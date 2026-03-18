@@ -63,7 +63,7 @@ export default function AuthPage() {
     } catch (err: any) {
       console.error(err);
       if (err.code === 'auth/operation-not-allowed') {
-        setError('Email/Password sign-in is not enabled in the Firebase Console. Please enable it in Authentication > Sign-in method.');
+        setError(`Email/Password sign-in is not enabled in the Firebase Console for project "gradeboost-df887". Please enable it in Authentication > Sign-in method.`);
       } else {
         setError(err.message || 'Something went wrong');
       }
