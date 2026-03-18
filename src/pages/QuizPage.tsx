@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { collection, query, where, getDocs, limit, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { ArrowLeft, CheckCircle2, XCircle, Trophy, RefreshCw, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,7 +27,13 @@ export default function QuizPage() {
       const dayNum = parseInt(day!);
       const lessonsRef = collection(db, 'lessons');
       const q = query(lessonsRef, where('day', '==', dayNum), limit(1));
-      const querySnapshot = await getDocs(q);
+      let querySnapshot;
+      try {
+        querySnapshot = await getDocs(q);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.LIST, 'lessons');
+        return;
+      }
       
       let lessonData: any = null;
       if (!querySnapshot.empty) {
@@ -89,7 +96,11 @@ export default function QuizPage() {
           updates.currentDay = dayNum + 1;
         }
 
-        await updateDoc(userRef, updates);
+        try {
+          await updateDoc(userRef, updates);
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
+        }
         await refreshUser();
       }
     } catch (err) {

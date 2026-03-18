@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { Link } from 'react-router-dom';
 import { Trophy, Clock, FileText, ChevronRight, Sparkles, ShieldCheck, Download } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -17,7 +18,13 @@ export default function MockExams() {
   const fetchExams = async () => {
     try {
       const q = query(collection(db, 'mockExams'), orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
+      let snapshot;
+      try {
+        snapshot = await getDocs(q);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.LIST, 'mockExams');
+        return;
+      }
       const examsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       
       // If no exams exist, provide some defaults for demonstration

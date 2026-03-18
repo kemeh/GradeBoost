@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { useNavigate, Link } from 'react-router-dom';
 import { Lock, Mail, User, ArrowRight, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -37,27 +38,35 @@ export default function AuthPage() {
         const user = userCredential.user;
         
         // Create user document in Firestore
-        await setDoc(doc(db, 'users', user.uid), {
-          name: formData.name,
-          email: formData.email,
-          school: formData.school,
-          age: parseInt(formData.age) || 0,
-          phoneNumber: formData.phoneNumber,
-          sex: formData.sex,
-          class: formData.class,
-          region: formData.region,
-          isPaid: false,
-          currentDay: 0,
-          progress: [],
-          role: 'student',
-          createdAt: new Date().toISOString()
-        });
+        try {
+          await setDoc(doc(db, 'users', user.uid), {
+            name: formData.name,
+            email: formData.email,
+            school: formData.school,
+            age: parseInt(formData.age) || 0,
+            phoneNumber: formData.phoneNumber,
+            sex: formData.sex,
+            class: formData.class,
+            region: formData.region,
+            isPaid: false,
+            currentDay: 0,
+            progress: [],
+            role: 'student',
+            createdAt: new Date().toISOString()
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`);
+        }
         
         navigate('/dashboard');
       }
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Something went wrong');
+      if (err.code === 'auth/operation-not-allowed') {
+        setError('Email/Password sign-in is not enabled in the Firebase Console. Please enable it in Authentication > Sign-in method.');
+      } else {
+        setError(err.message || 'Something went wrong');
+      }
     } finally {
       setLoading(false);
     }

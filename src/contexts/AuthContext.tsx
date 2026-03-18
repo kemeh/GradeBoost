@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 
 interface User {
   id: string;
@@ -10,6 +11,14 @@ interface User {
   isPaid: boolean;
   currentDay: number;
   role: 'student' | 'admin';
+  examHistory?: {
+    examId: string;
+    examTitle: string;
+    score: number;
+    completedAt: string;
+  }[];
+  displayName?: string;
+  uid?: string;
 }
 
 interface AuthContextType {
@@ -38,7 +47,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setLoading(false);
         }, (error) => {
-          console.error("Firestore Error in AuthContext: ", error);
+          handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
           setLoading(false);
         });
 
@@ -55,9 +64,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     if (!auth.currentUser) return;
     const userRef = doc(db, 'users', auth.currentUser.uid);
-    const docSnap = await getDoc(userRef);
-    if (docSnap.exists()) {
-      setUser({ id: docSnap.id, ...docSnap.data() } as User);
+    try {
+      const docSnap = await getDoc(userRef);
+      if (docSnap.exists()) {
+        setUser({ id: docSnap.id, ...docSnap.data() } as User);
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, `users/${auth.currentUser.uid}`);
     }
   };
 

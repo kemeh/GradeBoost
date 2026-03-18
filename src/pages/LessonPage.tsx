@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { ArrowLeft, PlayCircle, FileText, CheckCircle, ChevronRight, Clock, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -21,7 +22,13 @@ export default function LessonPage() {
       const dayNum = parseInt(day!);
       const lessonsRef = collection(db, 'lessons');
       const q = query(lessonsRef, where('day', '==', dayNum), limit(1));
-      const querySnapshot = await getDocs(q);
+      let querySnapshot;
+      try {
+        querySnapshot = await getDocs(q);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.LIST, 'lessons');
+        return;
+      }
       
       if (!querySnapshot.empty) {
         setLesson(querySnapshot.docs[0].data());

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { Link } from 'react-router-dom';
 import { CheckCircle2, Play, Trophy, ArrowRight, BookOpen, BrainCircuit, CreditCard, Lock, ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -22,7 +23,13 @@ export default function Dashboard() {
     try {
       const lessonsRef = collection(db, 'lessons');
       const q = query(lessonsRef, where('day', '==', user?.currentDay || 0), limit(1));
-      const querySnapshot = await getDocs(q);
+      let querySnapshot;
+      try {
+        querySnapshot = await getDocs(q);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.LIST, 'lessons');
+        return;
+      }
       
       if (!querySnapshot.empty) {
         setNextLesson(querySnapshot.docs[0].data());

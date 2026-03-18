@@ -32,23 +32,27 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return user && user?.role === 'admin' ? <Layout>{children}</Layout> : <Navigate to="/dashboard" />;
 }
 
+import ErrorBoundary from './components/ErrorBoundary';
+
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-          <Route path="/lessons/:day" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
-          <Route path="/lessons/:day/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
-          <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
-          <Route path="/exams" element={<PrivateRoute><MockExams /></PrivateRoute>} />
-          <Route path="/exams/:examId" element={<ExamRoute><ExamSession /></ExamRoute>} />
-          <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/lessons/:day" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
+            <Route path="/lessons/:day/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
+            <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
+            <Route path="/exams" element={<PrivateRoute><MockExams /></PrivateRoute>} />
+            <Route path="/exams/:examId" element={<ExamRoute><ExamSession /></ExamRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminPanel /></AdminRoute>} />
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

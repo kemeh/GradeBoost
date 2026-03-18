@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { doc, getDoc, updateDoc, arrayUnion, addDoc, collection } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { Clock, ArrowLeft, ArrowRight, CheckCircle2, XCircle, Trophy, AlertCircle, RefreshCw, ChevronLeft, ChevronRight, Upload, FileText, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,7 +26,13 @@ export default function ExamSession() {
     try {
       setLoading(true);
       const examRef = doc(db, 'mockExams', examId!);
-      const examSnap = await getDoc(examRef);
+      let examSnap;
+      try {
+        examSnap = await getDoc(examRef);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.GET, `mockExams/${examId}`);
+        return;
+      }
       
       let examData: any = null;
       if (examSnap.exists()) {
@@ -125,15 +132,19 @@ export default function ExamSession() {
         // Here we'll simulate a URL.
         const simulatedFileUrl = `https://firebasestorage.googleapis.com/v0/b/mock-url/o/${uploadFile.name}`;
         
-        await addDoc(collection(db, 'examSubmissions'), {
-          examId: exam.id,
-          examTitle: exam.title,
-          studentId: auth.currentUser?.uid,
-          studentName: user?.displayName || 'Anonymous Student',
-          fileUrl: simulatedFileUrl,
-          status: 'PENDING',
-          submittedAt: new Date().toISOString()
-        });
+        try {
+          await addDoc(collection(db, 'examSubmissions'), {
+            examId: exam.id,
+            examTitle: exam.title,
+            studentId: auth.currentUser?.uid,
+            studentName: user?.displayName || 'Anonymous Student',
+            fileUrl: simulatedFileUrl,
+            status: 'PENDING',
+            submittedAt: new Date().toISOString()
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, 'examSubmissions');
+        }
 
         setIsFinished(true);
         setResult({ type: 'STRUCTURED_PENDING' });
@@ -165,14 +176,18 @@ export default function ExamSession() {
     if (auth.currentUser && user) {
       try {
         const userRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(userRef, {
-          examHistory: arrayUnion({
-            examId: exam.id,
-            examTitle: exam.title,
-            score: percentage,
-            completedAt: new Date().toISOString()
-          })
-        });
+        try {
+          await updateDoc(userRef, {
+            examHistory: arrayUnion({
+              examId: exam.id,
+              examTitle: exam.title,
+              score: percentage,
+              completedAt: new Date().toISOString()
+            })
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
+        }
         await refreshUser();
       } catch (err) {
         console.error("Error updating exam history:", err);
