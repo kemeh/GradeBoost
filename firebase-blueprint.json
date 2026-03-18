@@ -1,0 +1,150 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and progress tracking",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "school": { "type": "string" },
+        "age": { "type": "integer" },
+        "phoneNumber": { "type": "string" },
+        "sex": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "class": { "type": "string" },
+        "region": { "type": "string" },
+        "isPaid": { "type": "boolean" },
+        "currentDay": { "type": "integer" },
+        "progress": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "day": { "type": "integer" },
+              "score": { "type": "number" },
+              "completedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "examHistory": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "examId": { "type": "string" },
+              "examTitle": { "type": "string" },
+              "score": { "type": "number" },
+              "completedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "role": { "type": "string", "enum": ["student", "admin"] }
+      },
+      "required": ["name", "email"]
+    },
+    "Lesson": {
+      "title": "Lesson",
+      "description": "Educational content for a specific day",
+      "type": "object",
+      "properties": {
+        "day": { "type": "integer" },
+        "title": { "type": "string" },
+        "content": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "quiz": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "correctAnswer": { "type": "integer" },
+              "explanation": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["day", "title", "content"]
+    },
+    "MockExam": {
+      "title": "MockExam",
+      "description": "Full GCE mock exam simulation",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "duration": { "type": "integer" },
+        "totalQuestions": { "type": "integer" },
+        "difficulty": { "type": "string" },
+        "category": { "type": "string" },
+        "type": { "type": "string", "enum": ["MCQ", "STRUCTURED"] },
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string" },
+              "options": { "type": "array", "items": { "type": "string" } },
+              "correctAnswer": { "type": "integer" },
+              "explanation": { "type": "string" },
+              "marks": { "type": "integer" }
+            }
+          }
+        }
+      },
+      "required": ["title", "duration", "questions"]
+    },
+    "ExamSubmission": {
+      "title": "ExamSubmission",
+      "description": "Student submission for structured exams",
+      "type": "object",
+      "properties": {
+        "examId": { "type": "string" },
+        "examTitle": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "fileUrl": { "type": "string", "format": "uri" },
+        "status": { "type": "string", "enum": ["PENDING", "GRADED"] },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["examId", "studentId", "fileUrl"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Payment transaction record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "reference": { "type": "string" },
+        "externalReference": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["PENDING", "SUCCESSFUL", "FAILED"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "reference", "amount"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/lessons/{lessonId}": {
+      "schema": "Lesson",
+      "description": "Lesson content"
+    },
+    "/mockExams/{examId}": {
+      "schema": "MockExam",
+      "description": "Mock exam simulations"
+    },
+    "/examSubmissions/{submissionId}": {
+      "schema": "ExamSubmission",
+      "description": "Student submissions for structured exams"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Payment transactions"
+    }
+  }
+}
