@@ -16,6 +16,8 @@ interface User {
   region: string;
   isPaid: boolean;
   currentDay: number;
+  streak: number;
+  lastCompletedAt?: string;
   role: 'student' | 'admin';
   examHistory?: {
     examId: string;

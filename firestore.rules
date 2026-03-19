@@ -18,6 +18,8 @@ service cloud.firestore {
     //   - region: string (required)
     //   - isPaid: boolean (default: false)
     //   - currentDay: number (default: 0)
+    //   - streak: number (default: 0)
+    //   - lastCompletedAt: string (ISO date)
     //   - progress: list of maps (day, score, completedAt)
     //   - role: string (student/admin)
     //   - createdAt: string (ISO date)
@@ -115,6 +117,8 @@ service cloud.firestore {
         (!('role' in data) || (data.role in ['student', 'admin'])) &&
         (!('isPaid' in data) || (data.isPaid is bool)) &&
         (!('currentDay' in data) || (data.currentDay is int)) &&
+        (!('streak' in data) || (data.streak is int)) &&
+        (!('lastCompletedAt' in data) || isValidDateString(data.lastCompletedAt)) &&
         (!('progress' in data) || (data.progress is list)) &&
         (!('examHistory' in data) || (data.examHistory is list)) &&
         (!('createdAt' in data) || isValidDateString(data.createdAt));

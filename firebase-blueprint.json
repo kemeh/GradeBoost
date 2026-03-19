@@ -15,6 +15,8 @@
         "region": { "type": "string" },
         "isPaid": { "type": "boolean" },
         "currentDay": { "type": "integer" },
+        "streak": { "type": "integer" },
+        "lastCompletedAt": { "type": "string", "format": "date-time" },
         "progress": {
           "type": "array",
           "items": {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { useNavigate, Link } from 'react-router-dom';
@@ -10,6 +10,8 @@ import { Logo } from '../components/Logo';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const [formData, setFormData] = useState({ 
     name: '', 
     email: '', 
@@ -28,8 +30,15 @@ export default function AuthPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setResetSent(false);
     setLoading(true);
     try {
+      if (isForgotPassword) {
+        await sendPasswordResetEmail(auth, formData.email);
+        setResetSent(true);
+        return;
+      }
+
       if (isLogin) {
         await signInWithEmailAndPassword(auth, formData.email, formData.password);
         navigate('/dashboard');
@@ -50,6 +59,8 @@ export default function AuthPage() {
             region: formData.region,
             isPaid: false,
             currentDay: 0,
+            streak: 0,
+            lastCompletedAt: null,
             progress: [],
             role: formData.email.toLowerCase() === 'kemehhilary@gmail.com' ? 'admin' : 'student',
             createdAt: new Date().toISOString()
@@ -65,7 +76,9 @@ export default function AuthPage() {
       if (err.code === 'auth/operation-not-allowed') {
         setError(`Email/Password sign-in is not enabled in the Firebase Console for project "gradeboost-df887". Please enable it in Authentication > Sign-in method.`);
       } else if (err.code === 'auth/invalid-credential') {
-        setError('Invalid email or password. If you just switched projects, please create a new account using the "Create free account" link below.');
+        setError('Invalid email or password. Please check your credentials and try again.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('This email is already registered. Please try logging in or use a different email address.');
       } else {
         setError(err.message || 'Something went wrong');
       }
@@ -83,12 +96,14 @@ export default function AuthPage() {
           </Link>
           <div className="space-y-2">
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tighter">
-              {isLogin ? 'Welcome back' : 'Start your journey'}
+              {isForgotPassword ? 'Reset password' : isLogin ? 'Welcome back' : 'Start your journey'}
             </h1>
             <p className="text-slate-500 font-medium">
-              {isLogin 
-                ? 'Continue your 60-day challenge' 
-                : 'Join the next generation of GCE A-Level students'}
+              {isForgotPassword 
+                ? 'We will send you a link to reset your password'
+                : isLogin 
+                  ? 'Continue your 60-day challenge' 
+                  : 'Join the next generation of GCE A-Level students'}
             </p>
           </div>
         </div>
@@ -97,7 +112,7 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <AnimatePresence mode="wait">
-                {!isLogin && (
+                {!isLogin && !isForgotPassword && (
                   <>
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
@@ -237,7 +252,7 @@ export default function AuthPage() {
                 )}
               </AnimatePresence>
 
-              <div className="space-y-2">
+              <div className={`space-y-2 ${isForgotPassword ? 'md:col-span-2' : ''}`}>
                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
                 <div className="relative group">
                   <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
@@ -252,21 +267,45 @@ export default function AuthPage() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Password</label>
-                <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full pl-12 pr-6 py-3.5 bg-white border-2 border-slate-100 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-bold text-slate-900"
-                    value={formData.password}
-                    onChange={e => setFormData({ ...formData, password: e.target.value })}
-                    required
-                  />
+              {!isForgotPassword && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between px-1">
+                    <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Password</label>
+                    {isLogin && (
+                      <button
+                        type="button"
+                        onClick={() => setIsForgotPassword(true)}
+                        className="text-[10px] font-black text-blue-600 uppercase tracking-widest hover:text-blue-700 transition-colors"
+                      >
+                        Forgot?
+                      </button>
+                    )}
+                  </div>
+                  <div className="relative group">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                    <input
+                      type="password"
+                      placeholder="••••••••"
+                      className="w-full pl-12 pr-6 py-3.5 bg-white border-2 border-slate-100 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-bold text-slate-900"
+                      value={formData.password}
+                      onChange={e => setFormData({ ...formData, password: e.target.value })}
+                      required={!isForgotPassword}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
+
+            {resetSent && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-emerald-50 text-emerald-600 p-4 rounded-xl text-sm font-bold flex items-center gap-2 border border-emerald-100"
+              >
+                <div className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-pulse" />
+                Password reset email sent! Please check your inbox.
+              </motion.div>
+            )}
 
             {error && (
               <motion.div 
@@ -288,7 +327,7 @@ export default function AuthPage() {
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  {isLogin ? 'Sign in to account' : 'Create my account'}
+                  {isForgotPassword ? 'Send reset link' : isLogin ? 'Sign in to account' : 'Create my account'}
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                 </>
               )}
@@ -297,13 +336,25 @@ export default function AuthPage() {
 
           <div className="mt-10 pt-8 border-t border-slate-100 text-center space-y-4">
             <p className="text-slate-500 font-medium text-sm">
-              {isLogin ? "Don't have an account yet?" : "Already have an account?"}
+              {isForgotPassword 
+                ? "Remembered your password?" 
+                : isLogin 
+                  ? "Don't have an account yet?" 
+                  : "Already have an account?"}
             </p>
             <button
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                if (isForgotPassword) {
+                  setIsForgotPassword(false);
+                } else {
+                  setIsLogin(!isLogin);
+                }
+                setError('');
+                setResetSent(false);
+              }}
               className="text-blue-600 font-black uppercase tracking-widest text-xs hover:text-blue-700 transition-colors"
             >
-              {isLogin ? 'Create free account' : 'Sign in to existing'}
+              {isForgotPassword ? 'Back to sign in' : isLogin ? 'Create free account' : 'Sign in to existing'}
             </button>
           </div>
         </div>

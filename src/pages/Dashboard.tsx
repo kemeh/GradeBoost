@@ -4,13 +4,29 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, Play, Trophy, ArrowRight, BookOpen, BrainCircuit, CreditCard, Lock, ChevronRight } from 'lucide-react';
+import { CheckCircle2, Play, Trophy, ArrowRight, BookOpen, BrainCircuit, CreditCard, Lock, ChevronRight, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [progress, setProgress] = useState(0);
   const [nextLesson, setNextLesson] = useState<any>(null);
+
+  const getCurrentStreak = () => {
+    if (!user || !user.lastCompletedAt) return 0;
+    const lastDate = new Date(user.lastCompletedAt);
+    const today = new Date();
+    const lastDateMidnight = new Date(lastDate.getFullYear(), lastDate.getMonth(), lastDate.getDate()).getTime();
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const oneDay = 24 * 60 * 60 * 1000;
+    
+    if (todayMidnight - lastDateMidnight > oneDay) {
+      return 0;
+    }
+    return user.streak || 0;
+  };
+
+  const currentStreak = getCurrentStreak();
 
   useEffect(() => {
     if (user) {
@@ -198,6 +214,13 @@ export default function Dashboard() {
               Quick Stats
             </h2>
             <div className="space-y-4 md:space-y-6">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400 text-xs md:text-sm font-medium">Daily Streak</span>
+                <div className="flex items-center gap-1.5">
+                  <Flame size={16} className={currentStreak > 0 ? "text-orange-500 fill-orange-500" : "text-slate-600"} />
+                  <span className={`text-lg md:text-xl font-bold ${currentStreak > 0 ? "text-orange-500" : "text-slate-400"}`}>{currentStreak}</span>
+                </div>
+              </div>
               <div className="flex justify-between items-center">
                 <span className="text-slate-400 text-xs md:text-sm font-medium">Lessons Done</span>
                 <span className="text-lg md:text-xl font-bold">{user.currentDay}</span>

@@ -87,8 +87,34 @@ export default function QuizPage() {
           completedAt: new Date().toISOString()
         };
 
+        // Streak logic
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const oneDay = 24 * 60 * 60 * 1000;
+        
+        let newStreak = user.streak || 0;
+        const lastCompleted = user.lastCompletedAt ? new Date(user.lastCompletedAt) : null;
+        
+        if (!lastCompleted) {
+          newStreak = 1;
+        } else {
+          const lastDate = new Date(lastCompleted.getFullYear(), lastCompleted.getMonth(), lastCompleted.getDate()).getTime();
+          const diff = today - lastDate;
+          
+          if (diff === oneDay) {
+            // Completed yesterday, increment streak
+            newStreak += 1;
+          } else if (diff > oneDay) {
+            // Missed a day, reset streak
+            newStreak = 1;
+          }
+          // If diff === 0, already completed today, streak remains same
+        }
+
         const updates: any = {
-          progress: arrayUnion(newProgress)
+          progress: arrayUnion(newProgress),
+          lastCompletedAt: now.toISOString(),
+          streak: newStreak
         };
 
         // Unlock next day if passed
@@ -136,25 +162,65 @@ export default function QuizPage() {
             You scored {result.score} out of {result.total} ({result.percentage}%)
           </p>
           
-          <div className="bg-slate-50 rounded-3xl p-8 mb-10 text-left space-y-6">
-            <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs">Review Results</h3>
-            {lesson.quiz.map((q: any, idx: number) => (
-              <div key={idx} className="border-b border-slate-200 pb-6 last:border-0 last:pb-0">
-                <p className="text-sm font-bold text-slate-800 mb-3">{idx + 1}. {q.question}</p>
-                <div className="flex items-center gap-2">
-                  {answers[idx] === q.correctAnswer ? (
-                    <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                      <CheckCircle2 size={12} /> Correct
-                    </span>
-                  ) : (
-                    <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1">
-                      <XCircle size={12} /> Incorrect
-                    </span>
+          <div className="bg-slate-50 rounded-3xl p-8 mb-10 text-left space-y-8">
+            <h3 className="font-black text-slate-900 uppercase tracking-widest text-xs border-b border-slate-200 pb-4">Review Results</h3>
+            {lesson.quiz.map((q: any, idx: number) => {
+              const isCorrect = answers[idx] === q.correctAnswer;
+              return (
+                <div key={idx} className="space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <p className="text-sm font-bold text-slate-800 leading-tight">
+                      <span className="text-slate-400 mr-2">{idx + 1}.</span>
+                      {q.question}
+                    </p>
+                    {isCorrect ? (
+                      <CheckCircle2 size={20} className="text-emerald-500 shrink-0" />
+                    ) : (
+                      <XCircle size={20} className="text-red-500 shrink-0" />
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-2 ml-6">
+                    {q.options.map((option: string, optIdx: number) => {
+                      const isUserChoice = answers[idx] === optIdx;
+                      const isCorrectChoice = q.correctAnswer === optIdx;
+                      
+                      let bgColor = 'bg-white';
+                      let borderColor = 'border-slate-100';
+                      let textColor = 'text-slate-600';
+
+                      if (isCorrectChoice) {
+                        bgColor = 'bg-emerald-50';
+                        borderColor = 'border-emerald-200';
+                        textColor = 'text-emerald-900';
+                      } else if (isUserChoice && !isCorrect) {
+                        bgColor = 'bg-red-50';
+                        borderColor = 'border-red-200';
+                        textColor = 'text-red-900';
+                      }
+
+                      return (
+                        <div 
+                          key={optIdx} 
+                          className={`px-4 py-3 rounded-xl border-2 text-xs font-bold flex items-center justify-between ${bgColor} ${borderColor} ${textColor}`}
+                        >
+                          <span>{option}</span>
+                          {isCorrectChoice && <CheckCircle2 size={14} className="text-emerald-600" />}
+                          {isUserChoice && !isCorrect && <XCircle size={14} className="text-red-600" />}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {!isCorrect && q.explanation && (
+                    <div className="ml-6 bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50">
+                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-1">Explanation</p>
+                      <p className="text-xs text-slate-600 leading-relaxed italic">{q.explanation}</p>
+                    </div>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 mt-3 bg-white p-3 rounded-xl border border-slate-100 italic">{q.explanation}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">

@@ -703,15 +703,23 @@ export default function AdminPanel() {
           <h2 className="text-2xl font-black text-slate-900 tracking-tight">Student Submissions (Paper 2)</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {submissions.map(sub => (
-              <div key={sub.id} className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100 space-y-6">
+              <div 
+                key={sub.id} 
+                className={`rounded-[2rem] p-8 border transition-all space-y-6 ${
+                  sub.status === 'GRADED' 
+                    ? 'bg-emerald-50/30 border-emerald-100 hover:bg-emerald-50/50' 
+                    : 'bg-amber-50/30 border-amber-100 hover:bg-amber-50/50'
+                }`}
+              >
                 <div className="flex justify-between items-start">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">{sub.examTitle}</p>
                     <h3 className="font-black text-slate-900 tracking-tight">{sub.studentName}</h3>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 ${
                     sub.status === 'GRADED' ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
                   }`}>
+                    {sub.status === 'GRADED' ? <CheckCircle2 size={10} /> : <Clock size={10} />}
                     {sub.status}
                   </span>
                 </div>
