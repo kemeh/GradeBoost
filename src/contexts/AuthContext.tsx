@@ -51,7 +51,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const unsubscribeDoc = onSnapshot(userRef, (docSnap) => {
           console.log('User doc snap:', docSnap.exists());
           if (docSnap.exists()) {
-            setUser({ id: docSnap.id, ...docSnap.data() } as User);
+            const data = docSnap.data();
+            const role = (firebaseUser.email?.toLowerCase() === 'kemehhilary@gmail.com') ? 'admin' : (data.role || 'student');
+            setUser({ id: docSnap.id, ...data, role } as User);
+          } else if (firebaseUser.email?.toLowerCase() === 'kemehhilary@gmail.com') {
+            // Virtual profile for admin if doc doesn't exist
+            setUser({
+              id: firebaseUser.uid,
+              uid: firebaseUser.uid,
+              email: firebaseUser.email,
+              name: 'Admin',
+              role: 'admin',
+              isPaid: true,
+              currentDay: 0,
+              streak: 0,
+              school: 'System',
+              age: 0,
+              phoneNumber: '',
+              sex: 'Other',
+              class: 'Admin',
+              region: 'System'
+            } as User);
           } else {
             setUser(null);
           }
@@ -78,7 +98,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const docSnap = await getDoc(userRef);
       if (docSnap.exists()) {
-        setUser({ id: docSnap.id, ...docSnap.data() } as User);
+        const data = docSnap.data();
+        const role = (auth.currentUser.email?.toLowerCase() === 'kemehhilary@gmail.com') ? 'admin' : (data.role || 'student');
+        setUser({ id: docSnap.id, ...data, role } as User);
+      } else if (auth.currentUser.email?.toLowerCase() === 'kemehhilary@gmail.com') {
+        setUser({
+          id: auth.currentUser.uid,
+          uid: auth.currentUser.uid,
+          email: auth.currentUser.email,
+          name: 'Admin',
+          role: 'admin',
+          isPaid: true,
+          currentDay: 0,
+          streak: 0,
+          school: 'System',
+          age: 0,
+          phoneNumber: '',
+          sex: 'Other',
+          class: 'Admin',
+          region: 'System'
+        } as User);
       }
     } catch (error) {
       handleFirestoreError(error, OperationType.GET, `users/${auth.currentUser.uid}`);
