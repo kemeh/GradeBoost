@@ -10,16 +10,17 @@ service cloud.firestore {
     // Fields:
     //   - name: string (required, 1-100 chars)
     //   - email: string (required, valid email)
-    //   - school: string (optional)
-    //   - age: number (optional, positive)
-    //   - phoneNumber: string (optional)
-    //   - sex: string (optional, Male/Female/Other)
-    //   - class: string (optional)
-    //   - region: string (optional)
+    //   - school: string (required)
+    //   - age: number (required, positive)
+    //   - phoneNumber: string (required)
+    //   - sex: string (required, Male/Female/Other)
+    //   - class: string (required)
+    //   - region: string (required)
     //   - isPaid: boolean (default: false)
     //   - currentDay: number (default: 0)
     //   - progress: list of maps (day, score, completedAt)
     //   - role: string (student/admin)
+    //   - createdAt: string (ISO date)
     //
     // Collection: lessons
     // Document ID: lessonId
@@ -102,16 +103,21 @@ service cloud.firestore {
     // ===============================================================
 
     function isValidUser(data) {
-      return data.keys().hasAll(['name', 'email']) &&
+      return data.keys().hasAll(['name', 'email', 'school', 'age', 'phoneNumber', 'sex', 'class', 'region']) &&
         data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
         isValidEmail(data.email) &&
-        (!('age' in data) || (data.age is int && data.age >= 0)) &&
-        (!('sex' in data) || (data.sex in ['Male', 'Female', 'Other'])) &&
+        data.school is string && data.school.size() > 0 && data.school.size() <= 200 &&
+        data.age is int && data.age >= 0 && data.age <= 120 &&
+        data.phoneNumber is string && data.phoneNumber.size() >= 8 && data.phoneNumber.size() <= 20 &&
+        data.sex in ['Male', 'Female', 'Other'] &&
+        data.class is string && data.class.size() > 0 && data.class.size() <= 50 &&
+        data.region is string && data.region.size() > 0 && data.region.size() <= 100 &&
         (!('role' in data) || (data.role in ['student', 'admin'])) &&
         (!('isPaid' in data) || (data.isPaid is bool)) &&
         (!('currentDay' in data) || (data.currentDay is int)) &&
         (!('progress' in data) || (data.progress is list)) &&
-        (!('examHistory' in data) || (data.examHistory is list));
+        (!('examHistory' in data) || (data.examHistory is list)) &&
+        (!('createdAt' in data) || isValidDateString(data.createdAt));
     }
 
     function isValidLesson(data) {

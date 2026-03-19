@@ -43,6 +43,7 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/lessons" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
             <Route path="/lessons/:day" element={<PrivateRoute><LessonPage /></PrivateRoute>} />
             <Route path="/lessons/:day/quiz" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
             <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />

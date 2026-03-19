@@ -75,6 +75,66 @@ export default function AdminPanel() {
     }
   };
 
+  const handleSeedLessons = async () => {
+    if (!window.confirm('This will add the first 5 days of lessons to the database. Continue?')) return;
+    
+    setIsSeeding(true);
+    try {
+      const batch = writeBatch(db);
+      
+      const seedLessons = [
+        {
+          day: 1,
+          title: 'Introduction to Computer Systems',
+          content: `# Day 1: Introduction to Computer Systems\n\nA computer system is a combination of hardware and software components that work together to process data and perform tasks. \n\n### Hardware Components\n1. **Input Devices**: Keyboard, mouse, scanner.\n2. **Processing Unit**: The CPU (Central Processing Unit).\n3. **Storage**: RAM (Primary) and Hard Drives (Secondary).\n4. **Output Devices**: Monitor, printer.\n\n### Software Components\n1. **System Software**: Operating Systems (Windows, Linux).\n2. **Application Software**: Word processors, browsers.\n\nUnderstanding how these interact is fundamental to Computer Science.`,
+          quiz: [
+            { question: "What does CPU stand for?", options: ["Central Process Unit", "Central Processing Unit", "Computer Personal Unit", "Central Processor Utility"], correctAnswer: 1, explanation: "CPU stands for Central Processing Unit." },
+            { question: "Which of these is an input device?", options: ["Monitor", "Printer", "Keyboard", "Speaker"], correctAnswer: 2, explanation: "Keyboard is used to input data." },
+            { question: "What is RAM?", options: ["Read Access Memory", "Random Access Memory", "Ready Action Memory", "Real Access Memory"], correctAnswer: 1, explanation: "RAM stands for Random Access Memory." },
+            { question: "Which is system software?", options: ["Chrome", "Windows 11", "MS Word", "Photoshop"], correctAnswer: 1, explanation: "Windows 11 is an Operating System." },
+            { question: "What is the brain of the computer?", options: ["RAM", "Hard Drive", "CPU", "Motherboard"], correctAnswer: 2, explanation: "The CPU processes all instructions." },
+            { question: "Which is a secondary storage device?", options: ["RAM", "SSD", "Cache", "Registers"], correctAnswer: 1, explanation: "SSD is non-volatile secondary storage." },
+            { question: "What is hardware?", options: ["Programs", "Physical components", "Data", "Internet"], correctAnswer: 1, explanation: "Hardware refers to the physical parts of a computer." },
+            { question: "What is software?", options: ["Cables", "Instructions for the computer", "The screen", "The mouse"], correctAnswer: 1, explanation: "Software is a set of instructions." },
+            { question: "Paper 2 Style: Explain the fetch-decode-execute cycle.", options: ["It's a loop", "CPU fetches, decodes, and runs instructions", "It's for printing", "It's a storage method"], correctAnswer: 1, explanation: "The FDE cycle is the basic operation of a CPU." },
+            { question: "Paper 3 Style: Write a simple algorithm to add two numbers.", options: ["Start -> Input A, B -> Sum = A + B -> Output Sum -> End", "Print 'Hello'", "Loop 10 times", "If A > B then A"], correctAnswer: 0, explanation: "A simple sequence of steps to solve a problem." }
+          ]
+        },
+        {
+          day: 2,
+          title: 'Data Representation: Binary & Hexadecimal',
+          content: `# Day 2: Data Representation\n\nComputers use binary (base-2) to represent all data. \n\n### Binary System\n- Uses only 0 and 1.\n- Each digit is a 'bit'.\n- 8 bits = 1 Byte.\n\n### Hexadecimal System\n- Base-16 system.\n- Uses 0-9 and A-F.\n- Used for color codes, MAC addresses, and memory addresses because it's more human-readable than binary.`,
+          quiz: [
+            { question: "What is the binary for decimal 5?", options: ["100", "101", "110", "111"], correctAnswer: 1, explanation: "4 + 0 + 1 = 101 in binary." },
+            { question: "How many bits are in a byte?", options: ["4", "8", "16", "32"], correctAnswer: 1, explanation: "A byte consists of 8 bits." },
+            { question: "What does Hexadecimal 'A' represent in decimal?", options: ["10", "11", "12", "13"], correctAnswer: 0, explanation: "A=10, B=11, C=12, D=13, E=14, F=15." },
+            { question: "Which base is Hexadecimal?", options: ["2", "8", "10", "16"], correctAnswer: 3, explanation: "Hexadecimal is base-16." },
+            { question: "Convert 1111 binary to decimal.", options: ["10", "12", "14", "15"], correctAnswer: 3, explanation: "8+4+2+1 = 15." },
+            { question: "What is a nibble?", options: ["2 bits", "4 bits", "8 bits", "1 bit"], correctAnswer: 1, explanation: "A nibble is half a byte (4 bits)." },
+            { question: "Which is used for MAC addresses?", options: ["Binary", "Decimal", "Hexadecimal", "Octal"], correctAnswer: 2, explanation: "MAC addresses are written in Hex." },
+            { question: "What is base-10 called?", options: ["Binary", "Denary", "Hex", "Octal"], correctAnswer: 1, explanation: "Denary or Decimal is base-10." },
+            { question: "Paper 2 Style: Convert 255 to Hex.", options: ["FF", "FE", "AA", "00"], correctAnswer: 0, explanation: "255 is the maximum value for 8 bits, which is FF in Hex." },
+            { question: "Paper 3 Style: Represent -5 in 8-bit Two's Complement.", options: ["11111011", "00000101", "10000101", "11111010"], correctAnswer: 0, explanation: "Flip bits of 5 (00000101) -> 11111010, add 1 -> 11111011." }
+          ]
+        }
+      ];
+      
+      for (const lesson of seedLessons) {
+        const lessonRef = doc(db, 'lessons', `day_${lesson.day}`);
+        batch.set(lessonRef, lesson);
+      }
+
+      await batch.commit();
+      fetchLessons();
+      alert('First 2 days of lessons seeded successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Error seeding lessons');
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   const handleSeedExams = async () => {
     if (!window.confirm('This will add a comprehensive set of GCE Computer Science and ICT Mock Exams (Papers 1, 2, and 3) to the database. Continue?')) return;
     
@@ -337,6 +397,14 @@ export default function AdminPanel() {
           <p className="text-slate-500 font-medium">Manage curriculum, exams, and student performance.</p>
         </div>
         <div className="flex gap-4">
+          <button
+            onClick={handleSeedLessons}
+            disabled={isSeeding}
+            className="bg-blue-50 text-blue-600 px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-[11px] border border-blue-100 hover:bg-blue-100 transition-all flex items-center gap-2 disabled:opacity-50"
+          >
+            {isSeeding ? <Sparkles className="animate-spin" size={16} /> : <Database size={16} />}
+            Seed Lessons
+          </button>
           <button
             onClick={handleSeedExams}
             disabled={isSeeding}

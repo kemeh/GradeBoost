@@ -8,6 +8,12 @@ interface User {
   id: string;
   name: string;
   email: string;
+  school: string;
+  age: number;
+  phoneNumber: string;
+  sex: string;
+  class: string;
+  region: string;
   isPaid: boolean;
   currentDay: number;
   role: 'student' | 'admin';
