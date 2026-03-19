@@ -19,7 +19,7 @@ admin.initializeApp({
   projectId: firebaseConfig.projectId,
 });
 
-const db = admin.firestore();
+const db = admin.firestore(firebaseConfig.firestoreDatabaseId);
 
 const app = express();
 const PORT = 3000;
@@ -97,6 +97,81 @@ app.get("/api/payment/status/:reference", async (req: any, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Webhook from CamPay
+app.post("/api/payment/webhook", async (req, res) => {
+  const { reference, status } = req.body;
+  console.log(`Received webhook for ${reference}: ${status}`);
+
+  try {
+    const transactionRef = db.collection("transactions").doc(reference);
+    const transactionDoc = await transactionRef.get();
+
+    if (transactionDoc.exists) {
+      await transactionRef.update({
+        status: status,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+      if (status === 'SUCCESSFUL') {
+        const transactionData = transactionDoc.data();
+        if (transactionData?.userId) {
+          const userRef = db.collection("users").doc(transactionData.userId);
+          await userRef.update({
+            isPaid: true
+          });
+          console.log(`Webhook: Transaction ${reference} successful. User ${transactionData.userId} marked as paid.`);
+        }
+      }
+    }
+    res.status(200).send("OK");
+  } catch (error) {
+    console.error("Webhook error:", error);
+    res.status(500).send("Error");
+  }
+});
+
+// Background job to check pending transactions every 30 seconds
+setInterval(async () => {
+  try {
+    const pendingTransactions = await db.collection("transactions")
+      .where("status", "==", "PENDING")
+      .get();
+
+    if (pendingTransactions.empty) return;
+
+    console.log(`Checking ${pendingTransactions.size} pending transactions...`);
+
+    for (const doc of pendingTransactions.docs) {
+      const transaction = doc.data();
+      const reference = doc.id;
+
+      try {
+        const data = await checkTransactionStatus(reference);
+        
+        if (data.status !== 'PENDING') {
+          await doc.ref.update({
+            status: data.status,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+
+          if (data.status === 'SUCCESSFUL' && transaction.userId) {
+            await db.collection("users").doc(transaction.userId).update({
+              isPaid: true
+            });
+            console.log(`Transaction ${reference} successful. User ${transaction.userId} marked as paid.`);
+          } else {
+            console.log(`Transaction ${reference} status updated to: ${data.status}`);
+          }
+        }
+      } catch (err) {
+        console.error(`Error checking status for ${reference}:`, err);
+      }
+    }
+  } catch (error) {
+    console.error("Background job error:", error);
+  }
+}, 30000);
 
 // --- Vite Middleware ---
 async function startServer() {

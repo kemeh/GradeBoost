@@ -50,7 +50,7 @@ export default function QuizPage() {
 
       if (lessonData) {
         setLesson(lessonData);
-        setAnswers(new Array(lessonData.quiz.length).fill(-1));
+        setAnswers(new Array((lessonData.quiz || []).length).fill(-1));
       }
     } catch (err) {
       console.error(err);
@@ -142,6 +142,21 @@ export default function QuizPage() {
   );
 
   if (!lesson) return <div className="text-center py-20">Quiz not found.</div>;
+
+  if (!lesson.quiz || lesson.quiz.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto py-20 px-4 text-center space-y-6">
+        <div className="w-20 h-20 bg-slate-100 text-slate-400 rounded-3xl flex items-center justify-center mx-auto">
+          <RefreshCw size={40} />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900">No Quiz Available</h2>
+        <p className="text-slate-500 font-medium">There is no quiz for this lesson yet. Please check back later or continue to the next lesson.</p>
+        <Link to="/dashboard" className="inline-flex bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-blue-100">
+          Back to Dashboard
+        </Link>
+      </div>
+    );
+  }
 
   if (result) {
     const isPassed = result.percentage >= 60;

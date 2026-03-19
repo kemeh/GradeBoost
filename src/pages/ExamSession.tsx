@@ -80,7 +80,7 @@ export default function ExamSession() {
 
       if (examData) {
         setExam(examData);
-        setAnswers(new Array(examData.questions.length).fill(-1));
+        setAnswers(new Array((examData.questions || []).length).fill(-1));
         setTimeLeft(examData.duration * 60);
       }
     } catch (err) {
@@ -215,6 +215,21 @@ export default function ExamSession() {
     </div>
   );
 
+  if (!exam.questions || exam.questions.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto py-32 px-4 text-center space-y-6">
+        <div className="w-20 h-20 bg-slate-100 text-slate-400 rounded-3xl flex items-center justify-center mx-auto">
+          <RefreshCw size={40} />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900">No Questions Available</h2>
+        <p className="text-slate-500 font-medium">There are no questions for this exam yet. Please check back later or contact support.</p>
+        <Link to="/exams" className="inline-flex bg-blue-600 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-xl shadow-blue-100">
+          Back to Exam Center
+        </Link>
+      </div>
+    );
+  }
+
   if (isFinished && result) {
     if (result.type === 'STRUCTURED_PENDING') {
       return (
@@ -319,7 +334,7 @@ export default function ExamSession() {
                 setIsFinished(false);
                 setResult(null);
                 setCurrentQuestionIdx(0);
-                setAnswers(new Array(exam.questions.length).fill(-1));
+                setAnswers(new Array((exam.questions || []).length).fill(-1));
                 setTimeLeft(exam.duration * 60);
               }}
               className="flex-1 bg-blue-600 text-white font-black py-5 rounded-2xl hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3"

@@ -16,7 +16,7 @@ export default function PaymentPage() {
   const { user, refreshUser } = useAuth();
   const navigate = useNavigate();
 
-  const amount = 10000;
+  const amount = 1000;
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +113,7 @@ export default function PaymentPage() {
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Total Enrollment Fee</p>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-black tracking-tighter">10,000</span>
+              <span className="text-4xl sm:text-5xl font-black tracking-tighter">1,000</span>
               <span className="text-xl font-bold text-slate-400 uppercase tracking-widest">FCFA</span>
             </div>
           </div>
@@ -235,7 +235,7 @@ export default function PaymentPage() {
                         <Loader2 className="animate-spin" size={20} />
                       ) : (
                         <>
-                          Pay 10,000 FCFA <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                          Pay 1,000 FCFA <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                         </>
                       )}
                     </button>
