@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrorHandler';
@@ -26,6 +27,23 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { user: authUser, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    console.log('AuthPage status:', { authLoading, authUser: !!authUser, currentUser: !!auth.currentUser, isForgotPassword });
+    if (!authLoading && authUser && !isForgotPassword) {
+      console.log('Redirecting to dashboard from AuthPage');
+      navigate('/dashboard');
+    }
+  }, [authUser, authLoading, navigate, isForgotPassword]);
+
+  // Check if user is authenticated but has no profile document
+  useEffect(() => {
+    if (!authLoading && !authUser && auth.currentUser && !isForgotPassword && !loading) {
+      console.log('User authenticated but no profile found');
+      setError('User profile not found. If you just created this account, please try again or contact support.');
+    }
+  }, [authUser, authLoading, isForgotPassword, loading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,14 +58,18 @@ export default function AuthPage() {
       }
 
       if (isLogin) {
+        console.log('Attempting login...');
         await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        console.log('Login successful, navigating...');
         navigate('/dashboard');
       } else {
+        console.log('Attempting signup...');
         const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         const user = userCredential.user;
         
         // Create user document in Firestore
         try {
+          console.log('Creating user document...');
           await setDoc(doc(db, 'users', user.uid), {
             name: formData.name,
             email: formData.email,
@@ -65,14 +87,19 @@ export default function AuthPage() {
             role: formData.email.toLowerCase() === 'kemehhilary@gmail.com' ? 'admin' : 'student',
             createdAt: new Date().toISOString()
           });
+          console.log('User document created');
         } catch (err) {
+          console.error('Error creating user document:', err);
           handleFirestoreError(err, OperationType.CREATE, `users/${user.uid}`);
+          // Don't navigate if profile creation failed
+          throw new Error('Failed to create user profile. Please try again.');
         }
         
+        console.log('Signup successful, navigating...');
         navigate('/dashboard');
       }
     } catch (err: any) {
-      console.error(err);
+      console.error('Auth error:', err);
       if (err.code === 'auth/operation-not-allowed') {
         setError(`Email/Password sign-in is not enabled in the Firebase Console for project "gradeboost-df887". Please enable it in Authentication > Sign-in method.`);
       } else if (err.code === 'auth/invalid-credential') {

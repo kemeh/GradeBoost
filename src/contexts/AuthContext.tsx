@@ -44,10 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('Auth state changed:', firebaseUser?.email);
       if (firebaseUser) {
         // Listen to user document in real-time
         const userRef = doc(db, 'users', firebaseUser.uid);
         const unsubscribeDoc = onSnapshot(userRef, (docSnap) => {
+          console.log('User doc snap:', docSnap.exists());
           if (docSnap.exists()) {
             setUser({ id: docSnap.id, ...docSnap.data() } as User);
           } else {
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           setLoading(false);
         }, (error) => {
+          console.error('Snapshot error:', error);
           handleFirestoreError(error, OperationType.GET, `users/${firebaseUser.uid}`);
           setLoading(false);
         });
