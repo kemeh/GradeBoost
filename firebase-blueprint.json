@@ -50,6 +50,7 @@
       "type": "object",
       "properties": {
         "day": { "type": "integer" },
+        "subject": { "type": "string", "enum": ["Computer Science", "ICT"] },
         "title": { "type": "string" },
         "content": { "type": "string" },
         "videoUrl": { "type": "string" },
@@ -78,7 +79,8 @@
         "duration": { "type": "integer" },
         "totalQuestions": { "type": "integer" },
         "difficulty": { "type": "string" },
-        "category": { "type": "string" },
+        "category": { "type": "string", "enum": ["Computer Science", "ICT"] },
+        "paperNumber": { "type": "integer", "enum": [1, 2, 3] },
         "type": { "type": "string", "enum": ["MCQ", "STRUCTURED"] },
         "questions": {
           "type": "array",

@@ -28,10 +28,22 @@ service cloud.firestore {
     // Document ID: lessonId
     // Fields:
     //   - day: number (required, unique)
+    //   - subject: string (Computer Science / ICT)
     //   - title: string (required)
     //   - content: string (required)
     //   - videoUrl: string (optional)
     //   - quiz: list of maps (question, options, correctAnswer, explanation)
+    //
+    // Collection: mockExams
+    // Document ID: examId
+    // Fields:
+    //   - title: string (required)
+    //   - description: string
+    //   - duration: number
+    //   - category: string (Computer Science / ICT)
+    //   - paperNumber: number (1, 2, 3)
+    //   - type: string (MCQ / STRUCTURED)
+    //   - questions: list of maps
     //
     // Collection: transactions
     // Document ID: transactionId
@@ -125,8 +137,9 @@ service cloud.firestore {
     }
 
     function isValidLesson(data) {
-      return data.keys().hasAll(['day', 'title', 'content']) &&
+      return data.keys().hasAll(['day', 'title', 'content', 'subject']) &&
         data.day is int &&
+        data.subject in ['Computer Science', 'ICT'] &&
         data.title is string && data.title.size() > 0 &&
         data.content is string && data.content.size() > 0 &&
         (!('videoUrl' in data) || isValidUrl(data.videoUrl)) &&
@@ -134,9 +147,11 @@ service cloud.firestore {
     }
 
     function isValidMockExam(data) {
-      return data.keys().hasAll(['title', 'duration', 'questions']) &&
+      return data.keys().hasAll(['title', 'duration', 'questions', 'category', 'paperNumber']) &&
         data.title is string && data.title.size() > 0 &&
         data.duration is int && data.duration > 0 &&
+        data.category in ['Computer Science', 'ICT'] &&
+        data.paperNumber in [1, 2, 3] &&
         data.questions is list &&
         (!('type' in data) || (data.type in ['MCQ', 'STRUCTURED']));
     }

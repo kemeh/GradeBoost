@@ -1,185 +1,189 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, Trophy, Users, Zap, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, BarChart3, Brain, Target, CheckCircle2 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Logo } from '../components/Logo';
+import { Button, Card } from '../components/ui';
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white overflow-hidden font-sans">
+    <div className="min-h-screen bg-slate-50 overflow-hidden font-sans">
       {/* Navbar */}
-      <nav className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between">
-        <Logo className="scale-90 sm:scale-100" />
-        <div className="flex items-center gap-8">
-          <Link to="/auth" className="text-slate-400 font-black uppercase tracking-widest text-[11px] hover:text-slate-900 transition-colors hidden sm:block">Sign In</Link>
-          <Link to="/auth" className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[11px] hover:bg-black transition-all shadow-xl shadow-slate-200 active:scale-[0.98]">
-            Get Started
+      <nav className="max-w-7xl mx-auto px-6 h-24 flex items-center justify-between relative z-50">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-linear-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+            <Target size={24} />
+          </div>
+          <span className="text-xl font-black tracking-tighter text-slate-900">GradeBoost<span className="text-indigo-600">60</span></span>
+        </div>
+        <div className="flex items-center gap-4 sm:gap-8">
+          <Link to="/auth" className="text-slate-500 font-black uppercase tracking-widest text-[11px] hover:text-indigo-600 transition-colors hidden sm:block">Login</Link>
+          <Link to="/auth">
+            <Button size="md">Get Started</Button>
           </Link>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-6 pt-16 pb-32 grid lg:grid-cols-2 gap-20 items-center">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="space-y-10"
-        >
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-            <Sparkles size={12} /> Vertexon Technologies
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-6xl font-black leading-[0.9] tracking-tighter text-slate-900">
-            Master GCE <br />
-            <span className="text-blue-600">Computer <br className="hidden sm:block" /> Science</span> <br />
-            in 60 Days.
-          </h1>
-          <p className="text-lg text-slate-500 font-medium leading-relaxed max-w-lg">
-            A structured, daily challenge system designed specifically for the Cameroon GCE syllabus. Lessons, quizzes, and progress tracking all in one place.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-6 pt-4">
-            <Link to="/auth" className="bg-blue-600 text-white px-12 py-6 rounded-[2rem] font-black text-lg hover:bg-blue-700 transition-all shadow-2xl shadow-blue-200 flex items-center justify-center gap-3 group active:scale-[0.98]">
-              Start Challenge <ArrowRight size={24} className="group-hover:translate-x-1 transition-transform" />
-            </Link>
-          </div>
-          <div className="flex items-center gap-6 pt-8">
-            <div className="flex -space-x-4">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="w-12 h-12 rounded-2xl border-4 border-white bg-slate-100 overflow-hidden shadow-sm">
-                  <img src={`https://picsum.photos/seed/user${i}/100/100`} alt="User" referrerPolicy="no-referrer" />
-                </div>
-              ))}
+      <section className="relative max-w-7xl mx-auto px-6 pt-20 pb-32">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-8 relative z-10"
+          >
+            <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-600 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+              <Sparkles size={12} /> The Future of A-Level Prep
             </div>
-            <div className="space-y-1">
-              <p className="text-slate-900 text-sm font-black">500+ Students</p>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Joined across Cameroon</p>
+            <h1 className="text-5xl md:text-7xl font-black leading-[0.9] tracking-tighter text-slate-900">
+              Track. Analyze. <br />
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-600 to-purple-600">Improve Your Grades.</span>
+            </h1>
+            <p className="text-xl text-slate-500 font-medium leading-relaxed max-w-lg">
+              Built specifically for Advanced Level Computer Science & ICT students. Master your syllabus with data-driven insights and smart predictions.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Link to="/auth">
+                <Button size="lg" className="w-full sm:w-auto group">
+                  Get Started <ArrowRight size={20} className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+              <Link to="/auth">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  Try Demo
+                </Button>
+              </Link>
             </div>
-          </div>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, rotate: 2 }}
-          animate={{ opacity: 1, scale: 1, rotate: 0 }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-          className="relative"
-        >
-            <div className="bg-slate-50 rounded-[3rem] p-8 aspect-square relative overflow-hidden border border-slate-100 shadow-inner">
-            <div className="absolute top-8 left-8 right-8 bottom-8 bg-white rounded-[2rem] shadow-2xl p-8 border border-slate-50 flex flex-col justify-between">
-              <div className="flex items-center justify-between">
-                <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-blue-100">
-                  <Zap size={24} />
-                </div>
-                <div className="text-right space-y-1">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Current Progress</p>
-                  <p className="text-3xl font-black text-slate-900 tracking-tighter">Day 14/60</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                    <div className="w-8 h-8 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600">
-                      <CheckCircle2 size={16} />
-                    </div>
-                    <div className="h-2 bg-slate-200 rounded-full flex-1 overflow-hidden">
-                      <div className="bg-emerald-500 h-full w-full" />
-                    </div>
+            
+            <div className="flex items-center gap-4 pt-8 border-t border-slate-200">
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
+                    <img src={`https://picsum.photos/seed/student${i}/100/100`} alt="Student" referrerPolicy="no-referrer" />
                   </div>
                 ))}
               </div>
-
-              <div className="pt-6 border-t border-slate-50">
-                <div className="flex justify-between items-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                  <span>Next: Data Structures</span>
-                  <span className="text-blue-600">Unlock in 2h</span>
-                </div>
-              </div>
+              <p className="text-sm font-bold text-slate-600">Trusted by <span className="text-indigo-600">500+</span> students across Cameroon</p>
             </div>
-          </div>
-          {/* Decorative elements */}
-          <div className="absolute -top-12 -right-12 w-48 h-48 bg-blue-100 rounded-full blur-[100px] opacity-60" />
-          <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-red-100 rounded-full blur-[120px] opacity-40" />
-        </motion.div>
-      </section>
+          </motion.div>
 
-      {/* Features */}
-      <section className="bg-slate-50/50 py-32 border-y border-slate-50">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tighter">Everything you need to succeed.</h2>
-            <p className="text-base text-slate-500 font-medium">Designed by top ICT educators in Cameroon to help you ace your A-Levels.</p>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              { icon: Users, title: "Community Driven", desc: "Join hundreds of students sharing tips and solving past GCE questions together.", color: "blue" },
-              { icon: CheckCircle2, title: "Syllabus Focused", desc: "Every lesson is mapped directly to the Cameroon GCE A-Level Computer Science syllabus.", color: "emerald" },
-              { icon: Trophy, title: "Challenge-Based + Mastery-Based Learning", desc: "Step by step, day by day — master each topic and track your success. Your journey from F to A starts here.", color: "amber" }
-            ].map((f, i) => (
-              <div key={i} className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-2 transition-all group">
-                <div className={`w-16 h-16 bg-${f.color}-50 rounded-[1.5rem] flex items-center justify-center text-${f.color}-600 mb-8 group-hover:scale-110 transition-transform`}>
-                  <f.icon size={32} />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{f.title}</h3>
-                <p className="text-slate-500 font-medium leading-relaxed">{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Quote Section */}
-      <section className="py-32 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6">
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            className="relative bg-blue-600 rounded-[3rem] p-10 md:p-20 text-center text-white overflow-hidden shadow-2xl shadow-blue-200"
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+            className="relative hidden lg:block"
           >
-            <div className="relative z-10 max-w-4xl mx-auto space-y-6">
-              <Sparkles className="mx-auto text-blue-200 opacity-50" size={40} />
-          <blockquote className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tighter leading-[0.95]">
-            “Success isn’t about talent, it’s about showing up every day and doing the work. Start today, finish stronger.”
-          </blockquote>
-              <div className="pt-8 flex items-center justify-center gap-4">
-                <div className="h-px w-12 bg-blue-400" />
-                <span className="text-xs font-black uppercase tracking-[0.3em] text-blue-200">Motivational Insight</span>
-                <div className="h-px w-12 bg-blue-400" />
-              </div>
+            <div className="relative z-10">
+              <Card className="p-0 overflow-hidden border-slate-200/60 shadow-2xl">
+                <div className="bg-slate-900 p-6 text-white flex justify-between items-center">
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500" />
+                    <div className="w-3 h-3 rounded-full bg-amber-500" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest opacity-50">Dashboard Preview</span>
+                </div>
+                <div className="p-8 space-y-8 bg-white">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-1">Avg Score</p>
+                      <p className="text-2xl font-black text-indigo-600">78%</p>
+                    </div>
+                    <div className="p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                      <p className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-1">Predicted</p>
+                      <p className="text-2xl font-black text-purple-600">A</p>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="h-4 bg-slate-100 rounded-full w-3/4" />
+                    <div className="h-4 bg-slate-100 rounded-full w-full" />
+                    <div className="h-4 bg-slate-100 rounded-full w-1/2" />
+                  </div>
+                  <div className="pt-4 flex justify-between items-center">
+                    <div className="flex gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-slate-100" />
+                      <div className="w-8 h-8 rounded-lg bg-slate-100" />
+                    </div>
+                    <div className="w-24 h-8 rounded-lg bg-indigo-600" />
+                  </div>
+                </div>
+              </Card>
             </div>
-            {/* Background elements */}
-            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent_70%)]" />
+            {/* Background Glows */}
+            <div className="absolute -top-20 -right-20 w-96 h-96 bg-indigo-400/20 rounded-full blur-[120px]" />
+            <div className="absolute -bottom-20 -left-20 w-96 h-96 bg-purple-400/20 rounded-full blur-[120px]" />
           </motion.div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="bg-slate-900 rounded-[3rem] p-12 md:p-20 text-center text-white relative overflow-hidden shadow-2xl">
-            <div className="relative z-10 space-y-10">
-              <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tighter leading-none">Ready to boost <br /> your grade?</h2>
-              <Link to="/auth" className="inline-flex bg-white text-slate-900 px-10 py-5 rounded-[1.5rem] font-black text-lg hover:bg-slate-50 transition-all shadow-2xl active:scale-[0.98] group">
-                Get Started Today <ArrowRight className="ml-3 group-hover:translate-x-2 transition-transform" />
-              </Link>
-            </div>
-            {/* Decorative circles */}
-            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-600/20 rounded-full -translate-y-1/2 translate-x-1/2 blur-[100px]" />
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-red-600/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-[80px]" />
-          </div>
+      {/* Features Section */}
+      <section className="max-w-7xl mx-auto px-6 py-32 relative">
+        <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
+          <h2 className="text-4xl font-black text-slate-900 tracking-tighter">Everything you need to excel.</h2>
+          <p className="text-slate-500 font-medium">Powerful tools designed to give you a competitive edge in your A-Level exams.</p>
+        </div>
+        
+        <div className="grid md:grid-cols-3 gap-8">
+          {[
+            { 
+              icon: BarChart3, 
+              title: "Grade Tracking", 
+              desc: "Log your scores for every paper and see your progress visualized with beautiful charts.",
+              color: "indigo"
+            },
+            { 
+              icon: Brain, 
+              title: "Smart Insights", 
+              desc: "Our logic engine analyzes your data to tell you exactly where you need to focus your study time.",
+              color: "purple"
+            },
+            { 
+              icon: Target, 
+              title: "Exam Prediction", 
+              desc: "Get accurate grade predictions based on your current performance and syllabus weightings.",
+              color: "emerald"
+            }
+          ].map((feature, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <Card className="h-full hover:border-indigo-200 hover:shadow-medium group">
+                <div className={`w-14 h-14 rounded-2xl bg-${feature.color}-50 flex items-center justify-center text-${feature.color}-600 mb-6 group-hover:scale-110 transition-transform`}>
+                  <feature.icon size={28} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 mb-4 tracking-tight">{feature.title}</h3>
+                <p className="text-slate-500 font-medium leading-relaxed">{feature.desc}</p>
+              </Card>
+            </motion.div>
+          ))}
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-20 border-t border-slate-50">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-12">
-          <Logo className="scale-90" />
-          <div className="flex gap-12">
-            <a href="https://vertexontechhub.com" className="text-slate-400 hover:text-slate-900 text-[11px] font-black uppercase tracking-widest transition-colors">About</a>
-            <a href="https://vertexontechhub.com" className="text-slate-400 hover:text-slate-900 text-[11px] font-black uppercase tracking-widest transition-colors">Contact</a>
-            <a href="https://vertexontechhub.com" className="text-slate-400 hover:text-slate-900 text-[11px] font-black uppercase tracking-widest transition-colors">Privacy Policy</a>
+      <footer className="bg-white border-t border-slate-100 py-20">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-12">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
+                <Target size={18} />
+              </div>
+              <span className="text-lg font-black tracking-tighter text-slate-900">GradeBoost<span className="text-indigo-600">60</span></span>
+            </div>
+            
+            <div className="flex gap-10">
+              <Link to="/" className="text-slate-400 hover:text-indigo-600 text-[11px] font-black uppercase tracking-widest transition-colors">Home</Link>
+              <Link to="/auth" className="text-slate-400 hover:text-indigo-600 text-[11px] font-black uppercase tracking-widest transition-colors">Login</Link>
+              <a href="#" className="text-slate-400 hover:text-indigo-600 text-[11px] font-black uppercase tracking-widest transition-colors">About</a>
+            </div>
+            
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">
+              © 2026 GradeBoost60. All rights reserved.
+            </p>
           </div>
-          <p className="text-slate-300 text-[10px] font-black uppercase tracking-[0.2em]">© 2026 Vertexon Technologies. All rights reserved.</p>
         </div>
       </footer>
     </div>
