@@ -70,8 +70,10 @@ export default function Diagnostic() {
   const [answers, setAnswers] = useState<any>({});
   const [isFinished, setIsFinished] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleNext = () => {
+    setError('');
     if (step < QUESTIONS.length - 1) {
       setStep(step + 1);
     } else {
@@ -82,9 +84,10 @@ export default function Diagnostic() {
   const finishDiagnostic = async () => {
     if (!user) return;
     setLoading(true);
+    setError('');
     const path = `users/${user.uid}`;
     try {
-      // Calculate Paper 1 score
+      // ... existing logic ...
       const p1Questions = QUESTIONS.filter(q => q.paper === 'Paper 1');
       let p1Correct = 0;
       p1Questions.forEach(q => {
@@ -92,7 +95,6 @@ export default function Diagnostic() {
       });
       const p1Score = Math.round((p1Correct / p1Questions.length) * 100);
 
-      // Mock scores for P2 and P3 based on length of text answers
       const p2Score = answers['p2_1']?.length > 50 ? 65 : 30;
       const p3Score = answers['p3_1']?.length > 50 ? 70 : 40;
 
@@ -119,8 +121,11 @@ export default function Diagnostic() {
       });
 
       setIsFinished(true);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, path);
+    } catch (err: any) {
+      console.error("Diagnostic Error:", err);
+      setError('Failed to save your results. Please check your connection and try again.');
+      // Still call the utility for logging/debugging
+      try { handleFirestoreError(err, OperationType.UPDATE, path); } catch(e) {}
     } finally {
       setLoading(false);
     }
@@ -215,6 +220,18 @@ export default function Diagnostic() {
       <main className="flex-1 flex items-center justify-center p-6">
         <div className="max-w-2xl w-full">
           <AnimatePresence mode="wait">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 bg-red-50 border border-red-100 p-4 rounded-2xl flex items-start gap-3"
+              >
+                <AlertCircle className="text-red-600 shrink-0" size={18} />
+                <p className="text-xs font-bold text-red-600 leading-tight">{error}</p>
+              </motion.div>
+            )}
+
             <motion.div
               key={step}
               initial={{ opacity: 0, x: 20 }}

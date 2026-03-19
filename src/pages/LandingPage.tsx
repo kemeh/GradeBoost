@@ -1,10 +1,26 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { BookOpen, Target, TrendingUp, ArrowRight, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Badge, cn } from '../components/ui';
 
 export default function LandingPage() {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.paymentStatus === 'paid') {
+        navigate('/dashboard');
+      } else {
+        navigate('/payment');
+      }
+    }
+  }, [user, loading, navigate]);
+
   return (
     <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       {/* Navigation */}

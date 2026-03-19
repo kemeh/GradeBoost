@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, BookOpen, ArrowRight, AlertCircle, CheckCircle2, TrendingUp, School, MapPin } from 'lucide-react';
 import { auth, db } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { Subject } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
@@ -16,6 +17,19 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else if (user.paymentStatus === 'paid') {
+        navigate('/dashboard');
+      } else {
+        navigate('/payment');
+      }
+    }
+  }, [user, authLoading, navigate]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -25,6 +39,36 @@ export default function AuthPage() {
     school: '',
     region: '',
   });
+
+  const getFriendlyErrorMessage = (error: any) => {
+    if (error.message && error.message.startsWith('{')) {
+      return 'A database error occurred. Please try again.';
+    }
+
+    const code = error.code || '';
+    switch (code) {
+      case 'auth/email-already-in-use':
+        return 'This email is already registered. Please login instead.';
+      case 'auth/invalid-email':
+        return 'Please enter a valid email address.';
+      case 'auth/user-disabled':
+        return 'This account has been disabled. Please contact support.';
+      case 'auth/user-not-found':
+        return 'No account found with this email. Please sign up.';
+      case 'auth/wrong-password':
+        return 'Incorrect password. Please try again.';
+      case 'auth/weak-password':
+        return 'Password should be at least 6 characters.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your connection.';
+      case 'auth/too-many-requests':
+        return 'Too many failed attempts. Please try again later.';
+      case 'auth/invalid-credential':
+        return 'Invalid email or password. Please try again.';
+      default:
+        return error.message || 'An unexpected error occurred. Please try again.';
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +82,6 @@ export default function AuthPage() {
         setSuccess('Password reset link sent to your email.');
       } else if (isLogin) {
         await signInWithEmailAndPassword(auth, formData.email, formData.password);
-        navigate('/dashboard');
       } else {
         const { user } = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         
@@ -62,16 +105,9 @@ export default function AuthPage() {
         } catch (error) {
           handleFirestoreError(error, OperationType.CREATE, path);
         }
-        
-        navigate('/dashboard');
       }
     } catch (err: any) {
-      if (err.message && err.message.startsWith('{')) {
-        // This is a FirestoreErrorInfo JSON string
-        setError('A database error occurred. Please try again.');
-      } else {
-        setError(err.message || 'An error occurred. Please try again.');
-      }
+      setError(getFriendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }

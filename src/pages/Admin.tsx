@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Upload, FileText, Trash2, 
   Users, BarChart3, ShieldCheck, 
-  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard
+  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard, AlertCircle
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,6 +18,7 @@ export default function Admin() {
   const navigate = useNavigate();
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [activeTab, setActiveTab] = useState<'papers' | 'payments'>('papers');
@@ -41,11 +42,13 @@ export default function Admin() {
 
   const fetchPapers = async () => {
     try {
+      setError('');
       const q = query(collection(db, 'questionPapers'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       setPapers(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as QuestionPaper)));
-    } catch (error) {
-      console.error("Error fetching papers:", error);
+    } catch (err) {
+      console.error("Error fetching papers:", err);
+      setError('Failed to load question papers. Please refresh.');
     } finally {
       setLoading(false);
     }
@@ -53,24 +56,28 @@ export default function Admin() {
 
   const fetchUsers = async () => {
     try {
+      setError('');
       const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       setUsers(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (error) {
-      console.error("Error fetching users:", error);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      setError('Failed to load student data.');
     }
   };
 
   const handleApprovePayment = async (userId: string) => {
     if (!window.confirm('Manually approve this payment?')) return;
     try {
+      setError('');
       await updateDoc(doc(db, 'users', userId), {
         paymentStatus: 'paid',
         paymentDate: new Date().toISOString(),
       });
       fetchUsers();
-    } catch (error) {
-      console.error("Error approving payment:", error);
+    } catch (err) {
+      console.error("Error approving payment:", err);
+      setError('Failed to approve payment. Please try again.');
     }
   };
 
@@ -79,6 +86,7 @@ export default function Admin() {
     if (!file || !user) return;
 
     setUploading(true);
+    setError('');
     try {
       const storageRef = ref(storage, `papers/${Date.now()}_${file.name}`);
       const snapshot = await uploadBytes(storageRef, file);
@@ -102,8 +110,9 @@ export default function Admin() {
       });
       setFile(null);
       fetchPapers();
-    } catch (error) {
-      console.error("Error uploading paper:", error);
+    } catch (err) {
+      console.error("Error uploading paper:", err);
+      setError('Failed to upload paper. Please check your connection.');
     } finally {
       setUploading(false);
     }
@@ -112,10 +121,12 @@ export default function Admin() {
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this paper?')) return;
     try {
+      setError('');
       await deleteDoc(doc(db, 'questionPapers', id));
       fetchPapers();
-    } catch (error) {
-      console.error("Error deleting paper:", error);
+    } catch (err) {
+      console.error("Error deleting paper:", err);
+      setError('Failed to delete paper.');
     }
   };
 
@@ -228,6 +239,17 @@ export default function Admin() {
             </Card>
           ))}
         </div>
+
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600"
+          >
+            <AlertCircle size={20} />
+            <p className="text-sm font-bold">{error}</p>
+          </motion.div>
+        )}
 
         {/* Papers Table */}
         {activeTab === 'papers' ? (

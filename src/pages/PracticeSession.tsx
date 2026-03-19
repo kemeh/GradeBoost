@@ -20,6 +20,7 @@ export default function PracticeSession() {
   const [paper, setPaper] = useState<QuestionPaper | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState(10800); // 3 hours in seconds
   const [answers, setAnswers] = useState<any>({});
   const [isFullScreen, setIsFullScreen] = useState(false);
@@ -27,14 +28,19 @@ export default function PracticeSession() {
   useEffect(() => {
     const fetchPaper = async () => {
       if (!paperId) return;
+      setError('');
       const path = `questionPapers/${paperId}`;
       try {
         const docSnap = await getDoc(doc(db, 'questionPapers', paperId));
         if (docSnap.exists()) {
           setPaper({ id: docSnap.id, ...docSnap.data() } as QuestionPaper);
+        } else {
+          setError('Exam paper not found.');
         }
-      } catch (error) {
-        handleFirestoreError(error, OperationType.GET, path);
+      } catch (err: any) {
+        console.error("Fetch Paper Error:", err);
+        setError('Failed to load exam paper. Please check your connection.');
+        try { handleFirestoreError(err, OperationType.GET, path); } catch(e) {}
       } finally {
         setLoading(false);
       }
@@ -60,9 +66,10 @@ export default function PracticeSession() {
   const handleSubmit = async () => {
     if (!user || !paper) return;
     setIsSubmitting(true);
+    setError('');
     const path = 'results';
     try {
-      // Scoring logic
+      // ... existing scoring logic ...
       let score = Math.floor(Math.random() * 40) + 60; // Default mock score
       
       if (paper.paperType === 'Paper 1' && paper.correctAnswers) {
@@ -89,18 +96,33 @@ export default function PracticeSession() {
         score,
         grade,
         feedback: "Great attempt! Focus on improving your structured answer keywords.",
-        completedAt: serverTimestamp(), // Consistent with dashboard query
+        completedAt: serverTimestamp(),
       });
 
       navigate('/dashboard');
-    } catch (error) {
-      handleFirestoreError(error, OperationType.CREATE, path);
+    } catch (err: any) {
+      console.error("Submit Exam Error:", err);
+      setError('Failed to submit your exam. Please try again.');
+      try { handleFirestoreError(err, OperationType.CREATE, path); } catch(e) {}
     } finally {
       setIsSubmitting(false);
     }
   };
 
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Loading Session...</div>;
+  
+  if (error && !paper) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 space-y-6">
+        <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center">
+          <AlertCircle size={32} />
+        </div>
+        <p className="text-slate-900 font-bold">{error}</p>
+        <Button onClick={() => navigate('/practice')}>Go Back</Button>
+      </div>
+    );
+  }
+
   if (!paper) return <div className="min-h-screen flex items-center justify-center">Paper not found</div>;
 
   return (
@@ -126,6 +148,12 @@ export default function PracticeSession() {
         </div>
 
         <div className="flex items-center gap-8">
+          {error && (
+            <div className="flex items-center gap-2 text-red-400 bg-red-400/10 px-4 py-2 rounded-xl border border-red-400/20">
+              <AlertCircle size={16} />
+              <span className="text-xs font-bold">{error}</span>
+            </div>
+          )}
           <div className="flex items-center gap-3 px-6 py-2 bg-slate-800 rounded-xl border border-slate-700">
             <Clock className="text-indigo-400" size={18} />
             <span className="text-lg font-black text-white tabular-nums">{formatTime(timeLeft)}</span>
