@@ -19,13 +19,13 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 const PaymentGatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Loading...</div>;
   
   if (!user) return <Navigate to="/auth" />;
   
   // Admins always have access
-  if (user.role === 'admin') return <>{children}</>;
+  if (isAdmin) return <>{children}</>;
   
   // Check payment status and expiry
   const isPaid = user.paymentStatus === 'paid';
@@ -39,7 +39,7 @@ const PaymentGatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, isAdmin } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Loading...</div>;
-  return user && isAdmin ? <>{children}</> : <Navigate to="/dashboard" />;
+  return isAdmin ? <>{children}</> : <Navigate to="/dashboard" />;
 };
 
 export default function App() {

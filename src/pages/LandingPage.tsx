@@ -6,20 +6,20 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Badge, cn } from '../components/ui';
 
 export default function LandingPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!loading && user) {
-      if (user.role === 'admin') {
+    if (!loading && (user || isAdmin)) {
+      if (isAdmin) {
         navigate('/admin');
-      } else if (user.paymentStatus === 'paid') {
+      } else if (user?.paymentStatus === 'paid') {
         navigate('/dashboard');
-      } else {
+      } else if (user) {
         navigate('/payment');
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, isAdmin, navigate]);
 
   return (
     <div className="min-h-screen bg-slate-50 overflow-x-hidden">

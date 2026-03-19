@@ -17,19 +17,19 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, isAdmin } = useAuth();
 
   useEffect(() => {
-    if (!authLoading && user) {
-      if (user.role === 'admin') {
+    if (!authLoading && (user || isAdmin)) {
+      if (isAdmin) {
         navigate('/admin');
-      } else if (user.paymentStatus === 'paid') {
+      } else if (user?.paymentStatus === 'paid') {
         navigate('/dashboard');
-      } else {
+      } else if (user) {
         navigate('/payment');
       }
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, isAdmin, navigate]);
 
   const [formData, setFormData] = useState({
     name: '',
