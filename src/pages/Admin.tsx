@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Upload, FileText, Trash2, 
   Users, BarChart3, ShieldCheck, 
-  LayoutDashboard, LogOut, TrendingUp, Search
+  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,9 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
+  const [activeTab, setActiveTab] = useState<'papers' | 'payments'>('papers');
+  const [users, setUsers] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -33,6 +36,7 @@ export default function Admin() {
 
   useEffect(() => {
     fetchPapers();
+    fetchUsers();
   }, []);
 
   const fetchPapers = async () => {
@@ -44,6 +48,29 @@ export default function Admin() {
       console.error("Error fetching papers:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      setUsers(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+      console.error("Error fetching users:", error);
+    }
+  };
+
+  const handleApprovePayment = async (userId: string) => {
+    if (!window.confirm('Manually approve this payment?')) return;
+    try {
+      await updateDoc(doc(db, 'users', userId), {
+        paymentStatus: 'paid',
+        paymentDate: new Date().toISOString(),
+      });
+      fetchUsers();
+    } catch (error) {
+      console.error("Error approving payment:", error);
     }
   };
 
@@ -124,25 +151,41 @@ export default function Admin() {
 
         <nav className="flex-1 space-y-2">
           {[
-            { icon: LayoutDashboard, label: 'Overview', path: '/admin', active: true },
-            { icon: FileText, label: 'Manage Papers', path: '#' },
+            { icon: LayoutDashboard, label: 'Overview', onClick: () => setActiveTab('papers'), active: activeTab === 'papers' },
+            { icon: CreditCard, label: 'Payments', onClick: () => setActiveTab('payments'), active: activeTab === 'payments' },
             { icon: Users, label: 'Manage Users', path: '#' },
             { icon: BarChart3, label: 'Analytics', path: '#' },
             { icon: ShieldCheck, label: 'Security', path: '#' },
           ].map((item, i) => (
-            <Link 
-              key={i} 
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all",
-                item.active 
-                  ? "bg-indigo-50 text-indigo-600" 
-                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              )}
-            >
-              <item.icon size={20} />
-              {item.label}
-            </Link>
+            item.onClick ? (
+              <button 
+                key={i} 
+                onClick={item.onClick}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all w-full text-left",
+                  item.active 
+                    ? "bg-indigo-50 text-indigo-600" 
+                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                )}
+              >
+                <item.icon size={20} />
+                {item.label}
+              </button>
+            ) : (
+              <Link 
+                key={i} 
+                to={item.path || '#'}
+                className={cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all",
+                  item.active 
+                    ? "bg-indigo-50 text-indigo-600" 
+                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                )}
+              >
+                <item.icon size={20} />
+                {item.label}
+              </Link>
+            )
           ))}
         </nav>
 
@@ -187,58 +230,124 @@ export default function Admin() {
         </div>
 
         {/* Papers Table */}
-        <Card className="overflow-hidden">
-          <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-xl font-black text-slate-900 tracking-tight">Question Papers</h2>
-            <div className="relative w-64">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:bg-white outline-none transition-all"
-              />
+        {activeTab === 'papers' ? (
+          <Card className="overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">Question Papers</h2>
+              <div className="relative w-64">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                <input 
+                  type="text" 
+                  placeholder="Search..." 
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:bg-white outline-none transition-all"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
             </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="bg-slate-50 border-b border-slate-100">
-                <tr>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Paper</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Year</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {papers.map((paper) => (
-                  <tr key={paper.id} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-8 py-4">
-                      <p className="text-sm font-bold text-slate-900">{paper.title}</p>
-                    </td>
-                    <td className="px-8 py-4">
-                      <Badge variant="default">{paper.subject}</Badge>
-                    </td>
-                    <td className="px-8 py-4">
-                      <Badge variant="primary">{paper.paperType}</Badge>
-                    </td>
-                    <td className="px-8 py-4">
-                      <span className="text-sm font-black text-slate-400">{paper.year}</span>
-                    </td>
-                    <td className="px-8 py-4">
-                      <button 
-                        onClick={() => handleDelete(paper.id)}
-                        className="p-2 text-slate-300 hover:text-red-600 transition-colors"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Paper</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Year</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {papers.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase())).map((paper) => (
+                    <tr key={paper.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-8 py-4">
+                        <p className="text-sm font-bold text-slate-900">{paper.title}</p>
+                      </td>
+                      <td className="px-8 py-4">
+                        <Badge variant="default">{paper.subject}</Badge>
+                      </td>
+                      <td className="px-8 py-4">
+                        <Badge variant="primary">{paper.paperType}</Badge>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span className="text-sm font-black text-slate-400">{paper.year}</span>
+                      </td>
+                      <td className="px-8 py-4">
+                        <button 
+                          onClick={() => handleDelete(paper.id)}
+                          className="p-2 text-slate-300 hover:text-red-600 transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">Student Payments</h2>
+              <div className="relative w-64">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
+                <input 
+                  type="text" 
+                  placeholder="Search students..." 
+                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:bg-white outline-none transition-all"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {users.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase())).map((u) => (
+                    <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-8 py-4">
+                        <p className="text-sm font-bold text-slate-900">{u.name}</p>
+                      </td>
+                      <td className="px-8 py-4">
+                        <p className="text-xs text-slate-500 font-medium">{u.email}</p>
+                      </td>
+                      <td className="px-8 py-4">
+                        <Badge variant={u.paymentStatus === 'paid' ? 'success' : 'danger'}>
+                          {u.paymentStatus || 'unpaid'}
+                        </Badge>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span className="text-xs font-bold text-slate-400">
+                          {u.paymentDate ? new Date(u.paymentDate).toLocaleDateString() : '-'}
+                        </span>
+                      </td>
+                      <td className="px-8 py-4">
+                        {u.paymentStatus !== 'paid' && (
+                          <Button 
+                            size="sm" 
+                            variant="success"
+                            onClick={() => handleApprovePayment(u.id)}
+                          >
+                            Approve
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
 
         {/* Upload Modal */}
         {showUpload && (

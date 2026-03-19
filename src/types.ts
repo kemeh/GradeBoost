@@ -15,6 +15,8 @@ export interface UserProfile {
   role: 'student' | 'admin';
   hasTakenDiagnostic: boolean;
   diagnosticResults?: DiagnosticResult;
+  paymentStatus?: 'unpaid' | 'paid' | 'pending';
+  paymentDate?: string;
 }
 
 export interface DiagnosticResult {

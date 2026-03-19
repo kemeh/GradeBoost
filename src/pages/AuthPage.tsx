@@ -43,6 +43,7 @@ export default function AuthPage() {
         const { user } = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         
         // Create user profile
+        const isAdminEmail = formData.email.toLowerCase() === 'kemehhilary@gmail.com';
         const path = `users/${user.uid}`;
         try {
           await setDoc(doc(db, 'users', user.uid), {
@@ -53,8 +54,9 @@ export default function AuthPage() {
             region: formData.region,
             assignedPapers: ['paper1', 'paper2', 'paper3'],
             targetGrade: 'A',
-            role: 'student',
+            role: isAdminEmail ? 'admin' : 'student',
             hasTakenDiagnostic: false,
+            paymentStatus: isAdminEmail ? 'paid' : 'unpaid',
             createdAt: serverTimestamp(),
           });
         } catch (error) {
