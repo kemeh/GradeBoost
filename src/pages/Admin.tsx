@@ -70,9 +70,14 @@ export default function Admin() {
     if (!window.confirm('Manually approve this payment?')) return;
     try {
       setError('');
+      const now = new Date();
+      const expiry = new Date(now);
+      expiry.setDate(now.getDate() + 30);
+
       await updateDoc(doc(db, 'users', userId), {
         paymentStatus: 'paid',
-        paymentDate: new Date().toISOString(),
+        paymentDate: now.toISOString(),
+        paymentExpiryDate: expiry.toISOString(),
       });
       fetchUsers();
     } catch (err) {
@@ -329,7 +334,8 @@ export default function Admin() {
                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</th>
                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Paid On</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Expires On</th>
                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                   </tr>
                 </thead>
@@ -350,6 +356,14 @@ export default function Admin() {
                       <td className="px-8 py-4">
                         <span className="text-xs font-bold text-slate-400">
                           {u.paymentDate ? new Date(u.paymentDate).toLocaleDateString() : '-'}
+                        </span>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span className={cn(
+                          "text-xs font-bold",
+                          u.paymentExpiryDate && new Date(u.paymentExpiryDate) < new Date() ? "text-red-500" : "text-slate-400"
+                        )}>
+                          {u.paymentExpiryDate ? new Date(u.paymentExpiryDate).toLocaleDateString() : '-'}
                         </span>
                       </td>
                       <td className="px-8 py-4">

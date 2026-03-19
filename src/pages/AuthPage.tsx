@@ -100,6 +100,7 @@ export default function AuthPage() {
             role: isAdminEmail ? 'admin' : 'student',
             hasTakenDiagnostic: false,
             paymentStatus: isAdminEmail ? 'paid' : 'unpaid',
+            paymentExpiryDate: isAdminEmail ? new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
             createdAt: serverTimestamp(),
           });
         } catch (error) {

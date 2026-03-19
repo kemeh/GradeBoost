@@ -27,8 +27,11 @@ const PaymentGatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }
   // Admins always have access
   if (user.role === 'admin') return <>{children}</>;
   
-  // Check payment status
-  if (user.paymentStatus !== 'paid') return <Navigate to="/payment" />;
+  // Check payment status and expiry
+  const isPaid = user.paymentStatus === 'paid';
+  const hasExpired = user.paymentExpiryDate && new Date(user.paymentExpiryDate) < new Date();
+  
+  if (!isPaid || hasExpired) return <Navigate to="/payment" />;
   
   return <>{children}</>;
 };

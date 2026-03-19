@@ -190,6 +190,11 @@ export default function Dashboard() {
             <p className="text-slate-500 font-medium">Your path to an A in {user.subject} is 72% complete.</p>
           </div>
           <div className="flex items-center gap-4">
+            {user.role === 'student' && user.paymentExpiryDate && (
+              <Badge variant="default" className="px-4 py-2 border-slate-200">
+                Expires: {new Date(user.paymentExpiryDate).toLocaleDateString()}
+              </Badge>
+            )}
             <Badge variant="primary" className="px-4 py-2">Target: Grade A</Badge>
             <div className="w-12 h-12 bg-white rounded-2xl border border-slate-100 flex items-center justify-center shadow-sm">
               <Zap className="text-amber-500" size={20} />

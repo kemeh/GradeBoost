@@ -33,9 +33,14 @@ export default function PaymentPage() {
       
       if (data.status === 'SUCCESSFUL') {
         const path = `users/${user?.uid}`;
+        const now = new Date();
+        const expiry = new Date(now);
+        expiry.setDate(now.getDate() + 30);
+
         await updateDoc(doc(db, 'users', user?.uid as string), {
           paymentStatus: 'paid',
-          paymentDate: new Date().toISOString(),
+          paymentDate: now.toISOString(),
+          paymentExpiryDate: expiry.toISOString(),
           updatedAt: serverTimestamp(),
         });
         setPaymentStep('success');
@@ -128,7 +133,7 @@ export default function PaymentPage() {
               Unlock Your Full Potential for an <span className="text-indigo-600">A Grade</span>.
             </h1>
             <p className="text-slate-500 font-medium text-lg">
-              To access full exam practice and improve your grades, a one-time fee of <span className="font-black text-slate-900">1000 FCFA</span> is required.
+              To access full exam practice and improve your grades, a monthly fee of <span className="font-black text-slate-900">1000 FCFA</span> is required. Access is valid for <span className="font-black text-indigo-600">30 days</span>.
             </p>
           </div>
 

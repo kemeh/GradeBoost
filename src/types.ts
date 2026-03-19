@@ -17,6 +17,7 @@ export interface UserProfile {
   diagnosticResults?: DiagnosticResult;
   paymentStatus?: 'unpaid' | 'paid' | 'pending';
   paymentDate?: string;
+  paymentExpiryDate?: string;
 }
 
 export interface DiagnosticResult {
