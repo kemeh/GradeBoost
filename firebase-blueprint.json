@@ -1,0 +1,70 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores student and admin profile information.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Full name of the user." },
+        "email": { "type": "string", "format": "email", "description": "Email address of the user." },
+        "subject": { "type": "string", "enum": ["Computer Science", "ICT"], "description": "The subject the student is studying." },
+        "assignedPapers": { "type": "array", "items": { "type": "string" }, "description": "List of paper IDs assigned to the student." },
+        "targetGrade": { "type": "string", "enum": ["A", "B", "C", "D", "F"], "description": "The student's target grade." },
+        "role": { "type": "string", "enum": ["student", "admin"], "description": "The user's role in the system." },
+        "hasTakenDiagnostic": { "type": "boolean", "description": "Whether the student has completed the diagnostic test." },
+        "diagnosticResults": { "type": "object", "description": "Results from the diagnostic test." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the user was created." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "When the user was last updated." }
+      },
+      "required": ["name", "email", "subject", "role", "createdAt"]
+    },
+    "QuestionPaper": {
+      "title": "Question Paper",
+      "description": "Stores metadata for uploaded PDF exam papers.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the question paper." },
+        "year": { "type": "integer", "description": "The year of the exam session." },
+        "subject": { "type": "string", "description": "The subject of the paper." },
+        "paperType": { "type": "string", "description": "The type of paper (e.g., Paper 1, Paper 2)." },
+        "description": { "type": "string", "description": "A brief description of the paper." },
+        "pdfUrl": { "type": "string", "format": "uri", "description": "The URL to the PDF file in storage." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the paper was uploaded." },
+        "uploadedBy": { "type": "string", "description": "The UID of the admin who uploaded the paper." },
+        "correctAnswers": { "type": "object", "description": "Map of question numbers to correct answers (for Paper 1)." }
+      },
+      "required": ["title", "year", "subject", "paperType", "pdfUrl", "createdAt", "uploadedBy"]
+    },
+    "ExamResult": {
+      "title": "Exam Result",
+      "description": "Stores student answers and scores for a specific paper.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the student." },
+        "paperId": { "type": "string", "description": "The ID of the question paper." },
+        "subject": { "type": "string", "description": "The subject of the paper." },
+        "paperType": { "type": "string", "description": "The type of paper." },
+        "answers": { "type": "object", "description": "The student's answers for each question." },
+        "score": { "type": "number", "description": "The student's score as a percentage." },
+        "grade": { "type": "string", "description": "The grade achieved." },
+        "feedback": { "type": "string", "description": "Automated feedback for the student." },
+        "completedAt": { "type": "string", "format": "date-time", "description": "When the exam was submitted." }
+      },
+      "required": ["userId", "paperId", "subject", "paperType", "answers", "score", "grade", "completedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile documents."
+    },
+    "/questionPapers/{paperId}": {
+      "schema": "QuestionPaper",
+      "description": "Exam paper metadata."
+    },
+    "/results/{resultId}": {
+      "schema": "ExamResult",
+      "description": "Student exam results."
+    }
+  }
+}

@@ -1,0 +1,159 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// This security rules file assumes the following data structures:
+//
+// Collection: users
+// Document ID: {userId}
+// Fields:
+//   - name: string (required, 1-100 chars)
+//   - email: string (required, email format)
+//   - subject: string (required, enum: ["Computer Science", "ICT"])
+//   - assignedPapers: list (optional, strings)
+//   - targetGrade: string (optional, enum: ["A", "B", "C", "D", "F"])
+//   - role: string (required, enum: ["student", "admin"])
+//   - hasTakenDiagnostic: bool (optional)
+//   - diagnosticResults: map (optional)
+//   - createdAt: timestamp (required)
+//   - updatedAt: timestamp (optional)
+//
+// Collection: questionPapers
+// Document ID: {paperId}
+// Fields:
+//   - title: string (required, 1-200 chars)
+//   - year: number (required, 1900-2100)
+//   - subject: string (required)
+//   - paperType: string (required)
+//   - description: string (optional)
+//   - pdfUrl: string (required, url format)
+//   - createdAt: timestamp (required)
+//   - uploadedBy: string (required, uid)
+//   - correctAnswers: map (optional, {qNum: answer})
+//
+// Collection: results
+// Document ID: {resultId}
+// Fields:
+//   - userId: string (required, uid)
+//   - paperId: string (required, docId)
+//   - subject: string (required)
+//   - paperType: string (required)
+//   - answers: map (required)
+//   - score: number (required, 0-100)
+//   - grade: string (required)
+//   - feedback: string (optional)
+//   - completedAt: timestamp (required)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "kemehhilary@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             isValidEmail(data.email) &&
+             data.subject in ["Computer Science", "ICT"] &&
+             data.role in ["student", "admin"] &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidQuestionPaper(data) {
+      return data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
+             data.year is number && data.year >= 1900 && data.year <= 2100 &&
+             data.subject is string &&
+             data.paperType is string &&
+             isValidUrl(data.pdfUrl) &&
+             data.createdAt is timestamp &&
+             data.uploadedBy is string &&
+             (!('correctAnswers' in data) || data.correctAnswers is map);
+    }
+
+    function isValidResult(data) {
+      return data.userId is string &&
+             data.paperId is string &&
+             data.answers is map &&
+             data.score is number && data.score >= 0 && data.score <= 100 &&
+             data.grade is string &&
+             data.completedAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      
+      allow create: if isAuthenticated() && 
+                      isValidUser(request.resource.data) && 
+                      (
+                        (isOwner(userId) && request.resource.data.role == 'student') || 
+                        isAdmin()
+                      );
+      
+      allow update: if isAuthenticated() && 
+                      isValidUser(request.resource.data) && 
+                      (
+                        (isOwner(userId) && request.resource.data.role == resource.data.role) || 
+                        isAdmin()
+                      );
+    }
+
+    match /questionPapers/{paperId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isValidQuestionPaper(request.resource.data);
+    }
+
+    match /results/{resultId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid && 
+                      isValidResult(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
+    // Default deny
+    match /{path=**} {
+      allow read, write: if false;
+    }
+  }
+}
