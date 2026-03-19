@@ -22,7 +22,8 @@ export default function AuthPage() {
     phoneNumber: '',
     sex: 'Male',
     class: '',
-    region: ''
+    region: '',
+    subject: 'Computer Science'
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -70,6 +71,10 @@ export default function AuthPage() {
         // Create user document in Firestore
         try {
           console.log('Creating user document...');
+          const assignedSubjects = formData.subject === 'Computer Science' 
+            ? ["cs_paper1", "cs_paper2", "cs_paper3"]
+            : ["ict_paper1", "ict_paper2", "ict_paper3"];
+
           await setDoc(doc(db, 'users', user.uid), {
             name: formData.name,
             email: formData.email,
@@ -79,6 +84,8 @@ export default function AuthPage() {
             sex: formData.sex,
             class: formData.class,
             region: formData.region,
+            subject: formData.subject,
+            assignedSubjects: assignedSubjects,
             isPaid: false,
             currentDay: 0,
             streak: 0,
@@ -254,6 +261,26 @@ export default function AuthPage() {
                           onChange={e => setFormData({ ...formData, class: e.target.value })}
                           required={!isLogin}
                         />
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="space-y-2"
+                    >
+                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                      <div className="relative group">
+                        <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-blue-600 transition-colors" size={20} />
+                        <select
+                          className="w-full pl-12 pr-6 py-3.5 bg-white border-2 border-slate-100 rounded-2xl focus:border-blue-600 focus:ring-4 focus:ring-blue-50/50 outline-none transition-all font-bold text-slate-900 appearance-none"
+                          value={formData.subject}
+                          onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                          required={!isLogin}
+                        >
+                          <option value="Computer Science">Computer Science</option>
+                          <option value="ICT">ICT</option>
+                        </select>
                       </div>
                     </motion.div>
 

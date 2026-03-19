@@ -26,7 +26,12 @@ export default function LessonPage() {
     try {
       setLoading(true);
       const lessonsRef = collection(db, 'lessons');
-      const q = query(lessonsRef, where('day', '==', dayNum), limit(1));
+      const q = query(
+        lessonsRef, 
+        where('day', '==', dayNum), 
+        where('subject', '==', user?.subject || 'Computer Science'),
+        limit(1)
+      );
       let querySnapshot;
       try {
         querySnapshot = await getDocs(q);

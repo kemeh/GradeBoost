@@ -48,7 +48,12 @@ export default function Dashboard() {
         predictedGrade: 'N/A',
         readiness: 0,
         trend: 0,
-        history: []
+        history: [],
+        confidence: 0,
+        bestSubject: 'N/A',
+        weakestSubject: 'N/A',
+        insights: ["Start your first quiz to see your performance insights!"],
+        subjectAvgs: []
       };
     }
 
@@ -60,20 +65,25 @@ export default function Dashboard() {
 
     const avgScore = Math.round(user.examHistory.reduce((acc: number, curr: any) => acc + curr.score, 0) / user.examHistory.length);
     
-    // Simple grade prediction logic
+    // Grade prediction logic
     let grade = 'F';
-    if (avgScore >= 80) grade = 'A';
-    else if (avgScore >= 70) grade = 'B';
-    else if (avgScore >= 60) grade = 'C';
-    else if (avgScore >= 50) grade = 'D';
-    else if (avgScore >= 40) grade = 'E';
+    let confidence = 0;
+    if (avgScore >= 80) { grade = 'A'; confidence = 92; }
+    else if (avgScore >= 70) { grade = 'B'; confidence = 88; }
+    else if (avgScore >= 60) { grade = 'C'; confidence = 78; }
+    else if (avgScore >= 50) { grade = 'D'; confidence = 68; }
+    else if (avgScore >= 40) { grade = 'E'; confidence = 55; }
+    else { grade = 'F'; confidence = 45; }
+
+    // Adjust confidence based on number of exams taken
+    confidence = Math.min(98, confidence + (user.examHistory.length * 2));
 
     // Readiness based on progress and avg score
-    const progressWeight = (user.currentDay / 60) * 40; // 40% weight to progress
-    const scoreWeight = (avgScore / 100) * 60; // 60% weight to avg score
+    const progressWeight = (user.currentDay / 60) * 40; 
+    const scoreWeight = (avgScore / 100) * 60; 
     const readiness = Math.round(progressWeight + scoreWeight);
 
-    // Trend (last vs second to last)
+    // Trend
     let trend = 0;
     if (user.examHistory.length >= 2) {
       const last = user.examHistory[user.examHistory.length - 1].score;
@@ -81,7 +91,45 @@ export default function Dashboard() {
       trend = last - prev;
     }
 
-    return { avgScore, predictedGrade: grade, readiness, trend, history };
+    // Best and Weakest Subjects
+    const subjectScores: {[key: string]: number[]} = {};
+    user.examHistory.forEach((e: any) => {
+      // Try to extract subject/topic from title
+      let category = 'General';
+      if (e.examTitle.toLowerCase().includes('paper 1')) category = 'Paper 1 (MCQ)';
+      else if (e.examTitle.toLowerCase().includes('paper 2')) category = 'Paper 2 (Structured)';
+      else if (e.examTitle.toLowerCase().includes('paper 3')) category = 'Paper 3 (Practical)';
+      else category = e.examTitle.split(' ')[0];
+
+      if (!subjectScores[category]) subjectScores[category] = [];
+      subjectScores[category].push(e.score);
+    });
+
+    const subjectAvgs = Object.entries(subjectScores).map(([name, scores]) => ({
+      name,
+      avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+      color: name.includes('Paper 1') ? '#4f46e5' : name.includes('Paper 2') ? '#7c3aed' : '#2563eb'
+    }));
+
+    const bestSubject = subjectAvgs.length > 0 ? subjectAvgs.reduce((a, b) => a.avg > b.avg ? a : b).name : 'N/A';
+    const weakestSubject = subjectAvgs.length > 0 ? subjectAvgs.reduce((a, b) => a.avg < b.avg ? a : b).name : 'N/A';
+
+    // Smart Insights
+    const insights = [];
+    if (avgScore < 50) insights.push("Overall performance is below target. Focus on foundational concepts.");
+    if (trend < 0) insights.push(`Your performance dropped by ${Math.abs(trend)}% recently. Review your mistakes.`);
+    if (trend > 5) insights.push("Great improvement! Your scores are trending upwards.");
+    if (readiness < 40) insights.push("Consistency is key. Complete more daily lessons to boost readiness.");
+    
+    // Specific subject insights
+    subjectAvgs.forEach(s => {
+      if (s.avg < 50) insights.push(`Struggling with ${s.name}. Dedicate more time to this paper.`);
+      if (s.avg > 85) insights.push(`Excellent mastery of ${s.name}. You're exam-ready here!`);
+    });
+
+    if (insights.length === 0) insights.push("Steady progress. Keep maintaining your study streak!");
+
+    return { avgScore, predictedGrade: grade, readiness, trend, history, confidence, bestSubject, weakestSubject, insights, subjectAvgs };
   }, [user]);
 
   const currentStreak = useMemo(() => {
@@ -168,9 +216,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           { label: "Avg Score", value: `${stats.avgScore}%`, icon: Target, color: "indigo", trend: stats.trend },
-          { label: "Predicted Grade", value: stats.predictedGrade, icon: TrendingUp, color: "purple" },
-          { label: "Daily Streak", value: `${currentStreak} Days`, icon: Flame, color: "orange" },
-          { label: "Course Progress", value: `${Math.round((user.currentDay / 60) * 100)}%`, icon: BookOpen, color: "emerald" }
+          { label: "Predicted Grade", value: stats.predictedGrade, icon: TrendingUp, color: "purple", badge: `${stats.confidence}% Conf.` },
+          { label: "Best Subject", value: stats.bestSubject, icon: Trophy, color: "emerald" },
+          { label: "Weakest Subject", value: stats.weakestSubject, icon: AlertCircle, color: "red" }
         ].map((stat, i) => (
           <Card key={i} className="p-6 hover:shadow-medium transition-shadow">
             <div className="flex justify-between items-start mb-4">
@@ -180,6 +228,11 @@ export default function Dashboard() {
               {stat.trend !== undefined && (
                 <Badge variant={stat.trend >= 0 ? "success" : "danger"} className="text-[10px]">
                   {stat.trend >= 0 ? "+" : ""}{stat.trend}%
+                </Badge>
+              )}
+              {stat.badge && (
+                <Badge variant="info" className="text-[10px]">
+                  {stat.badge}
                 </Badge>
               )}
             </div>
@@ -300,16 +353,51 @@ export default function Dashboard() {
                   <Progress value={stats.avgScore} color="primary" />
                 </div>
                 <div className="pt-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Smart Insight</p>
-                  <p className="text-xs text-slate-600 font-medium italic">
-                    {stats.readiness > 70 
-                      ? "You're on track for an A! Keep maintaining this consistency." 
-                      : stats.readiness > 40 
-                      ? "Good progress. Focus on improving your quiz scores to boost your grade." 
-                      : "Start completing more daily lessons to increase your syllabus coverage."}
-                  </p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Smart Insights</p>
+                  <div className="space-y-2">
+                    {stats.insights.map((insight, idx) => (
+                      <p key={idx} className="text-xs text-slate-600 font-medium italic flex items-start gap-2">
+                        <Sparkles size={12} className="text-indigo-500 mt-0.5 shrink-0" />
+                        {insight}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
+            </Card>
+
+            {/* Paper 3 Practical Tasks */}
+            <Card className="p-8 space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">Paper 3 Practical Tasks</h3>
+                <Badge variant="primary">ICT & CS</Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {user.subject === 'ICT' ? (
+                  ['PowerPoint', 'Access', 'HTML', 'Programming', 'Excel'].map((topic, i) => (
+                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{topic}</p>
+                      <div className="flex justify-between items-end">
+                        <p className="text-lg font-black text-slate-900">0%</p>
+                        <Zap size={16} className="text-amber-500" />
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  ['Programming', 'Databases'].map((topic, i) => (
+                    <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{topic}</p>
+                      <div className="flex justify-between items-end">
+                        <p className="text-lg font-black text-slate-900">0%</p>
+                        <Zap size={16} className="text-indigo-500" />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              <Button variant="outline" className="w-full text-xs font-black uppercase tracking-widest">
+                Explore Practical Lab
+              </Button>
             </Card>
           </div>
         </div>
@@ -319,28 +407,32 @@ export default function Dashboard() {
           <Card className="p-8">
             <h3 className="text-xl font-black text-slate-900 tracking-tight mb-8">Subject Breakdown</h3>
             <div className="space-y-6">
-              {[
-                { name: "Programming", score: 85, color: "#4f46e5" },
-                { name: "Data Structures", score: 72, color: "#7c3aed" },
-                { name: "Networking", score: 64, color: "#2563eb" },
-                { name: "Databases", score: 91, color: "#0891b2" }
-              ].map((subject, i) => (
-                <div key={i} className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-bold text-slate-700">{subject.name}</span>
-                    <span className="text-xs font-black text-slate-400">{subject.score}%</span>
+              {stats.subjectAvgs.length > 0 ? (
+                stats.subjectAvgs.map((subject, i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold text-slate-700">{subject.name}</span>
+                      <span className="text-xs font-black text-slate-400">{subject.avg}%</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <motion.div 
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${subject.avg}%` }}
+                        transition={{ duration: 1, delay: i * 0.1 }}
+                        className="h-full rounded-full"
+                        style={{ backgroundColor: subject.color }}
+                      />
+                    </div>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${subject.score}%` }}
-                      transition={{ duration: 1, delay: i * 0.1 }}
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: subject.color }}
-                    />
+                ))
+              ) : (
+                <div className="text-center py-8 space-y-4">
+                  <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mx-auto">
+                    <BookOpen size={24} />
                   </div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No subject data yet</p>
                 </div>
-              ))}
+              )}
             </div>
             <Button variant="outline" className="w-full mt-8 text-xs font-black uppercase tracking-widest">
               View Detailed Report

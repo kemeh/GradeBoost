@@ -19,6 +19,8 @@ interface User {
   streak: number;
   lastCompletedAt?: string;
   role: 'student' | 'admin';
+  subject?: string;
+  assignedSubjects?: string[];
   examHistory?: {
     examId: string;
     examTitle: string;
