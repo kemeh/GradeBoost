@@ -12,11 +12,13 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { DailyDrill, DailyDrillQuestion, Subject, Grade } from '../types';
+import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
 
 export default function AdminDailyDrill() {
   const { user } = useAuth();
   const [drills, setDrills] = useState<DailyDrill[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [filteredSubmissions, setFilteredSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -24,12 +26,20 @@ export default function AdminDailyDrill() {
   const [activeTab, setActiveTab] = useState<'drills' | 'grading'>('drills');
   const [gradingSubmission, setGradingSubmission] = useState<any | null>(null);
 
+  // Filters
+  const [filters, setFilters] = useState({
+    day: '',
+    subject: '',
+    paperType: '',
+    status: ''
+  });
+
   // Form State
   const [formData, setFormData] = useState({
     dayNumber: 1,
     subject: 'Computer Science' as Subject,
     topic: '',
-    paperType: 'Paper 1' as 'Paper 1' | 'Paper 2',
+    paperType: 'Paper 1' as 'Paper 1' | 'Paper 2' | 'Paper 3',
   });
   const [questions, setQuestions] = useState<Partial<DailyDrillQuestion>[]>([
     { questionText: '', options: ['', '', '', ''], correctAnswer: 'A' }
@@ -39,6 +49,18 @@ export default function AdminDailyDrill() {
     fetchDrills();
     fetchSubmissions();
   }, []);
+
+  useEffect(() => {
+    let filtered = [...submissions];
+    if (filters.day) filtered = filtered.filter(s => s.dayNumber === parseInt(filters.day));
+    if (filters.subject) filtered = filtered.filter(s => s.subject === filters.subject);
+    if (filters.paperType) filtered = filtered.filter(s => s.paperType === filters.paperType);
+    if (filters.status) {
+      const isGraded = filters.status === 'Graded';
+      filtered = filtered.filter(s => s.gradedStatus === isGraded);
+    }
+    setFilteredSubmissions(filtered);
+  }, [filters, submissions]);
 
   const fetchDrills = async () => {
     try {
@@ -57,7 +79,9 @@ export default function AdminDailyDrill() {
     try {
       const q = query(collection(db, 'dailyDrillSubmissions'), orderBy('submittedAt', 'desc'));
       const snapshot = await getDocs(q);
-      setSubmissions(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const subs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSubmissions(subs);
+      setFilteredSubmissions(subs);
     } catch (err) {
       console.error("Error fetching submissions:", err);
     }
@@ -160,7 +184,11 @@ export default function AdminDailyDrill() {
         <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Daily Drill Manager</h1>
-            <p className="text-slate-500 font-medium">Manage the 60-day challenge content and grade submissions.</p>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-slate-500 font-medium">Manage the 60-day challenge content and grade submissions.</p>
+              <Badge variant="primary" className="bg-indigo-600">Day {getCurrentDayNumber()} / 60</Badge>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{getDaysRemaining()} Days Left</span>
+            </div>
           </div>
           <div className="flex gap-4">
             <Button 
@@ -201,6 +229,58 @@ export default function AdminDailyDrill() {
             <AlertCircle size={20} />
             <p className="text-sm font-bold">{error}</p>
           </motion.div>
+        )}
+
+        {activeTab === 'grading' && (
+          <div className="mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Day</label>
+              <input 
+                type="number" 
+                placeholder="All Days" 
+                className="w-full px-4 py-2 rounded-xl border border-slate-100 outline-none font-bold text-sm bg-white"
+                value={filters.day}
+                onChange={e => setFilters({ ...filters, day: e.target.value })}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+              <select 
+                className="w-full px-4 py-2 rounded-xl border border-slate-100 outline-none font-bold text-sm bg-white"
+                value={filters.subject}
+                onChange={e => setFilters({ ...filters, subject: e.target.value })}
+              >
+                <option value="">All Subjects</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="ICT">ICT</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Paper</label>
+              <select 
+                className="w-full px-4 py-2 rounded-xl border border-slate-100 outline-none font-bold text-sm bg-white"
+                value={filters.paperType}
+                onChange={e => setFilters({ ...filters, paperType: e.target.value })}
+              >
+                <option value="">All Papers</option>
+                <option value="Paper 1">Paper 1</option>
+                <option value="Paper 2">Paper 2</option>
+                <option value="Paper 3">Paper 3</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Status</label>
+              <select 
+                className="w-full px-4 py-2 rounded-xl border border-slate-100 outline-none font-bold text-sm bg-white"
+                value={filters.status}
+                onChange={e => setFilters({ ...filters, status: e.target.value })}
+              >
+                <option value="">All Status</option>
+                <option value="Graded">Graded</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          </div>
         )}
 
         {activeTab === 'drills' ? (
@@ -249,7 +329,7 @@ export default function AdminDailyDrill() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {submissions.map((sub) => (
+                  {filteredSubmissions.map((sub) => (
                     <tr key={sub.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-8 py-4">
                         <div className="flex items-center gap-3">
@@ -349,7 +429,7 @@ export default function AdminDailyDrill() {
                           className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
                           value={formData.paperType}
                           onChange={e => {
-                            const newType = e.target.value as 'Paper 1' | 'Paper 2';
+                            const newType = e.target.value as 'Paper 1' | 'Paper 2' | 'Paper 3';
                             setFormData({ ...formData, paperType: newType });
                             // Reset questions structure based on type
                             if (newType === 'Paper 1') {
@@ -361,6 +441,7 @@ export default function AdminDailyDrill() {
                         >
                           <option value="Paper 1">Paper 1 (MCQs)</option>
                           <option value="Paper 2">Paper 2 (Structured)</option>
+                          <option value="Paper 3">Paper 3 (Practical)</option>
                         </select>
                       </div>
                       <div className="space-y-2">

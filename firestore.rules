@@ -182,7 +182,7 @@ service cloud.firestore {
       return data.dayNumber is number && data.dayNumber >= 1 && data.dayNumber <= 60 &&
              data.subject in ["Computer Science", "ICT"] &&
              data.topic is string && data.topic.size() > 0 && data.topic.size() <= 200 &&
-             data.paperType in ["Paper 1", "Paper 2"] &&
+             data.paperType in ["Paper 1", "Paper 2", "Paper 3"] &&
              data.questions is list && data.questions.size() <= 50 &&
              data.createdAt is timestamp &&
              data.uploadedBy is string;
@@ -193,10 +193,17 @@ service cloud.firestore {
              data.drillId is string &&
              data.dayNumber is number &&
              data.subject in ["Computer Science", "ICT"] &&
-             data.paperType in ["Paper 1", "Paper 2"] &&
+             data.paperType in ["Paper 1", "Paper 2", "Paper 3"] &&
              data.answers is map &&
              data.gradedStatus is bool &&
              data.submittedAt is timestamp;
+    }
+
+    function getCurrentDay() {
+      let start = timestamp.value('2026-03-01T00:00:00Z');
+      let diff = request.time - start;
+      let day = (diff.toMillis() / (1000 * 60 * 60 * 24)) + 1;
+      return int(day);
     }
 
     // ===============================================================
@@ -244,7 +251,7 @@ service cloud.firestore {
     }
 
     match /dailyDrills/{drillId} {
-      allow read: if isPaid();
+      allow read: if isPaid() && (isAdmin() || resource.data.dayNumber <= getCurrentDay());
       allow create, update, delete: if isAdmin() && isValidDailyDrill(request.resource.data);
     }
 
@@ -252,6 +259,7 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
       allow create: if isPaid() && 
                       request.resource.data.userId == request.auth.uid && 
+                      (isAdmin() || request.resource.data.dayNumber == getCurrentDay()) &&
                       isValidDailyDrillSubmission(request.resource.data) &&
                       isRecent(request.resource.data.submittedAt);
       allow update, delete: if isAdmin();
@@ -260,17 +268,6 @@ service cloud.firestore {
     // Default deny
     match /{path=**} {
       allow read, write: if false;
-    }
-    // ===============================================================
-    // Audit Collections (Admin Only via Server)
-    // ===============================================================
-    
-    match /paymentAudit/{auditId} {
-      allow read, write: if false; // Only accessible via Admin SDK on server
-    }
-
-    match /securityAudit/{auditId} {
-      allow read, write: if false; // Only accessible via Admin SDK on server
     }
   }
 }

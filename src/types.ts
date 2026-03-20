@@ -72,7 +72,7 @@ export interface DailyDrill {
   dayNumber: number; // 1-60
   subject: Subject;
   topic: string;
-  paperType: 'Paper 1' | 'Paper 2';
+  paperType: 'Paper 1' | 'Paper 2' | 'Paper 3';
   questions: DailyDrillQuestion[];
   createdAt: string;
   uploadedBy: string;
@@ -84,8 +84,8 @@ export interface DailyDrillSubmission {
   drillId: string;
   dayNumber: number;
   subject: Subject;
-  paperType: 'Paper 1' | 'Paper 2';
-  answers: any; // Record<string, string> for MCQs, or { text: string, fileUrl?: string } for Paper 2
+  paperType: 'Paper 1' | 'Paper 2' | 'Paper 3';
+  answers: any; // Record<string, string> for MCQs, or { text: string, fileUrl?: string } for Paper 2/3
   score?: number;
   grade?: Grade;
   feedback?: string;

@@ -35,12 +35,15 @@ const MOCK_PAPER_DATA = [
   { name: 'Paper 3', score: 75, color: '#0ea5e9' },
 ];
 
+import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [results, setResults] = useState<ExamResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayDrill, setTodayDrill] = useState<DailyDrill | null>(null);
+  const [hasSubmittedToday, setHasSubmittedToday] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(60);
 
   useEffect(() => {
@@ -61,12 +64,8 @@ export default function Dashboard() {
         setResults(resultsData.reverse());
 
         // Fetch Daily Drill
-        const challengeStartDate = new Date('2024-03-01');
-        const today = new Date();
-        const diffTime = Math.abs(today.getTime() - challengeStartDate.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const currentDay = Math.min(Math.max(diffDays, 1), 60);
-        setDaysRemaining(60 - currentDay);
+        const currentDay = getCurrentDayNumber();
+        setDaysRemaining(getDaysRemaining());
 
         const drillQ = query(
           collection(db, 'dailyDrills'), 
@@ -75,7 +74,19 @@ export default function Dashboard() {
         );
         const drillSnapshot = await getDocs(drillQ);
         if (!drillSnapshot.empty) {
-          setTodayDrill({ id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill);
+          const drillData = { id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill;
+          setTodayDrill(drillData);
+
+          // Check if already submitted today
+          const subQ = query(
+            collection(db, 'dailyDrillSubmissions'),
+            where('userId', '==', user.uid),
+            where('drillId', '==', drillData.id)
+          );
+          const subSnapshot = await getDocs(subQ);
+          if (!subSnapshot.empty) {
+            setHasSubmittedToday(true);
+          }
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -243,11 +254,25 @@ export default function Dashboard() {
                 <div className="flex flex-wrap gap-4">
                   <Button 
                     variant="secondary" 
-                    className="bg-white text-indigo-600 hover:bg-indigo-50 font-black px-8 py-6 rounded-2xl"
-                    onClick={() => navigate('/daily-drill')}
+                    className={cn(
+                      "font-black px-8 py-6 rounded-2xl transition-all",
+                      hasSubmittedToday 
+                        ? "bg-emerald-400 text-emerald-950 cursor-default" 
+                        : "bg-white text-indigo-600 hover:bg-indigo-50"
+                    )}
+                    onClick={() => !hasSubmittedToday && navigate('/daily-drill')}
                   >
-                    Start Drill Now
-                    <ArrowRight className="ml-2" size={20} />
+                    {hasSubmittedToday ? (
+                      <>
+                        <CheckCircle2 className="mr-2" size={20} />
+                        Completed Today
+                      </>
+                    ) : (
+                      <>
+                        Start Drill Now
+                        <ArrowRight className="ml-2" size={20} />
+                      </>
+                    )}
                   </Button>
                   <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
                     <Trophy className="text-amber-400" size={20} />

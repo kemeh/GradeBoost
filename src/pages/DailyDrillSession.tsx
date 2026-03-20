@@ -14,6 +14,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { DailyDrill, DailyDrillSubmission, Grade } from '../types';
 import { Button, Card, Badge, cn } from '../components/ui';
 
+import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
+
 export default function DailyDrillSession() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -64,12 +66,7 @@ export default function DailyDrillSession() {
   const fetchTodayDrill = async () => {
     if (!user) return;
     try {
-      // Calculate day number based on challenge start date
-      const challengeStartDate = new Date('2024-03-01'); 
-      const today = new Date();
-      const diffTime = Math.abs(today.getTime() - challengeStartDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const currentDay = Math.min(Math.max(diffDays, 1), 60);
+      const currentDay = getCurrentDayNumber();
 
       const q = query(
         collection(db, 'dailyDrills'), 
@@ -78,25 +75,10 @@ export default function DailyDrillSession() {
       );
       const snapshot = await getDocs(q);
       
-      let currentDrill: DailyDrill | null = null;
       if (!snapshot.empty) {
-        currentDrill = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as DailyDrill;
-      } else {
-        const fallbackQ = query(
-          collection(db, 'dailyDrills'),
-          where('subject', '==', user.subject),
-          where('dayNumber', '<=', currentDay)
-        );
-        const fallbackSnapshot = await getDocs(fallbackQ);
-        if (!fallbackSnapshot.empty) {
-          const sorted = fallbackSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as DailyDrill))
-            .sort((a, b) => b.dayNumber - a.dayNumber);
-          currentDrill = sorted[0];
-        }
-      }
-
-      if (currentDrill) {
+        const currentDrill = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as DailyDrill;
         setDrill(currentDrill);
+
         // Check if already submitted
         const subQ = query(
           collection(db, 'dailyDrillSubmissions'),
@@ -107,6 +89,8 @@ export default function DailyDrillSession() {
         if (!subSnapshot.empty) {
           setHasSubmitted(true);
         }
+      } else {
+        setDrill(null);
       }
     } catch (err) {
       console.error("Error fetching drill:", err);
@@ -123,12 +107,18 @@ export default function DailyDrillSession() {
   const handleSubmit = async () => {
     if (!user || !drill) return;
 
+    // Final security check on day number
+    if (!isDrillAccessible(drill.dayNumber)) {
+      setError(`⚠️ You can only answer today's drill (Day ${getCurrentDayNumber()}). Please wait for the next assignment.`);
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
       let finalAnswers: any = answers;
       
-      if (drill.paperType === 'Paper 2') {
+      if (drill.paperType === 'Paper 2' || drill.paperType === 'Paper 3') {
         let fileUrl = '';
         if (file) {
           const storageRef = ref(storage, `submissions/${user.uid}/${Date.now()}_${file.name}`);
