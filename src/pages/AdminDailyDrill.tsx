@@ -43,7 +43,7 @@ export default function AdminDailyDrill() {
     paperType: 'Paper 1' as 'Paper 1' | 'Paper 2' | 'Paper 3',
   });
   const [questions, setQuestions] = useState<Partial<DailyDrillQuestion>[]>([
-    { questionText: '', options: ['', '', '', ''], correctAnswer: 'A' }
+    { questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }
   ]);
 
   useEffect(() => {
@@ -90,9 +90,9 @@ export default function AdminDailyDrill() {
 
   const handleAddQuestion = () => {
     if (formData.paperType === 'Paper 1') {
-      setQuestions([...questions, { questionText: '', options: ['', '', '', ''], correctAnswer: 'A' }]);
+      setQuestions([...questions, { questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }]);
     } else {
-      setQuestions([...questions, { questionText: '' }]);
+      setQuestions([...questions, { questionText: '', reasoning: '' }]);
     }
   };
 
@@ -121,17 +121,31 @@ export default function AdminDailyDrill() {
     setLoading(true);
     setError('');
     try {
+      // Check for duplicates
+      const q = query(
+        collection(db, 'dailyDrills'),
+        where('dayNumber', '==', formData.dayNumber),
+        where('subject', '==', formData.subject),
+        where('paperType', '==', formData.paperType),
+        where('topic', '==', formData.topic)
+      );
+      const snapshot = await getDocs(q);
+      if (!snapshot.empty) {
+        throw new Error('A drill for this day, subject, paper type, and topic already exists.');
+      }
+
       await addDoc(collection(db, 'dailyDrills'), {
         ...formData,
         questions: questions.map((q, i) => ({ ...q, id: `q${i + 1}` })),
         createdAt: serverTimestamp(),
         uploadedBy: user.uid,
+        gradedStatus: false,
       });
 
       setSuccess('Daily Drill added successfully!');
       setShowAddModal(false);
       setFormData({ dayNumber: 1, subject: 'Computer Science', topic: '', paperType: 'Paper 1' });
-      setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A' }]);
+      setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }]);
       fetchDrills();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -433,9 +447,9 @@ export default function AdminDailyDrill() {
                             setFormData({ ...formData, paperType: newType });
                             // Reset questions structure based on type
                             if (newType === 'Paper 1') {
-                              setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A' }]);
+                              setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }]);
                             } else {
-                              setQuestions([{ questionText: '' }]);
+                              setQuestions([{ questionText: '', reasoning: '' }]);
                             }
                           }}
                         >
@@ -515,6 +529,16 @@ export default function AdminDailyDrill() {
                                 </div>
                               </div>
                             )}
+
+                            <div className="space-y-2">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reasoning / Explanation</label>
+                              <textarea 
+                                className="w-full px-6 py-3.5 bg-white border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none h-24 resize-none"
+                                placeholder="Explain why this answer is correct..."
+                                value={q.reasoning || ''}
+                                onChange={e => handleQuestionChange(qIndex, 'reasoning', e.target.value)}
+                              />
+                            </div>
                           </div>
                         </Card>
                       ))}

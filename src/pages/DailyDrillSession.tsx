@@ -26,8 +26,8 @@ export default function DailyDrillSession() {
   const [success, setSuccess] = useState(false);
   
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  
-  // Quiz State
+  const [submission, setSubmission] = useState<DailyDrillSubmission | null>(null);
+  const [showResults, setShowResults] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [structuredAnswer, setStructuredAnswer] = useState('');
@@ -88,6 +88,10 @@ export default function DailyDrillSession() {
         const subSnapshot = await getDocs(subQ);
         if (!subSnapshot.empty) {
           setHasSubmitted(true);
+          setSubmission({ id: subSnapshot.docs[0].id, ...subSnapshot.docs[0].data() } as DailyDrillSubmission);
+          if (currentDrill.paperType === 'Paper 1') {
+            setShowResults(true);
+          }
         }
       } else {
         setDrill(null);
@@ -128,7 +132,7 @@ export default function DailyDrillSession() {
         finalAnswers = { text: structuredAnswer, fileUrl };
       }
 
-      await addDoc(collection(db, 'dailyDrillSubmissions'), {
+      const subData = {
         userId: user.uid,
         drillId: drill.id,
         dayNumber: drill.dayNumber,
@@ -137,9 +141,16 @@ export default function DailyDrillSession() {
         answers: finalAnswers,
         gradedStatus: false,
         submittedAt: new Date().toISOString()
-      });
+      };
 
-      setSuccess(true);
+      const docRef = await addDoc(collection(db, 'dailyDrillSubmissions'), subData);
+      setSubmission({ id: docRef.id, ...subData } as DailyDrillSubmission);
+
+      if (drill.paperType === 'Paper 1') {
+        setShowResults(true);
+      } else {
+        setSuccess(true);
+      }
     } catch (err) {
       console.error("Error submitting drill:", err);
       setError('Failed to submit your answers. Please try again.');
@@ -159,13 +170,13 @@ export default function DailyDrillSession() {
     );
   }
 
-  if (success || hasSubmitted) {
+  if ((success || hasSubmitted) && (drill?.paperType !== 'Paper 1' || !showResults)) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
           <Card className="max-w-md w-full p-12 text-center">
             <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
-              <Trophy size={40} />
+              <CheckCircle2 size={40} />
             </div>
             <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
               {hasSubmitted ? 'Already Completed' : 'Submission Successful!'}
@@ -274,37 +285,67 @@ export default function DailyDrillSession() {
                   <div className="grid grid-cols-1 gap-4">
                     {currentQuestion.options?.map((option, i) => {
                       const letter = ['A', 'B', 'C', 'D'][i];
-                      const isSelected = answers[currentQuestion.id] === letter;
+                      const isSelected = (showResults ? (submission?.answers as any)[currentQuestion.id] : answers[currentQuestion.id]) === letter;
+                      const isCorrect = currentQuestion.correctAnswer === letter;
                       
                       return (
                         <button
                           key={letter}
+                          disabled={showResults}
                           onClick={() => handleAnswerSelect(currentQuestion.id, letter)}
                           className={cn(
                             "group flex items-center gap-6 p-6 rounded-2xl border-2 text-left transition-all",
                             isSelected 
-                              ? "bg-indigo-50 border-indigo-600" 
-                              : "bg-white border-slate-100 hover:border-slate-200"
+                              ? (showResults 
+                                  ? (isCorrect ? "bg-emerald-50 border-emerald-600" : "bg-red-50 border-red-600")
+                                  : "bg-indigo-50 border-indigo-600")
+                              : (showResults && isCorrect ? "bg-emerald-50 border-emerald-600" : "bg-white border-slate-100 hover:border-slate-200")
                           )}
                         >
                           <div className={cn(
                             "w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg transition-all",
                             isSelected 
-                              ? "bg-indigo-600 text-white" 
-                              : "bg-slate-50 text-slate-400 group-hover:bg-slate-100"
+                              ? (showResults 
+                                  ? (isCorrect ? "bg-emerald-600 text-white" : "bg-red-600 text-white")
+                                  : "bg-indigo-600 text-white")
+                              : (showResults && isCorrect ? "bg-emerald-600 text-white" : "bg-slate-50 text-slate-400 group-hover:bg-slate-100")
                           )}>
                             {letter}
                           </div>
-                          <span className={cn(
-                            "text-lg font-bold transition-all",
-                            isSelected ? "text-indigo-900" : "text-slate-600"
-                          )}>
-                            {option}
-                          </span>
+                          <div className="flex-1">
+                            <span className={cn(
+                              "text-lg font-bold transition-all",
+                              isSelected 
+                                ? (showResults 
+                                    ? (isCorrect ? "text-emerald-900" : "text-red-900")
+                                    : "text-indigo-900")
+                                : (showResults && isCorrect ? "text-emerald-900" : "text-slate-600")
+                            )}>
+                              {option}
+                            </span>
+                          </div>
+                          {showResults && isCorrect && <CheckCircle2 className="text-emerald-600" size={24} />}
+                          {showResults && isSelected && !isCorrect && <AlertCircle className="text-red-600" size={24} />}
                         </button>
                       );
                     })}
                   </div>
+
+                  {showResults && currentQuestion.reasoning && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-12 p-8 bg-indigo-50 rounded-3xl border border-indigo-100"
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <Zap className="text-indigo-600" size={20} />
+                        <h4 className="text-sm font-black text-indigo-900 uppercase tracking-widest">Reasoning / Explanation</h4>
+                      </div>
+                      <p className="text-indigo-900/80 font-medium leading-relaxed">
+                        {currentQuestion.reasoning}
+                      </p>
+                    </motion.div>
+                  )}
                 </Card>
               </motion.div>
             </AnimatePresence>
@@ -318,14 +359,26 @@ export default function DailyDrillSession() {
                 <ChevronLeft className="mr-2" size={20} /> Previous
               </Button>
               
-              {currentQuestionIndex === drill.questions.length - 1 ? (
-                <Button onClick={handleSubmit} disabled={submitting}>
-                  {submitting ? 'Submitting...' : 'Finish & Submit'}
-                </Button>
+              {showResults ? (
+                currentQuestionIndex === drill.questions.length - 1 ? (
+                  <Button onClick={() => navigate('/dashboard')}>
+                    Finish Review
+                  </Button>
+                ) : (
+                  <Button onClick={() => setCurrentQuestionIndex(prev => prev + 1)}>
+                    Next Question <ChevronRight className="ml-2" size={20} />
+                  </Button>
+                )
               ) : (
-                <Button onClick={() => setCurrentQuestionIndex(prev => prev + 1)}>
-                  Next Question <ChevronRight className="ml-2" size={20} />
-                </Button>
+                currentQuestionIndex === drill.questions.length - 1 ? (
+                  <Button onClick={handleSubmit} disabled={submitting}>
+                    {submitting ? 'Submitting...' : 'Finish & Submit'}
+                  </Button>
+                ) : (
+                  <Button onClick={() => setCurrentQuestionIndex(prev => prev + 1)}>
+                    Next Question <ChevronRight className="ml-2" size={20} />
+                  </Button>
+                )
               )}
             </div>
           </div>

@@ -64,6 +64,7 @@ export interface DailyDrillQuestion {
   questionText: string;
   options?: string[]; // For Paper 1 (MCQs)
   correctAnswer?: string; // For Paper 1 (MCQs)
+  reasoning?: string; // Explanation for the answer
   imageUrl?: string; // Optional reference image
 }
 
@@ -76,6 +77,7 @@ export interface DailyDrill {
   questions: DailyDrillQuestion[];
   createdAt: string;
   uploadedBy: string;
+  gradedStatus?: boolean; // Added for consistency with user request
 }
 
 export interface DailyDrillSubmission {
