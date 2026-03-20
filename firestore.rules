@@ -151,10 +151,28 @@ service cloud.firestore {
     }
 
     function isValidPaymentAudit(data) {
+      return (data.userId is string &&
+              data.amount is number &&
+              data.provider in ["MTN", "Orange"] &&
+              data.status in ["initiated", "success", "failed"] &&
+              data.timestamp is timestamp) ||
+             (data.adminId is string &&
+              data.adminEmail is string &&
+              data.studentId is string &&
+              data.studentEmail is string &&
+              data.amount is number &&
+              data.method is string &&
+              data.timestamp is timestamp);
+    }
+
+    function isValidManualPaymentRequest(data) {
       return data.userId is string &&
+             data.userName is string &&
+             data.userEmail is string &&
+             data.method is string &&
+             data.reference is string &&
              data.amount is number &&
-             data.provider in ["MTN", "Orange"] &&
-             data.status in ["initiated", "success", "failed"] &&
+             data.status in ['pending', 'approved', 'rejected'] &&
              data.timestamp is timestamp;
     }
 
@@ -172,6 +190,8 @@ service cloud.firestore {
     function isValidResult(data) {
       return data.userId is string &&
              data.paperId is string &&
+             data.subject is string &&
+             data.paperType is string &&
              data.answers is map &&
              data.score is number && data.score >= 0 && data.score <= 100 &&
              data.grade is string &&
@@ -224,15 +244,29 @@ service cloud.firestore {
                       isValidUser(request.resource.data) && 
                       (
                         (isOwner(userId) && 
-                         areImmutableFieldsUnchanged(['role', 'email', 'createdAt', 'paymentStatus', 'paymentDate', 'paymentExpiryDate']) &&
-                         (request.resource.data.paymentStatus == resource.data.paymentStatus || isAdmin())) || 
+                         areImmutableFieldsUnchanged(['role', 'email', 'createdAt', 'paymentDate', 'paymentExpiryDate']) &&
+                         (
+                           request.resource.data.paymentStatus == resource.data.paymentStatus || 
+                           (resource.data.paymentStatus == 'unpaid' && request.resource.data.paymentStatus == 'pending') ||
+                           isAdmin()
+                         )) || 
                         isAdmin()
                       );
     }
 
+    match /manualPaymentRequests/{requestId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && 
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.status == 'pending' &&
+                      isValidManualPaymentRequest(request.resource.data);
+      allow update: if isAdmin() && isValidManualPaymentRequest(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
     match /paymentAudit/{auditId} {
       allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidPaymentAudit(request.resource.data);
+      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidPaymentAudit(request.resource.data)) || isAdmin();
       allow update, delete: if isAdmin();
     }
 
@@ -243,23 +277,25 @@ service cloud.firestore {
 
     match /results/{resultId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
-      allow create: if isPaid() && 
+      allow create: if isAuthenticated() && 
                       request.resource.data.userId == request.auth.uid && 
+                      (isPaid() || request.resource.data.paperType == 'Paper 1') &&
                       isValidResult(request.resource.data) &&
                       isRecent(request.resource.data.completedAt);
       allow update, delete: if isAdmin();
     }
 
     match /dailyDrills/{drillId} {
-      allow read: if isPaid() && (isAdmin() || resource.data.dayNumber <= getCurrentDay());
+      allow read: if isAuthenticated() && (isPaid() || resource.data.dayNumber == 1) && (isAdmin() || resource.data.dayNumber <= getCurrentDay() || resource.data.dayNumber == 1);
       allow create, update, delete: if isAdmin() && isValidDailyDrill(request.resource.data);
     }
 
     match /dailyDrillSubmissions/{submissionId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
-      allow create: if isPaid() && 
+      allow create: if isAuthenticated() && 
                       request.resource.data.userId == request.auth.uid && 
-                      (isAdmin() || request.resource.data.dayNumber == getCurrentDay()) &&
+                      (isPaid() || request.resource.data.dayNumber == 1) &&
+                      (isAdmin() || request.resource.data.dayNumber == getCurrentDay() || request.resource.data.dayNumber == 1) &&
                       isValidDailyDrillSubmission(request.resource.data) &&
                       isRecent(request.resource.data.submittedAt);
       allow update, delete: if isAdmin();

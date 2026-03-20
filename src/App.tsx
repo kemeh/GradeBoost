@@ -64,7 +64,7 @@ export default function App() {
           <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
           <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
           <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
-          <Route path="/daily-drill" element={<PaymentGatedRoute><DailyDrillSession /></PaymentGatedRoute>} />
+          <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
           <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
           
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />

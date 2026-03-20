@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
@@ -19,6 +19,9 @@ import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
 export default function DailyDrillSession() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const requestedDay = searchParams.get('day');
+  
   const [drill, setDrill] = useState<DailyDrill | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -67,10 +70,17 @@ export default function DailyDrillSession() {
     if (!user) return;
     try {
       const currentDay = getCurrentDayNumber();
+      const dayToFetch = requestedDay ? parseInt(requestedDay) : currentDay;
+
+      // Security check: if not paid, only allow Day 1
+      if (user.paymentStatus !== 'paid' && dayToFetch !== 1) {
+        navigate('/payment');
+        return;
+      }
 
       const q = query(
         collection(db, 'dailyDrills'), 
-        where('dayNumber', '==', currentDay),
+        where('dayNumber', '==', dayToFetch),
         where('subject', '==', user.subject)
       );
       const snapshot = await getDocs(q);
@@ -112,7 +122,9 @@ export default function DailyDrillSession() {
     if (!user || !drill) return;
 
     // Final security check on day number
-    if (!isDrillAccessible(drill.dayNumber)) {
+    // Allow Day 1 if it's a free sample (unpaid user) or if it's the current day
+    const isFreeSample = drill.dayNumber === 1 && user.paymentStatus !== 'paid';
+    if (!isDrillAccessible(drill.dayNumber) && !isFreeSample) {
       setError(`⚠️ You can only answer today's drill (Day ${getCurrentDayNumber()}). Please wait for the next assignment.`);
       return;
     }

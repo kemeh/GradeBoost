@@ -9,17 +9,28 @@ service firebase.storage {
     
     function isAdmin() {
       return isAuthenticated() && 
-        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        (
+          (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) && 
+           firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "kemehhilary@gmail.com" && request.auth.token.email_verified == true)
+        );
     }
     
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
     // Question Papers (Admin only upload, all authenticated can read)
-    match /questionPapers/{paperId} {
+    match /papers/{paperId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAdmin() && 
+                   request.resource.size < 50 * 1024 * 1024 && // 50MB limit
+                   request.resource.contentType.matches('application/pdf');
     }
 
     // Submissions (Student upload their own, Admin read all)

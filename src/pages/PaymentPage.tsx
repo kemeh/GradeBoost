@@ -8,12 +8,12 @@ import {
   Play, HelpCircle, ChevronRight, LockKeyhole,
   LogOut
 } from 'lucide-react';
-import { doc, updateDoc, serverTimestamp, collection, query, where, limit, getDocs, orderBy } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, collection, query, where, limit, getDocs, orderBy, addDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
-import { QuestionPaper } from '../types';
+import { QuestionPaper, DailyDrill } from '../types';
 
 export default function PaymentPage() {
   const { user } = useAuth();
@@ -21,9 +21,14 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'success' | 'failed'>('form');
+  const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'success' | 'failed' | 'manual'>('form');
   const [reference, setReference] = useState('');
-  const [freeSample, setFreeSample] = useState<QuestionPaper | null>(null);
+  const [manualData, setManualData] = useState({
+    transactionId: '',
+    method: 'MTN Mobile Money' as string,
+    amount: 1000
+  });
+  const [freeSample, setFreeSample] = useState<QuestionPaper | DailyDrill | null>(null);
   const [loadingSample, setLoadingSample] = useState(true);
   const { isAdmin } = useAuth();
 
@@ -55,20 +60,39 @@ export default function PaymentPage() {
       setLoadingSample(true);
       try {
         console.log(`PaymentPage: Fetching free sample for ${userSubject}`);
-        const q = query(
-          collection(db, 'questionPapers'),
+        
+        // Try to fetch Day 1 Daily Drill first
+        const drillQuery = query(
+          collection(db, 'dailyDrills'),
           where('subject', '==', userSubject),
-          where('paperType', '==', 'Paper 1'),
+          where('dayNumber', '==', 1),
           limit(1)
         );
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-          const sample = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as QuestionPaper;
-          console.log("PaymentPage: Found free sample", sample);
-          setFreeSample(sample);
+        
+        const drillSnapshot = await getDocs(drillQuery);
+        
+        if (!drillSnapshot.empty) {
+          const drill = { id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill;
+          console.log("PaymentPage: Found Day 1 Daily Drill as free sample", drill);
+          setFreeSample(drill);
         } else {
-          console.log(`PaymentPage: No free sample found for ${userSubject}`);
-          setFreeSample(null);
+          // Fallback to Paper 1 Question Paper
+          console.log("PaymentPage: Day 1 Drill not found, falling back to Paper 1");
+          const q = query(
+            collection(db, 'questionPapers'),
+            where('subject', '==', userSubject),
+            where('paperType', '==', 'Paper 1'),
+            limit(1)
+          );
+          const querySnapshot = await getDocs(q);
+          if (!querySnapshot.empty) {
+            const sample = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as QuestionPaper;
+            console.log("PaymentPage: Found Paper 1 free sample", sample);
+            setFreeSample(sample);
+          } else {
+            console.log(`PaymentPage: No free sample found for ${userSubject}`);
+            setFreeSample(null);
+          }
         }
       } catch (err) {
         console.error("Error fetching free sample:", err);
@@ -79,6 +103,17 @@ export default function PaymentPage() {
     };
     fetchFreeSample();
   }, [user?.subject]);
+
+  const handleStartSample = () => {
+    if (!freeSample) return;
+    
+    // Check if it's a Daily Drill or a Question Paper
+    if ('dayNumber' in freeSample) {
+      navigate(`/daily-drill?day=1`);
+    } else {
+      navigate(`/practice/${freeSample.id}`);
+    }
+  };
 
   const checkStatus = async (ref: string) => {
     try {
@@ -102,6 +137,40 @@ export default function PaymentPage() {
     } catch (err) {
       console.error("Status check error:", err);
       return false;
+    }
+  };
+
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const requestRef = doc(collection(db, 'manualPaymentRequests'));
+      await setDoc(requestRef, {
+        userId: user.uid,
+        userName: user.name,
+        userEmail: user.email,
+        amount: manualData.amount,
+        method: manualData.method,
+        reference: manualData.transactionId,
+        status: 'pending',
+        timestamp: serverTimestamp()
+      });
+
+      await updateDoc(doc(db, 'users', user.uid), {
+        paymentStatus: 'pending'
+      });
+
+      setPaymentStep('success');
+      setSuccess(true);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.WRITE, 'manualPaymentRequests');
+      setError('Failed to submit manual payment request.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -237,19 +306,19 @@ export default function PaymentPage() {
                   <div className="flex-1 space-y-4 text-center md:text-left">
                     <div>
                       <h3 className="text-xl font-black text-slate-900">
-                        {loadingSample ? 'Loading Sample...' : (freeSample ? freeSample.title : 'No Sample Available')}
+                        {loadingSample ? 'Loading Sample...' : (freeSample ? (('dayNumber' in freeSample) ? `Daily Drill: Day ${freeSample.dayNumber}` : freeSample.title) : 'No Sample Available')}
                       </h3>
                       <p className="text-slate-500 font-medium">
                         {freeSample 
-                          ? 'Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.'
+                          ? (('dayNumber' in freeSample) ? 'Try our Day 1 Daily Drill to see how GradeBoost 60 keeps you sharp every day.' : 'Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.')
                           : isAdmin 
-                            ? `You haven't uploaded any Paper 1 samples for ${userSubject} yet. Go to the Admin dashboard to upload one.`
+                            ? `You haven't uploaded any samples for ${userSubject} yet. Go to the Admin dashboard to upload one.`
                             : `There are currently no free samples available for ${userSubject}. Please check back later.`}
                       </p>
                     </div>
                     <div className="flex flex-wrap justify-center md:justify-start gap-4">
                       <Button 
-                        onClick={() => freeSample && navigate(`/practice/${freeSample.id}`)}
+                        onClick={handleStartSample}
                         disabled={!freeSample || loadingSample}
                         className="bg-emerald-600 hover:bg-emerald-700 h-12 px-8 rounded-xl font-black uppercase tracking-widest transition-all"
                       >
@@ -314,6 +383,31 @@ export default function PaymentPage() {
               </div>
               
               <AnimatePresence mode="wait">
+                {(paymentStep === 'form' || paymentStep === 'manual') && (
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-2xl mb-8">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentStep('form')}
+                      className={cn(
+                        "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        paymentStep === 'form' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                      )}
+                    >
+                      Automatic
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentStep('manual')}
+                      className={cn(
+                        "py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                        paymentStep === 'manual' ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                      )}
+                    >
+                      Manual
+                    </button>
+                  </div>
+                )}
+
                 {paymentStep === 'form' && (
                   <motion.div
                     key="form"
@@ -382,6 +476,66 @@ export default function PaymentPage() {
                           {error}
                         </div>
                       )}
+                    </form>
+                  </motion.div>
+                )}
+
+                {paymentStep === 'manual' && (
+                  <motion.div
+                    key="manual"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="space-y-8"
+                  >
+                    <div className="space-y-2">
+                      <h2 className="text-2xl font-black text-slate-900 tracking-tight">Manual Payment</h2>
+                      <p className="text-sm text-slate-500 font-medium">
+                        Paid via Mobile Money or Bank Transfer? Enter your transaction details below for manual approval.
+                      </p>
+                    </div>
+
+                    <form onSubmit={handleManualSubmit} className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Payment Method</label>
+                        <select
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
+                          value={manualData.method}
+                          onChange={e => setManualData({ ...manualData, method: e.target.value })}
+                        >
+                          <option value="MTN Mobile Money">MTN Mobile Money</option>
+                          <option value="Orange Money">Orange Money</option>
+                          <option value="Bank Transfer">Bank Transfer</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Transaction ID / Reference</label>
+                        <input 
+                          type="text"
+                          required
+                          placeholder="Enter the transaction ID"
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
+                          value={manualData.transactionId}
+                          onChange={e => setManualData({ ...manualData, transactionId: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Amount Paid (XAF)</label>
+                        <input 
+                          type="number"
+                          required
+                          className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
+                          value={manualData.amount}
+                          onChange={e => setManualData({ ...manualData, amount: parseInt(e.target.value) })}
+                        />
+                      </div>
+
+                      <Button type="submit" className="w-full py-8 text-lg" disabled={loading}>
+                        {loading ? 'Submitting...' : 'Submit for Approval'}
+                      </Button>
                     </form>
                   </motion.div>
                 )}

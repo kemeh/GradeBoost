@@ -12,11 +12,13 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { DailyDrill, DailyDrillQuestion, Subject, Grade } from '../types';
+import { useNavigate } from 'react-router-dom';
 import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 export default function AdminDailyDrill() {
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [drills, setDrills] = useState<DailyDrill[]>([]);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<any[]>([]);
@@ -47,9 +49,17 @@ export default function AdminDailyDrill() {
   ]);
 
   useEffect(() => {
-    fetchDrills();
-    fetchSubmissions();
-  }, []);
+    if (!authLoading && (!user || !isAdmin)) {
+      navigate('/');
+    }
+  }, [user, isAdmin, authLoading, navigate]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchDrills();
+      fetchSubmissions();
+    }
+  }, [isAdmin]);
 
   useEffect(() => {
     let filtered = [...submissions];
@@ -188,7 +198,17 @@ export default function AdminDailyDrill() {
     }
   };
 
-  if (!user) return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="font-black text-slate-400 animate-pulse tracking-widest uppercase text-xs">Loading Admin Dashboard...</p>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">

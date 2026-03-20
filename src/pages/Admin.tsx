@@ -16,7 +16,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 export default function Admin() {
-  const { user } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
@@ -24,11 +24,12 @@ export default function Admin() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const activeTab = (searchParams.get('tab') as 'papers' | 'payments') || 'papers';
+  const activeTab = (searchParams.get('tab') as 'papers' | 'payments' | 'manual') || 'papers';
   const [users, setUsers] = useState<any[]>([]);
+  const [manualRequests, setManualRequests] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const setActiveTab = (tab: 'papers' | 'payments') => {
+  const setActiveTab = (tab: 'papers' | 'payments' | 'manual') => {
     setSearchParams({ tab });
   };
 
@@ -43,9 +44,28 @@ export default function Admin() {
   const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
-    fetchPapers();
-    fetchUsers();
-  }, []);
+    if (!authLoading && (!user || !isAdmin)) {
+      navigate('/');
+    }
+  }, [user, isAdmin, authLoading, navigate]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      fetchPapers();
+      fetchUsers();
+      fetchManualRequests();
+    }
+  }, [isAdmin]);
+
+  const fetchManualRequests = async () => {
+    try {
+      const q = query(collection(db, 'manualPaymentRequests'), orderBy('timestamp', 'desc'));
+      const querySnapshot = await getDocs(q);
+      setManualRequests(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (err) {
+      console.error("Error fetching manual requests:", err);
+    }
+  };
 
   const fetchPapers = async () => {
     try {
@@ -100,6 +120,53 @@ export default function Admin() {
     } catch (err) {
       console.error("Error approving payment:", err);
       setError('Failed to approve payment. Please try again.');
+    }
+  };
+
+  const handleManualApproval = async (requestId: string, userId: string, approve: boolean) => {
+    if (!window.confirm(`Are you sure you want to ${approve ? 'approve' : 'reject'} this request?`)) return;
+    try {
+      setError('');
+      const now = new Date();
+      const expiry = new Date(now);
+      expiry.setDate(now.getDate() + 30);
+
+      if (approve) {
+        // Log in audit
+        const auditRef = doc(collection(db, 'paymentAudit'));
+        await setDoc(auditRef, {
+          userId,
+          amount: 1000,
+          provider: 'Manual',
+          status: 'SUCCESSFUL',
+          timestamp: serverTimestamp(),
+          reference: `manual_${requestId}`
+        });
+
+        // Update user
+        await updateDoc(doc(db, 'users', userId), {
+          paymentStatus: 'paid',
+          paymentDate: now.toISOString(),
+          paymentExpiryDate: expiry.toISOString(),
+        });
+      } else {
+        // Update user back to unpaid
+        await updateDoc(doc(db, 'users', userId), {
+          paymentStatus: 'unpaid'
+        });
+      }
+
+      // Update request status
+      await updateDoc(doc(db, 'manualPaymentRequests', requestId), {
+        status: approve ? 'approved' : 'rejected',
+        processedAt: serverTimestamp()
+      });
+
+      fetchManualRequests();
+      fetchUsers();
+    } catch (err) {
+      console.error("Error processing manual request:", err);
+      setError('Failed to process manual request.');
     }
   };
 
@@ -166,7 +233,17 @@ export default function Admin() {
     navigate('/');
   };
 
-  if (!user) return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <p className="font-black text-slate-400 animate-pulse tracking-widest uppercase text-xs">Loading Admin Dashboard...</p>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
@@ -252,6 +329,37 @@ export default function Admin() {
           </Card>
         </div>
 
+        {/* Tabs */}
+        <div className="flex items-center gap-2 mb-8 p-1 bg-white rounded-2xl border border-slate-100 w-fit">
+          <button
+            onClick={() => setActiveTab('papers')}
+            className={cn(
+              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+              activeTab === 'papers' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
+            )}
+          >
+            Papers
+          </button>
+          <button
+            onClick={() => setActiveTab('payments')}
+            className={cn(
+              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+              activeTab === 'payments' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
+            )}
+          >
+            Payments
+          </button>
+          <button
+            onClick={() => setActiveTab('manual')}
+            className={cn(
+              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+              activeTab === 'manual' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
+            )}
+          >
+            Manual Requests
+          </button>
+        </div>
+
         {error && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
@@ -319,7 +427,7 @@ export default function Admin() {
               </table>
             </div>
           </Card>
-        ) : (
+        ) : activeTab === 'payments' ? (
           <Card className="overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-xl font-black text-slate-900 tracking-tight">Student Payments</h2>
@@ -353,10 +461,10 @@ export default function Admin() {
                         <p className="text-sm font-bold text-slate-900">{u.name}</p>
                       </td>
                       <td className="px-8 py-4">
-                        <p className="text-xs text-slate-500 font-medium">{u.email}</p>
+                        <p className="text-xs font-medium text-slate-500">{u.email}</p>
                       </td>
                       <td className="px-8 py-4">
-                        <Badge variant={u.paymentStatus === 'paid' ? 'success' : 'danger'}>
+                        <Badge variant={u.paymentStatus === 'paid' ? 'success' : u.paymentStatus === 'pending' ? 'warning' : 'danger'}>
                           {u.paymentStatus || 'unpaid'}
                         </Badge>
                       </td>
@@ -379,6 +487,7 @@ export default function Admin() {
                             size="sm" 
                             variant="success"
                             onClick={() => handleApprovePayment(u.id)}
+                            className="text-[10px] h-8"
                           >
                             Approve
                           </Button>
@@ -390,7 +499,81 @@ export default function Admin() {
               </table>
             </div>
           </Card>
-        )}
+        ) : (
+          <Card className="overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">Manual Payment Requests</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reference</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {manualRequests.map((req) => (
+                    <tr key={req.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-8 py-4">
+                        <p className="text-sm font-bold text-slate-900">{req.userName}</p>
+                        <p className="text-[10px] text-slate-500">{req.userEmail}</p>
+                      </td>
+                      <td className="px-8 py-4">
+                        <Badge variant="default">{req.method}</Badge>
+                      </td>
+                      <td className="px-8 py-4">
+                        <code className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{req.reference}</code>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span className="text-sm font-black text-slate-900">{req.amount} XAF</span>
+                      </td>
+                      <td className="px-8 py-4">
+                        <Badge variant={req.status === 'approved' ? 'success' : req.status === 'rejected' ? 'danger' : 'warning'}>
+                          {req.status}
+                        </Badge>
+                      </td>
+                      <td className="px-8 py-4">
+                        {req.status === 'pending' && (
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="success"
+                              onClick={() => handleManualApproval(req.id, req.userId, true)}
+                              className="text-[10px] h-8"
+                            >
+                              Approve
+                            </Button>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => handleManualApproval(req.id, req.userId, false)}
+                              className="text-[10px] h-8 text-red-600 border-red-100 hover:bg-red-50"
+                            >
+                              Reject
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {manualRequests.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-8 py-12 text-center">
+                        <p className="text-slate-400 font-medium">No manual payment requests found.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )
+}
 
         {/* Upload Modal */}
         {showUpload && (

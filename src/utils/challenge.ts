@@ -18,7 +18,20 @@ export function getDaysRemaining(): number {
   return 60 - currentDay;
 }
 
-export function isDrillAccessible(drillDayNumber: number): boolean {
+export function isDrillAccessible(drillDayNumber: number, isPaid: boolean = false, expiryDate?: string): boolean {
   const currentDay = getCurrentDayNumber();
-  return drillDayNumber === currentDay;
+  
+  // Day 1 is always accessible as a free sample
+  if (drillDayNumber === 1) return true;
+
+  // If paid and not expired, can access current day or any past day
+  if (isPaid) {
+    const hasExpired = expiryDate && new Date(expiryDate) < new Date();
+    if (!hasExpired) {
+      return drillDayNumber <= currentDay;
+    }
+  }
+
+  // Otherwise, only current day is accessible if paid
+  return drillDayNumber === currentDay && isPaid;
 }
