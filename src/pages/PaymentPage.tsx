@@ -8,7 +8,7 @@ import {
   Play, HelpCircle, ChevronRight, LockKeyhole,
   LogOut
 } from 'lucide-react';
-import { doc, updateDoc, serverTimestamp, collection, query, where, limit, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, collection, query, where, limit, getDocs, orderBy } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
@@ -50,6 +50,7 @@ export default function PaymentPage() {
           collection(db, 'questionPapers'),
           where('subject', '==', user.subject),
           where('paperType', '==', 'Paper 1'),
+          orderBy('createdAt', 'asc'),
           limit(1)
         );
         const querySnapshot = await getDocs(q);
@@ -220,19 +221,28 @@ export default function PaymentPage() {
                   <div className="flex-1 space-y-4 text-center md:text-left">
                     <div>
                       <h3 className="text-xl font-black text-slate-900">
-                        {freeSample ? freeSample.title : 'Paper 1 MCQ Practice'}
+                        {loadingSample ? 'Loading Sample...' : (freeSample ? freeSample.title : 'No Sample Available')}
                       </h3>
                       <p className="text-slate-500 font-medium">
-                        Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.
+                        {freeSample 
+                          ? 'Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.'
+                          : `There are currently no free samples available for ${user.subject}. Please check back later.`}
                       </p>
                     </div>
                     <div className="flex flex-wrap justify-center md:justify-start gap-4">
                       <Button 
                         onClick={() => freeSample && navigate(`/practice/${freeSample.id}`)}
-                        disabled={!freeSample}
-                        className="bg-emerald-600 hover:bg-emerald-700"
+                        disabled={!freeSample || loadingSample}
+                        className="bg-emerald-600 hover:bg-emerald-700 h-12 px-8 rounded-xl font-black uppercase tracking-widest transition-all"
                       >
-                        Try Free Sample <Play className="ml-2" size={16} />
+                        {loadingSample ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Loading...
+                          </div>
+                        ) : (
+                          <>Try Free Sample <Play className="ml-2" size={16} /></>
+                        )}
                       </Button>
                     </div>
                   </div>

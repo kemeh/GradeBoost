@@ -237,7 +237,7 @@ service cloud.firestore {
     }
 
     match /questionPapers/{paperId} {
-      allow read: if isPaid();
+      allow read: if isPaid() || (isAuthenticated() && resource.data.paperType == 'Paper 1');
       allow create, update, delete: if isAdmin() && isValidQuestionPaper(request.resource.data);
     }
 

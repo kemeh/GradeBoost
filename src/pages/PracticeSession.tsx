@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, limit, getDocs } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, limit, getDocs, orderBy } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, FileText, Send, Clock, 
@@ -52,6 +52,7 @@ export default function PracticeSession() {
                 collection(db, 'questionPapers'),
                 where('subject', '==', user.subject),
                 where('paperType', '==', 'Paper 1'),
+                orderBy('createdAt', 'asc'),
                 limit(1)
               );
               const freeSnap = await getDocs(q);
