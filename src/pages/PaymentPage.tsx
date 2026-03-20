@@ -44,27 +44,30 @@ export default function PaymentPage() {
 
   useEffect(() => {
     const fetchFreeSample = async () => {
-      if (!user) return;
+      if (!user || !user.subject) return;
+      setLoadingSample(true);
       try {
         const q = query(
           collection(db, 'questionPapers'),
           where('subject', '==', user.subject),
           where('paperType', '==', 'Paper 1'),
-          orderBy('createdAt', 'asc'),
           limit(1)
         );
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
           setFreeSample({ id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as QuestionPaper);
+        } else {
+          setFreeSample(null);
         }
       } catch (err) {
         console.error("Error fetching free sample:", err);
+        setFreeSample(null);
       } finally {
         setLoadingSample(false);
       }
     };
     fetchFreeSample();
-  }, [user]);
+  }, [user?.subject]);
 
   const checkStatus = async (ref: string) => {
     try {
@@ -144,6 +147,8 @@ export default function PaymentPage() {
   };
 
   if (!user) return null;
+
+  const userSubject = user.subject || 'your subject';
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
@@ -226,7 +231,9 @@ export default function PaymentPage() {
                       <p className="text-slate-500 font-medium">
                         {freeSample 
                           ? 'Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.'
-                          : `There are currently no free samples available for ${user.subject}. Please check back later.`}
+                          : isAdmin 
+                            ? `You haven't uploaded any Paper 1 samples for ${userSubject} yet. Go to the Admin dashboard to upload one.`
+                            : `There are currently no free samples available for ${userSubject}. Please check back later.`}
                       </p>
                     </div>
                     <div className="flex flex-wrap justify-center md:justify-start gap-4">

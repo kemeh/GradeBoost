@@ -45,24 +45,25 @@ export default function PracticeSession() {
           const paperData = { id: docSnap.id, ...docSnap.data() } as QuestionPaper;
           
           // If not paid and not admin, check if it's a free sample
-          if (!isPaid || hasExpired) {
-            if (!isAdmin) {
-              // Fetch the first Paper 1 for this subject to see if it's the free one
-              const q = query(
-                collection(db, 'questionPapers'),
-                where('subject', '==', user.subject),
-                where('paperType', '==', 'Paper 1'),
-                orderBy('createdAt', 'asc'),
-                limit(1)
-              );
-              const freeSnap = await getDocs(q);
-              const freeId = !freeSnap.empty ? freeSnap.docs[0].id : null;
+          if ((!isPaid || hasExpired) && !isAdmin) {
+            if (!user.subject) {
+              navigate('/payment');
+              return;
+            }
+            // Fetch the first Paper 1 for this subject to see if it's the free one
+            const q = query(
+              collection(db, 'questionPapers'),
+              where('subject', '==', user.subject),
+              where('paperType', '==', 'Paper 1'),
+              limit(1)
+            );
+            const freeSnap = await getDocs(q);
+            const freeId = !freeSnap.empty ? freeSnap.docs[0].id : null;
 
-              if (paperId !== freeId) {
-                // Not the free sample, redirect to payment
-                navigate('/payment');
-                return;
-              }
+            if (paperId !== freeId) {
+              // Not the free sample, redirect to payment
+              navigate('/payment');
+              return;
             }
           }
           
