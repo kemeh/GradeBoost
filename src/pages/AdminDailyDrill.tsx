@@ -13,6 +13,7 @@ import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { DailyDrill, DailyDrillQuestion, Subject, Grade } from '../types';
 import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 export default function AdminDailyDrill() {
   const { user } = useAuth();
@@ -123,7 +124,7 @@ export default function AdminDailyDrill() {
       await addDoc(collection(db, 'dailyDrills'), {
         ...formData,
         questions: questions.map((q, i) => ({ ...q, id: `q${i + 1}` })),
-        createdAt: new Date().toISOString(),
+        createdAt: serverTimestamp(),
         uploadedBy: user.uid,
       });
 
@@ -133,9 +134,8 @@ export default function AdminDailyDrill() {
       setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A' }]);
       fetchDrills();
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      console.error("Error adding drill:", err);
-      setError('Failed to add daily drill.');
+    } catch (err: any) {
+      handleFirestoreError(err, OperationType.CREATE, 'dailyDrills');
     } finally {
       setLoading(false);
     }

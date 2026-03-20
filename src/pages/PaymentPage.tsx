@@ -44,19 +44,30 @@ export default function PaymentPage() {
 
   useEffect(() => {
     const fetchFreeSample = async () => {
-      if (!user || !user.subject) return;
+      if (!user) return;
+      
+      const userSubject = user.subject;
+      if (!userSubject) {
+        console.log("PaymentPage: No user subject found", user);
+        return;
+      }
+
       setLoadingSample(true);
       try {
+        console.log(`PaymentPage: Fetching free sample for ${userSubject}`);
         const q = query(
           collection(db, 'questionPapers'),
-          where('subject', '==', user.subject),
+          where('subject', '==', userSubject),
           where('paperType', '==', 'Paper 1'),
           limit(1)
         );
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty) {
-          setFreeSample({ id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as QuestionPaper);
+          const sample = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() } as QuestionPaper;
+          console.log("PaymentPage: Found free sample", sample);
+          setFreeSample(sample);
         } else {
+          console.log(`PaymentPage: No free sample found for ${userSubject}`);
           setFreeSample(null);
         }
       } catch (err) {

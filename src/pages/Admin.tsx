@@ -13,6 +13,7 @@ import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { QuestionPaper, Subject, PaperType } from '../types';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 export default function Admin() {
   const { user } = useAuth();
@@ -113,8 +114,18 @@ export default function Admin() {
       const snapshot = await uploadBytes(storageRef, file);
       const pdfUrl = await getDownloadURL(snapshot.ref);
 
-      await addDoc(collection(db, 'questionPapers'), {
+      const correctAnswers: Record<string, string> = {};
+      if (formData.paperType === 'Paper 1' && formData.correctAnswersRaw) {
+        formData.correctAnswersRaw.split(',').forEach(pair => {
+          const [q, a] = pair.trim().split(':');
+          if (q && a) correctAnswers[q.trim()] = a.trim().toUpperCase();
+        });
+      }
+
+      const path = 'questionPapers';
+      await addDoc(collection(db, path), {
         ...formData,
+        correctAnswers,
         pdfUrl,
         createdAt: serverTimestamp(),
         uploadedBy: user.uid,
@@ -131,9 +142,8 @@ export default function Admin() {
       });
       setFile(null);
       fetchPapers();
-    } catch (err) {
-      console.error("Error uploading paper:", err);
-      setError('Failed to upload paper. Please check your connection.');
+    } catch (err: any) {
+      handleFirestoreError(err, OperationType.CREATE, 'questionPapers');
     } finally {
       setUploading(false);
     }
