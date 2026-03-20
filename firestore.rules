@@ -9,12 +9,15 @@
 // Fields:
 //   - name: string (required, 1-100 chars)
 //   - email: string (required, email format)
+//   - phone: string (optional, phone format)
 //   - subject: string (required, enum: ["Computer Science", "ICT"])
 //   - assignedPapers: list (optional, strings)
 //   - targetGrade: string (optional, enum: ["A", "B", "C", "D", "F"])
 //   - role: string (required, enum: ["student", "admin"])
 //   - hasTakenDiagnostic: bool (optional)
 //   - diagnosticResults: map (optional)
+//   - paymentStatus: string (optional, enum: ["unpaid", "paid", "pending"])
+//   - paymentExpiryDate: string (optional, ISO date)
 //   - createdAt: timestamp (required)
 //   - updatedAt: timestamp (optional)
 //
@@ -44,6 +47,32 @@
 //   - feedback: string (optional)
 //   - completedAt: timestamp (required)
 //
+// Collection: dailyDrills
+// Document ID: {drillId}
+// Fields:
+//   - dayNumber: number (required, 1-60)
+//   - subject: string (required, enum)
+//   - topic: string (required)
+//   - paperType: string (required, enum)
+//   - questions: list (required)
+//   - createdAt: timestamp (required)
+//   - uploadedBy: string (required, uid)
+//
+// Collection: dailyDrillSubmissions
+// Document ID: {submissionId}
+// Fields:
+//   - userId: string (required, uid)
+//   - drillId: string (required, docId)
+//   - dayNumber: number (required)
+//   - subject: string (required)
+//   - paperType: string (required)
+//   - answers: map (required)
+//   - score: number (optional)
+//   - grade: string (optional)
+//   - feedback: string (optional)
+//   - gradedStatus: bool (required)
+//   - submittedAt: timestamp (required)
+//
 // ===============================================================
 
 rules_version = '2';
@@ -71,12 +100,24 @@ service cloud.firestore {
         );
     }
 
+    function isPaid() {
+      return isAdmin() || 
+        (isAuthenticated() && 
+         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.paymentStatus == 'paid' &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.paymentExpiryDate > request.time);
+    }
+
     function hasRequiredFields(fields) {
       return request.resource.data.keys().hasAll(fields);
     }
 
     function hasOnlyAllowedFields(fields) {
       return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function areImmutableFieldsUnchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
     }
 
     function isValidEmail(email) {
@@ -87,6 +128,14 @@ service cloud.firestore {
       return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
     }
 
+    function isValidPhone(phone) {
+      return phone is string && phone.matches("^\\+?[0-9]{7,15}$");
+    }
+
+    function isRecent(time) {
+      return time > request.time - duration.value(5, 'm') && time < request.time + duration.value(5, 'm');
+    }
+
     // ===============================================================
     // Domain Validators
     // ===============================================================
@@ -94,9 +143,19 @@ service cloud.firestore {
     function isValidUser(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
              isValidEmail(data.email) &&
+             (!('phone' in data) || isValidPhone(data.phone)) &&
              data.subject in ["Computer Science", "ICT"] &&
              data.role in ["student", "admin"] &&
-             data.createdAt is timestamp;
+             data.createdAt is timestamp &&
+             (!('paymentStatus' in data) || data.paymentStatus in ["unpaid", "paid", "pending"]);
+    }
+
+    function isValidPaymentAudit(data) {
+      return data.userId is string &&
+             data.amount is number &&
+             data.provider in ["MTN", "Orange"] &&
+             data.status in ["initiated", "success", "failed"] &&
+             data.timestamp is timestamp;
     }
 
     function isValidQuestionPaper(data) {
@@ -119,6 +178,27 @@ service cloud.firestore {
              data.completedAt is timestamp;
     }
 
+    function isValidDailyDrill(data) {
+      return data.dayNumber is number && data.dayNumber >= 1 && data.dayNumber <= 60 &&
+             data.subject in ["Computer Science", "ICT"] &&
+             data.topic is string && data.topic.size() > 0 && data.topic.size() <= 200 &&
+             data.paperType in ["Paper 1", "Paper 2"] &&
+             data.questions is list && data.questions.size() <= 50 &&
+             data.createdAt is timestamp &&
+             data.uploadedBy is string;
+    }
+
+    function isValidDailyDrillSubmission(data) {
+      return data.userId is string &&
+             data.drillId is string &&
+             data.dayNumber is number &&
+             data.subject in ["Computer Science", "ICT"] &&
+             data.paperType in ["Paper 1", "Paper 2"] &&
+             data.answers is map &&
+             data.gradedStatus is bool &&
+             data.submittedAt is timestamp;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
@@ -129,34 +209,68 @@ service cloud.firestore {
       allow create: if isAuthenticated() && 
                       isValidUser(request.resource.data) && 
                       (
-                        (isOwner(userId) && request.resource.data.role == 'student') || 
+                        (isOwner(userId) && request.resource.data.role == 'student' && request.resource.data.paymentStatus == 'unpaid') || 
                         isAdmin()
                       );
       
       allow update: if isAuthenticated() && 
                       isValidUser(request.resource.data) && 
                       (
-                        (isOwner(userId) && request.resource.data.role == resource.data.role) || 
+                        (isOwner(userId) && 
+                         areImmutableFieldsUnchanged(['role', 'email', 'createdAt', 'paymentStatus', 'paymentDate', 'paymentExpiryDate']) &&
+                         (request.resource.data.paymentStatus == resource.data.paymentStatus || isAdmin())) || 
                         isAdmin()
                       );
     }
 
+    match /paymentAudit/{auditId} {
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidPaymentAudit(request.resource.data);
+      allow update, delete: if isAdmin();
+    }
+
     match /questionPapers/{paperId} {
-      allow read: if isAuthenticated();
+      allow read: if isPaid();
       allow create, update, delete: if isAdmin() && isValidQuestionPaper(request.resource.data);
     }
 
     match /results/{resultId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
-      allow create: if isAuthenticated() && 
+      allow create: if isPaid() && 
                       request.resource.data.userId == request.auth.uid && 
-                      isValidResult(request.resource.data);
+                      isValidResult(request.resource.data) &&
+                      isRecent(request.resource.data.completedAt);
+      allow update, delete: if isAdmin();
+    }
+
+    match /dailyDrills/{drillId} {
+      allow read: if isPaid();
+      allow create, update, delete: if isAdmin() && isValidDailyDrill(request.resource.data);
+    }
+
+    match /dailyDrillSubmissions/{submissionId} {
+      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isPaid() && 
+                      request.resource.data.userId == request.auth.uid && 
+                      isValidDailyDrillSubmission(request.resource.data) &&
+                      isRecent(request.resource.data.submittedAt);
       allow update, delete: if isAdmin();
     }
 
     // Default deny
     match /{path=**} {
       allow read, write: if false;
+    }
+    // ===============================================================
+    // Audit Collections (Admin Only via Server)
+    // ===============================================================
+    
+    match /paymentAudit/{auditId} {
+      allow read, write: if false; // Only accessible via Admin SDK on server
+    }
+
+    match /securityAudit/{auditId} {
+      allow read, write: if false; // Only accessible via Admin SDK on server
     }
   }
 }

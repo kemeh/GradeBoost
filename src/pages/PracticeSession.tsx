@@ -6,7 +6,7 @@ import {
   ArrowLeft, FileText, Send, Clock, 
   ChevronLeft, ChevronRight, CheckCircle2, 
   AlertCircle, Info, Save, Maximize2, Minimize2,
-  TrendingUp
+  TrendingUp, Sparkles, ArrowRight, Trophy, Zap
 } from 'lucide-react';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,6 +25,8 @@ export default function PracticeSession() {
   const [timeLeft, setTimeLeft] = useState(10800); // 3 hours in seconds
   const [answers, setAnswers] = useState<any>({});
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [resultsSummary, setResultsSummary] = useState<{ score: number; grade: string } | null>(null);
 
   useEffect(() => {
     const fetchPaper = async () => {
@@ -129,7 +131,11 @@ export default function PracticeSession() {
         completedAt: serverTimestamp(),
       });
 
-      navigate('/dashboard');
+      setResultsSummary({ score, grade });
+      setShowResults(true);
+
+      // Only navigate immediately if user is paid or admin (optional, let's show summary to everyone)
+      // navigate('/dashboard');
     } catch (err: any) {
       console.error("Submit Exam Error:", err);
       setError('Failed to submit your exam. Please try again.');
@@ -329,6 +335,82 @@ export default function PracticeSession() {
           </div>
         </div>
       </div>
+
+      {/* Results Summary Modal */}
+      <AnimatePresence>
+        {showResults && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm"
+              onClick={() => !user.paymentStatus || user.paymentStatus === 'unpaid' ? null : setShowResults(false)}
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              className="relative w-full max-w-lg bg-white rounded-[2rem] shadow-2xl overflow-hidden"
+            >
+              <div className="p-12 text-center space-y-8">
+                <div className="w-24 h-24 bg-indigo-50 text-indigo-600 rounded-3xl flex items-center justify-center mx-auto">
+                  <Trophy size={48} />
+                </div>
+                
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Exam Completed!</h2>
+                  <p className="text-slate-500 font-medium">You've successfully submitted your {paper.paperType} session.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Your Score</p>
+                    <p className="text-4xl font-black text-slate-900">{resultsSummary?.score}%</p>
+                  </div>
+                  <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Predicted Grade</p>
+                    <p className="text-4xl font-black text-indigo-600">{resultsSummary?.grade}</p>
+                  </div>
+                </div>
+
+                {user.paymentStatus === 'unpaid' ? (
+                  <div className="space-y-6">
+                    <div className="p-6 bg-amber-50 rounded-2xl border border-amber-100 text-left">
+                      <div className="flex gap-3">
+                        <Zap className="text-amber-600 shrink-0" size={20} />
+                        <p className="text-sm font-bold text-amber-900">
+                          Unlock detailed corrections, explanations, and Paper 2 & 3 interactive practice for just 1000 FCFA.
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      className="w-full py-6 text-lg bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-200"
+                      onClick={() => navigate('/payment')}
+                    >
+                      Unlock Full Access <Sparkles className="ml-2" size={20} />
+                    </Button>
+                    <button 
+                      onClick={() => navigate('/payment')}
+                      className="text-slate-400 font-black text-xs uppercase tracking-widest hover:text-slate-600 transition-colors"
+                    >
+                      Return to Dashboard
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <Button 
+                      className="w-full py-6 text-lg bg-slate-900 hover:bg-black"
+                      onClick={() => navigate('/dashboard')}
+                    >
+                      Go to Dashboard <ArrowRight className="ml-2" size={20} />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

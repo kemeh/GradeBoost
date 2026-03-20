@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, BookOpen, ArrowRight, AlertCircle, CheckCircle2, TrendingUp, School, MapPin } from 'lucide-react';
@@ -70,6 +70,20 @@ export default function AuthPage() {
     }
   };
 
+  const validatePassword = (password: string) => {
+    const minLength = 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasNonalphas = /\W/.test(password);
+    
+    if (password.length < minLength) return "Password must be at least 8 characters long.";
+    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasNonalphas) {
+      return "Password must contain uppercase, lowercase, numbers, and special characters.";
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -83,8 +97,23 @@ export default function AuthPage() {
       } else if (isLogin) {
         await signInWithEmailAndPassword(auth, formData.email, formData.password);
       } else {
+        // Strong password validation
+        const passwordError = validatePassword(formData.password);
+        if (passwordError) {
+          setError(passwordError);
+          setLoading(false);
+          return;
+        }
+
         const { user } = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         
+        // Send verification email
+        try {
+          await sendEmailVerification(user);
+        } catch (err) {
+          console.error("Failed to send verification email:", err);
+        }
+
         // Create user profile
         const isAdminEmail = formData.email.toLowerCase() === 'kemehhilary@gmail.com';
         const path = `users/${user.uid}`;

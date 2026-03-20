@@ -5,7 +5,8 @@ import {
   CreditCard, Smartphone, ShieldCheck, 
   TrendingUp, CheckCircle2, AlertCircle,
   ArrowRight, Lock, Zap, FileText, Target,
-  Play, HelpCircle, ChevronRight, LockKeyhole
+  Play, HelpCircle, ChevronRight, LockKeyhole,
+  LogOut
 } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
@@ -66,21 +67,14 @@ export default function PaymentPage() {
 
   const checkStatus = async (ref: string) => {
     try {
-      const response = await fetch(`/api/payment/status/${ref}`);
+      const response = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: ref, userId: user?.uid })
+      });
       const data = await response.json();
       
       if (data.status === 'SUCCESSFUL') {
-        const path = `users/${user?.uid}`;
-        const now = new Date();
-        const expiry = new Date(now);
-        expiry.setDate(now.getDate() + 30);
-
-        await updateDoc(doc(db, 'users', user?.uid as string), {
-          paymentStatus: 'paid',
-          paymentDate: now.toISOString(),
-          paymentExpiryDate: expiry.toISOString(),
-          updatedAt: serverTimestamp(),
-        });
         setPaymentStep('success');
         setSuccess(true);
         return true;

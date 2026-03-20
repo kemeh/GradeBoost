@@ -29,6 +29,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const studentLinks = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Target, label: 'Daily Drills', path: '/daily-drill' },
     { icon: FileText, label: 'Practice Papers', path: '/practice' },
     { icon: Target, label: 'Diagnostic', path: '/diagnostic' },
     { icon: Trophy, label: 'Achievements', path: '#' },
@@ -39,6 +40,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: ShieldCheck, label: 'Admin Panel', path: '/admin' },
     { icon: CreditCard, label: 'Payments', path: '/admin?tab=payments' },
     { icon: FileText, label: 'Manage Papers', path: '/admin?tab=papers' },
+    { icon: Target, label: 'Daily Drills', path: '/admin/daily-drill' },
     { icon: LayoutDashboard, label: 'Student View', path: '/dashboard' },
   ];
 

@@ -6,6 +6,7 @@ export interface UserProfile {
   uid: string;
   name: string;
   email: string;
+  phone?: string;
   subject: Subject;
   school: string;
   region: string;
@@ -56,4 +57,38 @@ export interface ExamResult {
   feedback: string;
   grade: Grade;
   timestamp: string;
+}
+
+export interface DailyDrillQuestion {
+  id: string;
+  questionText: string;
+  options?: string[]; // For Paper 1 (MCQs)
+  correctAnswer?: string; // For Paper 1 (MCQs)
+  imageUrl?: string; // Optional reference image
+}
+
+export interface DailyDrill {
+  id: string;
+  dayNumber: number; // 1-60
+  subject: Subject;
+  topic: string;
+  paperType: 'Paper 1' | 'Paper 2';
+  questions: DailyDrillQuestion[];
+  createdAt: string;
+  uploadedBy: string;
+}
+
+export interface DailyDrillSubmission {
+  id: string;
+  userId: string;
+  drillId: string;
+  dayNumber: number;
+  subject: Subject;
+  paperType: 'Paper 1' | 'Paper 2';
+  answers: any; // Record<string, string> for MCQs, or { text: string, fileUrl?: string } for Paper 2
+  score?: number;
+  grade?: Grade;
+  feedback?: string;
+  gradedStatus: boolean;
+  submittedAt: string;
 }

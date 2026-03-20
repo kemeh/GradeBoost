@@ -8,15 +8,35 @@
         "name": { "type": "string", "description": "Full name of the user." },
         "email": { "type": "string", "format": "email", "description": "Email address of the user." },
         "subject": { "type": "string", "enum": ["Computer Science", "ICT"], "description": "The subject the student is studying." },
+        "school": { "type": "string" },
+        "region": { "type": "string" },
         "assignedPapers": { "type": "array", "items": { "type": "string" }, "description": "List of paper IDs assigned to the student." },
         "targetGrade": { "type": "string", "enum": ["A", "B", "C", "D", "F"], "description": "The student's target grade." },
         "role": { "type": "string", "enum": ["student", "admin"], "description": "The user's role in the system." },
         "hasTakenDiagnostic": { "type": "boolean", "description": "Whether the student has completed the diagnostic test." },
         "diagnosticResults": { "type": "object", "description": "Results from the diagnostic test." },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "paid", "pending"] },
+        "paymentDate": { "type": "string", "format": "date-time" },
+        "paymentExpiryDate": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time", "description": "When the user was created." },
         "updatedAt": { "type": "string", "format": "date-time", "description": "When the user was last updated." }
       },
       "required": ["name", "email", "subject", "role", "createdAt"]
+    },
+    "PaymentAudit": {
+      "title": "Payment Audit",
+      "description": "Logs payment attempts and confirmations.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "currency": { "type": "string" },
+        "provider": { "type": "string", "enum": ["MTN", "Orange"] },
+        "transactionId": { "type": "string" },
+        "status": { "type": "string", "enum": ["initiated", "success", "failed"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "provider", "status", "timestamp"]
     },
     "QuestionPaper": {
       "title": "Question Paper",
@@ -51,6 +71,55 @@
         "completedAt": { "type": "string", "format": "date-time", "description": "When the exam was submitted." }
       },
       "required": ["userId", "paperId", "subject", "paperType", "answers", "score", "grade", "completedAt"]
+    },
+    "DailyDrill": {
+      "title": "Daily Drill",
+      "description": "Stores daily topic-based questions for the 60-day challenge.",
+      "type": "object",
+      "properties": {
+        "dayNumber": { "type": "integer", "description": "Day number (1-60)." },
+        "subject": { "type": "string", "enum": ["Computer Science", "ICT"] },
+        "topic": { "type": "string", "description": "The topic for the day." },
+        "paperType": { "type": "string", "enum": ["Paper 1", "Paper 2"] },
+        "questions": { "type": "array", "items": { "type": "object" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "uploadedBy": { "type": "string" }
+      },
+      "required": ["dayNumber", "subject", "topic", "paperType", "questions", "createdAt", "uploadedBy"]
+    },
+    "DailyDrillSubmission": {
+      "title": "Daily Drill Submission",
+      "description": "Stores student submissions for daily drills.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "drillId": { "type": "string" },
+        "dayNumber": { "type": "integer" },
+        "subject": { "type": "string" },
+        "paperType": { "type": "string" },
+        "answers": { "type": "object" },
+        "score": { "type": "number" },
+        "grade": { "type": "string" },
+        "feedback": { "type": "string" },
+        "gradedStatus": { "type": "boolean" },
+        "submittedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "drillId", "dayNumber", "subject", "paperType", "answers", "gradedStatus", "submittedAt"]
+    }
+    "SecurityAudit": {
+      "title": "Security Audit",
+      "description": "Logs unauthorized access attempts and security errors.",
+      "type": "object",
+      "properties": {
+        "error": { "type": "string" },
+        "operationType": { "type": "string" },
+        "path": { "type": "string" },
+        "authInfo": { "type": "object" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "ip": { "type": "string" },
+        "userAgent": { "type": "string" }
+      },
+      "required": ["error", "timestamp"]
     }
   },
   "firestore": {
@@ -65,6 +134,22 @@
     "/results/{resultId}": {
       "schema": "ExamResult",
       "description": "Student exam results."
+    },
+    "/dailyDrills/{drillId}": {
+      "schema": "DailyDrill",
+      "description": "Daily drill questions."
+    },
+    "/dailyDrillSubmissions/{submissionId}": {
+      "schema": "DailyDrillSubmission",
+      "description": "Student daily drill submissions."
+    },
+    "/paymentAudit/{auditId}": {
+      "schema": "PaymentAudit",
+      "description": "Payment audit logs."
+    },
+    "/securityAudit/{auditId}": {
+      "schema": "SecurityAudit",
+      "description": "Security audit logs."
     }
   }
 }

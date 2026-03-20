@@ -1,0 +1,97 @@
+import React, { useState } from 'react';
+import { sendEmailVerification } from 'firebase/auth';
+import { auth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
+import { Button } from '../components/ui';
+import { Mail, RefreshCw, LogOut, CheckCircle } from 'lucide-react';
+import { motion } from 'motion/react';
+
+const VerifyEmail: React.FC = () => {
+  const { firebaseUser, logout } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleResend = async () => {
+    if (!firebaseUser) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await sendEmailVerification(firebaseUser);
+      setSent(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to send verification email.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center"
+      >
+        <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Mail className="w-8 h-8 text-indigo-600" />
+        </div>
+        
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">Verify your email</h1>
+        <p className="text-slate-600 mb-8">
+          We've sent a verification email to <span className="font-semibold text-slate-900">{firebaseUser?.email}</span>. 
+          Please check your inbox and click the link to verify your account.
+        </p>
+
+        {sent && (
+          <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl flex items-center gap-3 mb-6 text-sm">
+            <CheckCircle className="w-5 h-5 flex-shrink-0" />
+            <p>Verification email resent successfully!</p>
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-sm">
+            {error}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="w-full h-12 text-lg"
+          >
+            I've verified my email
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            onClick={handleResend} 
+            disabled={loading}
+            className="w-full h-12 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <RefreshCw className="w-5 h-5 animate-spin" />
+            ) : (
+              "Resend verification email"
+            )}
+          </Button>
+
+          <button 
+            onClick={logout}
+            className="text-slate-500 hover:text-slate-700 text-sm font-medium flex items-center justify-center gap-2 mx-auto mt-4"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign out
+          </button>
+        </div>
+
+        <p className="mt-8 text-xs text-slate-400">
+          Can't find the email? Check your spam folder or try resending.
+        </p>
+      </motion.div>
+    </div>
+  );
+};
+
+export default VerifyEmail;

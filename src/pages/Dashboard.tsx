@@ -16,7 +16,7 @@ import { auth, db } from '../firebase';
 import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, Progress, cn } from '../components/ui';
-import { Grade, ExamResult } from '../types';
+import { Grade, ExamResult, DailyDrill } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 const MOCK_TREND_DATA = [
@@ -40,29 +40,51 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [results, setResults] = useState<ExamResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [todayDrill, setTodayDrill] = useState<DailyDrill | null>(null);
+  const [daysRemaining, setDaysRemaining] = useState(60);
 
   useEffect(() => {
-    const fetchResults = async () => {
+    const fetchData = async () => {
       if (!user) return;
-      const path = 'results';
+      
       try {
+        // Fetch Results
+        const resultsPath = 'results';
         const q = query(
-          collection(db, path),
+          collection(db, resultsPath),
           where('userId', '==', user.uid),
           orderBy('completedAt', 'desc'),
           limit(10)
         );
         const querySnapshot = await getDocs(q);
         const resultsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult));
-        setResults(resultsData.reverse()); // Chronological for trend
+        setResults(resultsData.reverse());
+
+        // Fetch Daily Drill
+        const challengeStartDate = new Date('2024-03-01');
+        const today = new Date();
+        const diffTime = Math.abs(today.getTime() - challengeStartDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const currentDay = Math.min(Math.max(diffDays, 1), 60);
+        setDaysRemaining(60 - currentDay);
+
+        const drillQ = query(
+          collection(db, 'dailyDrills'), 
+          where('dayNumber', '==', currentDay),
+          where('subject', '==', user.subject)
+        );
+        const drillSnapshot = await getDocs(drillQ);
+        if (!drillSnapshot.empty) {
+          setTodayDrill({ id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill);
+        }
       } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, path);
+        console.error("Error fetching dashboard data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchResults();
+    fetchData();
   }, [user]);
 
   const trendData = useMemo(() => {
@@ -102,6 +124,61 @@ export default function Dashboard() {
     return 'F';
   }, [readiness]);
 
+  const insights = useMemo(() => {
+    const paperScores = paperData.filter(p => p.score > 0);
+    if (paperScores.length === 0) {
+      return [
+        { 
+          type: 'action', 
+          title: 'Get Started', 
+          desc: 'Complete your first practice session to unlock smart insights.',
+          icon: Zap,
+          color: 'text-amber-600',
+          bg: 'bg-amber-50'
+        }
+      ];
+    }
+
+    const sorted = [...paperScores].sort((a, b) => a.score - b.score);
+    const weakest = sorted[0];
+    const strongest = sorted[sorted.length - 1];
+
+    const list = [];
+
+    if (weakest.score < 70) {
+      list.push({
+        type: 'weakness',
+        title: `${weakest.name} Gap`,
+        desc: `Your ${weakest.name} scores are averaging ${weakest.score}%. Focus on this area to reach an A.`,
+        icon: AlertCircle,
+        color: 'text-red-600',
+        bg: 'bg-red-50'
+      });
+    }
+
+    list.push({
+      type: 'action',
+      title: 'Recommended Focus',
+      desc: `Practice 3 structured questions from ${weakest.name} today to improve your accuracy.`,
+      icon: Zap,
+      color: 'text-amber-600',
+      bg: 'bg-amber-50'
+    });
+
+    if (strongest.score >= 80) {
+      list.push({
+        type: 'strength',
+        title: `${strongest.name} Mastery`,
+        desc: `You are hitting ${strongest.score}% in ${strongest.name}. Keep maintaining this consistency.`,
+        icon: CheckCircle2,
+        color: 'text-emerald-600',
+        bg: 'bg-emerald-50'
+      });
+    }
+
+    return list;
+  }, [paperData]);
+
   const handleLogout = () => {
     auth.signOut();
     navigate('/');
@@ -128,8 +205,8 @@ export default function Dashboard() {
       <main className="flex-1 lg:ml-72 p-6 md:p-12 pt-24 lg:pt-12">
         <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Welcome, {user.name}</h1>
-            <p className="text-slate-500 font-medium">Your path to an A in {user.subject} is 72% complete.</p>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Welcome, {user.name}! Ready to improve to an A grade?</h1>
+            <p className="text-slate-500 font-medium">You have full access to all practice materials, interactive quizzes, and performance insights.</p>
           </div>
           <div className="flex items-center gap-4">
             {user.role === 'student' && user.paymentExpiryDate && (
@@ -143,6 +220,52 @@ export default function Dashboard() {
             </div>
           </div>
         </header>
+
+        {/* Daily Drill Highlight */}
+        <section className="mb-12">
+          <Card className="p-8 bg-indigo-600 text-white overflow-hidden relative">
+            <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest">
+                    Day {60 - daysRemaining} of 60
+                  </div>
+                  <Badge variant="secondary" className="bg-amber-400 text-amber-950 border-none">Daily Drill</Badge>
+                </div>
+                <h2 className="text-3xl font-black mb-2 tracking-tight">
+                  {todayDrill ? `Today's Topic: ${todayDrill.topic}` : "Today's Drill is Loading..."}
+                </h2>
+                <p className="text-indigo-100 font-medium mb-6 max-w-xl">
+                  {todayDrill 
+                    ? `Master ${todayDrill.topic} with today's ${todayDrill.paperType} drill. Keep your streak alive!`
+                    : "Get ready for your daily challenge. Consistency is key to achieving an A grade."}
+                </p>
+                <div className="flex flex-wrap gap-4">
+                  <Button 
+                    variant="secondary" 
+                    className="bg-white text-indigo-600 hover:bg-indigo-50 font-black px-8 py-6 rounded-2xl"
+                    onClick={() => navigate('/daily-drill')}
+                  >
+                    Start Drill Now
+                    <ArrowRight className="ml-2" size={20} />
+                  </Button>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
+                    <Trophy className="text-amber-400" size={20} />
+                    <span className="text-sm font-bold">{daysRemaining} Days Left in Challenge</span>
+                  </div>
+                </div>
+              </div>
+              <div className="hidden lg:block relative">
+                <div className="w-48 h-48 bg-white/10 rounded-full flex items-center justify-center animate-pulse">
+                  <Zap size={80} className="text-white/20" />
+                </div>
+              </div>
+            </div>
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/20 rounded-full -ml-32 -mb-32 blur-3xl"></div>
+          </Card>
+        </section>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -163,6 +286,72 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
+
+        {/* PDFs & Resources Section */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                <FileText size={20} />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">PDFs & Resources</h2>
+            </div>
+            <Link to="/papers" className="text-indigo-600 font-black text-xs uppercase tracking-widest hover:underline">View All</Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { title: 'Syllabus Guide', type: 'PDF', size: '1.2 MB' },
+              { title: 'Formula Sheet', type: 'PDF', size: '0.8 MB' },
+              { title: 'Exam Tips', type: 'PDF', size: '2.1 MB' },
+            ].map((resource, i) => (
+              <Card key={i} className="p-6 hover:border-indigo-200 transition-all group cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:text-indigo-600 transition-colors">
+                      <FileText size={24} />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900">{resource.title}</p>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{resource.type} • {resource.size}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="text-slate-300 group-hover:text-indigo-600 transition-all" size={20} />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Admin-Assigned Papers Section */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
+                <Trophy size={20} />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Assigned for You</h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              { title: 'Mock Exam 2025', paper: 'Paper 1', due: 'In 2 days' },
+              { title: 'Practical Session', paper: 'Paper 3', due: 'In 5 days' },
+            ].map((assigned, i) => (
+              <Card key={i} className="p-8 border-l-4 border-l-amber-500 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4">
+                  <Badge variant="secondary" className="bg-amber-50 text-amber-700 border-amber-100">{assigned.due}</Badge>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-900">{assigned.title}</h3>
+                    <p className="text-slate-500 font-medium">{assigned.paper} • {user.subject}</p>
+                  </div>
+                  <Button className="bg-slate-900 hover:bg-black text-white">Start Now</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </section>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
           {/* Performance Trend */}
@@ -215,32 +404,7 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-6">
-              {[
-                { 
-                  type: 'weakness', 
-                  title: 'Paper 2 Gap', 
-                  desc: 'Your structured answers are 15% below target. Focus on keyword accuracy.',
-                  icon: AlertCircle,
-                  color: 'text-red-600',
-                  bg: 'bg-red-50'
-                },
-                { 
-                  type: 'action', 
-                  title: 'Recommended Focus', 
-                  desc: 'Practice 3 structured questions from 2023 Paper 2 today.',
-                  icon: Zap,
-                  color: 'text-amber-600',
-                  bg: 'bg-amber-50'
-                },
-                { 
-                  type: 'strength', 
-                  title: 'MCQ Mastery', 
-                  desc: 'You are hitting 85% in Paper 1. Keep maintaining this consistency.',
-                  icon: CheckCircle2,
-                  color: 'text-emerald-600',
-                  bg: 'bg-emerald-50'
-                }
-              ].map((insight, i) => (
+              {insights.map((insight, i) => (
                 <div key={i} className="flex gap-4">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", insight.bg, insight.color)}>
                     <insight.icon size={20} />
