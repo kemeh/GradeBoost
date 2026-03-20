@@ -26,7 +26,9 @@ export default function AdminDailyDrill() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDrillModal, setShowDrillModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingDrillId, setEditingDrillId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'drills' | 'grading'>('drills');
   const [gradingSubmission, setGradingSubmission] = useState<any | null>(null);
 
@@ -126,6 +128,20 @@ export default function AdminDailyDrill() {
     setQuestions(newQuestions);
   };
 
+  const handleEditDrill = (drill: DailyDrill) => {
+    setEditingDrillId(drill.id);
+    setIsEditing(true);
+    setFormData({
+      dayNumber: drill.dayNumber,
+      subject: drill.subject,
+      topic: drill.topic,
+      paperType: drill.paperType,
+      isFreeSample: drill.isFreeSample || false,
+    });
+    setQuestions(drill.questions);
+    setShowDrillModal(true);
+  };
+
   const handleSubmitDrill = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -133,35 +149,50 @@ export default function AdminDailyDrill() {
     setLoading(true);
     setError('');
     try {
-      // Check for duplicates
-      const q = query(
-        collection(db, 'dailyDrills'),
-        where('dayNumber', '==', formData.dayNumber),
-        where('subject', '==', formData.subject),
-        where('paperType', '==', formData.paperType),
-        where('topic', '==', formData.topic)
-      );
-      const snapshot = await getDocs(q);
-      if (!snapshot.empty) {
-        throw new Error('A drill for this day, subject, paper type, and topic already exists.');
+      if (!isEditing) {
+        // Check for duplicates only on create
+        const q = query(
+          collection(db, 'dailyDrills'),
+          where('dayNumber', '==', formData.dayNumber),
+          where('subject', '==', formData.subject),
+          where('paperType', '==', formData.paperType),
+          where('topic', '==', formData.topic)
+        );
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          throw new Error('A drill for this day, subject, paper type, and topic already exists.');
+        }
+
+        await addDoc(collection(db, 'dailyDrills'), {
+          ...formData,
+          questions: questions.map((q, i) => ({ ...q, id: `q${i + 1}` })),
+          createdAt: serverTimestamp(),
+          uploadedBy: user.uid,
+          gradedStatus: false,
+        });
+        setSuccess('Daily Drill added successfully!');
+      } else if (editingDrillId) {
+        await updateDoc(doc(db, 'dailyDrills', editingDrillId), {
+          ...formData,
+          questions: questions.map((q, i) => ({ ...q, id: q.id || `q${i + 1}` })),
+          updatedAt: serverTimestamp(),
+        });
+        setSuccess('Daily Drill updated successfully!');
       }
 
-      await addDoc(collection(db, 'dailyDrills'), {
-        ...formData,
-        questions: questions.map((q, i) => ({ ...q, id: `q${i + 1}` })),
-        createdAt: serverTimestamp(),
-        uploadedBy: user.uid,
-        gradedStatus: false,
-      });
-
-      setSuccess('Daily Drill added successfully!');
-      setShowAddModal(false);
+      setShowDrillModal(false);
+      setIsEditing(false);
+      setEditingDrillId(null);
       setFormData({ dayNumber: 1, subject: 'Computer Science', topic: '', paperType: 'Paper 1', isFreeSample: false });
       setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '', isFreeSample: false }]);
       fetchDrills();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
-      handleFirestoreError(err, OperationType.CREATE, 'dailyDrills');
+      if (isEditing) {
+        handleFirestoreError(err, OperationType.UPDATE, 'dailyDrills');
+      } else {
+        handleFirestoreError(err, OperationType.CREATE, 'dailyDrills');
+      }
     } finally {
       setLoading(false);
     }
@@ -239,7 +270,13 @@ export default function AdminDailyDrill() {
             >
               Grading
             </Button>
-            <Button onClick={() => setShowAddModal(true)} className="group">
+            <Button onClick={() => {
+              setIsEditing(false);
+              setEditingDrillId(null);
+              setFormData({ dayNumber: 1, subject: 'Computer Science', topic: '', paperType: 'Paper 1', isFreeSample: false });
+              setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '', isFreeSample: false }]);
+              setShowDrillModal(true);
+            }} className="group">
               <Plus className="mr-2" size={20} /> Add Daily Drill
             </Button>
           </div>
@@ -325,12 +362,20 @@ export default function AdminDailyDrill() {
               <Card key={drill.id} className="p-6 hover:shadow-xl transition-all group">
                 <div className="flex justify-between items-start mb-4">
                   <Badge variant="primary">Day {drill.dayNumber}</Badge>
-                  <button 
-                    onClick={() => handleDeleteDrill(drill.id)}
-                    className="p-2 text-slate-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={() => handleEditDrill(drill)}
+                      className="p-2 text-slate-300 hover:text-indigo-600 transition-colors"
+                    >
+                      <Edit3 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => handleDeleteDrill(drill.id)}
+                      className="p-2 text-slate-300 hover:text-red-600 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
                 <h3 className="text-lg font-black text-slate-900 mb-1">{drill.topic}</h3>
                 <div className="flex items-center gap-2 mb-4">
@@ -416,11 +461,11 @@ export default function AdminDailyDrill() {
           </Card>
         )}
 
-        {/* Add Drill Modal */}
+        {/* Drill Modal */}
         <AnimatePresence>
-          {showAddModal && (
+          {showDrillModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
+              <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setShowDrillModal(false)} />
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -429,8 +474,10 @@ export default function AdminDailyDrill() {
               >
                 <Card className="p-8 shadow-2xl">
                   <div className="flex justify-between items-center mb-8">
-                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Add Daily Drill</h2>
-                    <button onClick={() => setShowAddModal(false)} className="p-2 text-slate-400 hover:text-slate-900">
+                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                      {isEditing ? 'Edit Daily Drill' : 'Add Daily Drill'}
+                    </h2>
+                    <button onClick={() => setShowDrillModal(false)} className="p-2 text-slate-400 hover:text-slate-900">
                       <X size={24} />
                     </button>
                   </div>
@@ -467,11 +514,13 @@ export default function AdminDailyDrill() {
                           onChange={e => {
                             const newType = e.target.value as 'Paper 1' | 'Paper 2' | 'Paper 3';
                             setFormData({ ...formData, paperType: newType });
-                            // Reset questions structure based on type
-                            if (newType === 'Paper 1') {
-                              setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }]);
-                            } else {
-                              setQuestions([{ questionText: '', reasoning: '' }]);
+                            // Reset questions structure based on type if not editing or if type changed
+                            if (!isEditing || newType !== formData.paperType) {
+                              if (newType === 'Paper 1') {
+                                setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }]);
+                              } else {
+                                setQuestions([{ questionText: '', reasoning: '' }]);
+                              }
                             }
                           }}
                         >
@@ -491,15 +540,43 @@ export default function AdminDailyDrill() {
                           onChange={e => setFormData({ ...formData, topic: e.target.value })}
                         />
                       </div>
-                      <div className="flex items-center gap-3 pt-8">
-                        <input 
-                          type="checkbox"
-                          id="isFreeSample"
-                          className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                          checked={formData.isFreeSample}
-                          onChange={e => setFormData({ ...formData, isFreeSample: e.target.checked })}
-                        />
-                        <label htmlFor="isFreeSample" className="text-sm font-bold text-slate-700">Mark as Free Sample</label>
+                    </div>
+
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Access Type</label>
+                      <div className="flex gap-6">
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                          <div className={cn(
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                            formData.isFreeSample ? "border-indigo-600 bg-indigo-600" : "border-slate-200 group-hover:border-slate-300"
+                          )}>
+                            {formData.isFreeSample && <div className="w-2 h-2 rounded-full bg-white" />}
+                          </div>
+                          <input 
+                            type="radio"
+                            className="hidden"
+                            name="accessType"
+                            checked={formData.isFreeSample}
+                            onChange={() => setFormData({ ...formData, isFreeSample: true })}
+                          />
+                          <span className={cn("text-sm font-bold transition-colors", formData.isFreeSample ? "text-slate-900" : "text-slate-500")}>Free Sample</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer group">
+                          <div className={cn(
+                            "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
+                            !formData.isFreeSample ? "border-indigo-600 bg-indigo-600" : "border-slate-200 group-hover:border-slate-300"
+                          )}>
+                            {!formData.isFreeSample && <div className="w-2 h-2 rounded-full bg-white" />}
+                          </div>
+                          <input 
+                            type="radio"
+                            className="hidden"
+                            name="accessType"
+                            checked={!formData.isFreeSample}
+                            onChange={() => setFormData({ ...formData, isFreeSample: false })}
+                          />
+                          <span className={cn("text-sm font-bold transition-colors", !formData.isFreeSample ? "text-slate-900" : "text-slate-500")}>Paid Only</span>
+                        </label>
                       </div>
                     </div>
 
@@ -592,13 +669,13 @@ export default function AdminDailyDrill() {
                         type="button" 
                         variant="outline" 
                         className="flex-1" 
-                        onClick={() => setShowAddModal(false)}
+                        onClick={() => setShowDrillModal(false)}
                         disabled={loading}
                       >
                         Cancel
                       </Button>
                       <Button type="submit" className="flex-1" disabled={loading}>
-                        {loading ? 'Saving...' : 'Save Daily Drill'}
+                        {loading ? 'Saving...' : isEditing ? 'Update Daily Drill' : 'Save Daily Drill'}
                       </Button>
                     </div>
                   </form>

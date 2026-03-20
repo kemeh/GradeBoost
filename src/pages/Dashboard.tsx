@@ -5,7 +5,7 @@ import {
   TrendingUp, Target, BookOpen, Sparkles, 
   ArrowRight, LogOut, LayoutDashboard, 
   FileText, Settings, Trophy, AlertCircle,
-  Zap, ChevronRight, CheckCircle2
+  Zap, ChevronRight, CheckCircle2, Lock
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
@@ -258,7 +258,11 @@ export default function Dashboard() {
         <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Welcome, {user.name}! Ready to improve to an A grade?</h1>
-            <p className="text-slate-500 font-medium">You have full access to all practice materials, interactive quizzes, and performance insights.</p>
+            <p className="text-slate-500 font-medium">
+              {user.paymentStatus === 'paid' 
+                ? "You have full access to all practice materials, interactive quizzes, and performance insights."
+                : "Try our free sample questions or unlock the full course for complete access to all materials."}
+            </p>
           </div>
           <div className="flex items-center gap-4">
             {user.role === 'student' && user.paymentExpiryDate && (
@@ -293,28 +297,39 @@ export default function Dashboard() {
                     : "Get ready for your daily challenge. Consistency is key to achieving an A grade."}
                 </p>
                 <div className="flex flex-wrap gap-4">
-                  <Button 
-                    variant="secondary" 
-                    className={cn(
-                      "font-black px-8 py-6 rounded-2xl transition-all",
-                      hasSubmittedToday 
-                        ? "bg-emerald-400 text-emerald-950 cursor-default" 
-                        : "bg-white text-indigo-600 hover:bg-indigo-50"
-                    )}
-                    onClick={() => !hasSubmittedToday && navigate('/daily-drill')}
-                  >
-                    {hasSubmittedToday ? (
-                      <>
-                        <CheckCircle2 className="mr-2" size={20} />
-                        Completed Today
-                      </>
-                    ) : (
-                      <>
-                        Start Drill Now
-                        <ArrowRight className="ml-2" size={20} />
-                      </>
-                    )}
-                  </Button>
+                  {user.paymentStatus === 'paid' || (todayDrill && (todayDrill.dayNumber === 1 || todayDrill.isFreeSample)) ? (
+                    <Button 
+                      variant="secondary" 
+                      className={cn(
+                        "font-black px-8 py-6 rounded-2xl transition-all",
+                        hasSubmittedToday 
+                          ? "bg-emerald-400 text-emerald-950 cursor-default" 
+                          : "bg-white text-indigo-600 hover:bg-indigo-50"
+                      )}
+                      onClick={() => !hasSubmittedToday && navigate('/daily-drill')}
+                    >
+                      {hasSubmittedToday ? (
+                        <>
+                          <CheckCircle2 className="mr-2" size={20} />
+                          Completed Today
+                        </>
+                      ) : (
+                        <>
+                          Start Drill Now
+                          <ArrowRight className="ml-2" size={20} />
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button 
+                      variant="secondary" 
+                      className="font-black px-8 py-6 rounded-2xl bg-indigo-500/50 text-indigo-200 cursor-not-allowed"
+                      onClick={() => navigate('/payment')}
+                    >
+                      <Lock className="mr-2" size={20} />
+                      Unlock to Start
+                    </Button>
+                  )}
                   <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
                     <Trophy className="text-amber-400" size={20} />
                     <span className="text-sm font-bold">{daysRemaining} Days Left in Challenge</span>
