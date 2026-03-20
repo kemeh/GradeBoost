@@ -102,14 +102,18 @@ export default function Admin() {
       expiry.setDate(now.getDate() + 30);
 
       const auditRef = doc(collection(db, 'paymentAudit'));
-      await setDoc(auditRef, {
-        userId,
-        amount: 1000,
-        provider: 'Manual',
-        status: 'SUCCESSFUL',
-        timestamp: serverTimestamp(),
-        reference: `manual_${Date.now()}`
-      });
+      try {
+        await setDoc(auditRef, {
+          userId,
+          amount: 1000,
+          provider: 'Manual',
+          status: 'success',
+          timestamp: serverTimestamp(),
+          reference: `manual_${Date.now()}`
+        });
+      } catch (err: any) {
+        handleFirestoreError(err, OperationType.CREATE, 'paymentAudit');
+      }
 
       await updateDoc(doc(db, 'users', userId), {
         paymentStatus: 'paid',
@@ -117,9 +121,10 @@ export default function Admin() {
         paymentExpiryDate: expiry.toISOString(),
       });
       fetchUsers();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error approving payment:", err);
       setError('Failed to approve payment. Please try again.');
+      try { handleFirestoreError(err, OperationType.UPDATE, `users/${userId}`); } catch(e) {}
     }
   };
 
@@ -134,14 +139,18 @@ export default function Admin() {
       if (approve) {
         // Log in audit
         const auditRef = doc(collection(db, 'paymentAudit'));
-        await setDoc(auditRef, {
-          userId,
-          amount: 1000,
-          provider: 'Manual',
-          status: 'SUCCESSFUL',
-          timestamp: serverTimestamp(),
-          reference: `manual_${requestId}`
-        });
+        try {
+          await setDoc(auditRef, {
+            userId,
+            amount: 1000,
+            provider: 'Manual',
+            status: 'success',
+            timestamp: serverTimestamp(),
+            reference: `manual_${requestId}`
+          });
+        } catch (err: any) {
+          handleFirestoreError(err, OperationType.CREATE, 'paymentAudit');
+        }
 
         // Update user
         await updateDoc(doc(db, 'users', userId), {
@@ -164,9 +173,10 @@ export default function Admin() {
 
       fetchManualRequests();
       fetchUsers();
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error processing manual request:", err);
       setError('Failed to process manual request.');
+      try { handleFirestoreError(err, OperationType.UPDATE, `manualPaymentRequests/${requestId}`); } catch(e) {}
     }
   };
 

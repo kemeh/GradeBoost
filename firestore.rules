@@ -146,15 +146,17 @@ service cloud.firestore {
              (!('phone' in data) || isValidPhone(data.phone)) &&
              data.subject in ["Computer Science", "ICT"] &&
              data.role in ["student", "admin"] &&
-             data.createdAt is timestamp &&
-             (!('paymentStatus' in data) || data.paymentStatus in ["unpaid", "paid", "pending"]);
+             (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('paymentStatus' in data) || data.paymentStatus in ["unpaid", "paid", "pending"]) &&
+             (!('paymentDate' in data) || data.paymentDate is string) &&
+             (!('paymentExpiryDate' in data) || data.paymentExpiryDate is string);
     }
 
     function isValidPaymentAudit(data) {
       return (data.userId is string &&
               data.amount is number &&
-              data.provider in ["MTN", "Orange"] &&
-              data.status in ["initiated", "success", "failed"] &&
+              data.provider in ["MTN", "Orange", "Manual"] &&
+              data.status in ["initiated", "success", "failed", "SUCCESSFUL"] &&
               data.timestamp is timestamp) ||
              (data.adminId is string &&
               data.adminEmail is string &&
@@ -173,7 +175,7 @@ service cloud.firestore {
              data.reference is string &&
              data.amount is number &&
              data.status in ['pending', 'approved', 'rejected'] &&
-             data.timestamp is timestamp;
+             (!('timestamp' in data) || data.timestamp is timestamp);
     }
 
     function isValidQuestionPaper(data) {
