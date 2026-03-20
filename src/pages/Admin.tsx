@@ -9,21 +9,27 @@ import {
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { QuestionPaper, Subject, PaperType } from '../types';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 
 export default function Admin() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const [activeTab, setActiveTab] = useState<'papers' | 'payments'>('papers');
+  const activeTab = (searchParams.get('tab') as 'papers' | 'payments') || 'papers';
   const [users, setUsers] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const setActiveTab = (tab: 'papers' | 'payments') => {
+    setSearchParams({ tab });
+  };
 
   const [formData, setFormData] = useState({
     title: '',
@@ -143,79 +149,11 @@ export default function Admin() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-slate-100 hidden lg:flex flex-col p-8 fixed h-full z-20">
-        <div className="flex items-center gap-2 mb-12">
-          <img 
-            src="https://ais-dev-ph2spjdss3zj2jll4pbjwl-332084451562.europe-west2.run.app/logo.png" 
-            alt="GradeBoost 60 Logo" 
-            className="h-10 w-auto"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-          <div className="hidden w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-            <TrendingUp className="text-white" size={20} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black text-slate-900 tracking-tight">Admin Console</span>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Vertexon Technologies Admin Panel</span>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {[
-            { icon: LayoutDashboard, label: 'Overview', onClick: () => setActiveTab('papers'), active: activeTab === 'papers' },
-            { icon: CreditCard, label: 'Payments', onClick: () => setActiveTab('payments'), active: activeTab === 'payments' },
-            { icon: Users, label: 'Manage Users', path: '#' },
-            { icon: BarChart3, label: 'Analytics', path: '#' },
-            { icon: ShieldCheck, label: 'Security', path: '#' },
-          ].map((item, i) => (
-            item.onClick ? (
-              <button 
-                key={i} 
-                onClick={item.onClick}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all w-full text-left",
-                  item.active 
-                    ? "bg-indigo-50 text-indigo-600" 
-                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                )}
-              >
-                <item.icon size={20} />
-                {item.label}
-              </button>
-            ) : (
-              <Link 
-                key={i} 
-                to={item.path || '#'}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all",
-                  item.active 
-                    ? "bg-indigo-50 text-indigo-600" 
-                    : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                )}
-              >
-                <item.icon size={20} />
-                {item.label}
-              </Link>
-            )
-          ))}
-        </nav>
-
-        <button 
-          onClick={handleLogout}
-          className="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all mt-auto"
-        >
-          <LogOut size={20} />
-          Logout
-        </button>
-      </aside>
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-72 p-8 md:p-12">
+      <main className="flex-1 lg:ml-72 p-6 md:p-12 pt-24 lg:pt-12">
         <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Admin Dashboard</h1>

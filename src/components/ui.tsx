@@ -34,10 +34,11 @@ Card.displayName = "Card";
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success';
   size?: 'sm' | 'md' | 'lg' | 'icon';
+  loading?: boolean;
 }
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = 'primary', size = 'md', ...props }, ref) => {
+  ({ className, variant = 'primary', size = 'md', loading, disabled, children, ...props }, ref) => {
     const variants = {
       primary: "bg-slate-900 text-white hover:bg-black shadow-lg shadow-slate-200 active:scale-[0.98]",
       secondary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg shadow-indigo-100 active:scale-[0.98]",
@@ -57,6 +58,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
+        disabled={disabled || loading}
         className={cn(
           "inline-flex items-center justify-center transition-all disabled:opacity-50 disabled:pointer-events-none",
           variants[variant],
@@ -64,7 +66,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           className
         )}
         {...props}
-      />
+      >
+        {loading ? (
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            <span>Loading...</span>
+          </div>
+        ) : children}
+      </button>
     );
   }
 );
@@ -74,7 +83,7 @@ Button.displayName = "Button";
  * Badge Component
  */
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'primary';
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'secondary';
 }
 
 export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
@@ -86,6 +95,7 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
       danger: "bg-red-50 text-red-600 border border-red-100",
       info: "bg-blue-50 text-blue-600 border border-blue-100",
       primary: "bg-indigo-50 text-indigo-600 border border-indigo-100",
+      secondary: "bg-slate-100 text-slate-600 border border-slate-200",
     };
 
     return (

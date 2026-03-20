@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { 
   User, Mail, School, MapPin, 
-  ChevronRight, ArrowLeft, Save,
-  TrendingUp, LayoutDashboard, FileText,
-  Target, Trophy, Settings, LogOut
+  ChevronRight, Save,
+  TrendingUp, CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
-import { auth, db } from '../firebase';
+import { db } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import Sidebar from '../components/Sidebar';
 
 export default function Profile() {
   const { user } = useAuth();
@@ -23,11 +23,6 @@ export default function Profile() {
     school: user?.school || '',
     region: user?.region || '',
   });
-
-  const handleLogout = () => {
-    auth.signOut();
-    navigate('/');
-  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,188 +49,190 @@ export default function Profile() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-slate-100 hidden lg:flex flex-col p-8 fixed h-full z-20">
-        <div className="flex items-center gap-2 mb-12">
-          <img 
-            src="https://ais-dev-ph2spjdss3zj2jll4pbjwl-332084451562.europe-west2.run.app/logo.png" 
-            alt="GradeBoost 60 Logo" 
-            className="h-10 w-auto"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-          <div className="hidden w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-            <TrendingUp className="text-white" size={20} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black text-slate-900 tracking-tight">GradeBoost 60</span>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">by Vertexon Technologies</span>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {[
-            { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-            { icon: FileText, label: 'Practice Papers', path: '/practice' },
-            { icon: Target, label: 'Diagnostic', path: '/diagnostic' },
-            { icon: Trophy, label: 'Achievements', path: '#' },
-            { icon: Settings, label: 'Profile Settings', path: '/profile', active: true },
-          ].map((item, i) => (
-            <Link 
-              key={i} 
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all",
-                item.active 
-                  ? "bg-indigo-50 text-indigo-600" 
-                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              )}
-            >
-              <item.icon size={20} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-auto space-y-6">
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-              This platform is developed by Vertexon Technologies to help students improve and achieve academic excellence.
-            </p>
-          </div>
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all w-full"
-          >
-            <LogOut size={20} />
-            Logout
-          </button>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-72 p-8 md:p-12">
-        <header className="flex items-center gap-4 mb-12">
-          <Link to="/dashboard" className="w-12 h-12 bg-white rounded-2xl border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors shadow-sm">
-            <ArrowLeft size={20} />
-          </Link>
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Profile Settings</h1>
-            <p className="text-slate-500 font-medium">Manage your personal information and academic details.</p>
-          </div>
-        </header>
-
-        <div className="max-w-3xl">
-          <Card className="p-12">
-            <form onSubmit={handleUpdateProfile} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Name */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
-                  <div className="relative group">
-                    <User className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
-                    <input 
-                      type="text"
-                      required
-                      className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
-                      value={formData.name}
-                      onChange={e => setFormData({ ...formData, name: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Email (Read-only) */}
-                <div className="space-y-2 opacity-60">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                    <input 
-                      type="email"
-                      readOnly
-                      className="w-full pl-14 pr-6 py-4 bg-slate-100 border border-slate-200 rounded-2xl font-bold text-slate-500 cursor-not-allowed outline-none"
-                      value={user.email}
-                    />
-                  </div>
-                </div>
-
-                {/* School */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">School Name</label>
-                  <div className="relative group">
-                    <School className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
-                    <input 
-                      type="text"
-                      required
-                      className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
-                      value={formData.school}
-                      onChange={e => setFormData({ ...formData, school: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                {/* Region */}
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Region</label>
-                  <div className="relative group">
-                    <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
-                    <input 
-                      type="text"
-                      required
-                      className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
-                      value={formData.region}
-                      onChange={e => setFormData({ ...formData, region: e.target.value })}
-                    />
-                  </div>
-                </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+      <Sidebar />
+      
+      <main className="flex-1 lg:ml-72 pt-24 lg:pt-12 p-6 lg:p-12">
+        <div className="max-w-4xl mx-auto space-y-12">
+          {/* Header */}
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-indigo-600">
+                <TrendingUp size={20} />
+                <span className="text-sm font-black uppercase tracking-widest">Profile Settings</span>
               </div>
-
-              <div className="pt-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {success && (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center gap-2 text-emerald-600 font-bold text-sm"
-                    >
-                      <div className="w-5 h-5 bg-emerald-100 rounded-full flex items-center justify-center">
-                        <Save size={12} />
-                      </div>
-                      Profile updated successfully!
-                    </motion.div>
-                  )}
-                </div>
-                <Button 
-                  type="submit" 
-                  size="lg" 
-                  disabled={loading}
-                  className="min-w-[200px]"
-                >
-                  {loading ? 'Saving...' : 'Save Changes'}
-                  {!loading && <Save className="ml-2" size={20} />}
-                </Button>
-              </div>
-            </form>
-          </Card>
-
-          {/* Academic Stats Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-            <Card className="p-8 bg-indigo-600 text-white border-none">
-              <p className="text-[10px] font-black text-indigo-200 uppercase tracking-widest mb-1">Subject</p>
-              <p className="text-2xl font-black">{user.subject}</p>
-            </Card>
-            <Card className="p-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Member Since</p>
-              <p className="text-2xl font-black text-slate-900">
-                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+              <h1 className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tight leading-none">
+                Your <span className="text-indigo-600 italic">Account</span>
+              </h1>
+              <p className="text-slate-500 font-medium max-w-md">
+                Manage your personal information and track your progress across the platform.
               </p>
-            </Card>
-            <Card className="p-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
-              <Badge variant="success" className="mt-1">Active Student</Badge>
-            </Card>
+            </div>
+            
+            <div className="flex items-center gap-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black">
+                {user.name?.charAt(0) || 'U'}
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-black text-slate-900 leading-tight">{user.name}</span>
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{user.role}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Form */}
+            <div className="lg:col-span-2 space-y-8">
+              <Card className="p-8 lg:p-12">
+                <form onSubmit={handleUpdateProfile} className="space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <User size={12} /> Full Name
+                      </label>
+                      <input 
+                        type="text"
+                        required
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
+                        value={formData.name}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="space-y-3 opacity-60">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <Mail size={12} /> Email Address
+                      </label>
+                      <input 
+                        type="email"
+                        disabled
+                        className="w-full p-4 bg-slate-100 border border-slate-100 rounded-2xl font-bold text-slate-500 cursor-not-allowed"
+                        value={user.email}
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <School size={12} /> School Name
+                      </label>
+                      <input 
+                        type="text"
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
+                        value={formData.school}
+                        onChange={e => setFormData({ ...formData, school: e.target.value })}
+                        placeholder="Enter your school"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <MapPin size={12} /> Region
+                      </label>
+                      <input 
+                        type="text"
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
+                        value={formData.region}
+                        onChange={e => setFormData({ ...formData, region: e.target.value })}
+                        placeholder="Enter your region"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-4">
+                    <div className="flex items-center gap-2">
+                      {success && (
+                        <motion.div 
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-2 text-emerald-600"
+                        >
+                          <CheckCircle2 size={18} />
+                          <span className="text-xs font-black uppercase tracking-widest">Saved Successfully</span>
+                        </motion.div>
+                      )}
+                    </div>
+                    <Button type="submit" loading={loading} className="px-8">
+                      <Save className="mr-2" size={18} /> Save Changes
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+
+              {/* Security Section */}
+              <Card className="p-8 lg:p-12 border-red-100">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 text-red-600">
+                    <AlertCircle size={20} />
+                    <span className="text-sm font-black uppercase tracking-widest">Security & Privacy</span>
+                  </div>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <h3 className="text-lg font-black text-slate-900">Account Security</h3>
+                      <p className="text-sm text-slate-500 font-medium">Manage your password and authentication methods.</p>
+                    </div>
+                    <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
+                      Change Password
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Sidebar Stats */}
+            <div className="space-y-8">
+              <Card className="p-8 space-y-6 bg-slate-900 text-white border-none">
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subscription Status</span>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-black">{user.paymentStatus === 'paid' ? 'Premium Plan' : 'Free Plan'}</h3>
+                    <Badge variant={user.paymentStatus === 'paid' ? 'success' : 'secondary'}>
+                      {user.paymentStatus === 'paid' ? 'Active' : 'Limited'}
+                    </Badge>
+                  </div>
+                </div>
+                
+                {user.paymentStatus !== 'paid' && (
+                  <Button className="w-full bg-white text-slate-900 hover:bg-slate-100" onClick={() => navigate('/payment')}>
+                    Upgrade Now
+                  </Button>
+                )}
+
+                <div className="pt-6 border-t border-white/10 space-y-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400 font-medium">Member Since</span>
+                    <span className="font-bold">
+                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-400 font-medium">Diagnostic Status</span>
+                    <span className="font-bold text-emerald-400">Completed</span>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-8 space-y-6">
+                <h3 className="text-lg font-black text-slate-900">Quick Actions</h3>
+                <div className="space-y-3">
+                  {[
+                    { label: 'View Progress', icon: TrendingUp, path: '/dashboard' },
+                    { label: 'Practice History', icon: ChevronRight, path: '/practice' },
+                  ].map((action, i) => (
+                    <button 
+                      key={i}
+                      onClick={() => navigate(action.path)}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-indigo-50 group transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <action.icon size={18} className="text-slate-400 group-hover:text-indigo-600" />
+                        <span className="text-sm font-bold text-slate-600 group-hover:text-indigo-600">{action.label}</span>
+                      </div>
+                      <ChevronRight size={16} className="text-slate-300 group-hover:text-indigo-600" />
+                    </button>
+                  ))}
+                </div>
+              </Card>
+            </div>
           </div>
         </div>
       </main>

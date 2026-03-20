@@ -14,6 +14,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
 import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
+import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, Progress, cn } from '../components/ui';
 import { Grade, ExamResult } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
@@ -120,70 +121,11 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-slate-100 hidden lg:flex flex-col p-8 fixed h-full z-20">
-        <div className="flex items-center gap-2 mb-12">
-          <img 
-            src="https://ais-dev-ph2spjdss3zj2jll4pbjwl-332084451562.europe-west2.run.app/logo.png" 
-            alt="GradeBoost 60 Logo" 
-            className="h-10 w-auto"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
-          />
-          <div className="hidden w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-            <TrendingUp className="text-white" size={20} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black text-slate-900 tracking-tight">GradeBoost 60</span>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">by Vertexon Technologies</span>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-2">
-          {[
-            { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', active: true },
-            { icon: FileText, label: 'Practice Papers', path: '/practice' },
-            { icon: Target, label: 'Diagnostic', path: '/diagnostic' },
-            { icon: Trophy, label: 'Achievements', path: '#' },
-            { icon: Settings, label: 'Profile Settings', path: '/profile' },
-          ].map((item, i) => (
-            <Link 
-              key={i} 
-              to={item.path}
-              className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all",
-                item.active 
-                  ? "bg-indigo-50 text-indigo-600" 
-                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-              )}
-            >
-              <item.icon size={20} />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="mt-auto space-y-6">
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-            <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-              This platform is developed by Vertexon Technologies to help students improve and achieve academic excellence.
-            </p>
-          </div>
-          <button 
-            onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all w-full"
-          >
-            <LogOut size={20} />
-            Logout
-          </button>
-        </div>
-      </aside>
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+      <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-72 p-8 md:p-12">
+      <main className="flex-1 lg:ml-72 p-6 md:p-12 pt-24 lg:pt-12">
         <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Welcome, {user.name}</h1>
