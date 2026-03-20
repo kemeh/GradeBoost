@@ -82,6 +82,18 @@ export interface DailyDrill {
   isFreeSample?: boolean; // Added for free sample feature
 }
 
+export interface SampleQuestion {
+  id: string;
+  subject: Subject;
+  topic: string;
+  questionText: string;
+  options: string[]; // Options A-D
+  correctAnswer: string; // A, B, C, or D
+  reasoning: string;
+  isFreeSample: true;
+  createdAt: string;
+}
+
 export interface DailyDrillSubmission {
   id: string;
   userId: string;

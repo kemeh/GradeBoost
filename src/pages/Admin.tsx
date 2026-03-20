@@ -11,9 +11,10 @@ import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
-import { QuestionPaper, Subject, PaperType } from '../types';
+import { QuestionPaper, Subject, PaperType, SampleQuestion } from '../types';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { formatDate } from '../utils/dateUtils';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -24,12 +25,13 @@ export default function Admin() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const activeTab = (searchParams.get('tab') as 'papers' | 'payments' | 'manual') || 'papers';
+  const activeTab = (searchParams.get('tab') as 'papers' | 'payments' | 'manual' | 'samples') || 'papers';
   const [users, setUsers] = useState<any[]>([]);
   const [manualRequests, setManualRequests] = useState<any[]>([]);
+  const [sampleQuestions, setSampleQuestions] = useState<SampleQuestion[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const setActiveTab = (tab: 'papers' | 'payments' | 'manual') => {
+  const setActiveTab = (tab: 'papers' | 'payments' | 'manual' | 'samples') => {
     setSearchParams({ tab });
   };
 
@@ -43,6 +45,17 @@ export default function Admin() {
   });
   const [file, setFile] = useState<File | null>(null);
 
+  const [showSampleModal, setShowSampleModal] = useState(false);
+  const [editingSample, setEditingSample] = useState<SampleQuestion | null>(null);
+  const [sampleFormData, setSampleFormData] = useState({
+    subject: 'Computer Science' as Subject,
+    topic: '',
+    questionText: '',
+    options: ['', '', '', ''],
+    correctAnswer: 'A',
+    reasoning: '',
+  });
+
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate('/');
@@ -54,8 +67,19 @@ export default function Admin() {
       fetchPapers();
       fetchUsers();
       fetchManualRequests();
+      fetchSampleQuestions();
     }
   }, [isAdmin]);
+
+  const fetchSampleQuestions = async () => {
+    try {
+      const q = query(collection(db, 'sampleQuestions'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      setSampleQuestions(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SampleQuestion)));
+    } catch (err) {
+      console.error("Error fetching sample questions:", err);
+    }
+  };
 
   const fetchManualRequests = async () => {
     try {
@@ -243,6 +267,70 @@ export default function Admin() {
     navigate('/');
   };
 
+  const handleSaveSample = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    // Validation
+    if (!sampleFormData.topic.trim() || !sampleFormData.questionText.trim() || !sampleFormData.reasoning.trim()) {
+      alert('Please fill in all required fields (Topic, Question, Reasoning).');
+      return;
+    }
+
+    if (sampleFormData.options.some(opt => !opt.trim())) {
+      alert('Please fill in all four options (A-D).');
+      return;
+    }
+
+    // Check limit: 5-10 per subject
+    const subjectCount = sampleQuestions.filter(q => q.subject === sampleFormData.subject).length;
+    if (!editingSample && subjectCount >= 10) {
+      alert(`Limit reached! Maximum 10 sample questions allowed per subject (${sampleFormData.subject}).`);
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const data = {
+        ...sampleFormData,
+        isFreeSample: true,
+        createdAt: editingSample ? editingSample.createdAt : new Date().toISOString(),
+      };
+
+      if (editingSample) {
+        await updateDoc(doc(db, 'sampleQuestions', editingSample.id), data);
+      } else {
+        await addDoc(collection(db, 'sampleQuestions'), data);
+      }
+
+      setShowSampleModal(false);
+      setEditingSample(null);
+      setSampleFormData({
+        subject: 'Computer Science',
+        topic: '',
+        questionText: '',
+        options: ['', '', '', ''],
+        correctAnswer: 'A',
+        reasoning: '',
+      });
+      fetchSampleQuestions();
+    } catch (err: any) {
+      handleFirestoreError(err, OperationType.CREATE, 'sampleQuestions');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteSample = async (id: string) => {
+    if (!window.confirm('Delete this sample question?')) return;
+    try {
+      await deleteDoc(doc(db, 'sampleQuestions', id));
+      fetchSampleQuestions();
+    } catch (err) {
+      console.error("Error deleting sample:", err);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -368,6 +456,15 @@ export default function Admin() {
           >
             Manual Requests
           </button>
+          <button
+            onClick={() => setActiveTab('samples')}
+            className={cn(
+              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+              activeTab === 'samples' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
+            )}
+          >
+            Sample Questions
+          </button>
         </div>
 
         {error && (
@@ -480,7 +577,7 @@ export default function Admin() {
                       </td>
                       <td className="px-8 py-4">
                         <span className="text-xs font-bold text-slate-400">
-                          {u.paymentDate ? new Date(u.paymentDate).toLocaleDateString() : '-'}
+                          {formatDate(u.paymentDate)}
                         </span>
                       </td>
                       <td className="px-8 py-4">
@@ -488,7 +585,7 @@ export default function Admin() {
                           "text-xs font-bold",
                           u.paymentExpiryDate && new Date(u.paymentExpiryDate) < new Date() ? "text-red-500" : "text-slate-400"
                         )}>
-                          {u.paymentExpiryDate ? new Date(u.paymentExpiryDate).toLocaleDateString() : '-'}
+                          {formatDate(u.paymentExpiryDate)}
                         </span>
                       </td>
                       <td className="px-8 py-4">
@@ -505,6 +602,72 @@ export default function Admin() {
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : activeTab === 'samples' ? (
+          <Card className="overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Free Sample Questions</h2>
+                <p className="text-xs text-slate-500 font-medium mt-1">Limit: 5-10 per subject. Unpaid users see these to sample the platform.</p>
+              </div>
+              <Button onClick={() => { setEditingSample(null); setSampleFormData({ subject: 'Computer Science', topic: '', questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }); setShowSampleModal(true); }}>
+                <Plus size={18} className="mr-2" /> Add Sample
+              </Button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Topic</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Question</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Correct</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {sampleQuestions.map((q) => (
+                    <tr key={q.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-8 py-4">
+                        <Badge variant={q.subject === 'Computer Science' ? 'primary' : 'success'}>{q.subject}</Badge>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span className="text-sm font-bold text-slate-900">{q.topic}</span>
+                      </td>
+                      <td className="px-8 py-4 max-w-xs">
+                        <p className="text-sm text-slate-600 truncate">{q.questionText}</p>
+                      </td>
+                      <td className="px-8 py-4">
+                        <Badge variant="info">{q.correctAnswer}</Badge>
+                      </td>
+                      <td className="px-8 py-4">
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => { setEditingSample(q); setSampleFormData({ subject: q.subject, topic: q.topic, questionText: q.questionText, options: [...q.options], correctAnswer: q.correctAnswer, reasoning: q.reasoning }); setShowSampleModal(true); }}
+                            className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+                          >
+                            <FileText size={18} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteSample(q.id)}
+                            className="p-2 text-slate-400 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {sampleQuestions.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-12 text-center">
+                        <p className="text-slate-400 font-medium">No sample questions found.</p>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -584,6 +747,122 @@ export default function Admin() {
           </Card>
         )
 }
+
+        {/* Sample Question Modal */}
+        {showSampleModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !uploading && setShowSampleModal(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            >
+              <Card className="p-8 shadow-2xl">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-8">
+                  {editingSample ? 'Edit Sample Question' : 'Add Sample Question'}
+                </h2>
+                <form onSubmit={handleSaveSample} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
+                      <select 
+                        className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
+                        value={sampleFormData.subject}
+                        onChange={e => setSampleFormData({ ...sampleFormData, subject: e.target.value as Subject })}
+                      >
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="ICT">ICT</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Topic</label>
+                      <input 
+                        type="text" 
+                        required
+                        className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
+                        placeholder="e.g. Data Structures"
+                        value={sampleFormData.topic}
+                        onChange={e => setSampleFormData({ ...sampleFormData, topic: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Question Text</label>
+                    <textarea 
+                      required
+                      className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none min-h-[100px]"
+                      placeholder="Enter the question..."
+                      value={sampleFormData.questionText}
+                      onChange={e => setSampleFormData({ ...sampleFormData, questionText: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {['A', 'B', 'C', 'D'].map((opt, i) => (
+                      <div key={opt} className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Option {opt}</label>
+                        <input 
+                          type="text" 
+                          required
+                          className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
+                          value={sampleFormData.options[i]}
+                          onChange={e => {
+                            const newOpts = [...sampleFormData.options];
+                            newOpts[i] = e.target.value;
+                            setSampleFormData({ ...sampleFormData, options: newOpts });
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Correct Answer</label>
+                      <select 
+                        className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
+                        value={sampleFormData.correctAnswer}
+                        onChange={e => setSampleFormData({ ...sampleFormData, correctAnswer: e.target.value })}
+                      >
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Reasoning / Explanation</label>
+                    <textarea 
+                      required
+                      className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none min-h-[80px]"
+                      placeholder="Explain why the answer is correct..."
+                      value={sampleFormData.reasoning}
+                      onChange={e => setSampleFormData({ ...sampleFormData, reasoning: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="flex gap-4 pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="flex-1" 
+                      onClick={() => setShowSampleModal(false)}
+                      disabled={uploading}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={uploading}>
+                      {uploading ? 'Saving...' : 'Save Question'}
+                    </Button>
+                  </div>
+                </form>
+              </Card>
+            </motion.div>
+          </div>
+        )}
 
         {/* Upload Modal */}
         {showUpload && (

@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { formatDate } from '../utils/dateUtils';
 import Sidebar from '../components/Sidebar';
 
 export default function Profile() {
@@ -201,7 +202,7 @@ export default function Profile() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-400 font-medium">Member Since</span>
                     <span className="font-bold">
-                      {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                      {formatDate(user.createdAt)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">

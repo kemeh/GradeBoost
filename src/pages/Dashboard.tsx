@@ -15,9 +15,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
 import { collection, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 import Sidebar from '../components/Sidebar';
-import { Button, Card, Badge, Progress, cn } from '../components/ui';
-import { Grade, ExamResult, DailyDrill } from '../types';
+import { 
+  Button, Card, Badge, Progress, cn,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+  RadioGroup, RadioGroupItem, Label
+} from '../components/ui';
+import { Grade, ExamResult, DailyDrill, SampleQuestion } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { formatDate } from '../utils/dateUtils';
+import { toast } from 'react-hot-toast';
 
 const MOCK_TREND_DATA = [
   { day: 'Day 1', score: 45 },
@@ -45,6 +51,11 @@ export default function Dashboard() {
   const [todayDrill, setTodayDrill] = useState<DailyDrill | null>(null);
   const [hasSubmittedToday, setHasSubmittedToday] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(60);
+  const [sampleQuestions, setSampleQuestions] = useState<SampleQuestion[]>([]);
+  const [selectedSample, setSelectedSample] = useState<SampleQuestion | null>(null);
+  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -87,6 +98,17 @@ export default function Dashboard() {
           if (!subSnapshot.empty) {
             setHasSubmittedToday(true);
           }
+        }
+
+        // Fetch Sample Questions if unpaid
+        if (user.paymentStatus !== 'paid') {
+          const samplesQ = query(
+            collection(db, 'sampleQuestions'),
+            where('subject', '==', user.subject),
+            limit(10)
+          );
+          const samplesSnapshot = await getDocs(samplesQ);
+          setSampleQuestions(samplesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SampleQuestion)));
         }
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -134,6 +156,25 @@ export default function Dashboard() {
     if (readiness >= 50) return 'D';
     return 'F';
   }, [readiness]);
+
+  const handleCheckAnswer = () => {
+    if (!selectedSample || !selectedAnswer) return;
+    const correct = selectedAnswer === selectedSample.correctAnswer;
+    setIsCorrect(correct);
+    setShowAnswer(true);
+    if (correct) {
+      toast.success('Correct! Well done.');
+    } else {
+      toast.error('Not quite right. Check the reasoning below.');
+    }
+  };
+
+  const handleCloseSample = () => {
+    setSelectedSample(null);
+    setSelectedAnswer('');
+    setShowAnswer(false);
+    setIsCorrect(null);
+  };
 
   const insights = useMemo(() => {
     const paperScores = paperData.filter(p => p.score > 0);
@@ -222,7 +263,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-4">
             {user.role === 'student' && user.paymentExpiryDate && (
               <Badge variant="default" className="px-4 py-2 border-slate-200">
-                Expires: {new Date(user.paymentExpiryDate).toLocaleDateString()}
+                Expires: {formatDate(user.paymentExpiryDate)}
               </Badge>
             )}
             <Badge variant="primary" className="px-4 py-2">Target: Grade A</Badge>
@@ -291,6 +332,51 @@ export default function Dashboard() {
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/20 rounded-full -ml-32 -mb-32 blur-3xl"></div>
           </Card>
         </section>
+
+        {/* Free Sample Questions for Unpaid Users */}
+        {user.paymentStatus !== 'paid' && sampleQuestions.length > 0 && (
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Free Sample Questions</h2>
+                <p className="text-slate-500 text-sm font-medium">Try these sample questions to see what's in the full course.</p>
+              </div>
+              <Link 
+                to="/pricing" 
+                className="text-indigo-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all"
+              >
+                Unlock Full Course <ArrowRight size={16} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sampleQuestions.map((sample, idx) => (
+                <Card 
+                  key={sample.id} 
+                  className="p-6 hover:shadow-lg transition-all cursor-pointer border-slate-100 group"
+                  onClick={() => setSelectedSample(sample)}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <Badge variant="primary" className="text-[10px] font-black uppercase tracking-widest">
+                      {sample.topic}
+                    </Badge>
+                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-600 transition-colors">
+                      <BookOpen size={16} className="text-indigo-600 group-hover:text-white" />
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-slate-900 mb-2 line-clamp-2">
+                    {sample.questionText}
+                  </h3>
+                  <div className="flex items-center justify-between mt-4">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sample {idx + 1}</span>
+                    <span className="text-indigo-600 font-bold text-xs flex items-center gap-1">
+                      Try Now <ChevronRight size={14} />
+                    </span>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -524,6 +610,135 @@ export default function Dashboard() {
           </Card>
         </div>
       </main>
+
+      {/* Sample Question Modal */}
+      <Dialog open={!!selectedSample} onOpenChange={(open) => !open && handleCloseSample()}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black tracking-tight">
+              {selectedSample?.topic} - Sample Question
+            </DialogTitle>
+            <DialogDescription className="font-medium">
+              Test your knowledge with this free sample question.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedSample && (
+            <div className="space-y-6 py-4">
+              <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                <p className="text-lg font-bold text-slate-900 leading-relaxed">
+                  {selectedSample.questionText}
+                </p>
+              </div>
+
+              <RadioGroup 
+                value={selectedAnswer} 
+                onValueChange={setSelectedAnswer}
+                disabled={showAnswer}
+                className="grid grid-cols-1 gap-3"
+              >
+                {Object.entries(selectedSample.options).map(([key, value]) => (
+                  <div key={key}>
+                    <RadioGroupItem
+                      value={key}
+                      id={`option-${key}`}
+                      className="peer sr-only"
+                    />
+                    <Label
+                      htmlFor={`option-${key}`}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all hover:bg-slate-50",
+                        selectedAnswer === key ? "border-indigo-600 bg-indigo-50/50" : "border-slate-100",
+                        showAnswer && key === selectedSample.correctAnswer && "border-emerald-500 bg-emerald-50",
+                        showAnswer && selectedAnswer === key && key !== selectedSample.correctAnswer && "border-rose-500 bg-rose-50"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={cn(
+                          "w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm",
+                          selectedAnswer === key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"
+                        )}>
+                          {key}
+                        </span>
+                        <span className="font-bold text-slate-700">{value}</span>
+                      </div>
+                      {showAnswer && key === selectedSample.correctAnswer && (
+                        <CheckCircle2 className="text-emerald-500" size={20} />
+                      )}
+                      {showAnswer && selectedAnswer === key && key !== selectedSample.correctAnswer && (
+                        <AlertCircle className="text-rose-500" size={20} />
+                      )}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
+
+              {showAnswer && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "p-6 rounded-2xl border",
+                    isCorrect ? "bg-emerald-50 border-emerald-100" : "bg-rose-50 border-rose-100"
+                  )}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    {isCorrect ? (
+                      <CheckCircle2 className="text-emerald-600" size={20} />
+                    ) : (
+                      <AlertCircle className="text-rose-600" size={20} />
+                    )}
+                    <span className={cn(
+                      "font-black uppercase tracking-widest text-xs",
+                      isCorrect ? "text-emerald-600" : "text-rose-600"
+                    )}>
+                      {isCorrect ? 'Correct Answer' : 'Incorrect Answer'}
+                    </span>
+                  </div>
+                  <p className={cn(
+                    "font-bold mb-4",
+                    isCorrect ? "text-emerald-900" : "text-rose-900"
+                  )}>
+                    The correct answer is {selectedSample.correctAnswer}.
+                  </p>
+                  <div className="pt-4 border-t border-black/5">
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2">Reasoning</p>
+                    <p className="text-slate-600 font-medium leading-relaxed">
+                      {selectedSample.reasoning}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-3">
+            {!showAnswer ? (
+              <Button 
+                onClick={handleCheckAnswer} 
+                disabled={!selectedAnswer}
+                className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-black px-8 py-6 rounded-2xl"
+              >
+                Check Answer
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleCloseSample}
+                className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-black px-8 py-6 rounded-2xl"
+              >
+                Close Sample
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/pricing')}
+              className="w-full sm:w-auto border-slate-200 font-black px-8 py-6 rounded-2xl"
+            >
+              Unlock Full Course
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

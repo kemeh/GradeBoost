@@ -15,6 +15,7 @@ import { DailyDrill, DailyDrillQuestion, Subject, Grade } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { formatDate } from '../utils/dateUtils';
 
 export default function AdminDailyDrill() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -343,7 +344,7 @@ export default function AdminDailyDrill() {
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock size={14} />
-                    {new Date(drill.createdAt).toLocaleDateString()}
+                    {formatDate(drill.createdAt)}
                   </div>
                 </div>
               </Card>

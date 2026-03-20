@@ -150,3 +150,116 @@ export const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
   }
 );
 Progress.displayName = "Progress";
+
+/**
+ * Dialog Components
+ */
+export interface DialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
+}
+
+export const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div 
+        className="absolute inset-0" 
+        onClick={() => onOpenChange(false)} 
+      />
+      <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+export const DialogContent = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div className={cn("p-8 md:p-12 max-h-[90vh] overflow-y-auto", className)}>
+    {children}
+  </div>
+);
+
+export const DialogHeader = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div className={cn("mb-8", className)}>
+    {children}
+  </div>
+);
+
+export const DialogTitle = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <h2 className={cn("text-3xl font-black text-slate-900 tracking-tight", className)}>
+    {children}
+  </h2>
+);
+
+export const DialogDescription = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <p className={cn("text-slate-500 font-medium mt-2", className)}>
+    {children}
+  </p>
+);
+
+export const DialogFooter = ({ children, className }: { children: React.ReactNode; className?: string }) => (
+  <div className={cn("mt-12 flex flex-col sm:flex-row justify-end gap-4", className)}>
+    {children}
+  </div>
+);
+
+/**
+ * RadioGroup Components
+ */
+export interface RadioGroupProps {
+  value: string;
+  onValueChange: (value: string) => void;
+  children: React.ReactNode;
+  className?: string;
+  disabled?: boolean;
+}
+
+export const RadioGroup = ({ value, onValueChange, children, className, disabled }: RadioGroupProps) => {
+  return (
+    <div className={cn("grid gap-2", className)}>
+      {React.Children.map(children, child => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child as React.ReactElement<any>, { 
+            selectedValue: value, 
+            onValueChange,
+            disabled
+          });
+        }
+        return child;
+      })}
+    </div>
+  );
+};
+
+export const RadioGroupItem = ({ value, id, className, selectedValue, onValueChange, disabled }: any) => {
+  return (
+    <input
+      type="radio"
+      id={id}
+      name="radio-group"
+      value={value}
+      checked={selectedValue === value}
+      onChange={(e) => onValueChange(e.target.value)}
+      disabled={disabled}
+      className={cn("sr-only", className)}
+    />
+  );
+};
+
+/**
+ * Label Component
+ */
+export const Label = ({ children, htmlFor, className }: { children: React.ReactNode; htmlFor?: string; className?: string }) => (
+  <label
+    htmlFor={htmlFor}
+    className={cn(
+      "text-sm font-bold text-slate-700 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+      className
+    )}
+  >
+    {children}
+  </label>
+);

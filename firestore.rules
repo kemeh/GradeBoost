@@ -73,6 +73,18 @@
 //   - gradedStatus: bool (required)
 //   - submittedAt: timestamp (required)
 //
+// Collection: sampleQuestions
+// Document ID: {sampleId}
+// Fields:
+//   - subject: string (required, enum)
+//   - topic: string (required)
+//   - questionText: string (required)
+//   - options: list (required, 4 strings)
+//   - correctAnswer: string (required, A-D)
+//   - reasoning: string (required)
+//   - isFreeSample: bool (required, true)
+//   - createdAt: string (required, ISO date)
+//
 // ===============================================================
 
 rules_version = '2';
@@ -221,6 +233,17 @@ service cloud.firestore {
              data.submittedAt is timestamp;
     }
 
+    function isValidSampleQuestion(data) {
+      return data.subject in ["Computer Science", "ICT"] &&
+             data.topic is string && data.topic.size() > 0 && data.topic.size() <= 200 &&
+             data.questionText is string && data.questionText.size() > 0 && data.questionText.size() <= 2000 &&
+             data.options is list && data.options.size() == 4 &&
+             data.correctAnswer in ["A", "B", "C", "D"] &&
+             data.reasoning is string && data.reasoning.size() > 0 && data.reasoning.size() <= 2000 &&
+             data.isFreeSample == true &&
+             data.createdAt is string;
+    }
+
     function getCurrentDay() {
       let start = timestamp.value('2026-03-01T00:00:00Z');
       let diff = request.time - start;
@@ -301,6 +324,11 @@ service cloud.firestore {
                       isValidDailyDrillSubmission(request.resource.data) &&
                       isRecent(request.resource.data.submittedAt);
       allow update, delete: if isAdmin();
+    }
+
+    match /sampleQuestions/{sampleId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isValidSampleQuestion(request.resource.data);
     }
 
     // Default deny
