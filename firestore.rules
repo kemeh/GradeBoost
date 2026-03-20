@@ -161,8 +161,12 @@ service cloud.firestore {
              data.role in ["student", "admin"] &&
              (!('createdAt' in data) || data.createdAt is timestamp) &&
              (!('paymentStatus' in data) || data.paymentStatus in ["unpaid", "paid", "pending"]) &&
-             (!('paymentDate' in data) || data.paymentDate is string) &&
-             (!('paymentExpiryDate' in data) || data.paymentExpiryDate is string);
+             (!('paymentExpiryDate' in data) || data.paymentExpiryDate is string || data.paymentExpiryDate == null) &&
+             (!('school' in data) || data.school is string) &&
+             (!('region' in data) || data.region is string) &&
+             (!('assignedPapers' in data) || data.assignedPapers is list) &&
+             (!('targetGrade' in data) || data.targetGrade is string) &&
+             (!('hasTakenDiagnostic' in data) || data.hasTakenDiagnostic is bool);
     }
 
     function isValidPaymentAudit(data) {
