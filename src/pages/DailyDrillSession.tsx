@@ -72,12 +72,7 @@ export default function DailyDrillSession() {
       const currentDay = getCurrentDayNumber();
       const dayToFetch = requestedDay ? parseInt(requestedDay) : currentDay;
 
-      // Security check: if not paid, only allow Day 1
-      if (user.paymentStatus !== 'paid' && dayToFetch !== 1) {
-        navigate('/payment');
-        return;
-      }
-
+      // Security check: if not paid, only allow Day 1 or drills marked as free sample
       const q = query(
         collection(db, 'dailyDrills'), 
         where('dayNumber', '==', dayToFetch),
@@ -87,6 +82,14 @@ export default function DailyDrillSession() {
       
       if (!snapshot.empty) {
         const currentDrill = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as DailyDrill;
+        
+        // Check access
+        const isFree = currentDrill.dayNumber === 1 || currentDrill.isFreeSample;
+        if (user.paymentStatus !== 'paid' && !isFree) {
+          navigate('/payment');
+          return;
+        }
+
         setDrill(currentDrill);
 
         // Check if already submitted
@@ -122,9 +125,9 @@ export default function DailyDrillSession() {
     if (!user || !drill) return;
 
     // Final security check on day number
-    // Allow Day 1 if it's a free sample (unpaid user) or if it's the current day
-    const isFreeSample = drill.dayNumber === 1 && user.paymentStatus !== 'paid';
-    if (!isDrillAccessible(drill.dayNumber) && !isFreeSample) {
+    // Allow if it's a free sample (unpaid user) or if it's the current day
+    const isFreeSample = (drill.dayNumber === 1 || drill.isFreeSample) && user.paymentStatus !== 'paid';
+    if (!isDrillAccessible(drill.dayNumber, user.paymentStatus === 'paid', user.paymentExpiryDate, drill.isFreeSample) && !isFreeSample) {
       setError(`⚠️ You can only answer today's drill (Day ${getCurrentDayNumber()}). Please wait for the next assignment.`);
       return;
     }

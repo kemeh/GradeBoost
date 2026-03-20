@@ -61,19 +61,31 @@ export default function PaymentPage() {
       try {
         console.log(`PaymentPage: Fetching free sample for ${userSubject}`);
         
-        // Try to fetch Day 1 Daily Drill first
+        // Try to fetch Daily Drill marked as free sample first
         const drillQuery = query(
           collection(db, 'dailyDrills'),
           where('subject', '==', userSubject),
-          where('dayNumber', '==', 1),
+          where('isFreeSample', '==', true),
           limit(1)
         );
         
-        const drillSnapshot = await getDocs(drillQuery);
+        let drillSnapshot = await getDocs(drillQuery);
+        
+        // Fallback to Day 1 if no explicit free sample is found
+        if (drillSnapshot.empty) {
+          console.log("PaymentPage: No explicit free sample drill found, trying Day 1");
+          const day1Query = query(
+            collection(db, 'dailyDrills'),
+            where('subject', '==', userSubject),
+            where('dayNumber', '==', 1),
+            limit(1)
+          );
+          drillSnapshot = await getDocs(day1Query);
+        }
         
         if (!drillSnapshot.empty) {
           const drill = { id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill;
-          console.log("PaymentPage: Found Day 1 Daily Drill as free sample", drill);
+          console.log("PaymentPage: Found Daily Drill as free sample", drill);
           setFreeSample(drill);
         } else {
           // Fallback to Paper 1 Question Paper
@@ -306,14 +318,14 @@ export default function PaymentPage() {
                   <div className="flex-1 space-y-4 text-center md:text-left">
                     <div>
                       <h3 className="text-xl font-black text-slate-900">
-                        {loadingSample ? 'Loading Sample...' : (freeSample ? (('dayNumber' in freeSample) ? `Daily Drill: Day ${freeSample.dayNumber}` : freeSample.title) : 'No Sample Available')}
+                        {loadingSample ? 'Loading Sample...' : (freeSample ? (('dayNumber' in freeSample) ? `Daily Drill: Day ${freeSample.dayNumber}` : freeSample.title) : 'No Free Samples Available')}
                       </h3>
                       <p className="text-slate-500 font-medium">
                         {freeSample 
                           ? (('dayNumber' in freeSample) ? 'Try our Day 1 Daily Drill to see how GradeBoost 60 keeps you sharp every day.' : 'Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.')
                           : isAdmin 
                             ? `You haven't uploaded any samples for ${userSubject} yet. Go to the Admin dashboard to upload one.`
-                            : `There are currently no free samples available for ${userSubject}. Please check back later.`}
+                            : `No free samples available yet. Check back soon.`}
                       </p>
                     </div>
                     <div className="flex flex-wrap justify-center md:justify-start gap-4">

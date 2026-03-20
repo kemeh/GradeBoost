@@ -66,6 +66,7 @@ export interface DailyDrillQuestion {
   correctAnswer?: string; // For Paper 1 (MCQs)
   reasoning?: string; // Explanation for the answer
   imageUrl?: string; // Optional reference image
+  isFreeSample?: boolean; // Added for free sample feature
 }
 
 export interface DailyDrill {
@@ -78,6 +79,7 @@ export interface DailyDrill {
   createdAt: string;
   uploadedBy: string;
   gradedStatus?: boolean; // Added for consistency with user request
+  isFreeSample?: boolean; // Added for free sample feature
 }
 
 export interface DailyDrillSubmission {

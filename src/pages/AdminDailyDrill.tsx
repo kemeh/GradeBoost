@@ -43,9 +43,10 @@ export default function AdminDailyDrill() {
     subject: 'Computer Science' as Subject,
     topic: '',
     paperType: 'Paper 1' as 'Paper 1' | 'Paper 2' | 'Paper 3',
+    isFreeSample: false,
   });
   const [questions, setQuestions] = useState<Partial<DailyDrillQuestion>[]>([
-    { questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }
+    { questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '', isFreeSample: false }
   ]);
 
   useEffect(() => {
@@ -100,9 +101,9 @@ export default function AdminDailyDrill() {
 
   const handleAddQuestion = () => {
     if (formData.paperType === 'Paper 1') {
-      setQuestions([...questions, { questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }]);
+      setQuestions([...questions, { questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '', isFreeSample: false }]);
     } else {
-      setQuestions([...questions, { questionText: '', reasoning: '' }]);
+      setQuestions([...questions, { questionText: '', reasoning: '', isFreeSample: false }]);
     }
   };
 
@@ -154,8 +155,8 @@ export default function AdminDailyDrill() {
 
       setSuccess('Daily Drill added successfully!');
       setShowAddModal(false);
-      setFormData({ dayNumber: 1, subject: 'Computer Science', topic: '', paperType: 'Paper 1' });
-      setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }]);
+      setFormData({ dayNumber: 1, subject: 'Computer Science', topic: '', paperType: 'Paper 1', isFreeSample: false });
+      setQuestions([{ questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '', isFreeSample: false }]);
       fetchDrills();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -489,6 +490,16 @@ export default function AdminDailyDrill() {
                           onChange={e => setFormData({ ...formData, topic: e.target.value })}
                         />
                       </div>
+                      <div className="flex items-center gap-3 pt-8">
+                        <input 
+                          type="checkbox"
+                          id="isFreeSample"
+                          className="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                          checked={formData.isFreeSample}
+                          onChange={e => setFormData({ ...formData, isFreeSample: e.target.checked })}
+                        />
+                        <label htmlFor="isFreeSample" className="text-sm font-bold text-slate-700">Mark as Free Sample</label>
+                      </div>
                     </div>
 
                     <div className="space-y-6">
@@ -558,6 +569,17 @@ export default function AdminDailyDrill() {
                                 value={q.reasoning || ''}
                                 onChange={e => handleQuestionChange(qIndex, 'reasoning', e.target.value)}
                               />
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <input 
+                                type="checkbox"
+                                id={`q-${qIndex}-free`}
+                                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                checked={q.isFreeSample || false}
+                                onChange={e => handleQuestionChange(qIndex, 'isFreeSample', e.target.checked)}
+                              />
+                              <label htmlFor={`q-${qIndex}-free`} className="text-xs font-bold text-slate-600">Free Sample Question</label>
                             </div>
                           </div>
                         </Card>
