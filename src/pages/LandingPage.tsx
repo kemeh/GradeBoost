@@ -28,7 +28,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img 
-              src="https://ais-dev-ph2spjdss3zj2jll4pbjwl-332084451562.europe-west2.run.app/logo.png" 
+              src="/logo.png" 
               alt="GradeBoost 60 Logo" 
               className="h-10 w-auto"
               onError={(e) => {
@@ -180,7 +180,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center md:items-start gap-2">
             <div className="flex items-center gap-2">
               <img 
-                src="https://ais-dev-ph2spjdss3zj2jll4pbjwl-332084451562.europe-west2.run.app/logo.png" 
+                src="/logo.png" 
                 alt="GradeBoost 60 Logo" 
                 className="h-8 w-auto"
                 onError={(e) => {

@@ -54,7 +54,7 @@ export default function App() {
           <Route path="/dashboard" element={<PaymentGatedRoute><Dashboard /></PaymentGatedRoute>} />
           <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
           <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
-          <Route path="/practice/:paperId" element={<PaymentGatedRoute><PracticeSession /></PaymentGatedRoute>} />
+          <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
           <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
           
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />

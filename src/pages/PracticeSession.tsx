@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, limit, getDocs } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, FileText, Send, Clock, 
   ChevronLeft, ChevronRight, CheckCircle2, 
-  AlertCircle, Info, Save, Maximize2, Minimize2
+  AlertCircle, Info, Save, Maximize2, Minimize2,
+  TrendingUp
 } from 'lucide-react';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -27,13 +28,42 @@ export default function PracticeSession() {
 
   useEffect(() => {
     const fetchPaper = async () => {
-      if (!paperId) return;
+      if (!paperId || !user) return;
       setError('');
       const path = `questionPapers/${paperId}`;
       try {
+        // Check if user is paid
+        const isPaid = user.paymentStatus === 'paid';
+        const hasExpired = user.paymentExpiryDate && new Date(user.paymentExpiryDate) < new Date();
+        const isAdmin = user.role === 'admin';
+
+        // Fetch the paper
         const docSnap = await getDoc(doc(db, 'questionPapers', paperId));
         if (docSnap.exists()) {
-          setPaper({ id: docSnap.id, ...docSnap.data() } as QuestionPaper);
+          const paperData = { id: docSnap.id, ...docSnap.data() } as QuestionPaper;
+          
+          // If not paid and not admin, check if it's a free sample
+          if (!isPaid || hasExpired) {
+            if (!isAdmin) {
+              // Fetch the first Paper 1 for this subject to see if it's the free one
+              const q = query(
+                collection(db, 'questionPapers'),
+                where('subject', '==', user.subject),
+                where('paperType', '==', 'Paper 1'),
+                limit(1)
+              );
+              const freeSnap = await getDocs(q);
+              const freeId = !freeSnap.empty ? freeSnap.docs[0].id : null;
+
+              if (paperId !== freeId) {
+                // Not the free sample, redirect to payment
+                navigate('/payment');
+                return;
+              }
+            }
+          }
+          
+          setPaper(paperData);
         } else {
           setError('Exam paper not found.');
         }
@@ -47,7 +77,7 @@ export default function PracticeSession() {
     };
 
     fetchPaper();
-  }, [paperId]);
+  }, [paperId, user, navigate]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -134,13 +164,17 @@ export default function PracticeSession() {
             <ArrowLeft size={24} />
           </button>
           <img 
-            src="https://ais-dev-ph2spjdss3zj2jll4pbjwl-332084451562.europe-west2.run.app/logo.png" 
+            src="/logo.png" 
             alt="GradeBoost 60 Logo" 
             className="h-10 w-auto"
             onError={(e) => {
               e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
             }}
           />
+          <div className="hidden w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center">
+            <TrendingUp className="text-white" size={20} />
+          </div>
           <div>
             <h1 className="text-lg font-black text-white tracking-tight">{paper.title}</h1>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{paper.subject} • {paper.paperType}</p>
