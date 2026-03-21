@@ -75,6 +75,7 @@ export interface ExamQuestion {
   difficulty: 'Easy' | 'Medium' | 'Hard';
   year: number;
   isDailyDrill: boolean;
+  imageUrl?: string;
   createdAt: any;
 }
 

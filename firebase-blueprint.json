@@ -90,6 +90,7 @@
         "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
         "year": { "type": "integer" },
         "isDailyDrill": { "type": "boolean" },
+        "imageUrl": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["questionText", "options", "correctAnswer", "paper", "topic", "createdAt"]

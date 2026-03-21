@@ -287,6 +287,7 @@ service cloud.firestore {
              data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
              data.topic is string &&
              data.isDailyDrill is bool &&
+             (!('imageUrl' in data) || isValidUrl(data.imageUrl)) &&
              data.createdAt is timestamp;
     }
 

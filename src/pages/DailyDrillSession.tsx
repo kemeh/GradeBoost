@@ -401,6 +401,16 @@ export default function DailyDrillSession() {
                 className="space-y-8"
               >
                 <Card className="p-8 md:p-12">
+                  {question.imageUrl && (
+                    <div className="mb-8 rounded-2xl overflow-hidden border border-slate-100 bg-white">
+                      <img 
+                        src={question.imageUrl} 
+                        alt="Question Diagram" 
+                        className="w-full h-auto max-h-[400px] object-contain mx-auto"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  )}
                   <p className="text-xl font-bold text-slate-800 leading-relaxed mb-12">
                     {question.questionText}
                   </p>
@@ -503,6 +513,16 @@ export default function DailyDrillSession() {
         ) : (
           <div className="space-y-8">
             <Card className="p-8 md:p-12">
+              {question.imageUrl && (
+                <div className="mb-8 rounded-2xl overflow-hidden border border-slate-100 bg-white">
+                  <img 
+                    src={question.imageUrl} 
+                    alt="Question Diagram" 
+                    className="w-full h-auto max-h-[400px] object-contain mx-auto"
+                    referrerPolicy="no-referrer"
+                  />
+                </div>
+              )}
               <div className="prose prose-slate max-w-none mb-12">
                 <p className="text-xl font-bold text-slate-800 leading-relaxed">
                   {question.questionText}

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
+import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { 
   Plus, Trash2, CheckCircle2, Clock, 
   FileText, HelpCircle, ChevronRight, 
   Search, AlertCircle, Save, X, Edit3,
-  Check, MessageSquare, User, Calendar
+  Check, MessageSquare, User, Calendar,
+  Image as ImageIcon, Upload, FileUp, Loader2
 } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,6 +35,8 @@ export default function AdminDailyDrill() {
   const [success, setSuccess] = useState('');
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [showDrillModal, setShowDrillModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'bank' | 'drills' | 'grading' | 'leaderboard'>('bank');
@@ -147,6 +151,26 @@ export default function AdminDailyDrill() {
     if (filters.userId) filtered = filtered.filter(s => s.userId.toLowerCase().includes(filters.userId.toLowerCase()));
     setFilteredSubmissions(filtered);
   }, [filters, submissions]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const storage = getStorage();
+      const storageRef = ref(storage, `exam_questions/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setQuestionForm(prev => ({ ...prev, imageUrl: url }));
+      toast.success('Image uploaded successfully!');
+    } catch (err) {
+      console.error('Upload error:', err);
+      toast.error('Failed to upload image.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -305,6 +329,10 @@ export default function AdminDailyDrill() {
                 <Calendar className="w-4 h-4 mr-2" />
                 Assign Drill
               </Button>
+              <Button variant="secondary" onClick={() => setShowImportModal(true)}>
+                <FileUp className="w-4 h-4 mr-2" />
+                Bulk Import
+              </Button>
             </div>
           </div>
 
@@ -347,7 +375,14 @@ export default function AdminDailyDrill() {
                       {questionsBank.map((q) => (
                         <tr key={q.id}>
                           <td className="px-6 py-4">
-                            <div className="text-sm text-gray-900 line-clamp-1">{q.questionText}</div>
+                            <div className="flex items-center gap-3">
+                              {q.imageUrl && (
+                                <div className="w-10 h-10 rounded border overflow-hidden flex-shrink-0 bg-gray-50">
+                                  <img src={q.imageUrl} alt="Diagram" className="w-full h-full object-cover" />
+                                </div>
+                              )}
+                              <div className="text-sm text-gray-900 line-clamp-1">{q.questionText}</div>
+                            </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Badge variant="secondary">{q.paper}</Badge>
@@ -657,6 +692,41 @@ export default function AdminDailyDrill() {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Diagram / Image (Optional)</label>
+                    <div className="flex items-center gap-4">
+                      {questionForm.imageUrl ? (
+                        <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
+                          <img src={questionForm.imageUrl} alt="Diagram" className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setQuestionForm(prev => ({ ...prev, imageUrl: undefined }))}
+                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-gray-50 transition-all">
+                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            {isUploading ? (
+                              <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                            ) : (
+                              <>
+                                <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
+                                <p className="text-xs text-gray-500">Upload</p>
+                              </>
+                            )}
+                          </div>
+                          <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
+                        </label>
+                      )}
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500">Supported formats: JPG, PNG, WEBP. Max size: 2MB.</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Paper</label>
@@ -920,7 +990,248 @@ export default function AdminDailyDrill() {
             </div>
           )}
         </AnimatePresence>
+        {/* Bulk Import Modal */}
+        <AnimatePresence>
+          {showImportModal && (
+            <BulkImportModal 
+              onClose={() => setShowImportModal(false)} 
+              onImported={() => {
+                fetchQuestionsBank();
+                setShowImportModal(false);
+              }}
+            />
+          )}
+        </AnimatePresence>
       </main>
+    </div>
+  );
+}
+
+interface BulkImportModalProps {
+  onClose: () => void;
+  onImported: () => void;
+}
+
+function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
+  const [file, setFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [previewQuestions, setPreviewQuestions] = useState<Partial<ExamQuestion>[]>([]);
+  const [error, setError] = useState('');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setError('');
+    }
+  };
+
+  const processFile = async () => {
+    if (!file) return;
+    setIsProcessing(true);
+    setError('');
+    try {
+      let text = '';
+      if (file.type === 'application/pdf') {
+        const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
+        GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs`;
+        
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await getDocument(arrayBuffer).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map((item: any) => item.str).join(' ') + '\n';
+        }
+        text = fullText;
+      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // Extract images and text
+        const result = await mammoth.convertToHtml({ arrayBuffer });
+        const html = result.value;
+        
+        // Simple text extraction from HTML for Gemini
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        text = tempDiv.innerText;
+
+        // We could potentially extract images here, but associating them with 
+        // specific questions automatically is highly complex without a fixed format.
+        // For now, we'll focus on high-quality text extraction.
+      } else {
+        throw new Error('Unsupported file type. Please upload a PDF or Word document.');
+      }
+
+      // Use Gemini to parse the text into questions
+      const { GoogleGenAI, Type } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: `Extract exam questions from the following text. 
+        Return an array of objects with these fields: questionText, options (object with A, B, C, D keys), correctAnswer (A, B, C, or D), explanation, paper (Paper 1, Paper 2, or Paper 3), topic, marks (number), difficulty (Easy, Medium, or Hard).
+        
+        Text:
+        ${text.substring(0, 10000)}`, // Limit text for prompt
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                questionText: { type: Type.STRING },
+                options: { 
+                  type: Type.OBJECT,
+                  properties: {
+                    A: { type: Type.STRING },
+                    B: { type: Type.STRING },
+                    C: { type: Type.STRING },
+                    D: { type: Type.STRING }
+                  }
+                },
+                correctAnswer: { type: Type.STRING },
+                explanation: { type: Type.STRING },
+                paper: { type: Type.STRING },
+                topic: { type: Type.STRING },
+                marks: { type: Type.NUMBER },
+                difficulty: { type: Type.STRING }
+              },
+              required: ['questionText', 'correctAnswer', 'paper', 'topic']
+            }
+          }
+        }
+      });
+
+      const questions = JSON.parse(response.text || '[]');
+      setPreviewQuestions(questions);
+    } catch (err: any) {
+      console.error('Import error:', err);
+      setError(err.message || 'Failed to process file.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleImport = async () => {
+    if (previewQuestions.length === 0) return;
+    setIsProcessing(true);
+    try {
+      const batch = previewQuestions.map(q => {
+        return addDoc(collection(db, 'exam_questions'), {
+          ...q,
+          isDailyDrill: true,
+          year: new Date().getFullYear(),
+          createdAt: serverTimestamp()
+        });
+      });
+      await Promise.all(batch);
+      toast.success(`Successfully imported ${previewQuestions.length} questions!`);
+      onImported();
+    } catch (err) {
+      toast.error('Failed to import questions to database.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6"
+      >
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold">Bulk Import Questions</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {!previewQuestions.length ? (
+          <div className="space-y-6">
+            <div className="p-8 border-2 border-dashed border-gray-300 rounded-xl text-center">
+              <FileUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-600 mb-4">Upload a PDF or Word document containing exam questions.</p>
+              <input 
+                type="file" 
+                accept=".pdf,.docx" 
+                onChange={handleFileChange}
+                className="hidden" 
+                id="bulk-file"
+              />
+              <label 
+                htmlFor="bulk-file"
+                className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer hover:bg-indigo-700 transition-colors"
+              >
+                {file ? file.name : 'Select File'}
+              </label>
+            </div>
+
+            {error && (
+              <div className="p-4 bg-red-50 text-red-600 rounded-lg flex items-center gap-2">
+                <AlertCircle size={20} />
+                {error}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button 
+                onClick={processFile} 
+                disabled={!file || isProcessing}
+                className="bg-indigo-600 text-white"
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : 'Process File'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-gray-700">Preview: {previewQuestions.length} Questions Found</p>
+              <Button variant="outline" onClick={() => setPreviewQuestions([])}>Reset</Button>
+            </div>
+
+            <div className="space-y-4 max-h-[50vh] overflow-y-auto p-4 bg-gray-50 rounded-xl border">
+              {previewQuestions.map((q, i) => (
+                <div key={i} className="p-4 bg-white rounded-lg border shadow-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge variant="secondary">{q.paper}</Badge>
+                    <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 mb-2">{q.questionText}</p>
+                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                    <p>Topic: {q.topic}</p>
+                    <p>Marks: {q.marks}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button 
+                onClick={handleImport} 
+                disabled={isProcessing}
+                className="bg-indigo-600 text-white"
+              >
+                {isProcessing ? 'Importing...' : 'Import to Bank'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 }
