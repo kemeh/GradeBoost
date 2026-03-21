@@ -250,6 +250,81 @@ export const RadioGroupItem = ({ value, id, className, selectedValue, onValueCha
 };
 
 /**
+ * Tabs Components
+ */
+export interface TabsProps {
+  defaultValue: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const Tabs = ({ defaultValue, value, onValueChange, children, className }: TabsProps) => {
+  const [activeTab, setActiveTab] = React.useState(defaultValue);
+  const currentTab = value !== undefined ? value : activeTab;
+
+  const handleTabChange = (val: string) => {
+    if (value === undefined) {
+      setActiveTab(val);
+    }
+    onValueChange?.(val);
+  };
+
+  return (
+    <div className={cn("w-full", className)}>
+      {React.Children.map(children, child => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child as React.ReactElement<any>, { 
+            activeTab: currentTab, 
+            onTabChange: handleTabChange 
+          });
+        }
+        return child;
+      })}
+    </div>
+  );
+};
+
+export const TabsList = ({ children, className, activeTab, onTabChange }: any) => (
+  <div className={cn("inline-flex h-12 items-center justify-center rounded-2xl bg-slate-100 p-1.5 text-slate-500", className)}>
+    {React.Children.map(children, child => {
+      if (React.isValidElement(child)) {
+        return React.cloneElement(child as React.ReactElement<any>, { 
+          activeTab, 
+          onTabChange 
+        });
+      }
+      return child;
+    })}
+  </div>
+);
+
+export const TabsTrigger = ({ value, children, className, activeTab, onTabChange }: any) => (
+  <button
+    onClick={() => onTabChange(value)}
+    className={cn(
+      "inline-flex items-center justify-center whitespace-nowrap rounded-xl px-6 py-2 text-sm font-black uppercase tracking-widest transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50",
+      activeTab === value
+        ? "bg-white text-slate-900 shadow-sm"
+        : "hover:bg-white/50 hover:text-slate-600",
+      className
+    )}
+  >
+    {children}
+  </button>
+);
+
+export const TabsContent = ({ value, children, className, activeTab }: any) => {
+  if (activeTab !== value) return null;
+  return (
+    <div className={cn("mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300", className)}>
+      {children}
+    </div>
+  );
+};
+
+/**
  * Label Component
  */
 export const Label = ({ children, htmlFor, className }: { children: React.ReactNode; htmlFor?: string; className?: string }) => (

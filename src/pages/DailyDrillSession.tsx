@@ -7,7 +7,7 @@ import {
   Timer, ChevronRight, ChevronLeft, 
   CheckCircle2, AlertCircle, Send, 
   FileText, Upload, Target, Zap, 
-  ArrowLeft, Lock, Sparkles, Trophy
+  ArrowLeft, Lock, Sparkles, Trophy, MessageSquare, X
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,11 +16,62 @@ import { Button, Card, Badge, cn } from '../components/ui';
 
 import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
 
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId: string | undefined;
+    email: string | null | undefined;
+    emailVerified: boolean | undefined;
+    isAnonymous: boolean | undefined;
+    tenantId: string | null | undefined;
+    providerInfo: {
+      providerId: string;
+      displayName: string | null;
+      email: string | null;
+      photoUrl: string | null;
+    }[];
+  }
+}
+
 export default function DailyDrillSession() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedDay = searchParams.get('day');
+
+  const handleFirestoreError = (error: unknown, operationType: OperationType, path: string | null) => {
+    const errInfo: FirestoreErrorInfo = {
+      error: error instanceof Error ? error.message : String(error),
+      authInfo: {
+        userId: auth.currentUser?.uid,
+        email: auth.currentUser?.email,
+        emailVerified: auth.currentUser?.emailVerified,
+        isAnonymous: auth.currentUser?.isAnonymous,
+        tenantId: auth.currentUser?.tenantId,
+        providerInfo: auth.currentUser?.providerData.map(provider => ({
+          providerId: provider.providerId,
+          displayName: provider.displayName,
+          email: provider.email,
+          photoUrl: provider.photoURL
+        })) || []
+      },
+      operationType,
+      path
+    }
+    console.error('Firestore Error: ', JSON.stringify(errInfo));
+    throw new Error(JSON.stringify(errInfo));
+  }
   
   const [drill, setDrill] = useState<DailyDrill | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +81,7 @@ export default function DailyDrillSession() {
   
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submission, setSubmission] = useState<DailyDrillSubmission | null>(null);
+  const [submissions, setSubmissions] = useState<DailyDrillSubmission[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -101,25 +153,25 @@ export default function DailyDrillSession() {
         const subSnapshot = await getDocs(subQ);
         if (!subSnapshot.empty) {
           setHasSubmitted(true);
+          const allSubs = subSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyDrillSubmission));
+          setSubmissions(allSubs);
           
           // Reconstruct answers if it's Paper 1
           if (currentDrill.paperType === 'Paper 1') {
             const reconstructedAnswers: Record<string, string> = {};
-            subSnapshot.docs.forEach(doc => {
-              const data = doc.data();
-              if (data.questionId) {
-                reconstructedAnswers[data.questionId] = data.selectedAnswer;
+            allSubs.forEach(sub => {
+              if (sub.questionId) {
+                reconstructedAnswers[sub.questionId] = sub.selectedAnswer;
               }
             });
             setAnswers(reconstructedAnswers);
             setShowResults(true);
           } else {
             // For Paper 2/3, just take the first one
-            const firstSub = subSnapshot.docs[0].data();
+            const firstSub = allSubs[0];
             setStructuredAnswer(firstSub.selectedAnswer || '');
+            setSubmission(firstSub);
           }
-          
-          setSubmission({ id: subSnapshot.docs[0].id, ...subSnapshot.docs[0].data() } as DailyDrillSubmission);
         }
       } else {
         setDrill(null);
@@ -222,7 +274,12 @@ export default function DailyDrillSession() {
 
     } catch (err) {
       console.error("Error submitting drill:", err);
-      setError('Failed to submit your answers. Please try again.');
+      try {
+        handleFirestoreError(err, OperationType.WRITE, 'drill_submissions');
+      } catch (finalErr: any) {
+        // The error is already logged to console as JSON
+        setError('Failed to submit your answers. Please check your connection or contact support.');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -412,6 +469,22 @@ export default function DailyDrillSession() {
                       </div>
                       <p className="text-indigo-900/80 font-medium leading-relaxed">
                         {currentQuestion.reasoning}
+                      </p>
+                    </motion.div>
+                  )}
+
+                  {showResults && drill.paperType === 'Paper 1' && submissions.find(s => s.questionId === currentQuestion.id)?.feedback && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="mt-6 p-8 bg-emerald-50 rounded-3xl border border-emerald-100"
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <MessageSquare className="text-emerald-600" size={20} />
+                        <h4 className="text-sm font-black text-emerald-900 uppercase tracking-widest">Tutor Feedback</h4>
+                      </div>
+                      <p className="text-emerald-900/80 font-medium leading-relaxed">
+                        {submissions.find(s => s.questionId === currentQuestion.id)?.feedback}
                       </p>
                     </motion.div>
                   )}

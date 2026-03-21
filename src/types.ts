@@ -5,6 +5,8 @@ export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
 export interface UserProfile {
   uid: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone?: string;
   subject: Subject;
@@ -99,16 +101,43 @@ export interface DailyDrillSubmission {
   id: string;
   userId: string;
   drillId: string;
-  day: number;
-  questionId: string;
-  selectedAnswer: string;
-  correctAnswer: string;
+  topic: string;
   score: number;
-  createdAt: any; // Timestamp
-  subject?: Subject;
-  paperType?: 'Paper 1' | 'Paper 2' | 'Paper 3';
-  fileUrl?: string;
-  grade?: Grade;
+  totalQuestions: number;
+  answers: Record<string, string>;
+  timestamp: string;
+  questionId?: string;
+  selectedAnswer?: string;
   feedback?: string;
-  gradedStatus: boolean;
+}
+
+export interface LearningResource {
+  id: string;
+  title: string;
+  description: string;
+  topic: string;
+  link: string;
+  createdAt: any;
+}
+
+export interface Resource {
+  id: string;
+  title: string;
+  type: 'PDF' | 'Video' | 'Link';
+  subject: Subject;
+  fileUrl: string;
+  fileSize: string;
+  visible: boolean;
+  createdAt: any;
+}
+
+export interface Assignment {
+  id: string;
+  title: string;
+  paper: string;
+  subject: Subject;
+  dueDate: any; // Timestamp
+  link: string;
+  active: boolean;
+  createdAt: any;
 }

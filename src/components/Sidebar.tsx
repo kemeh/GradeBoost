@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, Target, Trophy, 
-  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard
+  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -41,6 +41,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: CreditCard, label: 'Payments', path: '/admin?tab=payments' },
     { icon: FileText, label: 'Manage Papers', path: '/admin?tab=papers' },
     { icon: Target, label: 'Daily Drills', path: '/admin/daily-drill' },
+    { icon: BookOpen, label: 'Resources & Assignments', path: '/admin/resources' },
     { icon: LayoutDashboard, label: 'Student View', path: '/dashboard' },
   ];
 

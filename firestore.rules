@@ -86,6 +86,37 @@
 //   - isFreeSample: bool (required, true)
 //   - createdAt: string (required, ISO date)
 //
+// Collection: learning_resources
+// Document ID: {resourceId}
+// Fields:
+//   - title: string
+//   - description: string
+//   - topic: string
+//   - link: string
+//   - createdAt: timestamp
+//
+// Collection: resources
+// Document ID: {resourceId}
+// Fields:
+//   - title: string
+//   - type: string (PDF, Video, Link)
+//   - subject: string (Computer Science, ICT)
+//   - fileUrl: string
+//   - fileSize: string
+//   - visible: bool
+//   - createdAt: timestamp
+//
+// Collection: assignments
+// Document ID: {assignmentId}
+// Fields:
+//   - title: string
+//   - paper: string
+//   - subject: string (Computer Science, ICT)
+//   - dueDate: timestamp
+//   - link: string
+//   - active: bool
+//   - createdAt: timestamp
+//
 // ===============================================================
 
 rules_version = '2';
@@ -158,6 +189,8 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             (!('firstName' in data) || data.firstName is string) &&
+             (!('lastName' in data) || data.lastName is string) &&
              isValidEmail(data.email) &&
              (!('phone' in data) || isValidPhone(data.phone)) &&
              data.subject in ["Computer Science", "ICT"] &&
@@ -240,7 +273,12 @@ service cloud.firestore {
              data.selectedAnswer is string &&
              data.correctAnswer is string &&
              data.score is number &&
-             data.createdAt is timestamp;
+             data.createdAt is timestamp &&
+             data.subject is string &&
+             data.paperType is string &&
+             data.gradedStatus is bool &&
+             (!('fileUrl' in data) || data.fileUrl is string) &&
+             (!('feedback' in data) || data.feedback is string);
     }
 
     function isValidSampleQuestion(data) {
@@ -252,6 +290,33 @@ service cloud.firestore {
              data.reasoning is string && data.reasoning.size() > 0 && data.reasoning.size() <= 2000 &&
              data.isFreeSample == true &&
              data.createdAt is string;
+    }
+
+    function isValidLearningResource(data) {
+      return data.title is string && data.title.size() > 0 &&
+             data.topic is string &&
+             isValidUrl(data.link) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidResource(data) {
+      return data.title is string && data.title.size() > 0 &&
+             data.type in ["PDF", "Video", "Link"] &&
+             data.subject in ["Computer Science", "ICT"] &&
+             isValidUrl(data.fileUrl) &&
+             data.fileSize is string &&
+             data.visible is bool &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidAssignment(data) {
+      return data.title is string && data.title.size() > 0 &&
+             data.paper is string &&
+             data.subject in ["Computer Science", "ICT"] &&
+             data.dueDate is timestamp &&
+             isValidUrl(data.link) &&
+             data.active is bool &&
+             data.createdAt is timestamp;
     }
 
     function getCurrentDay() {
@@ -339,6 +404,21 @@ service cloud.firestore {
     match /sampleQuestions/{sampleId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAdmin() && isValidSampleQuestion(request.resource.data);
+    }
+
+    match /learning_resources/{resourceId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isValidLearningResource(request.resource.data);
+    }
+
+    match /resources/{resourceId} {
+      allow read: if isAuthenticated() && (resource.data.visible == true || isAdmin());
+      allow create, update, delete: if isAdmin() && isValidResource(request.resource.data);
+    }
+
+    match /assignments/{assignmentId} {
+      allow read: if isAuthenticated() && (resource.data.active == true || isAdmin());
+      allow create, update, delete: if isAdmin() && isValidAssignment(request.resource.data);
     }
 
     // Default deny

@@ -6,6 +6,8 @@
       "type": "object",
       "properties": {
         "name": { "type": "string", "description": "Full name of the user." },
+        "firstName": { "type": "string", "description": "First name of the user." },
+        "lastName": { "type": "string", "description": "Last name of the user." },
         "email": { "type": "string", "format": "email", "description": "Email address of the user." },
         "subject": { "type": "string", "enum": ["Computer Science", "ICT"], "description": "The subject the student is studying." },
         "school": { "type": "string" },
@@ -118,6 +120,49 @@
         "userAgent": { "type": "string" }
       },
       "required": ["error", "timestamp"]
+    },
+    "LearningResource": {
+      "title": "Learning Resource",
+      "description": "Recommended learning resources for students.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "topic": { "type": "string" },
+        "link": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "topic", "link", "createdAt"]
+    },
+    "Resource": {
+      "title": "Resource",
+      "description": "Educational resources like PDFs and videos.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["PDF", "Video", "Link"] },
+        "subject": { "type": "string", "enum": ["Computer Science", "ICT"] },
+        "fileUrl": { "type": "string", "format": "uri" },
+        "fileSize": { "type": "string" },
+        "visible": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "type", "subject", "fileUrl", "visible", "createdAt"]
+    },
+    "Assignment": {
+      "title": "Assignment",
+      "description": "Assigned tasks for students.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "paper": { "type": "string" },
+        "subject": { "type": "string", "enum": ["Computer Science", "ICT"] },
+        "dueDate": { "type": "string", "format": "date-time" },
+        "link": { "type": "string", "format": "uri" },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "paper", "subject", "dueDate", "link", "active", "createdAt"]
     }
   },
   "firestore": {
@@ -148,6 +193,18 @@
     "/securityAudit/{auditId}": {
       "schema": "SecurityAudit",
       "description": "Security audit logs."
+    },
+    "/learning_resources/{resourceId}": {
+      "schema": "LearningResource",
+      "description": "Learning resources for students."
+    },
+    "/resources/{resourceId}": {
+      "schema": "Resource",
+      "description": "Educational resources."
+    },
+    "/assignments/{assignmentId}": {
+      "schema": "Assignment",
+      "description": "Student assignments."
     }
   }
 }

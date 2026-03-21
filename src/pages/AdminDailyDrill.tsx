@@ -37,7 +37,8 @@ export default function AdminDailyDrill() {
     day: '',
     subject: '',
     paperType: '',
-    status: ''
+    status: '',
+    userId: ''
   });
 
   // Form State
@@ -70,6 +71,7 @@ export default function AdminDailyDrill() {
     if (filters.day) filtered = filtered.filter(s => s.day === parseInt(filters.day));
     if (filters.subject) filtered = filtered.filter(s => s.subject === filters.subject);
     if (filters.paperType) filtered = filtered.filter(s => s.paperType === filters.paperType);
+    if (filters.userId) filtered = filtered.filter(s => s.userId.toLowerCase().includes(filters.userId.toLowerCase()));
     if (filters.status) {
       const isGraded = filters.status === 'Graded';
       filtered = filtered.filter(s => s.gradedStatus === isGraded);
@@ -353,6 +355,16 @@ export default function AdminDailyDrill() {
                 <option value="Pending">Pending</option>
               </select>
             </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Student ID</label>
+              <input 
+                type="text" 
+                placeholder="Search Student ID" 
+                className="w-full px-4 py-2 rounded-xl border border-slate-100 outline-none font-bold text-sm bg-white"
+                value={filters.userId}
+                onChange={e => setFilters({ ...filters, userId: e.target.value })}
+              />
+            </div>
           </div>
         )}
 
@@ -422,7 +434,9 @@ export default function AdminDailyDrill() {
                       </td>
                       <td className="px-8 py-4">
                         <p className="text-sm font-bold text-slate-900">Day {sub.day}</p>
-                        <p className="text-[10px] text-slate-400 font-black uppercase">{sub.subject}</p>
+                        <p className="text-[10px] text-slate-400 font-black uppercase">
+                          {sub.subject} {sub.paperType === 'Paper 1' && `- Q${sub.questionId}`}
+                        </p>
                       </td>
                       <td className="px-8 py-4">
                         <Badge variant="secondary">{sub.paperType}</Badge>
