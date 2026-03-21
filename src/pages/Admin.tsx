@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Upload, FileText, Trash2, 
   Users, BarChart3, ShieldCheck, 
-  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard, AlertCircle, CheckCircle2
+  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard, AlertCircle, CheckCircle2, Loader2
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
+import FileUpload from '../components/FileUpload';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { QuestionPaper, Subject, PaperType, SampleQuestion } from '../types';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
@@ -25,7 +26,6 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [showUpload, setShowUpload] = useState(false);
   const activeTab = (searchParams.get('tab') as 'papers' | 'payments' | 'manual' | 'samples') || 'papers';
   const [users, setUsers] = useState<any[]>([]);
@@ -44,8 +44,8 @@ export default function Admin() {
     paperType: 'Paper 1' as PaperType,
     description: '',
     correctAnswersRaw: '', // Raw string for input
+    pdfUrl: '',
   });
-  const [file, setFile] = useState<File | null>(null);
 
   const [showSampleModal, setShowSampleModal] = useState(false);
   const [editingSample, setEditingSample] = useState<SampleQuestion | null>(null);
@@ -206,72 +206,55 @@ export default function Admin() {
     }
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
+  const handleSavePaper = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file || !user) return;
+    if (!formData.pdfUrl || !user) {
+      toast.error('Please upload a PDF file first');
+      return;
+    }
 
     setUploading(true);
-    setUploadProgress(0);
     setError('');
     
     try {
-      const storageRef = ref(storage, `papers/${Date.now()}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const correctAnswers: Record<string, string> = {};
+      if (formData.paperType === 'Paper 1' && formData.correctAnswersRaw) {
+        formData.correctAnswersRaw.split(',').forEach(pair => {
+          const [q, a] = pair.trim().split(':');
+          if (q && a) correctAnswers[q.trim()] = a.trim().toUpperCase();
+        });
+      }
 
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        }, 
-        (error) => {
-          console.error("Upload error:", error);
-          toast.error('Failed to upload paper');
-          setUploading(false);
-        }, 
-        async () => {
-          try {
-            const pdfUrl = await getDownloadURL(uploadTask.snapshot.ref);
+      const path = 'questionPapers';
+      await addDoc(collection(db, path), {
+        title: formData.title,
+        year: formData.year,
+        subject: formData.subject,
+        paperType: formData.paperType,
+        description: formData.description,
+        correctAnswers,
+        pdfUrl: formData.pdfUrl,
+        createdAt: serverTimestamp(),
+        uploadedBy: user.uid,
+      });
 
-            const correctAnswers: Record<string, string> = {};
-            if (formData.paperType === 'Paper 1' && formData.correctAnswersRaw) {
-              formData.correctAnswersRaw.split(',').forEach(pair => {
-                const [q, a] = pair.trim().split(':');
-                if (q && a) correctAnswers[q.trim()] = a.trim().toUpperCase();
-              });
-            }
-
-            const path = 'questionPapers';
-            await addDoc(collection(db, path), {
-              ...formData,
-              correctAnswers,
-              pdfUrl,
-              createdAt: serverTimestamp(),
-              uploadedBy: user.uid,
-            });
-
-            setShowUpload(false);
-            setFormData({
-              title: '',
-              year: new Date().getFullYear(),
-              subject: 'Computer Science' as Subject,
-              paperType: 'Paper 1' as PaperType,
-              description: '',
-              correctAnswersRaw: '',
-            });
-            setFile(null);
-            setUploadProgress(0);
-            fetchPapers();
-            toast.success('Paper uploaded successfully!');
-          } catch (err: any) {
-            handleFirestoreError(err, OperationType.CREATE, 'questionPapers');
-          } finally {
-            setUploading(false);
-          }
-        }
-      );
+      setShowUpload(false);
+      setFormData({
+        title: '',
+        year: new Date().getFullYear(),
+        subject: 'Computer Science' as Subject,
+        paperType: 'Paper 1' as PaperType,
+        description: '',
+        correctAnswersRaw: '',
+        pdfUrl: '',
+      });
+      fetchPapers();
+      toast.success('Paper saved successfully!');
     } catch (err: any) {
-      console.error("Upload setup error:", err);
-      setError('Failed to start upload.');
+      console.error("Save paper error:", err);
+      handleFirestoreError(err, OperationType.CREATE, 'questionPapers');
+      setError('Failed to save paper details.');
+    } finally {
       setUploading(false);
     }
   };
@@ -901,7 +884,7 @@ export default function Admin() {
             >
               <Card className="p-8 shadow-2xl">
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-8">Upload Question Paper</h2>
-                <form onSubmit={handleUpload} className="space-y-6">
+                <form onSubmit={handleSavePaper} className="space-y-6">
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
                     <input 
@@ -966,21 +949,18 @@ export default function Admin() {
 
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PDF File</label>
-                    <div className="relative group">
-                      <input 
-                        type="file" 
-                        accept=".pdf"
-                        required
-                        onChange={e => setFile(e.target.files?.[0] || null)}
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      />
-                      <div className="w-full p-8 border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center gap-2 group-hover:border-indigo-600 transition-colors">
-                        <Upload className="text-slate-300 group-hover:text-indigo-600 transition-colors" size={32} />
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
-                          {file ? file.name : 'Click to upload PDF'}
-                        </p>
-                      </div>
-                    </div>
+                    <FileUpload
+                      onUploadStart={() => setUploading(true)}
+                      onUploadComplete={(url) => {
+                        setFormData(prev => ({ ...prev, pdfUrl: url }));
+                        setUploading(false);
+                      }}
+                      onUploadError={() => setUploading(false)}
+                      onDelete={() => setFormData(prev => ({ ...prev, pdfUrl: '' }))}
+                      initialUrl={formData.pdfUrl}
+                      folder="papers"
+                      label="Upload Question Paper"
+                    />
                   </div>
 
                   <div className="flex gap-4 pt-4">
@@ -993,20 +973,13 @@ export default function Admin() {
                     >
                       Cancel
                     </Button>
-                    <Button type="submit" className="flex-1" disabled={uploading}>
+                    <Button type="submit" className="flex-1" disabled={uploading || !formData.pdfUrl}>
                       {uploading ? (
-                        <div className="flex flex-col items-center gap-1">
-                          <span>{uploadProgress < 100 ? `Uploading ${Math.round(uploadProgress)}%` : 'Finalizing...'}</span>
-                          {uploading && (
-                            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-white transition-all duration-300" 
-                                style={{ width: `${uploadProgress}%` }}
-                              />
-                            </div>
-                          )}
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="animate-spin" size={18} />
+                          <span>Saving...</span>
                         </div>
-                      ) : 'Upload Paper'}
+                      ) : 'Save Paper'}
                     </Button>
                   </div>
                 </form>

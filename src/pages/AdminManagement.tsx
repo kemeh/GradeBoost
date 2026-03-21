@@ -113,47 +113,6 @@ export default function AdminManagement() {
     setIsResourceDialogOpen(true);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
-      toast.error('Please upload a PDF file');
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(0);
-    try {
-      const storageRef = ref(storage, `resources/${Date.now()}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        }, 
-        (error) => {
-          console.error('Upload error:', error);
-          toast.error('Failed to upload file');
-          setUploading(false);
-        }, 
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-          setResourceForm(prev => ({ ...prev, fileUrl: url, fileSize: size }));
-          setUploadProgress(0);
-          setUploading(false);
-          toast.success('File uploaded successfully');
-        }
-      );
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload file');
-      setUploading(false);
-    }
-  };
-
   const handleSaveResource = async () => {
     if (!resourceForm.title || !resourceForm.fileUrl) {
       toast.error('Please fill in all required fields');
@@ -449,10 +408,12 @@ export default function AdminManagement() {
                 <label className="text-xs font-black uppercase tracking-widest text-slate-400">File / Link *</label>
                 {resourceForm.type === 'PDF' ? (
                   <FileUpload
+                    onUploadStart={() => setUploading(true)}
                     onUploadComplete={(url, name, size) => {
                       setResourceForm(prev => ({ ...prev, fileUrl: url, fileSize: size }));
                       setUploading(false);
                     }}
+                    onUploadError={() => setUploading(false)}
                     onDelete={() => {
                       setResourceForm(prev => ({ ...prev, fileUrl: '', fileSize: '' }));
                     }}

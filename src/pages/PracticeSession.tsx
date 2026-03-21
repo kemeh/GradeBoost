@@ -175,7 +175,7 @@ export default function PracticeSession() {
             <ArrowLeft size={24} />
           </button>
           <img 
-            src="/logo.png" 
+            src="/logo.svg" 
             alt="GradeBoost 60 Logo" 
             className="h-10 w-auto"
             onError={(e) => {

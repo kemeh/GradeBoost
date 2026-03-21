@@ -248,7 +248,7 @@ export default function PaymentPage() {
       <header className="h-20 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <img 
-            src="/logo.png" 
+            src="/logo.svg" 
             alt="GradeBoost 60 Logo" 
             className="h-10 w-auto"
             onError={(e) => {

@@ -196,7 +196,7 @@ export default function Diagnostic() {
       <header className="h-20 bg-white border-b border-slate-100 px-8 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <img 
-            src="/logo.png" 
+            src="/logo.svg" 
             alt="GradeBoost 60 Logo" 
             className="h-10 w-auto"
             onError={(e) => {

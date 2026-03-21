@@ -160,7 +160,7 @@ export default function AuthPage() {
         <div className="text-center space-y-2">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
             <img 
-              src="/logo.png" 
+              src="/logo.svg" 
               alt="GradeBoost 60 Logo" 
               className="h-12 w-auto"
               onError={(e) => {

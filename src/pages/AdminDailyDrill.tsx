@@ -13,6 +13,7 @@ import {
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
+import FileUpload from '../components/FileUpload';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
 import { ExamQuestion, DailyDrill, DrillSubmission, Subject, PaperType, Grade, WeeklyLeaderboard } from '../types';
@@ -40,7 +41,6 @@ export default function AdminDailyDrill() {
   const [showAutoAssignModal, setShowAutoAssignModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'bank' | 'drills' | 'grading' | 'leaderboard'>('bank');
@@ -183,42 +183,6 @@ export default function AdminDailyDrill() {
     if (filters.userId) filtered = filtered.filter(s => s.userId.toLowerCase().includes(filters.userId.toLowerCase()));
     setFilteredSubmissions(filtered);
   }, [filters, submissions]);
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    setImageUploadProgress(0);
-    try {
-      const storage = getStorage();
-      const storageRef = ref(storage, `exam_questions/${Date.now()}_${file.name}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setImageUploadProgress(progress);
-        },
-        (error) => {
-          console.error('Upload error:', error);
-          toast.error('Failed to upload image.');
-          setIsUploading(false);
-        },
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          setQuestionForm(prev => ({ ...prev, imageUrl: url }));
-          setImageUploadProgress(0);
-          setIsUploading(false);
-          toast.success('Image uploaded successfully!');
-        }
-      );
-    } catch (err) {
-      console.error('Upload error:', err);
-      toast.error('Failed to upload image.');
-      setIsUploading(false);
-    }
-  };
 
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -890,44 +854,22 @@ export default function AdminDailyDrill() {
                     />
                   </div>
 
-                  <div>
+                  <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Diagram / Image (Optional)</label>
-                    <div className="flex items-center gap-4">
-                      {questionForm.imageUrl ? (
-                        <div className="relative w-32 h-32 rounded-lg overflow-hidden border">
-                          <img src={questionForm.imageUrl} alt="Diagram" className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => setQuestionForm(prev => ({ ...prev, imageUrl: undefined }))}
-                            className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                          >
-                            <X size={12} />
-                          </button>
-                        </div>
-                      ) : (
-                        <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-gray-50 transition-all">
-                          <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            {isUploading ? (
-                              <div className="flex flex-col items-center gap-2">
-                                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
-                                <span className="text-[8px] font-black uppercase text-slate-400">
-                                  {imageUploadProgress < 100 ? `${Math.round(imageUploadProgress)}%` : '...'}
-                                </span>
-                              </div>
-                            ) : (
-                              <>
-                                <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-                                <p className="text-xs text-gray-500">Upload</p>
-                              </>
-                            )}
-                          </div>
-                          <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
-                        </label>
-                      )}
-                      <div className="flex-1">
-                        <p className="text-xs text-gray-500">Supported formats: JPG, PNG, WEBP. Max size: 2MB.</p>
-                      </div>
-                    </div>
+                    <FileUpload
+                      onUploadStart={() => setIsUploading(true)}
+                      onUploadComplete={(url) => {
+                        setQuestionForm(prev => ({ ...prev, imageUrl: url }));
+                        setIsUploading(false);
+                      }}
+                      onUploadError={() => setIsUploading(false)}
+                      onDelete={() => setQuestionForm(prev => ({ ...prev, imageUrl: undefined }))}
+                      initialUrl={questionForm.imageUrl}
+                      folder="exam_questions"
+                      accept="image/*"
+                      label={questionForm.imageUrl ? 'Change Image' : 'Upload Image'}
+                    />
+                    <p className="text-[10px] text-gray-500">Supported formats: JPG, PNG, WEBP. Max size: 2MB.</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -1483,14 +1425,26 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         }
       });
 
-      const questions = JSON.parse(response.text || '[]').map((q: any) => ({
+      const aiResponseText = response.text;
+      if (!aiResponseText) {
+        throw new Error('AI failed to extract questions from the PDF. Please try again or use a different file.');
+      }
+
+      console.log('AI Response:', aiResponseText);
+      const questions = JSON.parse(aiResponseText).map((q: any) => ({
         ...q,
         subject: selectedSubject
       }));
+      
+      if (questions.length === 0) {
+        throw new Error('No questions were found in the PDF.');
+      }
+
       setPreviewQuestions(questions);
     } catch (err: any) {
       console.error('Import error:', err);
       setError(err.message || 'Failed to process file.');
+      toast.error(err.message || 'Failed to process file.');
     } finally {
       setIsProcessing(false);
       setProcessingStatus('');

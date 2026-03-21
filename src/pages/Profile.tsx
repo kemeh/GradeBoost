@@ -23,7 +23,6 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
-  const [avatarProgress, setAvatarProgress] = useState(0);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     school: user?.school || '',
@@ -49,49 +48,6 @@ export default function Profile() {
       handleFirestoreError(error, OperationType.UPDATE, path);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
-    if (!file.type.startsWith('image/')) {
-      toast.error('Please upload an image file');
-      return;
-    }
-
-    setAvatarUploading(true);
-    setAvatarProgress(0);
-
-    try {
-      const storageRef = ref(storage, `avatars/${user.uid}_${Date.now()}`);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setAvatarProgress(progress);
-        },
-        (error) => {
-          console.error('Avatar upload error:', error);
-          toast.error('Failed to upload avatar');
-          setAvatarUploading(false);
-        },
-        async () => {
-          const url = await getDownloadURL(uploadTask.snapshot.ref);
-          await updateDoc(doc(db, 'users', user.uid), {
-            photoURL: url,
-            updatedAt: serverTimestamp()
-          });
-          setAvatarUploading(false);
-          toast.success('Profile picture updated!');
-        }
-      );
-    } catch (error) {
-      console.error('Avatar upload error:', error);
-      toast.error('Failed to upload avatar');
-      setAvatarUploading(false);
     }
   };
 
@@ -122,13 +78,7 @@ export default function Profile() {
               <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black overflow-hidden relative">
                 {avatarUploading ? (
                   <div className="absolute inset-0 bg-indigo-600/80 flex flex-col items-center justify-center p-2">
-                    <Loader2 className="animate-spin text-white mb-1" size={16} />
-                    <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-white transition-all duration-300" 
-                        style={{ width: `${avatarProgress}%` }}
-                      />
-                    </div>
+                    <Loader2 className="animate-spin text-white" size={24} />
                   </div>
                 ) : user.photoURL ? (
                   <img 
@@ -149,18 +99,46 @@ export default function Profile() {
                   </div>
                 )}
               </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-black text-slate-900 leading-tight">{user.name}</span>
-                <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{user.role}</span>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-col">
+                  <span className="text-lg font-black text-slate-900 leading-tight">{user.name}</span>
+                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{user.role}</span>
+                </div>
+                <FileUpload
+                  onUploadStart={() => setAvatarUploading(true)}
+                  onUploadComplete={async (url) => {
+                    try {
+                      await updateDoc(doc(db, 'users', user.uid), {
+                        photoURL: url,
+                        updatedAt: serverTimestamp()
+                      });
+                      setAvatarUploading(false);
+                      toast.success('Profile picture updated!');
+                    } catch (error) {
+                      console.error('Error updating profile with new photoURL:', error);
+                      toast.error('Failed to update profile picture');
+                      setAvatarUploading(false);
+                    }
+                  }}
+                  onUploadError={() => setAvatarUploading(false)}
+                  onDelete={async () => {
+                    try {
+                      await updateDoc(doc(db, 'users', user.uid), {
+                        photoURL: '',
+                        updatedAt: serverTimestamp()
+                      });
+                      toast.success('Profile picture removed');
+                    } catch (error) {
+                      console.error('Error removing photoURL:', error);
+                      toast.error('Failed to remove profile picture');
+                    }
+                  }}
+                  initialUrl={user.photoURL}
+                  folder="avatars"
+                  accept="image/*"
+                  label={user.photoURL ? 'Change Photo' : 'Upload Photo'}
+                />
               </div>
-              <input 
-                id="avatar-upload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarUpload}
-                disabled={avatarUploading}
-              />
             </div>
           </div>
 

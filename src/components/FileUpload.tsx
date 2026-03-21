@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useId } from 'react';
 import { 
   Upload, X, CheckCircle2, AlertCircle, 
   Loader2, FileText, RefreshCw, Trash2 
@@ -10,6 +10,8 @@ import { toast } from 'react-hot-toast';
 
 interface FileUploadProps {
   onUploadComplete: (url: string, fileName: string, fileSize: string) => void;
+  onUploadStart?: () => void;
+  onUploadError?: (error: string) => void;
   onDelete?: () => void;
   accept?: string;
   maxSizeMB?: number;
@@ -21,6 +23,8 @@ interface FileUploadProps {
 
 export default function FileUpload({
   onUploadComplete,
+  onUploadStart,
+  onUploadError,
   onDelete,
   accept = 'application/pdf',
   maxSizeMB = 10,
@@ -29,6 +33,7 @@ export default function FileUpload({
   label = 'Upload File',
   className
 }: FileUploadProps) {
+  const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -54,6 +59,7 @@ export default function FileUpload({
     setUploading(true);
     setProgress(0);
     setError(null);
+    if (onUploadStart) onUploadStart();
 
     const storageRef = ref(storage, `${folder}/${Date.now()}_${fileToUpload.name}`);
     const task = uploadBytesResumable(storageRef, fileToUpload);
@@ -67,8 +73,10 @@ export default function FileUpload({
       },
       (err) => {
         console.error('Upload error:', err);
-        setError('Upload failed. Check your connection.');
+        const errorMessage = 'Upload failed. Check your connection.';
+        setError(errorMessage);
         setUploading(false);
+        if (onUploadError) onUploadError(errorMessage);
         toast.error('Upload failed');
       },
       async () => {
@@ -81,12 +89,14 @@ export default function FileUpload({
           toast.success('Upload complete!');
         } catch (err) {
           console.error('Error getting download URL:', err);
-          setError('Failed to finalize upload.');
+          const errorMessage = 'Failed to finalize upload.';
+          setError(errorMessage);
           setUploading(false);
+          if (onUploadError) onUploadError(errorMessage);
         }
       }
     );
-  }, [folder, onUploadComplete]);
+  }, [folder, onUploadComplete, onUploadStart, onUploadError]);
 
   const handleRetry = () => {
     if (file) {
@@ -134,10 +144,10 @@ export default function FileUpload({
             accept={accept}
             onChange={handleFileChange}
             className="hidden"
-            id="file-input"
+            id={inputId}
           />
           <label
-            htmlFor="file-input"
+            htmlFor={inputId}
             className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-600 cursor-pointer transition-all group"
           >
             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
