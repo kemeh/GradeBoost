@@ -4,7 +4,7 @@ import {
   Plus, Search, Edit2, Trash2, ExternalLink, 
   BookOpen, Save, X, AlertCircle, CheckCircle2,
   FileText, Calendar, Link as LinkIcon, Eye, EyeOff,
-  Upload, Loader2, FileUp
+  Upload, Loader2, FileUp, RefreshCw
 } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { 
@@ -12,13 +12,14 @@ import {
   doc, onSnapshot, query, orderBy, serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
+import FileUpload from '../components/FileUpload';
 import { 
   Button, Card, Badge, cn,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
-  Tabs, TabsList, TabsTrigger, TabsContent
+  Tabs, TabsList, TabsTrigger, TabsContent, Progress
 } from '../components/ui';
 import { Resource, Assignment, Subject } from '../types';
 import { toast } from 'react-hot-toast';
@@ -447,50 +448,18 @@ export default function AdminManagement() {
               <div className="space-y-2">
                 <label className="text-xs font-black uppercase tracking-widest text-slate-400">File / Link *</label>
                 {resourceForm.type === 'PDF' ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <Button 
-                        variant="outline" 
-                        className="w-full border-dashed border-2 py-8 flex flex-col gap-2"
-                        onClick={() => document.getElementById('file-upload')?.click()}
-                        disabled={uploading}
-                      >
-                        {uploading ? (
-                          <div className="flex flex-col items-center gap-2">
-                            <Loader2 className="animate-spin" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">
-                              {uploadProgress < 100 ? `Uploading ${Math.round(uploadProgress)}%` : 'Finalizing...'}
-                            </span>
-                            <div className="w-32 h-1 bg-slate-100 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-indigo-600 transition-all duration-300" 
-                                style={{ width: `${uploadProgress}%` }}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <>
-                            <Upload />
-                            <span className="text-xs font-bold uppercase tracking-widest">
-                              {resourceForm.fileUrl ? 'Change PDF' : 'Upload PDF'}
-                            </span>
-                          </>
-                        )}
-                      </Button>
-                      <input 
-                        id="file-upload" 
-                        type="file" 
-                        accept="application/pdf" 
-                        className="hidden" 
-                        onChange={handleFileUpload}
-                      />
-                    </div>
-                    {resourceForm.fileUrl && (
-                      <p className="text-xs font-bold text-emerald-600 flex items-center gap-2">
-                        <CheckCircle2 size={14} /> File Ready ({resourceForm.fileSize})
-                      </p>
-                    )}
-                  </div>
+                  <FileUpload
+                    onUploadComplete={(url, name, size) => {
+                      setResourceForm(prev => ({ ...prev, fileUrl: url, fileSize: size }));
+                      setUploading(false);
+                    }}
+                    onDelete={() => {
+                      setResourceForm(prev => ({ ...prev, fileUrl: '', fileSize: '' }));
+                    }}
+                    initialUrl={resourceForm.fileUrl}
+                    folder="resources"
+                    label={resourceForm.fileUrl ? 'Change PDF' : 'Upload PDF'}
+                  />
                 ) : (
                   <input 
                     type="url" 
@@ -607,16 +576,16 @@ interface BulkResourceImportModalProps {
 }
 
 function BulkResourceImportModal({ onClose, onImported }: BulkResourceImportModalProps) {
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<{ file: File, progress: number, status: 'idle' | 'uploading' | 'success' | 'error', url?: string, size?: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
   const [selectedSubject, setSelectedSubject] = useState<Subject>('Computer Science');
   const [error, setError] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (selectedFiles.length > 0) {
-      setFiles(prev => [...prev, ...selectedFiles]);
+      const newFiles = selectedFiles.map(f => ({ file: f, progress: 0, status: 'idle' as const }));
+      setFiles(prev => [...prev, ...newFiles]);
       setError('');
     }
   };
@@ -625,51 +594,100 @@ function BulkResourceImportModal({ onClose, onImported }: BulkResourceImportModa
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  const uploadFile = async (index: number) => {
+    const fileData = files[index];
+    if (fileData.status === 'success') return;
+
+    setFiles(prev => {
+      const next = [...prev];
+      next[index] = { ...next[index], status: 'uploading', progress: 0 };
+      return next;
+    });
+
+    return new Promise<void>((resolve, reject) => {
+      const storageRef = ref(storage, `resources/${Date.now()}_${fileData.file.name}`);
+      const uploadTask = uploadBytesResumable(storageRef, fileData.file);
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setFiles(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], progress };
+            return next;
+          });
+        },
+        (error) => {
+          console.error(`Upload error for ${fileData.file.name}:`, error);
+          setFiles(prev => {
+            const next = [...prev];
+            next[index] = { ...next[index], status: 'error' };
+            return next;
+          });
+          reject(error);
+        },
+        async () => {
+          try {
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            const size = (fileData.file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            
+            await addDoc(collection(db, 'resources'), {
+              title: fileData.file.name.replace(/\.[^/.]+$/, ""),
+              type: 'PDF',
+              subject: selectedSubject,
+              fileUrl: url,
+              fileSize: size,
+              visible: true,
+              createdAt: serverTimestamp()
+            });
+
+            setFiles(prev => {
+              const next = [...prev];
+              next[index] = { ...next[index], status: 'success', url, size, progress: 100 };
+              return next;
+            });
+            resolve();
+          } catch (err) {
+            reject(err);
+          }
+        }
+      );
+    });
+  };
+
   const handleBulkUpload = async () => {
     if (files.length === 0) return;
     setIsUploading(true);
     setError('');
 
     try {
-      const uploadPromises = files.map(async (file) => {
-        return new Promise<void>((resolve, reject) => {
-          const storageRef = ref(storage, `resources/${Date.now()}_${file.name}`);
-          const uploadTask = uploadBytesResumable(storageRef, file);
-
-          uploadTask.on('state_changed',
-            (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              setUploadProgress(prev => ({ ...prev, [file.name]: progress }));
-            },
-            (error) => {
-              console.error(`Upload error for ${file.name}:`, error);
-              reject(error);
-            },
-            async () => {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-              
-              await addDoc(collection(db, 'resources'), {
-                title: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
-                type: 'PDF',
-                subject: selectedSubject,
-                fileUrl: url,
-                fileSize: size,
-                visible: true,
-                createdAt: serverTimestamp()
-              });
-              resolve();
-            }
-          );
-        });
-      });
-
+      const uploadPromises = files.map((_, i) => uploadFile(i));
       await Promise.all(uploadPromises);
       toast.success(`Successfully imported ${files.length} resources!`);
       onImported();
     } catch (err: any) {
       console.error('Bulk upload error:', err);
-      setError('Failed to upload some files. Please try again.');
+      setError('Some files failed to upload. You can retry failed uploads.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const retryFailed = async () => {
+    setIsUploading(true);
+    setError('');
+    try {
+      const retryPromises = files.map((f, i) => {
+        if (f.status === 'error') return uploadFile(i);
+        return Promise.resolve();
+      });
+      await Promise.all(retryPromises);
+      if (files.every(f => f.status === 'success')) {
+        toast.success(`All resources imported!`);
+        onImported();
+      }
+    } catch (err) {
+      setError('Some files still failed. Please check your connection.');
     } finally {
       setIsUploading(false);
     }
@@ -698,47 +716,67 @@ function BulkResourceImportModal({ onClose, onImported }: BulkResourceImportModa
             </select>
           </div>
 
-          <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] text-center bg-slate-50/50">
-            <Upload className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-            <p className="text-slate-500 font-medium mb-4">Select multiple PDF files to upload at once.</p>
-            <input 
-              type="file" 
-              multiple 
-              accept="application/pdf" 
-              onChange={handleFileChange}
-              className="hidden" 
-              id="bulk-resource-files"
-            />
-            <label 
-              htmlFor="bulk-resource-files"
-              className="inline-flex items-center px-8 py-4 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs cursor-pointer hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm"
-            >
-              Select Files
-            </label>
-          </div>
+          {!isUploading && files.length === 0 && (
+            <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] text-center bg-slate-50/50">
+              <Upload className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500 font-medium mb-4">Select multiple PDF files to upload at once.</p>
+              <input 
+                type="file" 
+                multiple 
+                accept="application/pdf" 
+                onChange={handleFileChange}
+                className="hidden" 
+                id="bulk-resource-files"
+              />
+              <label 
+                htmlFor="bulk-resource-files"
+                className="inline-flex items-center px-8 py-4 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs cursor-pointer hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm"
+              >
+                Select Files
+              </label>
+            </div>
+          )}
 
           {files.length > 0 && (
-            <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+            <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
               {files.map((f, i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-3 overflow-hidden">
-                    <FileText className="text-indigo-600 flex-shrink-0" size={18} />
-                    <div className="overflow-hidden">
-                      <p className="text-sm font-bold text-slate-900 truncate">{f.name}</p>
-                      {uploadProgress[f.name] !== undefined && (
-                        <div className="w-full h-1 bg-slate-200 rounded-full mt-1 overflow-hidden">
-                          <div 
-                            className="h-full bg-indigo-600 transition-all duration-300" 
-                            style={{ width: `${uploadProgress[f.name]}%` }}
-                          />
-                        </div>
+                <div key={i} className={cn(
+                  "flex flex-col p-4 rounded-2xl border transition-all",
+                  f.status === 'error' ? "bg-rose-50 border-rose-100" : 
+                  f.status === 'success' ? "bg-emerald-50 border-emerald-100" :
+                  "bg-slate-50 border-slate-100"
+                )}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                      <FileText className={cn(
+                        f.status === 'error' ? "text-rose-600" : 
+                        f.status === 'success' ? "text-emerald-600" : 
+                        "text-indigo-600"
+                      )} size={18} />
+                      <p className="text-sm font-bold text-slate-900 truncate">{f.file.name}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {f.status === 'error' && (
+                        <button onClick={() => uploadFile(i)} className="p-1 text-rose-600 hover:bg-rose-100 rounded">
+                          <RefreshCw size={14} />
+                        </button>
+                      )}
+                      {f.status === 'success' && <CheckCircle2 className="text-emerald-600" size={16} />}
+                      {!isUploading && f.status !== 'success' && (
+                        <button onClick={() => removeFile(i)} className="p-1 text-slate-400 hover:text-rose-600 rounded">
+                          <X size={16} />
+                        </button>
                       )}
                     </div>
                   </div>
-                  {!isUploading && (
-                    <button onClick={() => removeFile(i)} className="text-slate-400 hover:text-rose-600">
-                      <X size={16} />
-                    </button>
+                  {(f.status === 'uploading' || f.status === 'error' || f.status === 'success') && (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <span>{f.status === 'error' ? 'Failed' : f.status === 'success' ? 'Complete' : 'Uploading'}</span>
+                        <span>{Math.round(f.progress)}%</span>
+                      </div>
+                      <Progress value={f.progress} className={cn("h-1", f.status === 'error' && "bg-rose-200")} />
+                    </div>
                   )}
                 </div>
               ))}
@@ -753,19 +791,30 @@ function BulkResourceImportModal({ onClose, onImported }: BulkResourceImportModa
           )}
 
           <div className="flex justify-end gap-4 pt-4">
-            <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button 
-              onClick={handleBulkUpload} 
-              disabled={files.length === 0 || isUploading}
-              className="bg-indigo-600 text-white px-8"
-            >
-              {isUploading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="animate-spin" size={18} />
-                  <span>Uploading...</span>
-                </div>
-              ) : `Upload ${files.length} Files`}
-            </Button>
+            <Button variant="outline" onClick={onClose} disabled={isUploading}>Cancel</Button>
+            {files.some(f => f.status === 'error') ? (
+              <Button 
+                onClick={retryFailed} 
+                disabled={isUploading}
+                className="bg-amber-500 hover:bg-amber-600 text-white px-8"
+              >
+                {isUploading ? <Loader2 className="animate-spin mr-2" size={18} /> : <RefreshCw className="mr-2" size={18} />}
+                Retry Failed
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleBulkUpload} 
+                disabled={files.length === 0 || isUploading || files.every(f => f.status === 'success')}
+                className="bg-indigo-600 text-white px-8"
+              >
+                {isUploading ? (
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="animate-spin" size={18} />
+                    <span>Uploading...</span>
+                  </div>
+                ) : `Upload ${files.filter(f => f.status !== 'success').length} Files`}
+              </Button>
+            )}
           </div>
         </div>
       </div>

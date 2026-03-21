@@ -22,6 +22,7 @@ export interface UserProfile {
   paymentStatus?: 'unpaid' | 'paid' | 'pending';
   paymentDate?: string;
   paymentExpiryDate?: string;
+  photoURL?: string;
 }
 
 export interface DiagnosticResult {
@@ -56,6 +57,7 @@ export interface ExamResult {
   subject: Subject;
   paperType: PaperType;
   answers: any;
+  fileUrls?: Record<string, string>;
   score: number;
   feedback: string;
   grade: Grade;

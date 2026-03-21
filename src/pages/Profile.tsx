@@ -4,21 +4,26 @@ import { motion } from 'motion/react';
 import { 
   User, Mail, School, MapPin, 
   ChevronRight, Save,
-  TrendingUp, CheckCircle2, AlertCircle
+  TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2
 } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../firebase';
+import { db, storage } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate } from '../utils/dateUtils';
 import Sidebar from '../components/Sidebar';
+import FileUpload from '../components/FileUpload';
+import { toast } from 'react-hot-toast';
 
 export default function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarProgress, setAvatarProgress] = useState(0);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     school: user?.school || '',
@@ -47,6 +52,49 @@ export default function Profile() {
     }
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    setAvatarUploading(true);
+    setAvatarProgress(0);
+
+    try {
+      const storageRef = ref(storage, `avatars/${user.uid}_${Date.now()}`);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setAvatarProgress(progress);
+        },
+        (error) => {
+          console.error('Avatar upload error:', error);
+          toast.error('Failed to upload avatar');
+          setAvatarUploading(false);
+        },
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          await updateDoc(doc(db, 'users', user.uid), {
+            photoURL: url,
+            updatedAt: serverTimestamp()
+          });
+          setAvatarUploading(false);
+          toast.success('Profile picture updated!');
+        }
+      );
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast.error('Failed to upload avatar');
+      setAvatarUploading(false);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -70,14 +118,49 @@ export default function Profile() {
               </p>
             </div>
             
-            <div className="flex items-center gap-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
-              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black">
-                {user.name?.charAt(0) || 'U'}
+            <div className="flex items-center gap-4 bg-white p-4 rounded-3xl border border-slate-100 shadow-sm group relative">
+              <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white text-2xl font-black overflow-hidden relative">
+                {avatarUploading ? (
+                  <div className="absolute inset-0 bg-indigo-600/80 flex flex-col items-center justify-center p-2">
+                    <Loader2 className="animate-spin text-white mb-1" size={16} />
+                    <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-white transition-all duration-300" 
+                        style={{ width: `${avatarProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                ) : user.photoURL ? (
+                  <img 
+                    src={user.photoURL} 
+                    alt={user.name} 
+                    className="w-full h-full object-cover"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  user.name?.charAt(0) || 'U'
+                )}
+                {!avatarUploading && (
+                  <div 
+                    className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                    onClick={() => document.getElementById('avatar-upload')?.click()}
+                  >
+                    <Camera size={20} />
+                  </div>
+                )}
               </div>
               <div className="flex flex-col">
                 <span className="text-lg font-black text-slate-900 leading-tight">{user.name}</span>
                 <span className="text-xs font-black text-slate-400 uppercase tracking-widest">{user.role}</span>
               </div>
+              <input 
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+                disabled={avatarUploading}
+              />
             </div>
           </div>
 

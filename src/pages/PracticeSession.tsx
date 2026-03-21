@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button, Card, Badge, Progress, cn } from '../components/ui';
 import { QuestionPaper, ExamResult, Subject } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import FileUpload from '../components/FileUpload';
 
 export default function PracticeSession() {
   const { paperId } = useParams();
@@ -24,6 +25,7 @@ export default function PracticeSession() {
   const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState(10800); // 3 hours in seconds
   const [answers, setAnswers] = useState<any>({});
+  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [resultsSummary, setResultsSummary] = useState<{ score: number; grade: string } | null>(null);
@@ -127,6 +129,7 @@ export default function PracticeSession() {
         subject: paper.subject,
         paperType: paper.paperType,
         answers,
+        fileUrls,
         score,
         grade,
         feedback: "Great attempt! Focus on improving your structured answer keywords.",
@@ -287,6 +290,24 @@ export default function PracticeSession() {
                       value={answers[q] || ''}
                       onChange={e => setAnswers({ ...answers, [q]: e.target.value })}
                     />
+                    <div className="mt-2">
+                      <FileUpload 
+                        onUploadComplete={(url) => {
+                          setFileUrls(prev => ({ ...prev, [q]: url }));
+                        }}
+                        onDelete={() => {
+                          setFileUrls(prev => {
+                            const next = { ...prev };
+                            delete next[q];
+                            return next;
+                          });
+                        }}
+                        initialUrl={fileUrls[q]}
+                        folder={`submissions/${user.uid}/practice/${paper.id}`}
+                        label="Upload Photo of Answer"
+                        accept="image/*,application/pdf"
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -302,6 +323,24 @@ export default function PracticeSession() {
                         value={answers['p3'] || ''}
                         onChange={e => setAnswers({ ...answers, 'p3': e.target.value })}
                       />
+                      <div className="mt-4">
+                        <FileUpload 
+                          onUploadComplete={(url) => {
+                            setFileUrls(prev => ({ ...prev, 'p3': url }));
+                          }}
+                          onDelete={() => {
+                            setFileUrls(prev => {
+                              const next = { ...prev };
+                              delete next['p3'];
+                              return next;
+                            });
+                          }}
+                          initialUrl={fileUrls['p3']}
+                          folder={`submissions/${user.uid}/practice/${paper.id}`}
+                          label="Upload Code/Project File"
+                          accept="*/*"
+                        />
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -315,6 +354,24 @@ export default function PracticeSession() {
                           value={answers[module] || ''}
                           onChange={e => setAnswers({ ...answers, [module]: e.target.value })}
                         />
+                        <div className="mt-2">
+                          <FileUpload 
+                            onUploadComplete={(url) => {
+                              setFileUrls(prev => ({ ...prev, [module]: url }));
+                            }}
+                            onDelete={() => {
+                              setFileUrls(prev => {
+                                const next = { ...prev };
+                                delete next[module];
+                                return next;
+                              });
+                            }}
+                            initialUrl={fileUrls[module]}
+                            folder={`submissions/${user.uid}/practice/${paper.id}`}
+                            label={`Upload ${module} File`}
+                            accept="*/*"
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>

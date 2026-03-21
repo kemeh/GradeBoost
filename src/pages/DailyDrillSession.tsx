@@ -13,6 +13,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { DailyDrill, DrillSubmission, ExamQuestion, Grade } from '../types';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
+import FileUpload from '../components/FileUpload';
 
 import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
 
@@ -86,6 +87,7 @@ export default function DailyDrillSession() {
   const [submissions, setSubmissions] = useState<DrillSubmission[]>([]);
   const [showResults, setShowResults] = useState(false);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
   const [structuredAnswer, setStructuredAnswer] = useState('');
   const currentQuestion = questions[currentQuestionIndex];
 
@@ -232,6 +234,7 @@ export default function DailyDrillSession() {
           questionId: q.id,
           day: drill.day,
           selectedAnswer: selectedAnswer,
+          fileUrl: fileUrls[q.id] || '',
           correctAnswer: q.correctAnswer || 'N/A',
           score: score,
           status: isPaper1 ? 'graded' : 'pending',
@@ -470,6 +473,45 @@ export default function DailyDrillSession() {
                           disabled={hasSubmitted}
                         />
                       </div>
+
+                      {!hasSubmitted && (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Or Upload a Photo of Your Answer</label>
+                          <FileUpload 
+                            onUploadComplete={(url) => {
+                              setFileUrls(prev => ({ ...prev, [currentQuestion.id]: url }));
+                            }}
+                            onDelete={() => {
+                              setFileUrls(prev => {
+                                const next = { ...prev };
+                                delete next[currentQuestion.id];
+                                return next;
+                              });
+                            }}
+                            initialUrl={fileUrls[currentQuestion.id]}
+                            folder={`submissions/${user.uid}/drills`}
+                            label="Upload Photo"
+                            accept="image/*,application/pdf"
+                          />
+                        </div>
+                      )}
+
+                      {hasSubmitted && fileUrls[currentQuestion.id] && (
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <FileText className="text-indigo-600" size={20} />
+                            <span className="text-sm font-bold text-slate-900">Uploaded Answer</span>
+                          </div>
+                          <a 
+                            href={fileUrls[currentQuestion.id]} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs font-black text-indigo-600 uppercase tracking-widest hover:underline"
+                          >
+                            View File
+                          </a>
+                        </div>
+                      )}
                     </div>
                   )}
 
