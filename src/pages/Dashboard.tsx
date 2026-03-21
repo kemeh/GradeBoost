@@ -439,7 +439,7 @@ export default function Dashboard() {
                 </h2>
                 <p className="text-indigo-100 font-medium mb-6 max-w-xl">
                   {todayDrill 
-                    ? `Master ${todayDrill.topic} with today's ${todayDrill.paper} drill. Keep your streak alive!`
+                    ? `Master ${todayDrill.topic} with today's ${todayDrill.subject} drill. Keep your streak alive!`
                     : "Get ready for your daily challenge. Consistency is key to achieving an A grade."}
                 </p>
                 <div className="flex flex-wrap gap-4">

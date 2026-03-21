@@ -68,6 +68,7 @@ export interface ExamQuestion {
   options: Record<string, string>; // { A: '...', B: '...', C: '...', D: '...' }
   correctAnswer: string;
   explanation: string;
+  subject: Subject;
   paper: PaperType;
   section: 'A' | 'B' | 'C';
   topic: string;
@@ -82,8 +83,8 @@ export interface ExamQuestion {
 export interface DailyDrill {
   id: string;
   day: number; // 1-60
-  questionId: string;
-  paper: PaperType;
+  questionIds: string[]; // Array of question IDs
+  subject: Subject;
   topic: string;
   isFree: boolean;
   createdAt: any;

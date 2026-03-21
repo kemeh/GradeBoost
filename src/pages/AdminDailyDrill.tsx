@@ -7,12 +7,14 @@ import {
   FileText, HelpCircle, ChevronRight, 
   Search, AlertCircle, Save, X, Edit3,
   Check, MessageSquare, User, Calendar,
-  Image as ImageIcon, Upload, FileUp, Loader2
+  Image as ImageIcon, Upload, FileUp, Loader2, Download,
+  Zap, Trophy, RefreshCw
 } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
+import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
 import { ExamQuestion, DailyDrill, DrillSubmission, Subject, PaperType, Grade, WeeklyLeaderboard } from '../types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui';
 import { useNavigate } from 'react-router-dom';
@@ -20,8 +22,8 @@ import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate, getWeekNumber } from '../utils/dateUtils';
 import { calculateWeeklyLeaderboard } from '../utils/leaderboard';
-import { Trophy, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { SUBJECT_TOPICS, getGroupedTopicsForSubject, SubjectName } from '../constants/topics';
 
 export default function AdminDailyDrill() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -35,6 +37,7 @@ export default function AdminDailyDrill() {
   const [success, setSuccess] = useState('');
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [showDrillModal, setShowDrillModal] = useState(false);
+  const [showAutoAssignModal, setShowAutoAssignModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -60,6 +63,7 @@ export default function AdminDailyDrill() {
     options: { A: '', B: '', C: '', D: '' },
     correctAnswer: 'A',
     explanation: '',
+    subject: 'Computer Science',
     paper: 'Paper 1',
     section: 'A',
     topic: '',
@@ -72,11 +76,20 @@ export default function AdminDailyDrill() {
   // Drill Form State
   const [drillForm, setDrillForm] = useState<Partial<DailyDrill>>({
     day: 1,
-    questionId: '',
-    paper: 'Paper 1',
+    questionIds: [],
+    subject: 'Computer Science',
     topic: '',
     isFree: false
   });
+  const [autoAssignForm, setAutoAssignForm] = useState({
+    day: 1,
+    subject: 'Computer Science' as Subject,
+    topic: '',
+    mcqCount: 10,
+    p2Count: 1,
+    p3Count: 1
+  });
+  const [drillSubjectFilter, setDrillSubjectFilter] = useState<string>('');
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -103,8 +116,26 @@ export default function AdminDailyDrill() {
     }
   };
 
+  useEffect(() => {
+    if (isAdmin) {
+      fetchQuestionsBank();
+    }
+  }, [isAdmin, filters.subject, filters.paper, filters.topic]);
+
   const fetchQuestionsBank = async () => {
-    const q = query(collection(db, 'exam_questions'), orderBy('createdAt', 'desc'));
+    let q = query(collection(db, 'exam_questions'), orderBy('createdAt', 'desc'));
+    
+    // Apply filters if they exist
+    if (filters.subject) {
+      q = query(q, where('subject', '==', filters.subject));
+    }
+    if (filters.paper) {
+      q = query(q, where('paper', '==', filters.paper));
+    }
+    if (filters.topic) {
+      q = query(q, where('topic', '==', filters.topic));
+    }
+
     const snapshot = await getDocs(q);
     setQuestionsBank(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamQuestion)));
   };
@@ -182,11 +213,19 @@ export default function AdminDailyDrill() {
         createdAt: serverTimestamp()
       };
       if (isEditing && editingId) {
-        await updateDoc(doc(db, 'exam_questions', editingId), data);
-        setSuccess('Question updated!');
+        try {
+          await updateDoc(doc(db, 'exam_questions', editingId), data);
+          setSuccess('Question updated!');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `exam_questions/${editingId}`);
+        }
       } else {
-        await addDoc(collection(db, 'exam_questions'), data);
-        setSuccess('Question added to bank!');
+        try {
+          await addDoc(collection(db, 'exam_questions'), data);
+          setSuccess('Question added to bank!');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, 'exam_questions');
+        }
       }
       setShowQuestionModal(false);
       fetchQuestionsBank();
@@ -197,30 +236,90 @@ export default function AdminDailyDrill() {
     }
   };
 
+  const handleAutoAssign = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setLoading(true);
+    try {
+      // 1. Find questions
+      const mcqs = questionsBank
+        .filter(q => q.subject === autoAssignForm.subject && q.topic === autoAssignForm.topic && q.paper === 'Paper 1')
+        .sort(() => 0.5 - Math.random())
+        .slice(0, autoAssignForm.mcqCount);
+
+      const p2s = questionsBank
+        .filter(q => q.subject === autoAssignForm.subject && q.topic === autoAssignForm.topic && q.paper === 'Paper 2')
+        .sort(() => 0.5 - Math.random())
+        .slice(0, autoAssignForm.p2Count);
+
+      const p3s = questionsBank
+        .filter(q => q.subject === autoAssignForm.subject && q.topic === autoAssignForm.topic && q.paper === 'Paper 3')
+        .sort(() => 0.5 - Math.random())
+        .slice(0, autoAssignForm.p3Count);
+
+      const questionIds = [...mcqs, ...p2s, ...p3s].map(q => q.id);
+
+      if (questionIds.length === 0) {
+        throw new Error('No questions found for the selected topic and subject.');
+      }
+
+      // 2. Check if day exists
+      const q = query(collection(db, 'daily_drills'), where('day', '==', autoAssignForm.day));
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        throw new Error(`Day ${autoAssignForm.day} already has an assigned drill.`);
+      }
+
+      // 3. Create drill
+      const data = {
+        day: autoAssignForm.day,
+        subject: autoAssignForm.subject,
+        topic: autoAssignForm.topic,
+        questionIds,
+        isFree: autoAssignForm.day === 1,
+        createdAt: serverTimestamp()
+      };
+
+      await addDoc(collection(db, 'daily_drills'), data);
+      setSuccess(`Day ${autoAssignForm.day} drill generated with ${questionIds.length} questions!`);
+      setShowAutoAssignModal(false);
+      fetchDailyDrills();
+    } catch (err: any) {
+      setError(err.message || 'Failed to auto-assign drill.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSaveDrill = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     setLoading(true);
     try {
-      const selectedQuestion = questionsBank.find(q => q.id === drillForm.questionId);
       const data = {
         ...drillForm,
-        paper: selectedQuestion?.paper || drillForm.paper,
-        topic: selectedQuestion?.topic || drillForm.topic,
         createdAt: serverTimestamp()
       };
       if (isEditing && editingId) {
-        await updateDoc(doc(db, 'daily_drills', editingId), data);
-        setSuccess('Drill updated!');
+        try {
+          await updateDoc(doc(db, 'daily_drills', editingId), data);
+          setSuccess('Drill updated!');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `daily_drills/${editingId}`);
+        }
       } else {
         // Check if day already exists
         const q = query(collection(db, 'daily_drills'), where('day', '==', drillForm.day));
         const snap = await getDocs(q);
         if (!snap.empty) {
-          throw new Error(`Day ${drillForm.day} already has an assigned question.`);
+          throw new Error(`Day ${drillForm.day} already has an assigned drill.`);
         }
-        await addDoc(collection(db, 'daily_drills'), data);
-        setSuccess('Question assigned to day!');
+        try {
+          await addDoc(collection(db, 'daily_drills'), data);
+          setSuccess('Questions assigned to day!');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, 'daily_drills');
+        }
       }
       setShowDrillModal(false);
       fetchDailyDrills();
@@ -237,6 +336,7 @@ export default function AdminDailyDrill() {
       await deleteDoc(doc(db, 'exam_questions', id));
       fetchQuestionsBank();
     } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `exam_questions/${id}`);
       setError('Failed to delete question.');
     }
   };
@@ -247,6 +347,7 @@ export default function AdminDailyDrill() {
       await deleteDoc(doc(db, 'daily_drills', id));
       fetchDailyDrills();
     } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, `daily_drills/${id}`);
       setError('Failed to delete drill.');
     }
   };
@@ -302,6 +403,7 @@ export default function AdminDailyDrill() {
                   options: { A: '', B: '', C: '', D: '' },
                   correctAnswer: 'A',
                   explanation: '',
+                  subject: 'Computer Science',
                   paper: 'Paper 1',
                   section: 'A',
                   topic: '',
@@ -316,18 +418,32 @@ export default function AdminDailyDrill() {
                 Add Question
               </Button>
               <Button variant="outline" onClick={() => {
+                setAutoAssignForm({
+                  day: drills.length + 1,
+                  subject: 'Computer Science',
+                  topic: '',
+                  mcqCount: 10,
+                  p2Count: 1,
+                  p3Count: 1
+                });
+                setShowAutoAssignModal(true);
+              }}>
+                <Zap className="w-4 h-4 mr-2" />
+                Auto-Assign Drill
+              </Button>
+              <Button variant="outline" onClick={() => {
                 setIsEditing(false);
                 setDrillForm({
                   day: drills.length + 1,
-                  questionId: '',
-                  paper: 'Paper 1',
+                  questionIds: [],
+                  subject: 'Computer Science',
                   topic: '',
                   isFree: false
                 });
                 setShowDrillModal(true);
               }}>
                 <Calendar className="w-4 h-4 mr-2" />
-                Assign Drill
+                Manual Assign
               </Button>
               <Button variant="secondary" onClick={() => setShowImportModal(true)}>
                 <FileUp className="w-4 h-4 mr-2" />
@@ -359,12 +475,65 @@ export default function AdminDailyDrill() {
             </TabsList>
 
             <TabsContent value="bank">
+              <div className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+                <select
+                  className="px-4 py-2 border rounded-lg"
+                  value={filters.subject}
+                  onChange={(e) => setFilters({ ...filters, subject: e.target.value, topic: '' })}
+                >
+                  <option value="">All Subjects</option>
+                  <option value="Computer Science">Computer Science</option>
+                  <option value="ICT">ICT</option>
+                </select>
+                <select
+                  className="px-4 py-2 border rounded-lg"
+                  value={filters.paper}
+                  onChange={(e) => setFilters({ ...filters, paper: e.target.value })}
+                >
+                  <option value="">All Papers</option>
+                  <option value="Paper 1">Paper 1</option>
+                  <option value="Paper 2">Paper 2</option>
+                  <option value="Paper 3">Paper 3</option>
+                </select>
+                <select
+                  className="px-4 py-2 border rounded-lg"
+                  value={filters.topic}
+                  onChange={(e) => setFilters({ ...filters, topic: e.target.value })}
+                >
+                  <option value="">All Topics</option>
+                  {filters.subject && Object.values(SUBJECT_TOPICS[filters.subject as SubjectName]).flat().map(topic => (
+                    <option key={topic} value={topic}>{topic}</option>
+                  ))}
+                </select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search questions..."
+                    className="w-full pl-10 pr-4 py-2 border rounded-lg"
+                    onChange={(e) => {
+                      // Simple client-side search for now
+                      const term = e.target.value.toLowerCase();
+                      if (!term) {
+                        fetchQuestionsBank();
+                        return;
+                      }
+                      setQuestionsBank(prev => prev.filter(q => 
+                        q.questionText.toLowerCase().includes(term) || 
+                        q.topic.toLowerCase().includes(term)
+                      ));
+                    }}
+                  />
+                </div>
+              </div>
+
               <Card className="overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50 border-bottom">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Question</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paper</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Topic</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difficulty</th>
@@ -385,6 +554,9 @@ export default function AdminDailyDrill() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-xs font-bold text-slate-400">{q.subject}</div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
                             <Badge variant="secondary">{q.paper}</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -396,23 +568,32 @@ export default function AdminDailyDrill() {
                             </Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <button
-                              onClick={() => {
-                                setIsEditing(true);
-                                setEditingId(q.id!);
-                                setQuestionForm(q);
-                                setShowQuestionModal(true);
-                              }}
-                              className="text-indigo-600 hover:text-indigo-900 mr-4"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteQuestion(q.id!)}
-                              className="text-red-600 hover:text-red-900"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => downloadQuestionAsPDF(q as any)}
+                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                title="Download PDF"
+                              >
+                                <Download className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setIsEditing(true);
+                                  setEditingId(q.id!);
+                                  setQuestionForm(q);
+                                  setShowQuestionModal(true);
+                                }}
+                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteQuestion(q.id!)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -442,7 +623,7 @@ export default function AdminDailyDrill() {
                             <div className="text-sm font-medium text-gray-900">Day {d.day}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant="secondary">{d.paper}</Badge>
+                            <Badge variant="secondary">{d.subject}</Badge>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-500">{d.topic}</div>
@@ -729,6 +910,17 @@ export default function AdminDailyDrill() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                      <select
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={questionForm.subject}
+                        onChange={(e) => setQuestionForm({ ...questionForm, subject: e.target.value as Subject, topic: '' })}
+                      >
+                        <option value="Computer Science">Computer Science (0795)</option>
+                        <option value="ICT">ICT (0796)</option>
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Paper</label>
                       <select
                         className="w-full px-4 py-2 border rounded-lg"
@@ -740,6 +932,9 @@ export default function AdminDailyDrill() {
                         <option value="Paper 3">Paper 3 (Practical/Case Study)</option>
                       </select>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
                       <select
@@ -750,6 +945,18 @@ export default function AdminDailyDrill() {
                         <option value="A">Section A</option>
                         <option value="B">Section B</option>
                         <option value="C">Section C</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Difficulty</label>
+                      <select
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={questionForm.difficulty}
+                        onChange={(e) => setQuestionForm({ ...questionForm, difficulty: e.target.value as any })}
+                      >
+                        <option value="Easy">Easy</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Hard">Hard</option>
                       </select>
                     </div>
                   </div>
@@ -814,13 +1021,21 @@ export default function AdminDailyDrill() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Topic</label>
-                      <input
-                        type="text"
+                      <select
                         required
                         className="w-full px-4 py-2 border rounded-lg"
                         value={questionForm.topic}
                         onChange={(e) => setQuestionForm({ ...questionForm, topic: e.target.value })}
-                      />
+                      >
+                        <option value="">Select Topic</option>
+                        {Object.entries(getGroupedTopicsForSubject(questionForm.subject as SubjectName)).map(([module, topics]) => (
+                          <optgroup key={module} label={module}>
+                            {topics.map(topic => (
+                              <option key={topic} value={topic}>{topic}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Marks</label>
@@ -844,7 +1059,108 @@ export default function AdminDailyDrill() {
           )}
         </AnimatePresence>
 
-        {/* Drill Assignment Modal */}
+        {/* Auto-Assign Modal */}
+        <AnimatePresence>
+          {showAutoAssignModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="bg-white rounded-xl shadow-xl w-full max-w-md p-6"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-bold">Auto-Assign Daily Drill</h2>
+                  <button onClick={() => setShowAutoAssignModal(false)} className="text-gray-400 hover:text-gray-600">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleAutoAssign} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Day (1-60)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        required
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={autoAssignForm.day}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, day: parseInt(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                      <select
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={autoAssignForm.subject}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, subject: e.target.value as Subject, topic: '' })}
+                      >
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="ICT">ICT</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                    <select
+                      required
+                      className="w-full px-4 py-2 border rounded-lg"
+                      value={autoAssignForm.topic}
+                      onChange={(e) => setAutoAssignForm({ ...autoAssignForm, topic: e.target.value })}
+                    >
+                      <option value="">Select Topic</option>
+                      {Object.entries(getGroupedTopicsForSubject(autoAssignForm.subject)).map(([module, topics]) => (
+                        <optgroup key={module} label={module}>
+                          {topics.map(topic => (
+                            <option key={topic} value={topic}>{topic}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">MCQs</label>
+                      <input
+                        type="number"
+                        className="w-full px-2 py-1 border rounded"
+                        value={autoAssignForm.mcqCount}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, mcqCount: parseInt(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Paper 2</label>
+                      <input
+                        type="number"
+                        className="w-full px-2 py-1 border rounded"
+                        value={autoAssignForm.p2Count}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, p2Count: parseInt(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Paper 3</label>
+                      <input
+                        type="number"
+                        className="w-full px-2 py-1 border rounded"
+                        value={autoAssignForm.p3Count}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, p3Count: parseInt(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4">
+                    <Button type="button" variant="outline" onClick={() => setShowAutoAssignModal(false)}>Cancel</Button>
+                    <Button type="submit" disabled={loading}>{loading ? 'Generating...' : 'Generate Drill'}</Button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
         <AnimatePresence>
           {showDrillModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -876,20 +1192,32 @@ export default function AdminDailyDrill() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Question from Bank</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Questions from Bank (Hold Ctrl/Cmd to select multiple)</label>
                     <select
                       required
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={drillForm.questionId}
-                      onChange={(e) => setDrillForm({ ...drillForm, questionId: e.target.value })}
+                      multiple
+                      className="w-full px-4 py-2 border rounded-lg h-48"
+                      value={drillForm.questionIds || []}
+                      onChange={(e) => {
+                        const options = e.target.options;
+                        const values = [];
+                        for (let i = 0; i < options.length; i++) {
+                          if (options[i].selected) {
+                            values.push(options[i].value);
+                          }
+                        }
+                        setDrillForm({ ...drillForm, questionIds: values });
+                      }}
                     >
-                      <option value="">-- Choose a question --</option>
-                      {questionsBank.map(q => (
-                        <option key={q.id} value={q.id}>
-                          [{q.paper}] {q.questionText.substring(0, 50)}...
-                        </option>
-                      ))}
+                      {questionsBank
+                        .filter(q => !drillSubjectFilter || q.subject === drillSubjectFilter)
+                        .map(q => (
+                          <option key={q.id} value={q.id}>
+                            [{q.subject}] [{q.paper}] {q.questionText.substring(0, 50)}...
+                          </option>
+                        ))}
                     </select>
+                    <p className="mt-1 text-xs text-gray-500">Selected: {drillForm.questionIds?.length || 0} questions</p>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -1017,6 +1345,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewQuestions, setPreviewQuestions] = useState<Partial<ExamQuestion>[]>([]);
   const [error, setError] = useState('');
+  const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Computer Science');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -1048,34 +1377,48 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         const mammoth = await import('mammoth');
         const arrayBuffer = await file.arrayBuffer();
-        
-        // Extract images and text
         const result = await mammoth.convertToHtml({ arrayBuffer });
-        const html = result.value;
-        
-        // Simple text extraction from HTML for Gemini
         const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = html;
+        tempDiv.innerHTML = result.value;
         text = tempDiv.innerText;
-
-        // We could potentially extract images here, but associating them with 
-        // specific questions automatically is highly complex without a fixed format.
-        // For now, we'll focus on high-quality text extraction.
+      } else if (file.type === 'application/json') {
+        const content = await file.text();
+        const rawQuestions = JSON.parse(content);
+        const questions = (Array.isArray(rawQuestions) ? rawQuestions : [rawQuestions]).map(q => ({
+          ...q,
+          subject: q.subject || selectedSubject
+        }));
+        setPreviewQuestions(questions);
+        setIsProcessing(false);
+        return;
+      } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+        text = await file.text();
       } else {
-        throw new Error('Unsupported file type. Please upload a PDF or Word document.');
+        throw new Error('Unsupported file type. Please upload a PDF, Word, CSV, or JSON document.');
       }
 
       // Use Gemini to parse the text into questions
       const { GoogleGenAI, Type } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
       
+      const validTopics = Object.values(SUBJECT_TOPICS[selectedSubject]).flat().join(', ');
+
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Extract exam questions from the following text. 
-        Return an array of objects with these fields: questionText, options (object with A, B, C, D keys), correctAnswer (A, B, C, or D), explanation, paper (Paper 1, Paper 2, or Paper 3), topic, marks (number), difficulty (Easy, Medium, or Hard).
+        contents: `Extract exam questions for the subject "${selectedSubject}" from the following text/data. 
+        Return an array of objects with these fields: 
+        - questionText: The full text of the question.
+        - options: For Paper 1 (MCQ), provide an object with A, B, C, D keys. For Paper 2/3, this should be null or empty.
+        - correctAnswer: For Paper 1, this MUST be exactly 'A', 'B', 'C', or 'D'. For Paper 2 or Paper 3, this should be the full marking scheme or expected answer text.
+        - explanation: A brief explanation of the answer.
+        - paper: MUST be exactly 'Paper 1', 'Paper 2', or 'Paper 3'.
+        - topic: MUST be the most relevant topic from this list: ${validTopics}. If no exact match, pick the closest one.
+        - marks: The number of marks awarded for the question.
+        - difficulty: 'Easy', 'Medium', or 'Hard'.
+        - imageUrl: (optional) any URL found in the text associated with the question.
         
-        Text:
-        ${text.substring(0, 10000)}`, // Limit text for prompt
+        Data:
+        ${text.substring(0, 15000)}`, // Increased limit slightly
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
@@ -1086,6 +1429,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                 questionText: { type: Type.STRING },
                 options: { 
                   type: Type.OBJECT,
+                  nullable: true,
                   properties: {
                     A: { type: Type.STRING },
                     B: { type: Type.STRING },
@@ -1098,7 +1442,8 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                 paper: { type: Type.STRING },
                 topic: { type: Type.STRING },
                 marks: { type: Type.NUMBER },
-                difficulty: { type: Type.STRING }
+                difficulty: { type: Type.STRING },
+                imageUrl: { type: Type.STRING }
               },
               required: ['questionText', 'correctAnswer', 'paper', 'topic']
             }
@@ -1106,7 +1451,10 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         }
       });
 
-      const questions = JSON.parse(response.text || '[]');
+      const questions = JSON.parse(response.text || '[]').map((q: any) => ({
+        ...q,
+        subject: selectedSubject
+      }));
       setPreviewQuestions(questions);
     } catch (err: any) {
       console.error('Import error:', err);
@@ -1120,19 +1468,24 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
     if (previewQuestions.length === 0) return;
     setIsProcessing(true);
     try {
-      const batch = previewQuestions.map(q => {
-        return addDoc(collection(db, 'exam_questions'), {
-          ...q,
-          isDailyDrill: true,
-          year: new Date().getFullYear(),
-          createdAt: serverTimestamp()
-        });
+      const batch = previewQuestions.map(async (q) => {
+        try {
+          await addDoc(collection(db, 'exam_questions'), {
+            ...q,
+            isDailyDrill: true,
+            year: new Date().getFullYear(),
+            createdAt: serverTimestamp()
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.CREATE, 'exam_questions');
+        }
       });
       await Promise.all(batch);
       toast.success(`Successfully imported ${previewQuestions.length} questions!`);
       onImported();
-    } catch (err) {
-      toast.error('Failed to import questions to database.');
+    } catch (err: any) {
+      console.error('Import error:', err);
+      toast.error(err.message || 'Failed to import questions to database.');
     } finally {
       setIsProcessing(false);
     }
@@ -1155,12 +1508,29 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
 
         {!previewQuestions.length ? (
           <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Target Subject</label>
+                <select
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedSubject}
+                  onChange={(e) => setSelectedSubject(e.target.value as SubjectName)}
+                >
+                  <option value="Computer Science">Computer Science (0795)</option>
+                  <option value="ICT">ICT (0796)</option>
+                </select>
+              </div>
+            </div>
+
             <div className="p-8 border-2 border-dashed border-gray-300 rounded-xl text-center">
               <FileUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">Upload a PDF or Word document containing exam questions.</p>
+              <p className="text-gray-600 mb-4">Upload a PDF, Word, CSV, or JSON document containing exam questions.</p>
+              <div className="flex flex-col items-center gap-2 mb-4">
+                <p className="text-xs text-slate-400">CSV/JSON should include: questionText, options, correctAnswer, paper, topic, imageUrl (optional)</p>
+              </div>
               <input 
                 type="file" 
-                accept=".pdf,.docx" 
+                accept=".pdf,.docx,.csv,.json" 
                 onChange={handleFileChange}
                 className="hidden" 
                 id="bulk-file"
@@ -1210,10 +1580,37 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                     <Badge variant="secondary">{q.paper}</Badge>
                     <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
                   </div>
-                  <p className="text-sm font-medium text-gray-900 mb-2">{q.questionText}</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                    <p>Topic: {q.topic}</p>
-                    <p>Marks: {q.marks}</p>
+                  <div className="flex gap-4">
+                    {q.imageUrl && (
+                      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border">
+                        <img src={q.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900 mb-2">{q.questionText}</p>
+                      
+                      {q.paper === 'Paper 1' && q.options && (
+                        <div className="grid grid-cols-2 gap-2 mb-2">
+                          {Object.entries(q.options).map(([key, val]) => (
+                            <div key={key} className={`text-xs p-1 rounded ${q.correctAnswer === key ? 'bg-green-50 border border-green-100' : 'bg-gray-50'}`}>
+                              <span className="font-bold mr-1">{key}:</span> {val}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {q.paper !== 'Paper 1' && (
+                        <div className="mb-2 p-2 bg-indigo-50 rounded border border-indigo-100">
+                          <p className="text-[10px] font-bold text-indigo-400 uppercase mb-1">Marking Scheme</p>
+                          <p className="text-xs text-indigo-900">{q.correctAnswer}</p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
+                        <p>Topic: {q.topic}</p>
+                        <p>Marks: {q.marks}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
