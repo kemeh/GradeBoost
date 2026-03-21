@@ -10,9 +10,9 @@ service firebase.storage {
     function isAdmin() {
       return isAuthenticated() && 
         (
-          (firestore.exists(/databases/(default)/documents/users/$(request.auth.uid)) && 
-           firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email == "kemehhilary@gmail.com" && request.auth.token.email_verified == true)
+          (firestore.exists(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)) && 
+           firestore.get(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (request.auth.token.email == "kemehhilary@gmail.com")
         );
     }
     

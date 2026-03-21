@@ -61,6 +61,7 @@ export default function FileUpload({
     setError(null);
     if (onUploadStart) onUploadStart();
 
+    console.log('Starting upload to bucket:', storage.app.options.storageBucket);
     const storageRef = ref(storage, `${folder}/${Date.now()}_${fileToUpload.name}`);
     const task = uploadBytesResumable(storageRef, fileToUpload);
     setUploadTask(task);
@@ -71,13 +72,24 @@ export default function FileUpload({
         const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
         setProgress(p);
       },
-      (err) => {
+      (err: any) => {
         console.error('Upload error:', err);
-        const errorMessage = 'Upload failed. Check your connection.';
+        let errorMessage = 'Upload failed. Check your connection.';
+        
+        if (err.code === 'storage/unauthorized') {
+          errorMessage = 'Permission denied. You might not have the right access.';
+        } else if (err.code === 'storage/canceled') {
+          errorMessage = 'Upload was canceled.';
+        } else if (err.code === 'storage/unknown') {
+          errorMessage = 'An unknown error occurred. Please try again.';
+        } else if (err.message) {
+          errorMessage = `Upload failed: ${err.message}`;
+        }
+        
         setError(errorMessage);
         setUploading(false);
         if (onUploadError) onUploadError(errorMessage);
-        toast.error('Upload failed');
+        toast.error(errorMessage);
       },
       async () => {
         try {
