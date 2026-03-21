@@ -25,6 +25,8 @@ import { formatDate, getWeekNumber } from '../utils/dateUtils';
 import { calculateWeeklyLeaderboard } from '../utils/leaderboard';
 import { toast } from 'react-hot-toast';
 import { SUBJECT_TOPICS, getGroupedTopicsForSubject, SubjectName } from '../constants/topics';
+// @ts-ignore
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
 export default function AdminDailyDrill() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -1331,7 +1333,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       if (file.type === 'application/pdf') {
         setProcessingStatus('Parsing PDF pages...');
         const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-        GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.5.207/pdf.worker.min.mjs`;
+        GlobalWorkerOptions.workerSrc = pdfWorker;
         
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await getDocument(arrayBuffer).promise;
