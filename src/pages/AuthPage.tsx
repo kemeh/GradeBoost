@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, BookOpen, ArrowRight, AlertCircle, CheckCircle2, TrendingUp, School, MapPin } from 'lucide-react';
@@ -128,12 +128,22 @@ export default function AuthPage() {
             targetGrade: 'A',
             role: isAdminEmail ? 'admin' : 'student',
             hasTakenDiagnostic: false,
+            isPaid: isAdminEmail ? true : false,
             paymentStatus: isAdminEmail ? 'paid' : 'unpaid',
             paymentExpiryDate: isAdminEmail ? new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
             createdAt: serverTimestamp(),
           });
+          console.log("User profile created for UID:", user.uid);
         } catch (error) {
+          // If Firestore document creation fails, delete the Auth user
+          console.error("Firestore profile creation failed, deleting Auth user:", error);
+          try {
+            await deleteUser(user);
+          } catch (deleteErr) {
+            console.error("Failed to delete Auth user after Firestore failure:", deleteErr);
+          }
           handleFirestoreError(error, OperationType.CREATE, path);
+          return;
         }
       }
     } catch (err: any) {

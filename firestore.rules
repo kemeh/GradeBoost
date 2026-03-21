@@ -117,7 +117,10 @@ service cloud.firestore {
       return isAdmin() || 
         (isAuthenticated() && 
          exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.paymentStatus == 'paid' &&
+         (
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.paymentStatus == 'paid' ||
+           (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isPaid == true)
+         ) &&
          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.paymentExpiryDate > request.time);
     }
 
@@ -160,6 +163,7 @@ service cloud.firestore {
              data.subject in ["Computer Science", "ICT"] &&
              data.role in ["student", "admin"] &&
              (!('createdAt' in data) || data.createdAt is timestamp) &&
+             (!('isPaid' in data) || data.isPaid is bool) &&
              (!('paymentStatus' in data) || data.paymentStatus in ["unpaid", "paid", "pending"]) &&
              (!('paymentExpiryDate' in data) || data.paymentExpiryDate is string || data.paymentExpiryDate == null) &&
              (!('school' in data) || data.school is string) &&

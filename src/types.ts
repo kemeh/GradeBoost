@@ -16,6 +16,7 @@ export interface UserProfile {
   role: 'student' | 'admin';
   hasTakenDiagnostic: boolean;
   diagnosticResults?: DiagnosticResult;
+  isPaid?: boolean;
   paymentStatus?: 'unpaid' | 'paid' | 'pending';
   paymentDate?: string;
   paymentExpiryDate?: string;

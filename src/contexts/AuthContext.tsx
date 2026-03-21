@@ -48,24 +48,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const userRef = doc(db, 'users', fUser.uid);
         
         const docSnap = await getDoc(userRef);
-        if (!docSnap.exists() && fUser.email === 'kemehhilary@gmail.com') {
+        if (!docSnap.exists()) {
+          // Auto-create profile if it doesn't exist
+          const isAdminEmail = fUser.email === 'kemehhilary@gmail.com';
           try {
             await setDoc(userRef, {
-              name: 'Admin',
+              name: fUser.displayName || (isAdminEmail ? 'Admin' : 'Student'),
               email: fUser.email,
               subject: 'Computer Science',
               school: 'GradeBoost 60',
-              region: 'Admin',
+              region: isAdminEmail ? 'Admin' : 'Unknown',
               assignedPapers: ['paper1', 'paper2', 'paper3'],
               targetGrade: 'A',
-              role: 'admin',
-              hasTakenDiagnostic: true,
-              paymentStatus: 'paid',
-              paymentExpiryDate: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString(),
+              role: isAdminEmail ? 'admin' : 'student',
+              hasTakenDiagnostic: isAdminEmail ? true : false,
+              isPaid: isAdminEmail ? true : false,
+              paymentStatus: isAdminEmail ? 'paid' : 'unpaid',
+              paymentExpiryDate: isAdminEmail ? new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
               createdAt: serverTimestamp(),
             });
+            console.log("User profile auto-created for UID:", fUser.uid);
           } catch (err) {
-            console.error("Failed to auto-create admin profile:", err);
+            console.error("Failed to auto-create user profile:", err);
           }
         }
 
