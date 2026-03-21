@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { sendEmailVerification } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from '../components/ui';
@@ -7,10 +8,36 @@ import { Mail, RefreshCw, LogOut, CheckCircle } from 'lucide-react';
 import { motion } from 'motion/react';
 
 const VerifyEmail: React.FC = () => {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser, logout, isEmailVerified } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isEmailVerified) {
+      navigate('/dashboard');
+    }
+  }, [isEmailVerified, navigate]);
+
+  const handleCheckVerification = async () => {
+    if (!firebaseUser) return;
+    setChecking(true);
+    setError(null);
+    try {
+      await firebaseUser.reload();
+      if (firebaseUser.emailVerified) {
+        navigate('/dashboard');
+      } else {
+        setError("Email not verified yet. Please check your inbox and click the link.");
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to check verification status.");
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const handleResend = async () => {
     if (!firebaseUser) return;
@@ -37,13 +64,17 @@ const VerifyEmail: React.FC = () => {
           <Mail className="w-8 h-8 text-indigo-600" />
         </div>
         
-        <h1 className="text-2xl font-bold text-slate-900 mb-2">Verify your email</h1>
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">
+          {isEmailVerified ? "Email Verified!" : "Verify your email"}
+        </h1>
         <p className="text-slate-600 mb-8">
-          We've sent a verification email to <span className="font-semibold text-slate-900">{firebaseUser?.email}</span>. 
-          Please check your inbox and click the link to verify your account.
+          {isEmailVerified 
+            ? "Your account is now fully verified. You can now access your dashboard and start your 60-day plan."
+            : <>We've sent a verification email to <span className="font-semibold text-slate-900">{firebaseUser?.email}</span>. Please check your inbox and click the link to verify your account.</>
+          }
         </p>
 
-        {sent && (
+        {sent && !isEmailVerified && (
           <div className="bg-emerald-50 text-emerald-700 p-4 rounded-xl flex items-center gap-3 mb-6 text-sm">
             <CheckCircle className="w-5 h-5 flex-shrink-0" />
             <p>Verification email resent successfully!</p>
@@ -57,25 +88,41 @@ const VerifyEmail: React.FC = () => {
         )}
 
         <div className="space-y-4">
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="w-full h-12 text-lg"
-          >
-            I've verified my email
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            onClick={handleResend} 
-            disabled={loading}
-            className="w-full h-12 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <RefreshCw className="w-5 h-5 animate-spin" />
-            ) : (
-              "Resend verification email"
-            )}
-          </Button>
+          {isEmailVerified ? (
+            <Button 
+              onClick={() => navigate('/dashboard')} 
+              className="w-full h-12 text-lg bg-emerald-600 hover:bg-emerald-700 font-black uppercase tracking-widest"
+            >
+              Go to Dashboard
+            </Button>
+          ) : (
+            <>
+              <Button 
+                onClick={handleCheckVerification} 
+                disabled={checking}
+                className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-700 font-black uppercase tracking-widest"
+              >
+                {checking ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  "I've verified my email"
+                )}
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                onClick={handleResend} 
+                disabled={loading}
+                className="w-full h-12 flex items-center justify-center gap-2 font-black uppercase tracking-widest text-xs"
+              >
+                {loading ? (
+                  <RefreshCw className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Resend verification email"
+                )}
+              </Button>
+            </>
+          )}
 
           <button 
             onClick={logout}
