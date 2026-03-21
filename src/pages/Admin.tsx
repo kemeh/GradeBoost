@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, updateDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Upload, FileText, Trash2, 
@@ -15,6 +15,7 @@ import { QuestionPaper, Subject, PaperType, SampleQuestion } from '../types';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate } from '../utils/dateUtils';
+import { toast } from 'react-hot-toast';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -24,6 +25,7 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [showUpload, setShowUpload] = useState(false);
   const activeTab = (searchParams.get('tab') as 'papers' | 'payments' | 'manual' | 'samples') || 'papers';
   const [users, setUsers] = useState<any[]>([]);
@@ -209,43 +211,67 @@ export default function Admin() {
     if (!file || !user) return;
 
     setUploading(true);
+    setUploadProgress(0);
     setError('');
+    
     try {
       const storageRef = ref(storage, `papers/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const pdfUrl = await getDownloadURL(snapshot.ref);
+      const uploadTask = uploadBytesResumable(storageRef, file);
 
-      const correctAnswers: Record<string, string> = {};
-      if (formData.paperType === 'Paper 1' && formData.correctAnswersRaw) {
-        formData.correctAnswersRaw.split(',').forEach(pair => {
-          const [q, a] = pair.trim().split(':');
-          if (q && a) correctAnswers[q.trim()] = a.trim().toUpperCase();
-        });
-      }
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        }, 
+        (error) => {
+          console.error("Upload error:", error);
+          toast.error('Failed to upload paper');
+          setUploading(false);
+        }, 
+        async () => {
+          try {
+            const pdfUrl = await getDownloadURL(uploadTask.snapshot.ref);
 
-      const path = 'questionPapers';
-      await addDoc(collection(db, path), {
-        ...formData,
-        correctAnswers,
-        pdfUrl,
-        createdAt: serverTimestamp(),
-        uploadedBy: user.uid,
-      });
+            const correctAnswers: Record<string, string> = {};
+            if (formData.paperType === 'Paper 1' && formData.correctAnswersRaw) {
+              formData.correctAnswersRaw.split(',').forEach(pair => {
+                const [q, a] = pair.trim().split(':');
+                if (q && a) correctAnswers[q.trim()] = a.trim().toUpperCase();
+              });
+            }
 
-      setShowUpload(false);
-      setFormData({
-        title: '',
-        year: new Date().getFullYear(),
-        subject: 'Computer Science' as Subject,
-        paperType: 'Paper 1' as PaperType,
-        description: '',
-        correctAnswersRaw: '',
-      });
-      setFile(null);
-      fetchPapers();
+            const path = 'questionPapers';
+            await addDoc(collection(db, path), {
+              ...formData,
+              correctAnswers,
+              pdfUrl,
+              createdAt: serverTimestamp(),
+              uploadedBy: user.uid,
+            });
+
+            setShowUpload(false);
+            setFormData({
+              title: '',
+              year: new Date().getFullYear(),
+              subject: 'Computer Science' as Subject,
+              paperType: 'Paper 1' as PaperType,
+              description: '',
+              correctAnswersRaw: '',
+            });
+            setFile(null);
+            setUploadProgress(0);
+            fetchPapers();
+            toast.success('Paper uploaded successfully!');
+          } catch (err: any) {
+            handleFirestoreError(err, OperationType.CREATE, 'questionPapers');
+          } finally {
+            setUploading(false);
+          }
+        }
+      );
     } catch (err: any) {
-      handleFirestoreError(err, OperationType.CREATE, 'questionPapers');
-    } finally {
+      console.error("Upload setup error:", err);
+      setError('Failed to start upload.');
       setUploading(false);
     }
   };
@@ -968,7 +994,19 @@ export default function Admin() {
                       Cancel
                     </Button>
                     <Button type="submit" className="flex-1" disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload Paper'}
+                      {uploading ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <span>{uploadProgress < 100 ? `Uploading ${Math.round(uploadProgress)}%` : 'Finalizing...'}</span>
+                          {uploading && (
+                            <div className="w-full h-1 bg-white/20 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-white transition-all duration-300" 
+                                style={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      ) : 'Upload Paper'}
                     </Button>
                   </div>
                 </form>

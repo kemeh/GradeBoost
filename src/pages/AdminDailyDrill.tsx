@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { 
   Plus, Trash2, CheckCircle2, Clock, 
   FileText, HelpCircle, ChevronRight, 
@@ -40,6 +40,7 @@ export default function AdminDailyDrill() {
   const [showAutoAssignModal, setShowAutoAssignModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [imageUploadProgress, setImageUploadProgress] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'bank' | 'drills' | 'grading' | 'leaderboard'>('bank');
@@ -188,17 +189,33 @@ export default function AdminDailyDrill() {
     if (!file) return;
 
     setIsUploading(true);
+    setImageUploadProgress(0);
     try {
       const storage = getStorage();
       const storageRef = ref(storage, `exam_questions/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      setQuestionForm(prev => ({ ...prev, imageUrl: url }));
-      toast.success('Image uploaded successfully!');
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setImageUploadProgress(progress);
+        },
+        (error) => {
+          console.error('Upload error:', error);
+          toast.error('Failed to upload image.');
+          setIsUploading(false);
+        },
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          setQuestionForm(prev => ({ ...prev, imageUrl: url }));
+          setImageUploadProgress(0);
+          setIsUploading(false);
+          toast.success('Image uploaded successfully!');
+        }
+      );
     } catch (err) {
       console.error('Upload error:', err);
       toast.error('Failed to upload image.');
-    } finally {
       setIsUploading(false);
     }
   };
@@ -891,7 +908,12 @@ export default function AdminDailyDrill() {
                         <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-gray-50 transition-all">
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
                             {isUploading ? (
-                              <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+                              <div className="flex flex-col items-center gap-2">
+                                <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+                                <span className="text-[8px] font-black uppercase text-slate-400">
+                                  {imageUploadProgress < 100 ? `${Math.round(imageUploadProgress)}%` : '...'}
+                                </span>
+                              </div>
                             ) : (
                               <>
                                 <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
@@ -1343,7 +1365,9 @@ interface BulkImportModalProps {
 function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState('');
   const [previewQuestions, setPreviewQuestions] = useState<Partial<ExamQuestion>[]>([]);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Computer Science');
 
@@ -1358,23 +1382,27 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
   const processFile = async () => {
     if (!file) return;
     setIsProcessing(true);
+    setProcessingStatus('Reading file...');
     setError('');
     try {
       let text = '';
       if (file.type === 'application/pdf') {
+        setProcessingStatus('Parsing PDF pages...');
         const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
-        GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.379/pdf.worker.min.mjs`;
+        GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/5.5.207/pdf.worker.min.mjs`;
         
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await getDocument(arrayBuffer).promise;
         let fullText = '';
         for (let i = 1; i <= pdf.numPages; i++) {
+          setProcessingStatus(`Parsing PDF page ${i} of ${pdf.numPages}...`);
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
           fullText += content.items.map((item: any) => item.str).join(' ') + '\n';
         }
         text = fullText;
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        setProcessingStatus('Converting Word document...');
         const mammoth = await import('mammoth');
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.convertToHtml({ arrayBuffer });
@@ -1382,6 +1410,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         tempDiv.innerHTML = result.value;
         text = tempDiv.innerText;
       } else if (file.type === 'application/json') {
+        setProcessingStatus('Parsing JSON data...');
         const content = await file.text();
         const rawQuestions = JSON.parse(content);
         const questions = (Array.isArray(rawQuestions) ? rawQuestions : [rawQuestions]).map(q => ({
@@ -1390,13 +1419,16 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         }));
         setPreviewQuestions(questions);
         setIsProcessing(false);
+        setProcessingStatus('');
         return;
       } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+        setProcessingStatus('Reading CSV data...');
         text = await file.text();
       } else {
         throw new Error('Unsupported file type. Please upload a PDF, Word, CSV, or JSON document.');
       }
 
+      setProcessingStatus('Analyzing with AI (this may take a moment)...');
       // Use Gemini to parse the text into questions
       const { GoogleGenAI, Type } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
@@ -1461,12 +1493,14 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       setError(err.message || 'Failed to process file.');
     } finally {
       setIsProcessing(false);
+      setProcessingStatus('');
     }
   };
 
   const handleImport = async () => {
     if (previewQuestions.length === 0) return;
     setIsProcessing(true);
+    setProcessingStatus('Importing to database...');
     try {
       const batch = previewQuestions.map(async (q) => {
         try {
@@ -1488,7 +1522,23 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       toast.error(err.message || 'Failed to import questions to database.');
     } finally {
       setIsProcessing(false);
+      setProcessingStatus('');
     }
+  };
+
+  const handleRemoveQuestion = (index: number) => {
+    setPreviewQuestions(prev => prev.filter((_, i) => i !== index));
+    if (editingIndex === index) setEditingIndex(null);
+    else if (editingIndex !== null && editingIndex > index) setEditingIndex(editingIndex - 1);
+  };
+
+  const handleUpdateQuestion = (index: number, updatedQuestion: Partial<ExamQuestion>) => {
+    setPreviewQuestions(prev => {
+      const next = [...prev];
+      next[index] = updatedQuestion;
+      return next;
+    });
+    setEditingIndex(null);
   };
 
   return (
@@ -1558,10 +1608,15 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                 className="bg-indigo-600 text-white"
               >
                 {isProcessing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>{processingStatus || 'Processing...'}</span>
+                    </div>
+                    <div className="w-full h-1 bg-indigo-100 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-600 animate-pulse" style={{ width: '100%' }} />
+                    </div>
+                  </div>
                 ) : 'Process File'}
               </Button>
             </div>
@@ -1576,42 +1631,194 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
             <div className="space-y-4 max-h-[50vh] overflow-y-auto p-4 bg-gray-50 rounded-xl border">
               {previewQuestions.map((q, i) => (
                 <div key={i} className="p-4 bg-white rounded-lg border shadow-sm">
-                  <div className="flex justify-between items-start mb-2">
-                    <Badge variant="secondary">{q.paper}</Badge>
-                    <span className="text-xs font-bold text-gray-400">#{i + 1}</span>
-                  </div>
-                  <div className="flex gap-4">
-                    {q.imageUrl && (
-                      <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border">
-                        <img src={q.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                  {editingIndex === i ? (
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <h4 className="font-bold text-sm">Edit Question #{i + 1}</h4>
+                        <button onClick={() => setEditingIndex(null)} className="text-gray-400 hover:text-gray-600">
+                          <X size={16} />
+                        </button>
                       </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 mb-2">{q.questionText}</p>
                       
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question Text</label>
+                        <textarea 
+                          className="w-full px-4 py-2 bg-slate-50 border rounded-lg text-sm"
+                          value={q.questionText}
+                          onChange={e => {
+                            const next = [...previewQuestions];
+                            next[i] = { ...next[i], questionText: e.target.value };
+                            setPreviewQuestions(next);
+                          }}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paper</label>
+                          <select 
+                            className="w-full px-4 py-2 bg-slate-50 border rounded-lg text-sm"
+                            value={q.paper}
+                            onChange={e => {
+                              const next = [...previewQuestions];
+                              const newPaper = e.target.value as PaperType;
+                              const options = newPaper === 'Paper 1' ? (next[i].options || { A: '', B: '', C: '', D: '' }) : null;
+                              next[i] = { ...next[i], paper: newPaper, options };
+                              setPreviewQuestions(next);
+                            }}
+                          >
+                            <option value="Paper 1">Paper 1</option>
+                            <option value="Paper 2">Paper 2</option>
+                            <option value="Paper 3">Paper 3</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Topic</label>
+                          <select 
+                            className="w-full px-4 py-2 bg-slate-50 border rounded-lg text-sm"
+                            value={q.topic}
+                            onChange={e => {
+                              const next = [...previewQuestions];
+                              next[i] = { ...next[i], topic: e.target.value };
+                              setPreviewQuestions(next);
+                            }}
+                          >
+                            {Object.values(SUBJECT_TOPICS[selectedSubject]).flat().map(topic => (
+                              <option key={topic} value={topic}>{topic}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
                       {q.paper === 'Paper 1' && q.options && (
-                        <div className="grid grid-cols-2 gap-2 mb-2">
-                          {Object.entries(q.options).map(([key, val]) => (
-                            <div key={key} className={`text-xs p-1 rounded ${q.correctAnswer === key ? 'bg-green-50 border border-green-100' : 'bg-gray-50'}`}>
-                              <span className="font-bold mr-1">{key}:</span> {val}
+                        <div className="grid grid-cols-2 gap-4">
+                          {['A', 'B', 'C', 'D'].map(opt => (
+                            <div key={opt} className="space-y-1">
+                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Option {opt}</label>
+                              <input 
+                                type="text"
+                                className="w-full px-4 py-2 bg-slate-50 border rounded-lg text-sm"
+                                value={q.options?.[opt as keyof typeof q.options] || ''}
+                                onChange={e => {
+                                  const next = [...previewQuestions];
+                                  const options = { ...next[i].options, [opt]: e.target.value };
+                                  next[i] = { ...next[i], options };
+                                  setPreviewQuestions(next);
+                                }}
+                              />
                             </div>
                           ))}
                         </div>
                       )}
 
-                      {q.paper !== 'Paper 1' && (
-                        <div className="mb-2 p-2 bg-indigo-50 rounded border border-indigo-100">
-                          <p className="text-[10px] font-bold text-indigo-400 uppercase mb-1">Marking Scheme</p>
-                          <p className="text-xs text-indigo-900">{q.correctAnswer}</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Correct Answer</label>
+                          {q.paper === 'Paper 1' ? (
+                            <select 
+                              className="w-full px-4 py-2 bg-slate-50 border rounded-lg text-sm"
+                              value={q.correctAnswer}
+                              onChange={e => {
+                                const next = [...previewQuestions];
+                                next[i] = { ...next[i], correctAnswer: e.target.value };
+                                setPreviewQuestions(next);
+                              }}
+                            >
+                              <option value="A">A</option>
+                              <option value="B">B</option>
+                              <option value="C">C</option>
+                              <option value="D">D</option>
+                            </select>
+                          ) : (
+                            <textarea 
+                              className="w-full px-4 py-2 bg-slate-50 border rounded-lg text-sm"
+                              value={q.correctAnswer}
+                              onChange={e => {
+                                const next = [...previewQuestions];
+                                next[i] = { ...next[i], correctAnswer: e.target.value };
+                                setPreviewQuestions(next);
+                              }}
+                            />
+                          )}
                         </div>
-                      )}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Marks</label>
+                          <input 
+                            type="number"
+                            className="w-full px-4 py-2 bg-slate-50 border rounded-lg text-sm"
+                            value={q.marks}
+                            onChange={e => {
+                              const next = [...previewQuestions];
+                              next[i] = { ...next[i], marks: parseInt(e.target.value) };
+                              setPreviewQuestions(next);
+                            }}
+                          />
+                        </div>
+                      </div>
 
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-500">
-                        <p>Topic: {q.topic}</p>
-                        <p>Marks: {q.marks}</p>
+                      <div className="flex justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => setEditingIndex(null)}>Done</Button>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">{q.paper}</Badge>
+                          <Badge variant="secondary" className="text-[10px]">{q.topic}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button 
+                            onClick={() => setEditingIndex(i)}
+                            className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                            title="Edit"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleRemoveQuestion(i)}
+                            className="p-1 text-slate-400 hover:text-rose-600 transition-colors"
+                            title="Remove"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                          <span className="text-xs font-bold text-gray-400 ml-2">#{i + 1}</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-4">
+                        {q.imageUrl && (
+                          <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border">
+                            <img src={q.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900 mb-2">{q.questionText}</p>
+                          
+                          {q.paper === 'Paper 1' && q.options && (
+                            <div className="grid grid-cols-2 gap-2 mb-2">
+                              {Object.entries(q.options).map(([key, val]) => (
+                                <div key={key} className={`text-xs p-1 rounded ${q.correctAnswer === key ? 'bg-green-50 border border-green-100' : 'bg-gray-50'}`}>
+                                  <span className="font-bold mr-1">{key}:</span> {val}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {q.paper !== 'Paper 1' && (
+                            <div className="mb-2 p-2 bg-indigo-50 rounded border border-indigo-100">
+                              <p className="text-[10px] font-bold text-indigo-400 uppercase mb-1">Marking Scheme</p>
+                              <p className="text-xs text-indigo-900">{q.correctAnswer}</p>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            <span>Marks: {q.marks}</span>
+                            <span>Difficulty: {q.difficulty}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
             </div>

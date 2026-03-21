@@ -4,7 +4,7 @@ import {
   Plus, Search, Edit2, Trash2, ExternalLink, 
   BookOpen, Save, X, AlertCircle, CheckCircle2,
   FileText, Calendar, Link as LinkIcon, Eye, EyeOff,
-  Upload, Loader2
+  Upload, Loader2, FileUp
 } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { 
@@ -12,7 +12,7 @@ import {
   doc, onSnapshot, query, orderBy, serverTimestamp,
   Timestamp
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { 
@@ -33,8 +33,10 @@ export default function AdminManagement() {
   // Resources State
   const [resources, setResources] = useState<Resource[]>([]);
   const [isResourceDialogOpen, setIsResourceDialogOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [resourceForm, setResourceForm] = useState({
     title: '',
     type: 'PDF' as 'PDF' | 'Video' | 'Link',
@@ -120,18 +122,33 @@ export default function AdminManagement() {
     }
 
     setUploading(true);
+    setUploadProgress(0);
     try {
       const storageRef = ref(storage, `resources/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      
-      const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
-      setResourceForm(prev => ({ ...prev, fileUrl: url, fileSize: size }));
-      toast.success('File uploaded successfully');
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        }, 
+        (error) => {
+          console.error('Upload error:', error);
+          toast.error('Failed to upload file');
+          setUploading(false);
+        }, 
+        async () => {
+          const url = await getDownloadURL(uploadTask.snapshot.ref);
+          const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+          setResourceForm(prev => ({ ...prev, fileUrl: url, fileSize: size }));
+          setUploadProgress(0);
+          setUploading(false);
+          toast.success('File uploaded successfully');
+        }
+      );
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload file');
-    } finally {
       setUploading(false);
     }
   };
@@ -280,13 +297,23 @@ export default function AdminManagement() {
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Admin Management</h1>
             <p className="text-slate-500 font-medium">Manage student resources and assignments.</p>
           </div>
-          <Button 
-            onClick={() => activeTab === 'resources' ? handleOpenResourceDialog() : handleOpenAssignmentDialog()}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-4 rounded-2xl flex items-center gap-2"
-          >
-            <Plus size={20} />
-            Add {activeTab === 'resources' ? 'Resource' : 'Assignment'}
-          </Button>
+          <div className="flex flex-col md:flex-row items-center gap-3">
+            <Button 
+              variant="outline"
+              onClick={() => setIsBulkImportOpen(true)}
+              className="font-black px-6 py-4 rounded-2xl flex items-center gap-2"
+            >
+              <FileUp size={20} />
+              Bulk Import
+            </Button>
+            <Button 
+              onClick={() => activeTab === 'resources' ? handleOpenResourceDialog() : handleOpenAssignmentDialog()}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-4 rounded-2xl flex items-center gap-2"
+            >
+              <Plus size={20} />
+              Add {activeTab === 'resources' ? 'Resource' : 'Assignment'}
+            </Button>
+          </div>
         </header>
 
         <Tabs defaultValue="resources" value={activeTab} onValueChange={setActiveTab} className="space-y-8">
@@ -428,10 +455,27 @@ export default function AdminManagement() {
                         onClick={() => document.getElementById('file-upload')?.click()}
                         disabled={uploading}
                       >
-                        {uploading ? <Loader2 className="animate-spin" /> : <Upload />}
-                        <span className="text-xs font-bold uppercase tracking-widest">
-                          {resourceForm.fileUrl ? 'Change PDF' : 'Upload PDF'}
-                        </span>
+                        {uploading ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="animate-spin" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">
+                              {uploadProgress < 100 ? `Uploading ${Math.round(uploadProgress)}%` : 'Finalizing...'}
+                            </span>
+                            <div className="w-32 h-1 bg-slate-100 rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-indigo-600 transition-all duration-300" 
+                                style={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <Upload />
+                            <span className="text-xs font-bold uppercase tracking-widest">
+                              {resourceForm.fileUrl ? 'Change PDF' : 'Upload PDF'}
+                            </span>
+                          </>
+                        )}
                       </Button>
                       <input 
                         id="file-upload" 
@@ -544,7 +588,187 @@ export default function AdminManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Bulk Import Modal */}
+        {isBulkImportOpen && (
+          <BulkResourceImportModal 
+            onClose={() => setIsBulkImportOpen(false)}
+            onImported={() => setIsBulkImportOpen(false)}
+          />
+        )}
       </main>
+    </div>
+  );
+}
+
+interface BulkResourceImportModalProps {
+  onClose: () => void;
+  onImported: () => void;
+}
+
+function BulkResourceImportModal({ onClose, onImported }: BulkResourceImportModalProps) {
+  const [files, setFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+  const [selectedSubject, setSelectedSubject] = useState<Subject>('Computer Science');
+  const [error, setError] = useState('');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    if (selectedFiles.length > 0) {
+      setFiles(prev => [...prev, ...selectedFiles]);
+      setError('');
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleBulkUpload = async () => {
+    if (files.length === 0) return;
+    setIsUploading(true);
+    setError('');
+
+    try {
+      const uploadPromises = files.map(async (file) => {
+        return new Promise<void>((resolve, reject) => {
+          const storageRef = ref(storage, `resources/${Date.now()}_${file.name}`);
+          const uploadTask = uploadBytesResumable(storageRef, file);
+
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              setUploadProgress(prev => ({ ...prev, [file.name]: progress }));
+            },
+            (error) => {
+              console.error(`Upload error for ${file.name}:`, error);
+              reject(error);
+            },
+            async () => {
+              const url = await getDownloadURL(uploadTask.snapshot.ref);
+              const size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+              
+              await addDoc(collection(db, 'resources'), {
+                title: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
+                type: 'PDF',
+                subject: selectedSubject,
+                fileUrl: url,
+                fileSize: size,
+                visible: true,
+                createdAt: serverTimestamp()
+              });
+              resolve();
+            }
+          );
+        });
+      });
+
+      await Promise.all(uploadPromises);
+      toast.success(`Successfully imported ${files.length} resources!`);
+      onImported();
+    } catch (err: any) {
+      console.error('Bulk upload error:', err);
+      setError('Failed to upload some files. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+      <div className="relative w-full max-w-2xl bg-white rounded-[2.5rem] shadow-2xl overflow-hidden p-8 md:p-12">
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Bulk Import Resources</h2>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-xs font-black uppercase tracking-widest text-slate-400">Target Subject</label>
+            <select 
+              className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-indigo-600 outline-none"
+              value={selectedSubject}
+              onChange={(e) => setSelectedSubject(e.target.value as Subject)}
+            >
+              <option value="Computer Science">Computer Science</option>
+              <option value="ICT">ICT</option>
+            </select>
+          </div>
+
+          <div className="p-8 border-2 border-dashed border-slate-200 rounded-[2rem] text-center bg-slate-50/50">
+            <Upload className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500 font-medium mb-4">Select multiple PDF files to upload at once.</p>
+            <input 
+              type="file" 
+              multiple 
+              accept="application/pdf" 
+              onChange={handleFileChange}
+              className="hidden" 
+              id="bulk-resource-files"
+            />
+            <label 
+              htmlFor="bulk-resource-files"
+              className="inline-flex items-center px-8 py-4 bg-white border-2 border-slate-200 text-slate-900 rounded-2xl font-black uppercase tracking-widest text-xs cursor-pointer hover:border-indigo-600 hover:text-indigo-600 transition-all shadow-sm"
+            >
+              Select Files
+            </label>
+          </div>
+
+          {files.length > 0 && (
+            <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+              {files.map((f, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <FileText className="text-indigo-600 flex-shrink-0" size={18} />
+                    <div className="overflow-hidden">
+                      <p className="text-sm font-bold text-slate-900 truncate">{f.name}</p>
+                      {uploadProgress[f.name] !== undefined && (
+                        <div className="w-full h-1 bg-slate-200 rounded-full mt-1 overflow-hidden">
+                          <div 
+                            className="h-full bg-indigo-600 transition-all duration-300" 
+                            style={{ width: `${uploadProgress[f.name]}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {!isUploading && (
+                    <button onClick={() => removeFile(i)} className="text-slate-400 hover:text-rose-600">
+                      <X size={16} />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {error && (
+            <div className="p-4 bg-red-50 text-red-600 rounded-xl flex items-center gap-2 text-sm font-medium">
+              <AlertCircle size={18} />
+              {error}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-4 pt-4">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button 
+              onClick={handleBulkUpload} 
+              disabled={files.length === 0 || isUploading}
+              className="bg-indigo-600 text-white px-8"
+            >
+              {isUploading ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="animate-spin" size={18} />
+                  <span>Uploading...</span>
+                </div>
+              ) : `Upload ${files.length} Files`}
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
