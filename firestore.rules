@@ -59,7 +59,7 @@
 //   - createdAt: timestamp (required)
 //   - uploadedBy: string (required, uid)
 //
-// Collection: dailyDrillSubmissions
+// Collection: drill_submissions
 // Document ID: {submissionId}
 // Fields:
 //   - userId: string (required, uid)
@@ -232,15 +232,15 @@ service cloud.firestore {
              data.uploadedBy is string;
     }
 
-    function isValidDailyDrillSubmission(data) {
+    function isValidDrillSubmission(data) {
       return data.userId is string &&
              data.drillId is string &&
-             data.dayNumber is number &&
-             data.subject in ["Computer Science", "ICT"] &&
-             data.paperType in ["Paper 1", "Paper 2", "Paper 3"] &&
-             data.answers is map &&
-             data.gradedStatus is bool &&
-             data.submittedAt is timestamp;
+             data.day is number &&
+             data.questionId is string &&
+             data.selectedAnswer is string &&
+             data.correctAnswer is string &&
+             data.score is number &&
+             data.createdAt is timestamp;
     }
 
     function isValidSampleQuestion(data) {
@@ -327,23 +327,12 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin() && isValidDailyDrill(request.resource.data);
     }
 
-    match /dailyDrillSubmissions/{submissionId} {
+    match /drill_submissions/{submissionId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
       allow create: if isAuthenticated() && 
                       request.resource.data.userId == request.auth.uid && 
-                      (
-                        isPaid() || 
-                        request.resource.data.dayNumber == 1 || 
-                        get(/databases/$(database)/documents/dailyDrills/$(request.resource.data.drillId)).data.isFreeSample == true
-                      ) &&
-                      (
-                        isAdmin() || 
-                        request.resource.data.dayNumber == getCurrentDay() || 
-                        request.resource.data.dayNumber == 1 || 
-                        get(/databases/$(database)/documents/dailyDrills/$(request.resource.data.drillId)).data.isFreeSample == true
-                      ) &&
-                      isValidDailyDrillSubmission(request.resource.data) &&
-                      isRecent(request.resource.data.submittedAt);
+                      isValidDrillSubmission(request.resource.data) &&
+                      isRecent(request.resource.data.createdAt);
       allow update, delete: if isAdmin();
     }
 

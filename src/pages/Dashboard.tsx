@@ -90,7 +90,7 @@ export default function Dashboard() {
 
           // Check if already submitted today
           const subQ = query(
-            collection(db, 'dailyDrillSubmissions'),
+            collection(db, 'drill_submissions'),
             where('userId', '==', user.uid),
             where('drillId', '==', drillData.id)
           );

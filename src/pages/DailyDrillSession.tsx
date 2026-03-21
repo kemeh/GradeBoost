@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, serverTimestamp, doc, getDoc, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -94,17 +94,32 @@ export default function DailyDrillSession() {
 
         // Check if already submitted
         const subQ = query(
-          collection(db, 'dailyDrillSubmissions'),
+          collection(db, 'drill_submissions'),
           where('userId', '==', user.uid),
           where('drillId', '==', currentDrill.id)
         );
         const subSnapshot = await getDocs(subQ);
         if (!subSnapshot.empty) {
           setHasSubmitted(true);
-          setSubmission({ id: subSnapshot.docs[0].id, ...subSnapshot.docs[0].data() } as DailyDrillSubmission);
+          
+          // Reconstruct answers if it's Paper 1
           if (currentDrill.paperType === 'Paper 1') {
+            const reconstructedAnswers: Record<string, string> = {};
+            subSnapshot.docs.forEach(doc => {
+              const data = doc.data();
+              if (data.questionId) {
+                reconstructedAnswers[data.questionId] = data.selectedAnswer;
+              }
+            });
+            setAnswers(reconstructedAnswers);
             setShowResults(true);
+          } else {
+            // For Paper 2/3, just take the first one
+            const firstSub = subSnapshot.docs[0].data();
+            setStructuredAnswer(firstSub.selectedAnswer || '');
           }
+          
+          setSubmission({ id: subSnapshot.docs[0].id, ...subSnapshot.docs[0].data() } as DailyDrillSubmission);
         }
       } else {
         setDrill(null);
@@ -124,48 +139,87 @@ export default function DailyDrillSession() {
   const handleSubmit = async () => {
     if (!user || !drill) return;
 
-    // Final security check on day number
-    // Allow if it's a free sample (unpaid user) or if it's the current day
-    const isFreeSample = (drill.dayNumber === 1 || drill.isFreeSample) && user.paymentStatus !== 'paid';
-    if (!isDrillAccessible(drill.dayNumber, user.paymentStatus === 'paid', user.paymentExpiryDate, drill.isFreeSample) && !isFreeSample) {
-      setError(`⚠️ You can only answer today's drill (Day ${getCurrentDayNumber()}). Please wait for the next assignment.`);
-      return;
+    // Prevent submission if no option is selected for Paper 1
+    if (drill.paperType === 'Paper 1') {
+      const unanswered = drill.questions.some(q => !answers[q.id]);
+      if (unanswered) {
+        setError('Please select an answer for all questions before submitting.');
+        return;
+      }
+    } else {
+      // For Paper 2/3, ensure at least some answer is provided
+      if (!structuredAnswer.trim() && !file) {
+        setError('Please provide an answer or upload a file before submitting.');
+        return;
+      }
     }
 
     setSubmitting(true);
     setError('');
     try {
-      let finalAnswers: any = answers;
+      const batch = writeBatch(db);
       
-      if (drill.paperType === 'Paper 2' || drill.paperType === 'Paper 3') {
+      if (drill.paperType === 'Paper 1') {
+        // Save each question as a separate document in drill_submissions
+        for (const question of drill.questions) {
+          const selectedAnswer = answers[question.id];
+          const isCorrect = selectedAnswer === question.correctAnswer;
+          const score = isCorrect ? 1 : 0;
+
+          const subRef = doc(collection(db, 'drill_submissions'));
+          batch.set(subRef, {
+            userId: user.uid,
+            drillId: drill.id,
+            day: drill.dayNumber,
+            questionId: question.id,
+            selectedAnswer: selectedAnswer,
+            correctAnswer: question.correctAnswer || '',
+            score: score,
+            createdAt: serverTimestamp(),
+            // Extra fields for context
+            subject: drill.subject,
+            paperType: drill.paperType,
+            gradedStatus: true
+          });
+        }
+      } else {
+        // For Paper 2/3, save as a single document
         let fileUrl = '';
         if (file) {
           const storageRef = ref(storage, `submissions/${user.uid}/${Date.now()}_${file.name}`);
           const snapshot = await uploadBytes(storageRef, file);
           fileUrl = await getDownloadURL(snapshot.ref);
         }
-        finalAnswers = { text: structuredAnswer, fileUrl };
+
+        const subRef = doc(collection(db, 'drill_submissions'));
+        batch.set(subRef, {
+          userId: user.uid,
+          drillId: drill.id,
+          day: drill.dayNumber,
+          questionId: 'structured_response',
+          selectedAnswer: structuredAnswer,
+          fileUrl: fileUrl,
+          correctAnswer: 'N/A',
+          score: 0,
+          createdAt: serverTimestamp(),
+          subject: drill.subject,
+          paperType: drill.paperType,
+          gradedStatus: false
+        });
       }
 
-      const subData = {
-        userId: user.uid,
-        drillId: drill.id,
-        dayNumber: drill.dayNumber,
-        subject: drill.subject,
-        paperType: drill.paperType,
-        answers: finalAnswers,
-        gradedStatus: false,
-        submittedAt: new Date().toISOString()
-      };
-
-      const docRef = await addDoc(collection(db, 'dailyDrillSubmissions'), subData);
-      setSubmission({ id: docRef.id, ...subData } as DailyDrillSubmission);
-
+      await batch.commit();
+      
+      setSuccess(true);
       if (drill.paperType === 'Paper 1') {
         setShowResults(true);
-      } else {
-        setSuccess(true);
       }
+      
+      // Redirect after a short delay
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 3000);
+
     } catch (err) {
       console.error("Error submitting drill:", err);
       setError('Failed to submit your answers. Please try again.');
@@ -300,7 +354,7 @@ export default function DailyDrillSession() {
                   <div className="grid grid-cols-1 gap-4">
                     {currentQuestion.options?.map((option, i) => {
                       const letter = ['A', 'B', 'C', 'D'][i];
-                      const isSelected = (showResults ? (submission?.answers as any)[currentQuestion.id] : answers[currentQuestion.id]) === letter;
+                      const isSelected = answers[currentQuestion.id] === letter;
                       const isCorrect = currentQuestion.correctAnswer === letter;
                       
                       return (

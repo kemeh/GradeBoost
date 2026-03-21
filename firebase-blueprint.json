@@ -94,18 +94,16 @@
       "properties": {
         "userId": { "type": "string" },
         "drillId": { "type": "string" },
-        "dayNumber": { "type": "integer" },
-        "subject": { "type": "string" },
-        "paperType": { "type": "string" },
-        "answers": { "type": "object" },
+        "day": { "type": "integer" },
+        "questionId": { "type": "string" },
+        "selectedAnswer": { "type": "string" },
+        "correctAnswer": { "type": "string" },
         "score": { "type": "number" },
-        "grade": { "type": "string" },
-        "feedback": { "type": "string" },
-        "gradedStatus": { "type": "boolean" },
-        "submittedAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "gradedStatus": { "type": "boolean" }
       },
-      "required": ["userId", "drillId", "dayNumber", "subject", "paperType", "answers", "gradedStatus", "submittedAt"]
-    }
+      "required": ["userId", "drillId", "day", "questionId", "selectedAnswer", "correctAnswer", "score", "createdAt"]
+    },
     "SecurityAudit": {
       "title": "Security Audit",
       "description": "Logs unauthorized access attempts and security errors.",
@@ -139,7 +137,7 @@
       "schema": "DailyDrill",
       "description": "Daily drill questions."
     },
-    "/dailyDrillSubmissions/{submissionId}": {
+    "/drill_submissions/{submissionId}": {
       "schema": "DailyDrillSubmission",
       "description": "Student daily drill submissions."
     },

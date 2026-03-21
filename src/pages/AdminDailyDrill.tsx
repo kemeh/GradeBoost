@@ -67,7 +67,7 @@ export default function AdminDailyDrill() {
 
   useEffect(() => {
     let filtered = [...submissions];
-    if (filters.day) filtered = filtered.filter(s => s.dayNumber === parseInt(filters.day));
+    if (filters.day) filtered = filtered.filter(s => s.day === parseInt(filters.day));
     if (filters.subject) filtered = filtered.filter(s => s.subject === filters.subject);
     if (filters.paperType) filtered = filtered.filter(s => s.paperType === filters.paperType);
     if (filters.status) {
@@ -92,7 +92,7 @@ export default function AdminDailyDrill() {
 
   const fetchSubmissions = async () => {
     try {
-      const q = query(collection(db, 'dailyDrillSubmissions'), orderBy('submittedAt', 'desc'));
+      const q = query(collection(db, 'drill_submissions'), orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
       const subs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setSubmissions(subs);
@@ -214,7 +214,7 @@ export default function AdminDailyDrill() {
 
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'dailyDrillSubmissions', gradingSubmission.id), {
+      await updateDoc(doc(db, 'drill_submissions', gradingSubmission.id), {
         grade: gradingSubmission.tempGrade,
         feedback: gradingSubmission.tempFeedback,
         score: gradingSubmission.tempScore || 0,
@@ -421,7 +421,7 @@ export default function AdminDailyDrill() {
                         </div>
                       </td>
                       <td className="px-8 py-4">
-                        <p className="text-sm font-bold text-slate-900">Day {sub.dayNumber}</p>
+                        <p className="text-sm font-bold text-slate-900">Day {sub.day}</p>
                         <p className="text-[10px] text-slate-400 font-black uppercase">{sub.subject}</p>
                       </td>
                       <td className="px-8 py-4">
@@ -709,19 +709,21 @@ export default function AdminDailyDrill() {
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Student Answer</p>
                       {gradingSubmission.paperType === 'Paper 1' ? (
                         <div className="space-y-2">
-                          {Object.entries(gradingSubmission.answers).map(([qId, ans]: any) => (
-                            <div key={qId} className="flex items-center justify-between text-sm font-bold">
-                              <span>Question {qId.replace('q', '')}</span>
-                              <Badge variant="secondary">{ans}</Badge>
-                            </div>
-                          ))}
+                          <div className="flex items-center justify-between text-sm font-bold">
+                            <span>Question {gradingSubmission.questionId}</span>
+                            <Badge variant="secondary">{gradingSubmission.selectedAnswer}</Badge>
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-slate-500">
+                            <span>Correct Answer:</span>
+                            <span className="font-bold">{gradingSubmission.correctAnswer}</span>
+                          </div>
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          <p className="text-sm font-bold text-slate-700">{gradingSubmission.answers.text}</p>
-                          {gradingSubmission.answers.fileUrl && (
+                          <p className="text-sm font-bold text-slate-700">{gradingSubmission.selectedAnswer}</p>
+                          {gradingSubmission.fileUrl && (
                             <a 
-                              href={gradingSubmission.answers.fileUrl} 
+                              href={gradingSubmission.fileUrl} 
                               target="_blank" 
                               rel="noreferrer"
                               className="inline-flex items-center gap-2 text-indigo-600 font-bold text-xs hover:underline"

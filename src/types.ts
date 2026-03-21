@@ -99,13 +99,16 @@ export interface DailyDrillSubmission {
   id: string;
   userId: string;
   drillId: string;
-  dayNumber: number;
-  subject: Subject;
-  paperType: 'Paper 1' | 'Paper 2' | 'Paper 3';
-  answers: any; // Record<string, string> for MCQs, or { text: string, fileUrl?: string } for Paper 2/3
-  score?: number;
+  day: number;
+  questionId: string;
+  selectedAnswer: string;
+  correctAnswer: string;
+  score: number;
+  createdAt: any; // Timestamp
+  subject?: Subject;
+  paperType?: 'Paper 1' | 'Paper 2' | 'Paper 3';
+  fileUrl?: string;
   grade?: Grade;
   feedback?: string;
   gradedStatus: boolean;
-  submittedAt: string;
 }
