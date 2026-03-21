@@ -1375,7 +1375,13 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       setProcessingStatus('Analyzing with AI (this may take a moment)...');
       // Use Gemini to parse the text into questions
       const { GoogleGenAI, Type } = await import('@google/genai');
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('Gemini API Key is missing. Please ensure it is set in the environment variables.');
+      }
+      
+      const ai = new GoogleGenAI({ apiKey });
       
       const validTopics = Object.values(SUBJECT_TOPICS[selectedSubject]).flat().join(', ');
 
