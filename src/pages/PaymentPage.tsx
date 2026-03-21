@@ -318,11 +318,11 @@ export default function PaymentPage() {
                   <div className="flex-1 space-y-4 text-center md:text-left">
                     <div>
                       <h3 className="text-xl font-black text-slate-900">
-                        {loadingSample ? 'Loading Sample...' : (freeSample ? (('dayNumber' in freeSample) ? `Daily Drill: Day ${freeSample.dayNumber}` : freeSample.title) : 'No Free Samples Available')}
+                        {loadingSample ? 'Loading Sample...' : (freeSample ? (('day' in freeSample) ? `Daily Drill: Day ${freeSample.day}` : (freeSample as any).title) : 'No Free Samples Available')}
                       </h3>
                       <p className="text-slate-500 font-medium">
                         {freeSample 
-                          ? (('dayNumber' in freeSample) ? 'Try our Day 1 Daily Drill to see how GradeBoost 60 keeps you sharp every day.' : 'Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.')
+                          ? (('day' in freeSample) ? 'Try our Day 1 Daily Drill to see how GradeBoost 60 keeps you sharp every day.' : 'Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.')
                           : isAdmin 
                             ? `You haven't uploaded any samples for ${userSubject} yet. Go to the Admin dashboard to upload one.`
                             : `No free samples available yet. Check back soon.`}

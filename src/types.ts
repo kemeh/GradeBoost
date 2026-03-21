@@ -62,27 +62,46 @@ export interface ExamResult {
   timestamp: string;
 }
 
-export interface DailyDrillQuestion {
+export interface ExamQuestion {
   id: string;
   questionText: string;
-  options?: string[]; // For Paper 1 (MCQs)
-  correctAnswer?: string; // For Paper 1 (MCQs)
-  reasoning?: string; // Explanation for the answer
-  imageUrl?: string; // Optional reference image
-  isFreeSample?: boolean; // Added for free sample feature
+  options: Record<string, string>; // { A: '...', B: '...', C: '...', D: '...' }
+  correctAnswer: string;
+  explanation: string;
+  paper: PaperType;
+  section: 'A' | 'B' | 'C';
+  topic: string;
+  marks: number;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+  year: number;
+  isDailyDrill: boolean;
+  createdAt: any;
 }
 
 export interface DailyDrill {
   id: string;
-  dayNumber: number; // 1-60
-  subject: Subject;
+  day: number; // 1-60
+  questionId: string;
+  paper: PaperType;
   topic: string;
-  paperType: 'Paper 1' | 'Paper 2' | 'Paper 3';
-  questions: DailyDrillQuestion[];
-  createdAt: string;
-  uploadedBy: string;
-  gradedStatus?: boolean; // Added for consistency with user request
-  isFreeSample?: boolean; // Added for free sample feature
+  isFree: boolean;
+  createdAt: any;
+}
+
+export interface DrillSubmission {
+  id: string;
+  userId: string;
+  questionId: string;
+  day: number;
+  selectedAnswer: string;
+  correctAnswer: string;
+  score: number;
+  paper: PaperType;
+  topic: string;
+  status?: 'pending' | 'graded';
+  feedback?: string;
+  fileUrl?: string;
+  createdAt: any;
 }
 
 export interface SampleQuestion {
@@ -95,20 +114,6 @@ export interface SampleQuestion {
   reasoning: string;
   isFreeSample: true;
   createdAt: string;
-}
-
-export interface DailyDrillSubmission {
-  id: string;
-  userId: string;
-  drillId: string;
-  topic: string;
-  score: number;
-  totalQuestions: number;
-  answers: Record<string, string>;
-  timestamp: string;
-  questionId?: string;
-  selectedAnswer?: string;
-  feedback?: string;
 }
 
 export interface LearningResource {
@@ -140,4 +145,15 @@ export interface Assignment {
   link: string;
   active: boolean;
   createdAt: any;
+}
+
+export interface WeeklyLeaderboard {
+  id: string;
+  userId: string;
+  userName: string;
+  totalScore: number;
+  position: number;
+  weekNumber: number;
+  year: number;
+  updatedAt: any;
 }

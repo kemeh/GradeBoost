@@ -20,9 +20,9 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
   RadioGroup, RadioGroupItem, Label
 } from '../components/ui';
-import { Grade, ExamResult, DailyDrill, SampleQuestion, DailyDrillSubmission, LearningResource, Resource, Assignment } from '../types';
+import { Grade, ExamResult, DailyDrill, SampleQuestion, DrillSubmission, LearningResource, Resource, Assignment, WeeklyLeaderboard } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate, getWeekNumber } from '../utils/dateUtils';
 import { toast } from 'react-hot-toast';
 import { onSnapshot, doc } from 'firebase/firestore';
 
@@ -48,7 +48,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [results, setResults] = useState<ExamResult[]>([]);
-  const [submissions, setSubmissions] = useState<DailyDrillSubmission[]>([]);
+  const [submissions, setSubmissions] = useState<DrillSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayDrill, setTodayDrill] = useState<DailyDrill | null>(null);
   const [hasSubmittedToday, setHasSubmittedToday] = useState(false);
@@ -62,6 +62,8 @@ export default function Dashboard() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [firstName, setFirstName] = useState<string>('');
+  const [leaderboard, setLeaderboard] = useState<WeeklyLeaderboard[]>([]);
+  const [userLeaderboard, setUserLeaderboard] = useState<WeeklyLeaderboard | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -93,7 +95,7 @@ export default function Dashboard() {
       orderBy('createdAt', 'desc')
     );
     const submissionsUnsub = onSnapshot(submissionsQuery, (snapshot) => {
-      const subsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyDrillSubmission));
+      const subsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DrillSubmission));
       setSubmissions(subsData);
     });
 
@@ -135,9 +137,8 @@ export default function Dashboard() {
     setDaysRemaining(getDaysRemaining());
 
     const drillQ = query(
-      collection(db, 'dailyDrills'), 
-      where('dayNumber', '==', currentDay),
-      where('subject', '==', user.subject)
+      collection(db, 'daily_drills'), 
+      where('day', '==', currentDay)
     );
     
     getDocs(drillQ).then(drillSnapshot => {
@@ -149,7 +150,7 @@ export default function Dashboard() {
         const subQ = query(
           collection(db, 'drill_submissions'),
           where('userId', '==', user.uid),
-          where('drillId', '==', drillData.id)
+          where('day', '==', currentDay)
         );
         getDocs(subQ).then(subSnapshot => {
           if (!subSnapshot.empty) {
@@ -171,6 +172,34 @@ export default function Dashboard() {
       });
     }
 
+    // Fetch Weekly Leaderboard
+    const now = new Date();
+    const weekNumber = getWeekNumber(now);
+    const year = now.getFullYear();
+
+    const leaderboardQuery = query(
+      collection(db, 'weekly_leaderboard'),
+      where('weekNumber', '==', weekNumber),
+      where('year', '==', year),
+      orderBy('position', 'asc'),
+      limit(5)
+    );
+
+    const leaderboardUnsub = onSnapshot(leaderboardQuery, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WeeklyLeaderboard));
+      setLeaderboard(data);
+    });
+
+    // Fetch user's position
+    const userLeaderboardId = `${year}-W${weekNumber}-${user.uid}`;
+    const userLeaderboardUnsub = onSnapshot(doc(db, 'weekly_leaderboard', userLeaderboardId), (doc) => {
+      if (doc.exists()) {
+        setUserLeaderboard({ id: doc.id, ...doc.data() } as WeeklyLeaderboard);
+      } else {
+        setUserLeaderboard(null);
+      }
+    });
+
     setLoading(false);
 
     return () => {
@@ -180,6 +209,8 @@ export default function Dashboard() {
       resourcesUnsub();
       pdfResourcesUnsub();
       assignmentsUnsub();
+      leaderboardUnsub();
+      userLeaderboardUnsub();
     };
   }, [user]);
 
@@ -408,11 +439,11 @@ export default function Dashboard() {
                 </h2>
                 <p className="text-indigo-100 font-medium mb-6 max-w-xl">
                   {todayDrill 
-                    ? `Master ${todayDrill.topic} with today's ${todayDrill.paperType} drill. Keep your streak alive!`
+                    ? `Master ${todayDrill.topic} with today's ${todayDrill.paper} drill. Keep your streak alive!`
                     : "Get ready for your daily challenge. Consistency is key to achieving an A grade."}
                 </p>
                 <div className="flex flex-wrap gap-4">
-                  {user.paymentStatus === 'paid' || (todayDrill && (todayDrill.dayNumber === 1 || todayDrill.isFreeSample)) ? (
+                  {user.paymentStatus === 'paid' || (todayDrill && (todayDrill.day === 1 || todayDrill.isFree)) ? (
                     <Button 
                       variant="secondary" 
                       className={cn(
@@ -527,6 +558,99 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
+
+        {/* Weekly Leaderboard Section */}
+        <section className="mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <Card className="lg:col-span-2 p-8">
+              <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
+                    <Trophy size={20} />
+                  </div>
+                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">Weekly Leaderboard</h2>
+                </div>
+                <Badge variant="secondary" className="bg-amber-50 text-amber-600 border-amber-100">
+                  Week {getWeekNumber(new Date())}
+                </Badge>
+              </div>
+
+              <div className="space-y-4">
+                {leaderboard.length > 0 ? (
+                  leaderboard.map((entry) => (
+                    <div 
+                      key={entry.id} 
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-2xl border transition-all",
+                        entry.userId === user.uid 
+                          ? "bg-indigo-50 border-indigo-100 shadow-sm" 
+                          : "bg-white border-slate-100 hover:border-slate-200"
+                      )}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center font-black",
+                          entry.position === 1 ? "bg-amber-100 text-amber-600" :
+                          entry.position === 2 ? "bg-slate-100 text-slate-400" :
+                          entry.position === 3 ? "bg-orange-100 text-orange-600" :
+                          "bg-slate-50 text-slate-400"
+                        )}>
+                          {entry.position}
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900">
+                            {entry.userName}
+                            {entry.userId === user.uid && <span className="ml-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest">(You)</span>}
+                          </p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Top Performer</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-black text-slate-900">{entry.totalScore} pts</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-12 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                    <p className="text-slate-400 font-bold">No leaderboard data available for this week yet.</p>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-8 bg-slate-900 text-white flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-black mb-2 tracking-tight">Your Standing</h3>
+                <p className="text-slate-400 text-sm font-medium mb-8">Keep practicing to climb the ranks and reach the top spot!</p>
+                
+                <div className="space-y-6">
+                  <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current Position</p>
+                    <p className="text-4xl font-black text-white tracking-tighter">
+                      {userLeaderboard ? `#${userLeaderboard.position}` : 'N/A'}
+                    </p>
+                  </div>
+                  
+                  <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
+                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Weekly Points</p>
+                    <p className="text-4xl font-black text-white tracking-tighter">
+                      {userLeaderboard ? userLeaderboard.totalScore : '0'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <Button 
+                  className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-black py-6 rounded-2xl"
+                  onClick={() => navigate('/daily-drill')}
+                >
+                  Earn More Points
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </section>
 
         {/* Assigned For You Section */}
         <section className="mb-12">

@@ -41,3 +41,36 @@ export function formatDate(dateValue: any, fallback: string = "Date not availabl
     return fallback;
   }
 }
+
+/**
+ * Gets the current week number (1-53)
+ * @param date The date to get the week number for
+ * @returns The week number
+ */
+export function getWeekNumber(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return weekNo;
+}
+
+/**
+ * Gets the start and end of the current week (Monday to Sunday)
+ * @returns { start: Date, end: Date }
+ */
+export function getCurrentWeekRange(): { start: Date, end: Date } {
+  const now = new Date();
+  const day = now.getDay(); // 0 (Sun) to 6 (Sat)
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
+  const start = new Date(now.setDate(diff));
+  start.setHours(0, 0, 0, 0);
+  
+  const end = new Date(start);
+  const endDate = new Date(start);
+  endDate.setDate(start.getDate() + 6);
+  endDate.setHours(23, 59, 59, 999);
+  
+  return { start, end: endDate };
+}

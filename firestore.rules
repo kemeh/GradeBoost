@@ -47,32 +47,47 @@
 //   - feedback: string (optional)
 //   - completedAt: timestamp (required)
 //
-// Collection: dailyDrills
+// Collection: exam_questions
+// Document ID: {questionId}
+// Fields:
+//   - questionText: string (required)
+//   - options: map (required, A-D)
+//   - correctAnswer: string (required, A-D)
+//   - explanation: string (optional)
+//   - paper: string (required, Paper 1, 2, 3)
+//   - section: string (optional, A, B, C)
+//   - topic: string (required)
+//   - marks: number (optional)
+//   - difficulty: string (optional, Easy, Medium, Hard)
+//   - year: number (optional)
+//   - isDailyDrill: bool (required)
+//   - createdAt: timestamp (required)
+//
+// Collection: daily_drills
 // Document ID: {drillId}
 // Fields:
-//   - dayNumber: number (required, 1-60)
-//   - subject: string (required, enum)
+//   - day: number (required, 1-60)
+//   - questionId: string (required, docId)
+//   - paper: string (required)
 //   - topic: string (required)
-//   - paperType: string (required, enum)
-//   - questions: list (required)
-//   - isFreeSample: bool (optional)
+//   - isFree: bool (required)
 //   - createdAt: timestamp (required)
-//   - uploadedBy: string (required, uid)
 //
 // Collection: drill_submissions
 // Document ID: {submissionId}
 // Fields:
 //   - userId: string (required, uid)
-//   - drillId: string (required, docId)
-//   - dayNumber: number (required)
-//   - subject: string (required)
-//   - paperType: string (required)
-//   - answers: map (required)
-//   - score: number (optional)
-//   - grade: string (optional)
+//   - questionId: string (required, docId)
+//   - day: number (required)
+//   - selectedAnswer: string (required)
+//   - correctAnswer: string (required)
+//   - score: number (required)
+//   - paper: string (required)
+//   - topic: string (required)
+//   - status: string (required, pending/graded)
 //   - feedback: string (optional)
-//   - gradedStatus: bool (required)
-//   - submittedAt: timestamp (required)
+//   - fileUrl: string (optional)
+//   - createdAt: timestamp (required)
 //
 // Collection: sampleQuestions
 // Document ID: {sampleId}
@@ -116,6 +131,17 @@
 //   - link: string
 //   - active: bool
 //   - createdAt: timestamp
+//
+// Collection: weekly_leaderboard
+// Document ID: {leaderboardId}
+// Fields:
+//   - userId: string (required, uid)
+//   - userName: string (required)
+//   - totalScore: number (required)
+//   - position: number (required)
+//   - weekNumber: number (required)
+//   - year: number (required)
+//   - updatedAt: timestamp (required)
 //
 // ===============================================================
 
@@ -254,31 +280,38 @@ service cloud.firestore {
              data.completedAt is timestamp;
     }
 
-    function isValidDailyDrill(data) {
-      return data.dayNumber is number && data.dayNumber >= 1 && data.dayNumber <= 60 &&
-             data.subject in ["Computer Science", "ICT"] &&
-             data.topic is string && data.topic.size() > 0 && data.topic.size() <= 200 &&
-             data.paperType in ["Paper 1", "Paper 2", "Paper 3"] &&
-             data.questions is list && data.questions.size() <= 50 &&
-             (!('isFreeSample' in data) || data.isFreeSample is bool) &&
-             data.createdAt is timestamp &&
-             data.uploadedBy is string;
+    function isValidExamQuestion(data) {
+      return data.questionText is string &&
+             data.options is map &&
+             data.correctAnswer in ["A", "B", "C", "D"] &&
+             data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
+             data.topic is string &&
+             data.isDailyDrill is bool &&
+             data.createdAt is timestamp;
     }
 
-    function isValidDrillSubmission(data) {
-      return data.userId is string &&
-             data.drillId is string &&
-             data.day is number &&
+    function isValidDailyDrillV2(data) {
+      return data.day is number && data.day >= 1 && data.day <= 60 &&
              data.questionId is string &&
+             data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
+             data.topic is string &&
+             data.isFree is bool &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidDrillSubmissionV2(data) {
+      return data.userId is string &&
+             data.questionId is string &&
+             data.day is number &&
              data.selectedAnswer is string &&
              data.correctAnswer is string &&
              data.score is number &&
-             data.createdAt is timestamp &&
-             data.subject is string &&
-             data.paperType is string &&
-             data.gradedStatus is bool &&
-             (!('fileUrl' in data) || data.fileUrl is string) &&
-             (!('feedback' in data) || data.feedback is string);
+             data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
+             data.topic is string &&
+             data.status in ["pending", "graded"] &&
+             (!('feedback' in data) || data.feedback is string) &&
+             (!('fileUrl' in data) || isValidUrl(data.fileUrl)) &&
+             data.createdAt is timestamp;
     }
 
     function isValidSampleQuestion(data) {
@@ -317,6 +350,16 @@ service cloud.firestore {
              isValidUrl(data.link) &&
              data.active is bool &&
              data.createdAt is timestamp;
+    }
+
+    function isValidWeeklyLeaderboard(data) {
+      return data.userId is string &&
+             data.userName is string &&
+             data.totalScore is number &&
+             data.position is number &&
+             data.weekNumber is number &&
+             data.year is number &&
+             data.updatedAt is timestamp;
     }
 
     function getCurrentDay() {
@@ -385,18 +428,23 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    match /dailyDrills/{drillId} {
+    match /exam_questions/{questionId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isValidExamQuestion(request.resource.data);
+    }
+
+    match /daily_drills/{drillId} {
       allow read: if isAuthenticated() && 
-                    (isPaid() || resource.data.dayNumber == 1 || (resource.data.isFreeSample == true)) && 
-                    (isAdmin() || resource.data.dayNumber <= getCurrentDay() || resource.data.dayNumber == 1 || (resource.data.isFreeSample == true));
-      allow create, update, delete: if isAdmin() && isValidDailyDrill(request.resource.data);
+                    (isPaid() || resource.data.day == 1 || (resource.data.isFree == true)) && 
+                    (isAdmin() || resource.data.day <= getCurrentDay() || resource.data.day == 1 || (resource.data.isFree == true));
+      allow create, update, delete: if isAdmin() && isValidDailyDrillV2(request.resource.data);
     }
 
     match /drill_submissions/{submissionId} {
       allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
       allow create: if isAuthenticated() && 
                       request.resource.data.userId == request.auth.uid && 
-                      isValidDrillSubmission(request.resource.data) &&
+                      isValidDrillSubmissionV2(request.resource.data) &&
                       isRecent(request.resource.data.createdAt);
       allow update, delete: if isAdmin();
     }
@@ -419,6 +467,11 @@ service cloud.firestore {
     match /assignments/{assignmentId} {
       allow read: if isAuthenticated() && (resource.data.active == true || isAdmin());
       allow create, update, delete: if isAdmin() && isValidAssignment(request.resource.data);
+    }
+
+    match /weekly_leaderboard/{leaderboardId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdmin() && isValidWeeklyLeaderboard(request.resource.data);
     }
 
     // Default deny

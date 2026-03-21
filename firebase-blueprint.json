@@ -74,37 +74,56 @@
       },
       "required": ["userId", "paperId", "subject", "paperType", "answers", "score", "grade", "completedAt"]
     },
-    "DailyDrill": {
-      "title": "Daily Drill",
-      "description": "Stores daily topic-based questions for the 60-day challenge.",
+    "ExamQuestion": {
+      "title": "Exam Question",
+      "description": "Stores individual exam questions for the question bank.",
       "type": "object",
       "properties": {
-        "dayNumber": { "type": "integer", "description": "Day number (1-60)." },
-        "subject": { "type": "string", "enum": ["Computer Science", "ICT"] },
-        "topic": { "type": "string", "description": "The topic for the day." },
-        "paperType": { "type": "string", "enum": ["Paper 1", "Paper 2"] },
-        "questions": { "type": "array", "items": { "type": "object" } },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "uploadedBy": { "type": "string" }
+        "questionText": { "type": "string" },
+        "options": { "type": "object", "description": "Map of options A, B, C, D." },
+        "correctAnswer": { "type": "string" },
+        "explanation": { "type": "string" },
+        "paper": { "type": "string", "enum": ["Paper 1", "Paper 2", "Paper 3"] },
+        "section": { "type": "string", "enum": ["A", "B", "C"] },
+        "topic": { "type": "string" },
+        "marks": { "type": "integer" },
+        "difficulty": { "type": "string", "enum": ["Easy", "Medium", "Hard"] },
+        "year": { "type": "integer" },
+        "isDailyDrill": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["dayNumber", "subject", "topic", "paperType", "questions", "createdAt", "uploadedBy"]
+      "required": ["questionText", "options", "correctAnswer", "paper", "topic", "createdAt"]
     },
-    "DailyDrillSubmission": {
-      "title": "Daily Drill Submission",
+    "DailyDrill": {
+      "title": "Daily Drill",
+      "description": "Maps a day (1-60) to a specific question from the exam_questions collection.",
+      "type": "object",
+      "properties": {
+        "day": { "type": "integer", "description": "Day number (1-60)." },
+        "questionId": { "type": "string" },
+        "paper": { "type": "string", "enum": ["Paper 1", "Paper 2", "Paper 3"] },
+        "topic": { "type": "string" },
+        "isFree": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["day", "questionId", "paper", "topic", "createdAt"]
+    },
+    "DrillSubmission": {
+      "title": "Drill Submission",
       "description": "Stores student submissions for daily drills.",
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
-        "drillId": { "type": "string" },
-        "day": { "type": "integer" },
         "questionId": { "type": "string" },
+        "day": { "type": "integer" },
         "selectedAnswer": { "type": "string" },
         "correctAnswer": { "type": "string" },
         "score": { "type": "number" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "gradedStatus": { "type": "boolean" }
+        "paper": { "type": "string", "enum": ["Paper 1", "Paper 2", "Paper 3"] },
+        "topic": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "drillId", "day", "questionId", "selectedAnswer", "correctAnswer", "score", "createdAt"]
+      "required": ["userId", "questionId", "day", "selectedAnswer", "correctAnswer", "score", "createdAt"]
     },
     "SecurityAudit": {
       "title": "Security Audit",
@@ -163,6 +182,21 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "paper", "subject", "dueDate", "link", "active", "createdAt"]
+    },
+    "WeeklyLeaderboard": {
+      "title": "Weekly Leaderboard",
+      "description": "Stores weekly leaderboard rankings for students.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "totalScore": { "type": "number" },
+        "position": { "type": "integer" },
+        "weekNumber": { "type": "integer" },
+        "year": { "type": "integer" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "totalScore", "position", "weekNumber", "year", "updatedAt"]
     }
   },
   "firestore": {
@@ -178,12 +212,16 @@
       "schema": "ExamResult",
       "description": "Student exam results."
     },
-    "/dailyDrills/{drillId}": {
+    "/exam_questions/{questionId}": {
+      "schema": "ExamQuestion",
+      "description": "Individual exam questions."
+    },
+    "/daily_drills/{drillId}": {
       "schema": "DailyDrill",
-      "description": "Daily drill questions."
+      "description": "Daily drill mappings."
     },
     "/drill_submissions/{submissionId}": {
-      "schema": "DailyDrillSubmission",
+      "schema": "DrillSubmission",
       "description": "Student daily drill submissions."
     },
     "/paymentAudit/{auditId}": {
@@ -205,6 +243,10 @@
     "/assignments/{assignmentId}": {
       "schema": "Assignment",
       "description": "Student assignments."
+    },
+    "/weekly_leaderboard/{leaderboardId}": {
+      "schema": "WeeklyLeaderboard",
+      "description": "Weekly leaderboard rankings."
     }
   }
 }
