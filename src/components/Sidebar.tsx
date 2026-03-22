@@ -15,7 +15,7 @@ interface SidebarProps {
 
 export default function Sidebar({ className }: SidebarProps) {
   const { user, isAdmin } = useAuth();
-  const { appName, logoUrl } = useSettings();
+  const { appName, logoUrl, contactEmail, whatsappNumber, whatsappGroupLink } = useSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -112,10 +112,15 @@ export default function Sidebar({ className }: SidebarProps) {
 
         {/* Footer */}
         <div className="mt-8 space-y-6 pt-6 border-t border-slate-50">
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
             <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
               Developed by Vertexon Technologies to empower students with academic excellence.
             </p>
+            <div className="flex flex-col gap-2 text-[10px] font-bold text-slate-500">
+              {contactEmail && <a href={`mailto:${contactEmail}`} className="hover:text-indigo-600 transition-colors">Email Support</a>}
+              {whatsappNumber && <a href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">WhatsApp Support</a>}
+              {whatsappGroupLink && <a href={whatsappGroupLink} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">Join WhatsApp Group</a>}
+            </div>
           </div>
           
           <button 

@@ -7,6 +7,9 @@ interface SettingsContextType {
   appName: string;
   logoUrl: string;
   contactEmail: string;
+  whatsappNumber: string;
+  whatsappGroupLink: string;
+  refreshSettings: () => Promise<void>;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -15,18 +18,18 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const data = await getSystemSettings();
-        setSettings(data);
-      } catch (error) {
-        console.error('Failed to fetch settings:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchSettings = async () => {
+    try {
+      const data = await getSystemSettings();
+      setSettings(data);
+    } catch (error) {
+      console.error('Failed to fetch settings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchSettings();
   }, []);
 
@@ -35,7 +38,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loading,
     appName: settings?.appName || 'GradeBoost 60',
     logoUrl: settings?.logoUrl || '/logo.svg',
-    contactEmail: settings?.contactEmail || 'support@gradeboost60.com'
+    contactEmail: settings?.contactEmail || 'support@gradeboost60.com',
+    whatsappNumber: settings?.whatsappNumber || '',
+    whatsappGroupLink: settings?.whatsappGroupLink || '',
+    refreshSettings: fetchSettings
   };
 
   return (

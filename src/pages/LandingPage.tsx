@@ -8,7 +8,7 @@ import { Button, Card, Badge, cn } from '../components/ui';
 
 export default function LandingPage() {
   const { user, loading, isAdmin } = useAuth();
-  const { appName, logoUrl } = useSettings();
+  const { appName, logoUrl, contactEmail, whatsappNumber, whatsappGroupLink } = useSettings();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -182,9 +182,16 @@ export default function LandingPage() {
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Built by Vertexon Technologies</p>
           </div>
           <p className="text-slate-400 text-sm font-bold">© 2026 Vertexon Technologies. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <ShieldCheck className="text-slate-300" size={20} />
-            <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Secure Platform</span>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-6">
+              <ShieldCheck className="text-slate-300" size={20} />
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Secure Platform</span>
+            </div>
+            <div className="flex items-center gap-4 text-sm font-bold text-slate-500">
+              {contactEmail && <a href={`mailto:${contactEmail}`} className="hover:text-indigo-600 transition-colors">Email Support</a>}
+              {whatsappNumber && <a href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">WhatsApp Support</a>}
+              {whatsappGroupLink && <a href={whatsappGroupLink} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">Join WhatsApp Group</a>}
+            </div>
           </div>
         </div>
       </footer>

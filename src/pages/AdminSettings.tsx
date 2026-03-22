@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Settings, Key, Save, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, Calendar, RotateCcw, CreditCard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { getSystemSettings, updateSystemSettings } from '../services/settingsService';
 import { toast } from 'react-hot-toast';
 import { GoogleGenAI } from '@google/genai';
@@ -9,14 +10,19 @@ import Sidebar from '../components/Sidebar';
 import { formatDate } from '../utils/dateUtils';
 import { DEFAULT_CHALLENGE_START_DATE, getCurrentDayNumber } from '../utils/challenge';
 
+import FileUpload from '../components/FileUpload';
+
 export default function AdminSettings() {
   const { user } = useAuth();
+  const { refreshSettings } = useSettings();
   const [apiKey, setApiKey] = useState('');
   const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
   const [paymentPrice, setPaymentPrice] = useState(1000);
   const [appName, setAppName] = useState('GradeBoost 60');
   const [logoUrl, setLogoUrl] = useState('/logo.svg');
   const [contactEmail, setContactEmail] = useState('support@gradeboost60.com');
+  const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
@@ -42,6 +48,12 @@ export default function AdminSettings() {
         }
         if (settings.contactEmail) {
           setContactEmail(settings.contactEmail);
+        }
+        if (settings.whatsappNumber) {
+          setWhatsappNumber(settings.whatsappNumber);
+        }
+        if (settings.whatsappGroupLink) {
+          setWhatsappGroupLink(settings.whatsappGroupLink);
         }
       }
       setIsLoading(false);
@@ -84,8 +96,11 @@ export default function AdminSettings() {
         appName.trim(),
         logoUrl.trim(),
         contactEmail.trim(),
+        whatsappNumber.trim(),
+        whatsappGroupLink.trim(),
         user?.uid || 'unknown'
       );
+      await refreshSettings();
       toast.success('Settings updated successfully');
     } catch (error) {
       toast.error('Failed to update settings');
@@ -257,13 +272,24 @@ export default function AdminSettings() {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Logo URL
+                    App Logo
                   </label>
+                  <div className="mb-4">
+                    <FileUpload
+                      onUploadComplete={(url) => setLogoUrl(url)}
+                      onUploadError={() => toast.error('Failed to upload logo')}
+                      onDelete={() => setLogoUrl('')}
+                      initialUrl={logoUrl}
+                      folder="branding"
+                      label="Upload Logo Image"
+                      accept="image/*"
+                    />
+                  </div>
                   <input
                     type="text"
                     value={logoUrl}
                     onChange={(e) => setLogoUrl(e.target.value)}
-                    placeholder="e.g. /logo.svg or https://..."
+                    placeholder="Or enter logo URL (e.g. /logo.svg or https://...)"
                     className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
                   />
                   {logoUrl && (
@@ -282,6 +308,33 @@ export default function AdminSettings() {
                     value={contactEmail}
                     onChange={(e) => setContactEmail(e.target.value)}
                     placeholder="e.g. support@example.com"
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    WhatsApp Number
+                  </label>
+                  <input
+                    type="text"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(e.target.value)}
+                    placeholder="e.g. +237600000000"
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
+                  />
+                  <p className="mt-2 text-xs text-slate-400">Include country code (e.g., +237 for Cameroon).</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    WhatsApp Group Link
+                  </label>
+                  <input
+                    type="url"
+                    value={whatsappGroupLink}
+                    onChange={(e) => setWhatsappGroupLink(e.target.value)}
+                    placeholder="e.g. https://chat.whatsapp.com/..."
                     className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
                   />
                 </div>

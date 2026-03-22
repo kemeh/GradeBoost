@@ -8,6 +8,8 @@ export interface SystemSettings {
   appName?: string;
   logoUrl?: string;
   contactEmail?: string;
+  whatsappNumber?: string;
+  whatsappGroupLink?: string;
   updatedAt: any;
   updatedBy: string;
 }
@@ -35,6 +37,8 @@ export const updateSystemSettings = async (
   appName: string,
   logoUrl: string,
   contactEmail: string,
+  whatsappNumber: string,
+  whatsappGroupLink: string,
   userId: string
 ): Promise<void> => {
   try {
@@ -46,6 +50,8 @@ export const updateSystemSettings = async (
       appName,
       logoUrl,
       contactEmail,
+      whatsappNumber,
+      whatsappGroupLink,
       updatedAt: serverTimestamp(),
       updatedBy: userId,
     });

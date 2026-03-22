@@ -19,7 +19,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
-  const { appName, logoUrl } = useSettings();
+  const { appName, logoUrl, contactEmail } = useSettings();
   const { user, loading: authLoading, isAdmin } = useAuth();
 
   useEffect(() => {
