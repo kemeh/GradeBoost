@@ -1470,20 +1470,17 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
 
         if (!hasText) {
           setProcessingStatus('PDF appears to be scanned. Preparing for AI OCR...');
-          // For scanned PDFs, we'll send the first few pages as images to Gemini
-          // Since we can't easily convert all pages to images in the browser without a canvas for each,
-          // and sending many images might hit limits, we'll try to send the first 5 pages.
-          // For now, let's just inform the user or try to send the PDF directly if supported by the SDK version.
-          // Actually, let's try to send the PDF as a base64 part.
-          const base64 = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
-            reader.readAsDataURL(file);
-          });
-          fileData = { data: base64, mimeType: 'application/pdf' };
         } else {
           text = fullText;
         }
+
+        // Always set fileData
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+        fileData = { data: base64, mimeType: 'application/pdf' };
       } else if (file.type.startsWith('image/')) {
         setProcessingStatus('Preparing image for AI analysis...');
         const base64 = await new Promise<string>((resolve) => {
@@ -1575,7 +1572,8 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       const contents: any[] = [{ text: prompt }];
       if (fileData) {
         contents.push({ inlineData: fileData });
-      } else {
+      }
+      if (text) {
         contents.push({ text: `Data Content:\n${text.substring(0, 100000)}` });
       }
 
