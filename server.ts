@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import admin from "firebase-admin";
 import { getFirestore as getAdminFirestore, FieldValue } from "firebase-admin/firestore";
 import rateLimit from "express-rate-limit";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -20,7 +21,7 @@ const db = getAdminFirestore(admin.app(), "ai-studio-8cbb773b-9589-470c-a864-1eb
 
 const CAMPAY_BASE_URL = process.env.CAMPAY_ENVIRONMENT === 'prod' 
   ? 'https://www.campay.net/api' 
-  : 'https://www.campay.net/api'; 
+  : 'https://demo.campay.net/api'; 
 
 // Rate limiting
 const apiLimiter = rateLimit({
@@ -72,11 +73,14 @@ async function startServer() {
       console.log(`Initiating payment for ${phone}, amount: ${amount}`);
       
       // Ensure phone number has country code (237 for Cameroon)
-      if (phone && phone.length === 9 && (phone.startsWith('6') || phone.startsWith('2'))) {
-        phone = `237${phone}`;
-      } else if (phone && phone.length === 8 && (phone.startsWith('6') || phone.startsWith('2'))) {
-        // Some old numbers are 8 digits
-        phone = `237${phone}`;
+      if (phone) {
+        phone = phone.replace(/\+/g, '').replace(/\s/g, '');
+        if (phone.length === 9 && (phone.startsWith('6') || phone.startsWith('2'))) {
+          phone = `237${phone}`;
+        } else if (phone.length === 8 && (phone.startsWith('6') || phone.startsWith('2'))) {
+          // Some old numbers are 8 digits
+          phone = `237${phone}`;
+        }
       }
 
       // Fetch dynamic price from Firestore to ensure security
@@ -188,6 +192,74 @@ async function startServer() {
     } catch (error: any) {
       console.error("Payment Verification Error:", error.response?.data || error.message);
       res.status(500).json({ error: "Failed to verify payment" });
+    }
+  });
+
+  // CamPay Webhook Endpoint
+  app.post("/api/payment/webhook", async (req, res) => {
+    try {
+      const signature = req.headers['x-campay-signature'] as string;
+      const payload = req.body;
+      const webhookKey = process.env.CAMPAY_WEBHOOK_KEY;
+
+      if (!webhookKey) {
+        console.error("Webhook key not configured");
+        return res.status(500).send("Webhook key not configured");
+      }
+
+      if (!signature) {
+        console.error("Missing signature in webhook");
+        return res.status(400).send("Missing signature");
+      }
+
+      // Verify signature
+      const hash = crypto.createHmac('sha256', webhookKey)
+                         .update(JSON.stringify(payload))
+                         .digest('hex');
+
+      if (hash !== signature) {
+        console.error("Invalid webhook signature");
+        return res.status(401).send("Invalid signature");
+      }
+
+      console.log("Webhook received and verified:", payload);
+
+      if (payload.status === 'SUCCESSFUL') {
+        const externalRef = payload.external_reference;
+        if (externalRef && externalRef.startsWith('gb60_')) {
+          const userId = externalRef.split('_')[1];
+          if (userId) {
+            const userRef = db.collection('users').doc(userId);
+            const now = new Date();
+            const expiry = new Date(now);
+            expiry.setDate(now.getDate() + 30);
+
+            await userRef.update({
+              paymentStatus: 'paid',
+              paymentDate: now.toISOString(),
+              paymentExpiryDate: expiry.toISOString(),
+              updatedAt: FieldValue.serverTimestamp()
+            });
+
+            await db.collection('paymentAudit').add({
+              userId,
+              reference: payload.reference,
+              amount: payload.amount,
+              currency: payload.currency,
+              status: payload.status,
+              timestamp: FieldValue.serverTimestamp(),
+              external_reference: payload.external_reference,
+              source: 'webhook'
+            });
+            console.log(`User ${userId} upgraded via webhook.`);
+          }
+        }
+      }
+
+      res.status(200).send("OK");
+    } catch (error) {
+      console.error("Webhook Error:", error);
+      res.status(500).send("Internal Server Error");
     }
   });
 

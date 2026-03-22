@@ -234,7 +234,7 @@ export default function DailyDrillSession() {
         const isPaper1 = q.paper === 'Paper 1';
         const selectedAnswer = answers[q.id] || '';
         const isCorrect = isPaper1 ? selectedAnswer === q.correctAnswer : false;
-        const score = isCorrect ? q.marks : 0;
+        const score = isCorrect ? (q.marks || 1) : 0;
 
         batch.set(subRef, {
           userId: user.uid,
@@ -247,8 +247,8 @@ export default function DailyDrillSession() {
           correctAnswer: q.correctAnswer || 'N/A',
           score: score,
           status: isPaper1 ? 'graded' : 'pending',
-          paper: q.paper,
-          topic: q.topic,
+          paper: q.paper || 'Paper 1',
+          topic: q.topic || 'General',
           createdAt: serverTimestamp()
         });
       }

@@ -324,8 +324,10 @@ service cloud.firestore {
              data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
              data.topic is string &&
              data.status in ["pending", "graded"] &&
+             (!('userEmail' in data) || data.userEmail is string || data.userEmail == null) &&
+             (!('drillId' in data) || data.drillId is string) &&
              (!('feedback' in data) || data.feedback is string) &&
-             (!('fileUrl' in data) || isValidUrl(data.fileUrl)) &&
+             (!('fileUrl' in data) || data.fileUrl == "" || data.fileUrl == null || isValidUrl(data.fileUrl)) &&
              data.createdAt is timestamp;
     }
 
