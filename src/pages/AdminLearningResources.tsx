@@ -115,8 +115,8 @@ export default function AdminLearningResources() {
   };
 
   const filteredResources = resources.filter(r => 
-    r.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.topic.toLowerCase().includes(searchTerm.toLowerCase())
+    (r.title || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (r.topic || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {

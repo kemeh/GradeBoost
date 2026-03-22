@@ -515,7 +515,7 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {papers.filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase())).map((paper) => (
+                  {papers.filter(p => (p.title || '').toLowerCase().includes(searchQuery.toLowerCase())).map((paper) => (
                     <tr key={paper.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-8 py-4">
                         <p className="text-sm font-bold text-slate-900">{paper.title}</p>
@@ -571,7 +571,7 @@ export default function Admin() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {users.filter(u => u.name.toLowerCase().includes(searchQuery.toLowerCase()) || u.email.toLowerCase().includes(searchQuery.toLowerCase())).map((u) => (
+                  {users.filter(u => (u.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (u.email || '').toLowerCase().includes(searchQuery.toLowerCase())).map((u) => (
                     <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-8 py-4">
                         <p className="text-sm font-bold text-slate-900">{u.name}</p>

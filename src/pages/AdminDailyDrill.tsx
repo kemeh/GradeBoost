@@ -185,7 +185,7 @@ export default function AdminDailyDrill() {
     if (filters.day) filtered = filtered.filter(s => s.day === parseInt(filters.day));
     if (filters.paper) filtered = filtered.filter(s => s.paper === filters.paper);
     if (filters.status) filtered = filtered.filter(s => s.status === filters.status);
-    if (filters.userId) filtered = filtered.filter(s => s.userId.toLowerCase().includes(filters.userId.toLowerCase()));
+    if (filters.userId) filtered = filtered.filter(s => (s.userId || '').toLowerCase().includes(filters.userId.toLowerCase()));
     setFilteredSubmissions(filtered);
   }, [filters, submissions]);
 
@@ -516,8 +516,8 @@ export default function AdminDailyDrill() {
                         return;
                       }
                       setQuestionsBank(prev => prev.filter(q => 
-                        q.questionText.toLowerCase().includes(term) || 
-                        q.topic.toLowerCase().includes(term)
+                        (q.questionText || '').toLowerCase().includes(term) || 
+                        (q.topic || '').toLowerCase().includes(term)
                       ));
                     }}
                   />
@@ -1349,6 +1349,7 @@ interface BulkImportModalProps {
 function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Computer Science');
+  const [selectedPaper, setSelectedPaper] = useState<PaperType>('Paper 1');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedSession, setSelectedSession] = useState<string>('June');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1487,15 +1488,18 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Extract ALL exam questions for the subject "${selectedSubject}" from the following text/data. 
-        This is a full question paper. Please be thorough and extract every single question found in the text.
+        contents: `Extract ALL exam questions for the subject "${selectedSubject}" and "${selectedPaper}" from the following text/data. 
+        This is a full "${selectedPaper}" question paper. 
+        ${selectedPaper === 'Paper 1' ? 'Expect exactly 50 multiple-choice questions.' : 'Expect structured questions (usually 8-10 main questions).'}
+        IMPORTANT: For structured papers (Paper 2/3), if a question has sub-parts (e.g., 1a, 1b, 1c), please extract each sub-part as a separate question if they cover different topics, or group them if they are part of the same topic.
+        Please be thorough and extract every single question found in the text.
         
         Return an array of objects with these fields: 
-        - questionText: The full text of the question.
+        - questionText: The full text of the question (including any context or sub-part labels like "1a)").
         - options: For Paper 1 (MCQ), provide an object with A, B, C, D keys. For Paper 2/3, this should be null or empty.
         - correctAnswer: For Paper 1, this MUST be exactly 'A', 'B', 'C', or 'D'. For Paper 2 or Paper 3, this should be the full marking scheme or expected answer text.
         - explanation: A brief explanation of the answer.
-        - paper: MUST be exactly 'Paper 1', 'Paper 2', or 'Paper 3'.
+        - paper: MUST be exactly '${selectedPaper}'.
         - topic: MUST be the most relevant topic from this list: ${validTopics}. If no exact match, pick the closest one.
         - marks: The number of marks awarded for the question.
         - difficulty: 'Easy', 'Medium', or 'Hard'.
@@ -1544,6 +1548,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       const questions = JSON.parse(aiResponseText).map((q: any) => ({
         ...q,
         subject: selectedSubject,
+        paper: selectedPaper, // Enforce the selected paper
         year: selectedYear,
         session: selectedSession
       }));
@@ -1651,7 +1656,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Target Subject</label>
                 <select
@@ -1661,6 +1666,18 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                 >
                   <option value="Computer Science">Computer Science (0795)</option>
                   <option value="ICT">ICT (0796)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Paper Type</label>
+                <select
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedPaper}
+                  onChange={(e) => setSelectedPaper(e.target.value as PaperType)}
+                >
+                  <option value="Paper 1">Paper 1 (MCQ)</option>
+                  <option value="Paper 2">Paper 2 (Structured)</option>
+                  <option value="Paper 3">Paper 3 (Practical/Case Study)</option>
                 </select>
               </div>
               <div>
