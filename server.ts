@@ -147,7 +147,8 @@ async function startServer() {
           // Fetch user name for leaderboard
           const userDoc = await db.collection('users').doc(playerId).get();
           const userData = userDoc.data();
-          const userName = userData?.name || userData?.firstName || 'Student';
+          const rawName = userData?.name || userData?.firstName || 'Student';
+          const userName = rawName === 'Anonymous' ? 'Student' : rawName;
           const photoURL = userData?.photoURL || '';
 
           await db.collection('pointsHistory').add({

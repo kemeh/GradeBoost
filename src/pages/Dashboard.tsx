@@ -253,7 +253,15 @@ export default function Dashboard() {
     );
 
     const leaderboardUnsub = onSnapshot(leaderboardQuery, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WeeklyLeaderboard));
+      const data = snapshot.docs.map(doc => {
+        const d = doc.data();
+        const name = d.userName || 'Student';
+        return { 
+          id: doc.id, 
+          ...d, 
+          userName: name === 'Anonymous' ? 'Student' : name 
+        } as WeeklyLeaderboard;
+      });
       setLeaderboard(data);
     }, (error) => {
       try {

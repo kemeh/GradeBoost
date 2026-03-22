@@ -36,16 +36,27 @@ export default function Leaderboard() {
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       if (timeframe === 'weekly') {
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WeeklyLeaderboard));
+        const data = snapshot.docs.map(doc => {
+          const d = doc.data();
+          const name = d.userName || 'Student';
+          return { 
+            id: doc.id, 
+            ...d, 
+            userName: name === 'Anonymous' ? 'Student' : name 
+          } as WeeklyLeaderboard;
+        });
         setLeaderboard(data);
       } else {
         // Map users to leaderboard format
         const data = snapshot.docs.map((doc, index) => {
           const userData = doc.data();
+          const rawName = userData.name || userData.firstName || 'Student';
+          const name = rawName === 'Anonymous' ? 'Student' : rawName;
+          
           return {
             id: doc.id,
             userId: doc.id,
-            userName: userData.name || userData.firstName || 'Student',
+            userName: name,
             photoURL: userData.photoURL,
             totalScore: userData.points || 0,
             weekNumber: 0,

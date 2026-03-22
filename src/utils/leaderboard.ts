@@ -43,8 +43,10 @@ export async function calculateWeeklyLeaderboard() {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
           const userData = userDoc.data() as UserProfile;
+          const rawName = userData.name || userData.firstName || 'Student';
+          const name = rawName === 'Anonymous' ? 'Student' : rawName;
           userProfiles[userId] = {
-            name: userData.name || userData.firstName || 'Student',
+            name,
             photoURL: userData.photoURL
           };
         }
