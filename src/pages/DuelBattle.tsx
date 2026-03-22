@@ -10,6 +10,7 @@ import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { LeaderboardEntry } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { toast } from 'react-hot-toast';
 
 const SOCKET_URL = window.location.origin;
 
@@ -41,15 +42,17 @@ export default function DuelBattle() {
     const newSocket = io(SOCKET_URL);
     setSocket(newSocket);
 
-    newSocket.on('duelMatched', async ({ duelId, opponentId, questions: questionIds }) => {
+    newSocket.on('duelStarted', async ({ duelId, opponentId, questions: questionIds }) => {
       setDuelId(duelId);
       setOpponentId(opponentId);
       
       // Fetch opponent details
       const oppDoc = await getDoc(doc(db, 'users', opponentId));
+      let oppName = 'Opponent';
       if (oppDoc.exists()) {
         const oppData = oppDoc.data();
-        setOpponentName(oppData.name || oppData.firstName || 'Opponent');
+        oppName = oppData.name || oppData.firstName || 'Opponent';
+        setOpponentName(oppName);
         setOpponentPhotoURL(oppData.photoURL || null);
       }
 
@@ -67,10 +70,27 @@ export default function DuelBattle() {
       timerRef.current = setInterval(() => {
         setTimeTaken(prev => prev + 1);
       }, 1000);
+      
+      toast.success(`Duel started against ${oppName}!`);
     });
 
     newSocket.on('duelCompleted', ({ winnerId }) => {
       setWinnerId(winnerId);
+      setStatus('result');
+      if (timerRef.current) clearInterval(timerRef.current);
+      
+      if (winnerId === user.uid) {
+        toast.success('Duel completed! You won! 🎉');
+      } else if (winnerId) {
+        toast.error('Duel completed! You lost. 😢');
+      } else {
+        toast.success('Duel completed! It\'s a draw!');
+      }
+    });
+
+    newSocket.on('opponentDisconnected', () => {
+      toast.error('Opponent disconnected. You win by default!');
+      setWinnerId(user.uid);
       setStatus('result');
       if (timerRef.current) clearInterval(timerRef.current);
     });

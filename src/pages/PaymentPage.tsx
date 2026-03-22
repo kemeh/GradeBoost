@@ -245,6 +245,8 @@ export default function PaymentPage() {
           console.error("Failed to parse error JSON:", errorText);
           if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html')) {
             errorMessage = `Server error (HTML returned). Please contact ${contactEmail}.`;
+          } else if (errorText) {
+            errorMessage = errorText; // Use the raw text (e.g., rate limit message)
           }
         }
         throw new Error(errorMessage);
