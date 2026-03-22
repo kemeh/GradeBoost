@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, updateDoc, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useMemo } from 'react';
+import { collection, addDoc, getDocs, deleteDoc, doc, serverTimestamp, query, orderBy, updateDoc, setDoc, limit, where, getDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -12,7 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import FileUpload from '../components/FileUpload';
 import { Button, Card, Badge, cn } from '../components/ui';
-import { QuestionPaper, Subject, PaperType, SampleQuestion } from '../types';
+import { QuestionPaper, Subject, PaperType, SampleQuestion, LeaderboardEntry, Duel, UserProfile } from '../types';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate } from '../utils/dateUtils';
@@ -33,6 +33,7 @@ export default function Admin() {
   const [manualRequests, setManualRequests] = useState<any[]>([]);
   const [sampleQuestions, setSampleQuestions] = useState<SampleQuestion[]>([]);
   const [duels, setDuels] = useState<any[]>([]);
+  const [duelLeaderboard, setDuelLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentPrice, setPaymentPrice] = useState(1000);
 
@@ -74,9 +75,20 @@ export default function Admin() {
       fetchManualRequests();
       fetchSampleQuestions();
       fetchDuels();
+      fetchDuelLeaderboard();
       fetchSettings();
     }
   }, [isAdmin]);
+
+  const fetchDuelLeaderboard = async () => {
+    try {
+      const q = query(collection(db, 'leaderboard'), orderBy('points', 'desc'), limit(10));
+      const querySnapshot = await getDocs(q);
+      setDuelLeaderboard(querySnapshot.docs.map(doc => ({ ...doc.data() } as any as LeaderboardEntry)));
+    } catch (err) {
+      console.error("Error fetching duel leaderboard:", err);
+    }
+  };
 
   const fetchDuels = async () => {
     try {
@@ -118,6 +130,14 @@ export default function Admin() {
       console.error("Error fetching manual requests:", err);
     }
   };
+
+  const userMap = useMemo(() => {
+    const map: { [key: string]: string } = {};
+    users.forEach(u => {
+      map[u.id] = u.name || u.firstName || 'Student';
+    });
+    return map;
+  }, [users]);
 
   const fetchPapers = async () => {
     try {
@@ -717,64 +737,114 @@ export default function Admin() {
             </div>
           </Card>
         ) : activeTab === 'duels' ? (
-          <Card className="overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">Active & Completed Duels</h2>
-              <div className="flex items-center gap-4">
-                <Badge variant="info">{duels.length} Total Duels</Badge>
+          <div className="space-y-8">
+            <Card className="overflow-hidden">
+              <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Active & Completed Duels</h2>
+                <div className="flex items-center gap-4">
+                  <Badge variant="info">{duels.length} Total Duels</Badge>
+                </div>
               </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 border-b border-slate-100">
-                  <tr>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Duel ID</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Players</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {duels.map((duel) => (
-                    <tr key={duel.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-8 py-4">
-                        <code className="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded">{duel.id.slice(0, 8)}...</code>
-                      </td>
-                      <td className="px-8 py-4">
-                        <div className="flex flex-col gap-1">
-                          <p className="text-xs font-bold text-slate-900">P1: {duel.player1Id.slice(0, 8)}...</p>
-                          <p className="text-xs font-bold text-slate-900">P2: {duel.player2Id ? `${duel.player2Id.slice(0, 8)}...` : 'Waiting...'}</p>
-                        </div>
-                      </td>
-                      <td className="px-8 py-4">
-                        <Badge variant={duel.status === 'completed' ? 'success' : duel.status === 'active' ? 'warning' : 'default'}>
-                          {duel.status}
-                        </Badge>
-                      </td>
-                      <td className="px-8 py-4">
-                        <span className="text-sm font-black text-slate-900">
-                          {duel.player1Score} - {duel.player2Score}
-                        </span>
-                      </td>
-                      <td className="px-8 py-4">
-                        <span className="text-xs font-bold text-slate-400">
-                          {duel.createdAt?.toDate ? formatDate(duel.createdAt.toDate().toISOString()) : 'N/A'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {duels.length === 0 && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100">
                     <tr>
-                      <td colSpan={5} className="px-8 py-12 text-center">
-                        <p className="text-slate-400 font-medium">No duels found.</p>
-                      </td>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Duel ID</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Players</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {duels.map((duel) => (
+                      <tr key={duel.id} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-8 py-4">
+                          <code className="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded">{duel.id.slice(0, 8)}...</code>
+                        </td>
+                        <td className="px-8 py-4">
+                          <div className="flex flex-col gap-1">
+                            <p className="text-xs font-bold text-slate-900">P1: {userMap[duel.player1Id] || duel.player1Id.slice(0, 8)}</p>
+                            <p className="text-xs font-bold text-slate-900">P2: {duel.player2Id ? (userMap[duel.player2Id] || duel.player2Id.slice(0, 8)) : 'Waiting...'}</p>
+                          </div>
+                        </td>
+                        <td className="px-8 py-4">
+                          <Badge variant={duel.status === 'completed' ? 'success' : duel.status === 'active' ? 'warning' : 'default'}>
+                            {duel.status}
+                          </Badge>
+                        </td>
+                        <td className="px-8 py-4">
+                          <span className="text-sm font-black text-slate-900">
+                            {duel.player1Score} - {duel.player2Score}
+                          </span>
+                        </td>
+                        <td className="px-8 py-4">
+                          <span className="text-xs font-bold text-slate-400">
+                            {duel.createdAt?.toDate ? formatDate(duel.createdAt.toDate().toISOString()) : 'N/A'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {duels.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-8 py-12 text-center">
+                          <p className="text-slate-400 font-medium">No duels found.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <div className="p-8 border-b border-slate-100">
+                <h2 className="text-xl font-black text-slate-900 tracking-tight">Arena Legends (Duel Leaderboard)</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Rank</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Points</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Wins</th>
+                      <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Losses</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {duelLeaderboard.map((entry, i) => (
+                      <tr key={entry.userId} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-8 py-4">
+                          <span className="text-sm font-black text-slate-900">#{i + 1}</span>
+                        </td>
+                        <td className="px-8 py-4">
+                          <p className="text-sm font-bold text-slate-900">{entry.name}</p>
+                          <p className="text-[10px] text-slate-500">{entry.userId}</p>
+                        </td>
+                        <td className="px-8 py-4">
+                          <span className="text-sm font-black text-indigo-600">{entry.points}</span>
+                        </td>
+                        <td className="px-8 py-4">
+                          <span className="text-sm font-bold text-emerald-600">{entry.wins}</span>
+                        </td>
+                        <td className="px-8 py-4">
+                          <span className="text-sm font-bold text-red-600">{entry.losses}</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {duelLeaderboard.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="px-8 py-12 text-center">
+                          <p className="text-slate-400 font-medium">No leaderboard data found.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
         ) : (
           <Card className="overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex items-center justify-between">

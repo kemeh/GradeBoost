@@ -34,10 +34,10 @@ export default function Sidebar({ className }: SidebarProps) {
   const studentLinks = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Zap, label: 'Duel Battle', path: '/duel' },
+    { icon: Trophy, label: 'Leaderboard', path: '/leaderboard' },
     { icon: Target, label: 'Daily Drills', path: '/daily-drill' },
     { icon: FileText, label: 'Practice Papers', path: '/practice' },
     { icon: Target, label: 'Diagnostic', path: '/diagnostic' },
-    { icon: Trophy, label: 'Achievements', path: '#' },
     { icon: Settings, label: 'Profile Settings', path: '/profile' },
   ];
 

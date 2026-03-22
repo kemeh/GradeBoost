@@ -16,6 +16,7 @@ import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import FileUpload from '../components/FileUpload';
 import { getSystemSettings } from '../services/settingsService';
 import { useSettings } from '../contexts/SettingsContext';
+import { updatePoints, checkAchievements } from '../services/gamificationService';
 
 export default function PracticeSession() {
   const { paperId } = useParams();
@@ -159,6 +160,11 @@ export default function PracticeSession() {
 
       setResultsSummary({ score, grade });
       setShowResults(true);
+
+      // Award points for completing the paper
+      await updatePoints(user.uid, 50, `Practice Paper Completion: ${paper.paperType}`);
+      // Check for achievements
+      await checkAchievements(user.uid);
 
       // Only navigate immediately if user is paid or admin (optional, let's show summary to everyone)
       // navigate('/dashboard');

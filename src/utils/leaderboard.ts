@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, writeBatch, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, writeBatch, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DrillSubmission, WeeklyLeaderboard, UserProfile } from '../types';
 import { getWeekNumber, getCurrentWeekRange } from './dateUtils';
@@ -39,10 +39,14 @@ export async function calculateWeeklyLeaderboard() {
     // For simplicity in this app, we'll fetch individually or in chunks if needed
     // But since this is a small-scale app, we'll fetch what we can
     for (const userId of userIds) {
-      const userDoc = await getDocs(query(collection(db, 'users'), where('uid', '==', userId)));
-      if (!userDoc.empty) {
-        const userData = userDoc.docs[0].data() as UserProfile;
-        userProfiles[userId] = userData.name || 'Anonymous';
+      try {
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data() as UserProfile;
+          userProfiles[userId] = userData.name || userData.firstName || 'Student';
+        }
+      } catch (err) {
+        console.error(`Error fetching user ${userId}:`, err);
       }
     }
 
@@ -50,7 +54,7 @@ export async function calculateWeeklyLeaderboard() {
     const sortedLeaderboard = Object.entries(userScores)
       .map(([userId, totalScore]) => ({
         userId,
-        userName: userProfiles[userId] || 'Anonymous',
+        userName: userProfiles[userId] || 'Student',
         totalScore,
         weekNumber,
         year

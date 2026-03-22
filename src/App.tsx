@@ -18,6 +18,7 @@ import AdminSettings from './pages/AdminSettings';
 import DailyDrillSession from './pages/DailyDrillSession';
 import VerifyEmail from './pages/VerifyEmail';
 import DuelBattle from './pages/DuelBattle';
+import Leaderboard from './pages/Leaderboard';
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, isEmailVerified } = useAuth();
@@ -71,6 +72,7 @@ export default function App() {
             <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
             <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
             <Route path="/duel" element={<PrivateRoute><DuelBattle /></PrivateRoute>} />
+            <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
             <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
             
             <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />

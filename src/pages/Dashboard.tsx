@@ -25,6 +25,7 @@ import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate, getWeekNumber } from '../utils/dateUtils';
 import { toast } from 'react-hot-toast';
 import { onSnapshot, doc } from 'firebase/firestore';
+import { updateStreak } from '../services/gamificationService';
 
 const MOCK_TREND_DATA = [
   { day: 'Day 1', score: 45 },
@@ -65,6 +66,14 @@ export default function Dashboard() {
   const [firstName, setFirstName] = useState<string>('');
   const [leaderboard, setLeaderboard] = useState<WeeklyLeaderboard[]>([]);
   const [userLeaderboard, setUserLeaderboard] = useState<WeeklyLeaderboard | null>(null);
+  const [userPoints, setUserPoints] = useState(0);
+  const [userStreak, setUserStreak] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      updateStreak(user.uid).catch(console.error);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
@@ -74,6 +83,8 @@ export default function Dashboard() {
       if (doc.exists()) {
         const userData = doc.data();
         setFirstName(userData.firstName || userData.name?.split(' ')[0] || 'Student');
+        setUserPoints(userData.points || 0);
+        setUserStreak(userData.streak || 0);
       }
     }, (error) => {
       try {
@@ -492,8 +503,13 @@ export default function Dashboard() {
               </Badge>
             )}
             <Badge variant="primary" className="px-4 py-2">Target: Grade A</Badge>
-            <div className="w-12 h-12 bg-white rounded-2xl border border-slate-100 flex items-center justify-center shadow-sm">
-              <Zap className="text-amber-500" size={20} />
+            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-100">
+              <Zap className="text-amber-500" size={16} />
+              <span className="text-sm font-black text-amber-700">{userStreak} Day Streak</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
+              <Trophy className="text-indigo-600" size={16} />
+              <span className="text-sm font-black text-indigo-700">{userPoints} Points</span>
             </div>
           </div>
         </header>

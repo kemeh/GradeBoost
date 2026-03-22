@@ -144,6 +144,11 @@ async function startServer() {
           const isWinner = playerId === winnerId;
           const points = isWinner ? 10 : 3; // Simplified scoring
           
+          // Fetch user name for leaderboard
+          const userDoc = await db.collection('users').doc(playerId).get();
+          const userData = userDoc.data();
+          const userName = userData?.name || userData?.firstName || 'Student';
+
           await db.collection('pointsHistory').add({
             userId: playerId,
             points,
@@ -153,8 +158,13 @@ async function startServer() {
           
           const userRef = db.collection('leaderboard').doc(playerId);
           await userRef.set({
-            totalPoints: FieldValue.increment(points),
-            wins: FieldValue.increment(isWinner ? 1 : 0)
+            name: userName,
+            userId: playerId,
+            points: FieldValue.increment(points),
+            wins: FieldValue.increment(isWinner ? 1 : 0),
+            losses: FieldValue.increment(isWinner ? 0 : 1),
+            draws: FieldValue.increment(0),
+            rank: 0 // Placeholder
           }, { merge: true });
         }
         

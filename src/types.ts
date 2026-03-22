@@ -40,6 +40,19 @@ export interface UserProfile {
   paymentDate?: string;
   paymentExpiryDate?: string;
   photoURL?: string;
+  points: number;
+  streak: number;
+  lastActiveDate?: any; // Timestamp
+  badges: string[]; // Array of badge IDs
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+  criteria: string;
+  points?: number;
 }
 
 export interface DiagnosticResult {

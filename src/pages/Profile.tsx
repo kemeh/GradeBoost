@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { 
-  User, Mail, School, MapPin, 
-  ChevronRight, Save,
-  TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2
-} from 'lucide-react';
+import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap } from 'lucide-react';
+import { ACHIEVEMENTS } from '../services/gamificationService';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -218,6 +215,62 @@ export default function Profile() {
                     </Button>
                   </div>
                 </form>
+              </Card>
+
+              {/* Badges Section */}
+              <Card className="p-8 lg:p-12">
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-amber-600">
+                      <Trophy size={20} />
+                      <span className="text-sm font-black uppercase tracking-widest">Achievements & Badges</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-100">
+                      <Zap className="text-amber-500" size={16} />
+                      <span className="text-sm font-black text-amber-700">{user.streak || 0} Day Streak</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                    {ACHIEVEMENTS.map((achievement) => {
+                      const isEarned = user.badges?.includes(achievement.id);
+                      const Icon = achievement.icon === 'Zap' ? Zap : achievement.icon === 'Trophy' ? Trophy : Star;
+                      
+                      return (
+                        <div 
+                          key={achievement.id}
+                          className={cn(
+                            "flex flex-col items-center text-center p-4 rounded-3xl border transition-all duration-500",
+                            isEarned 
+                              ? "bg-amber-50 border-amber-200 shadow-sm scale-105" 
+                              : "bg-slate-50 border-slate-100 opacity-40 grayscale"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-12 h-12 rounded-2xl flex items-center justify-center mb-3",
+                            isEarned ? "bg-amber-500 text-white shadow-lg shadow-amber-200" : "bg-slate-200 text-slate-400"
+                          )}>
+                            <Icon size={24} />
+                          </div>
+                          <span className={cn(
+                            "text-[10px] font-black uppercase tracking-wider mb-1",
+                            isEarned ? "text-amber-700" : "text-slate-500"
+                          )}>
+                            {achievement.title}
+                          </span>
+                          <p className="text-[8px] font-bold text-slate-400 leading-tight">
+                            {achievement.description}
+                          </p>
+                          {isEarned && (
+                            <div className="mt-2 px-2 py-0.5 bg-amber-200 rounded-full">
+                              <span className="text-[8px] font-black text-amber-800">+{achievement.points} PTS</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </Card>
 
               {/* Security Section */}

@@ -18,6 +18,7 @@ import FileUpload from '../components/FileUpload';
 import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
 import { getSystemSettings } from '../services/settingsService';
 import { useSettings } from '../contexts/SettingsContext';
+import { updatePoints, checkAchievements } from '../services/gamificationService';
 
 enum OperationType {
   CREATE = 'create',
@@ -277,6 +278,12 @@ export default function DailyDrillSession() {
       }
 
       await batch.commit();
+      
+      // Award points for completing the drill
+      await updatePoints(user.uid, 20, 'Daily Drill Completion');
+      // Check for achievements
+      await checkAchievements(user.uid);
+
       setHasSubmitted(true);
       setShowResults(true);
       setSuccess(true);
