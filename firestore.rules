@@ -334,23 +334,27 @@ service cloud.firestore {
     }
 
     function isValidResource(data) {
-      return data.title is string && data.title.size() > 0 &&
+      return hasOnlyAllowedFields(['title', 'type', 'subject', 'fileUrl', 'fileSize', 'visible', 'createdAt', 'updatedAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
              data.type in ["PDF", "Video", "Link"] &&
              data.subject in ["Computer Science", "ICT"] &&
              isValidUrl(data.fileUrl) &&
              data.fileSize is string &&
              data.visible is bool &&
-             data.createdAt is timestamp;
+             data.createdAt is timestamp &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
 
     function isValidAssignment(data) {
-      return data.title is string && data.title.size() > 0 &&
+      return hasOnlyAllowedFields(['title', 'paper', 'subject', 'dueDate', 'link', 'active', 'createdAt', 'updatedAt']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
              data.paper is string &&
              data.subject in ["Computer Science", "ICT"] &&
              data.dueDate is timestamp &&
              isValidUrl(data.link) &&
              data.active is bool &&
-             data.createdAt is timestamp;
+             data.createdAt is timestamp &&
+             (!('updatedAt' in data) || data.updatedAt is timestamp);
     }
 
     function isValidWeeklyLeaderboard(data) {

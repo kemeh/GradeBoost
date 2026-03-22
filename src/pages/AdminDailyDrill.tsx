@@ -1373,12 +1373,23 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       }
 
       setProcessingStatus('Analyzing with AI (this may take a moment)...');
+      
+      // Check for API key using platform API
+      if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
+        setProcessingStatus('Please select an API key to continue...');
+        await window.aistudio.openSelectKey();
+        // After opening the dialog, we assume the user will select a key.
+        // The next call to GoogleGenAI will use the newly selected key.
+      }
+
       // Use Gemini to parse the text into questions
       const { GoogleGenAI, Type } = await import('@google/genai');
       
-      const apiKey = process.env.GEMINI_API_KEY;
+      // Use process.env.API_KEY which is injected by the platform after key selection
+      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+      
       if (!apiKey) {
-        throw new Error('Gemini API Key is missing. Please ensure it is set in the environment variables.');
+        throw new Error('Gemini API Key is missing. Please ensure you have selected an API key in the settings or the dialog.');
       }
       
       const ai = new GoogleGenAI({ apiKey });

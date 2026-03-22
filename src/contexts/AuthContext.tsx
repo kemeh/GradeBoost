@@ -3,6 +3,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { UserProfile } from '../types';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -81,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           setLoading(false);
         }, (error) => {
-          console.error("AuthContext Firestore Error:", error);
+          handleFirestoreError(error, OperationType.GET, `users/${fUser.uid}`);
           setLoading(false);
         });
       } else {

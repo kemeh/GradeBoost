@@ -23,6 +23,7 @@ import {
 } from '../components/ui';
 import { Resource, Assignment, Subject } from '../types';
 import { toast } from 'react-hot-toast';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 export default function AdminManagement() {
   const { user } = useAuth();
@@ -70,6 +71,9 @@ export default function AdminManagement() {
       query(collection(db, 'resources'), orderBy('createdAt', 'desc')),
       (snapshot) => {
         setResources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource)));
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'resources');
       }
     );
 
@@ -77,6 +81,9 @@ export default function AdminManagement() {
       query(collection(db, 'assignments'), orderBy('createdAt', 'desc')),
       (snapshot) => {
         setAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assignment)));
+      },
+      (error) => {
+        handleFirestoreError(error, OperationType.LIST, 'assignments');
       }
     );
 
@@ -135,6 +142,7 @@ export default function AdminManagement() {
       }
       setIsResourceDialogOpen(false);
     } catch (error) {
+      handleFirestoreError(error, editingResource ? OperationType.UPDATE : OperationType.CREATE, 'resources');
       toast.error('Failed to save resource');
     }
   };
@@ -145,6 +153,7 @@ export default function AdminManagement() {
       await deleteDoc(doc(db, 'resources', id));
       toast.success('Resource deleted');
     } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `resources/${id}`);
       toast.error('Failed to delete');
     }
   };
@@ -156,6 +165,7 @@ export default function AdminManagement() {
       });
       toast.success(`Resource ${!resource.visible ? 'visible' : 'hidden'}`);
     } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `resources/${resource.id}`);
       toast.error('Update failed');
     }
   };
@@ -214,6 +224,7 @@ export default function AdminManagement() {
       }
       setIsAssignmentDialogOpen(false);
     } catch (error) {
+      handleFirestoreError(error, editingAssignment ? OperationType.UPDATE : OperationType.CREATE, 'assignments');
       toast.error('Failed to save assignment');
     }
   };
@@ -224,6 +235,7 @@ export default function AdminManagement() {
       await deleteDoc(doc(db, 'assignments', id));
       toast.success('Assignment deleted');
     } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `assignments/${id}`);
       toast.error('Failed to delete');
     }
   };
@@ -235,6 +247,7 @@ export default function AdminManagement() {
       });
       toast.success(`Assignment ${!assignment.active ? 'activated' : 'deactivated'}`);
     } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `assignments/${assignment.id}`);
       toast.error('Update failed');
     }
   };
@@ -284,76 +297,94 @@ export default function AdminManagement() {
 
           <TabsContent value="resources" className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {resources.map((res) => (
-                <Card key={res.id} className="p-6 flex flex-col group">
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
-                      {res.subject}
-                    </Badge>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => handleToggleResourceVisibility(res)}
-                        className={cn("p-2 rounded-lg transition-colors", res.visible ? "text-emerald-600 bg-emerald-50" : "text-slate-400 bg-slate-100")}
-                      >
-                        {res.visible ? <Eye size={16} /> : <EyeOff size={16} />}
-                      </button>
-                      <button onClick={() => handleOpenResourceDialog(res)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-                        <Edit2 size={16} />
-                      </button>
-                      <button onClick={() => handleDeleteResource(res.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
-                        <Trash2 size={16} />
-                      </button>
+              {resources.length === 0 ? (
+                <div className="col-span-full p-12 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-100">
+                  <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="text-slate-300" size={32} />
+                  </div>
+                  <p className="text-slate-400 font-bold">No resources available yet.</p>
+                </div>
+              ) : (
+                resources.map((res) => (
+                  <Card key={res.id} className="p-6 flex flex-col group">
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                        {res.subject}
+                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => handleToggleResourceVisibility(res)}
+                          className={cn("p-2 rounded-lg transition-colors", res.visible ? "text-emerald-600 bg-emerald-50" : "text-slate-400 bg-slate-100")}
+                        >
+                          {res.visible ? <Eye size={16} /> : <EyeOff size={16} />}
+                        </button>
+                        <button onClick={() => handleOpenResourceDialog(res)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteResource(res.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <h3 className="font-bold text-slate-900 mb-2">{res.title}</h3>
-                  <div className="flex items-center gap-2 mt-auto pt-4 border-t border-slate-100">
-                    <Badge variant="secondary" className="text-[10px] font-bold">{res.type}</Badge>
-                    <span className="text-[10px] font-bold text-slate-400">{res.fileSize}</span>
-                    <a href={res.fileUrl} target="_blank" rel="noopener noreferrer" className="ml-auto text-indigo-600">
-                      <ExternalLink size={16} />
-                    </a>
-                  </div>
-                </Card>
-              ))}
+                    <h3 className="font-bold text-slate-900 mb-2">{res.title}</h3>
+                    <div className="flex items-center gap-2 mt-auto pt-4 border-t border-slate-100">
+                      <Badge variant="secondary" className="text-[10px] font-bold">{res.type}</Badge>
+                      <span className="text-[10px] font-bold text-slate-400">{res.fileSize}</span>
+                      <a href={res.fileUrl} target="_blank" rel="noopener noreferrer" className="ml-auto text-indigo-600">
+                        <ExternalLink size={16} />
+                      </a>
+                    </div>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="assignments" className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {assignments.map((asgn) => (
-                <Card key={asgn.id} className="p-6 flex flex-col group">
-                  <div className="flex items-center justify-between mb-4">
-                    <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
-                      {asgn.subject}
-                    </Badge>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => handleToggleAssignmentActive(asgn)}
-                        className={cn("p-2 rounded-lg transition-colors", asgn.active ? "text-emerald-600 bg-emerald-50" : "text-slate-400 bg-slate-100")}
-                      >
-                        {asgn.active ? <CheckCircle2 size={16} /> : <X size={16} />}
-                      </button>
-                      <button onClick={() => handleOpenAssignmentDialog(asgn)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
-                        <Edit2 size={16} />
-                      </button>
-                      <button onClick={() => handleDeleteAssignment(asgn.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+              {assignments.length === 0 ? (
+                <div className="col-span-full p-12 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-100">
+                  <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="text-slate-300" size={32} />
                   </div>
-                  <h3 className="font-bold text-slate-900 mb-1">{asgn.title}</h3>
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">{asgn.paper}</p>
-                  <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Calendar size={14} />
-                      <span className="text-xs font-bold">Due: {asgn.dueDate?.toDate ? asgn.dueDate.toDate().toLocaleDateString() : new Date(asgn.dueDate).toLocaleDateString()}</span>
+                  <p className="text-slate-400 font-bold">No assignments available yet.</p>
+                </div>
+              ) : (
+                assignments.map((asgn) => (
+                  <Card key={asgn.id} className="p-6 flex flex-col group">
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                        {asgn.subject}
+                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => handleToggleAssignmentActive(asgn)}
+                          className={cn("p-2 rounded-lg transition-colors", asgn.active ? "text-emerald-600 bg-emerald-50" : "text-slate-400 bg-slate-100")}
+                        >
+                          {asgn.active ? <CheckCircle2 size={16} /> : <X size={16} />}
+                        </button>
+                        <button onClick={() => handleOpenAssignmentDialog(asgn)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteAssignment(asgn.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
-                    <a href={asgn.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600">
-                      <LinkIcon size={16} />
-                    </a>
-                  </div>
-                </Card>
-              ))}
+                    <h3 className="font-bold text-slate-900 mb-1">{asgn.title}</h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">{asgn.paper}</p>
+                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-slate-500">
+                        <Calendar size={14} />
+                        <span className="text-xs font-bold">Due: {asgn.dueDate?.toDate ? asgn.dueDate.toDate().toLocaleDateString() : new Date(asgn.dueDate).toLocaleDateString()}</span>
+                      </div>
+                      <a href={asgn.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600">
+                        <LinkIcon size={16} />
+                      </a>
+                    </div>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
         </Tabs>
@@ -609,6 +640,7 @@ function BulkResourceImportModal({ onClose, onImported }: BulkResourceImportModa
             });
             resolve();
           } catch (err) {
+            handleFirestoreError(err, OperationType.CREATE, 'resources');
             reject(err);
           }
         }

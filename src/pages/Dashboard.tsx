@@ -74,6 +74,8 @@ export default function Dashboard() {
         const userData = doc.data();
         setFirstName(userData.firstName || userData.name?.split(' ')[0] || 'Student');
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
     });
 
     // Fetch Results
@@ -86,6 +88,8 @@ export default function Dashboard() {
     const resultsUnsub = onSnapshot(resultsQuery, (snapshot) => {
       const resultsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult));
       setResults(resultsData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'results');
     });
 
     // Fetch Drill Submissions
@@ -97,6 +101,8 @@ export default function Dashboard() {
     const submissionsUnsub = onSnapshot(submissionsQuery, (snapshot) => {
       const subsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DrillSubmission));
       setSubmissions(subsData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'drill_submissions');
     });
 
     // Fetch Learning Resources
@@ -108,6 +114,8 @@ export default function Dashboard() {
     const resourcesUnsub = onSnapshot(resourcesQuery, (snapshot) => {
       const resourcesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LearningResource));
       setLearningResources(resourcesData);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'learning_resources');
     });
 
     // Fetch Resources (PDFs, etc.)
@@ -119,6 +127,8 @@ export default function Dashboard() {
     const pdfResourcesUnsub = onSnapshot(pdfResourcesQuery, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource));
       setResources(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'resources');
     });
 
     // Fetch Assignments
@@ -130,6 +140,8 @@ export default function Dashboard() {
     const assignmentsUnsub = onSnapshot(assignmentsQuery, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assignment));
       setAssignments(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'assignments');
     });
 
     // Fetch Daily Drill
@@ -188,6 +200,8 @@ export default function Dashboard() {
     const leaderboardUnsub = onSnapshot(leaderboardQuery, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WeeklyLeaderboard));
       setLeaderboard(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'weekly_leaderboard');
     });
 
     // Fetch user's position
@@ -198,6 +212,8 @@ export default function Dashboard() {
       } else {
         setUserLeaderboard(null);
       }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, `weekly_leaderboard/${userLeaderboardId}`);
     });
 
     setLoading(false);
