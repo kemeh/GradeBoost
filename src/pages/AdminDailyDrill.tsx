@@ -1407,21 +1407,51 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
     setError('');
     try {
       let text = '';
+      let fileData: { data: string; mimeType: string } | null = null;
+
       if (file.type === 'application/pdf') {
-        setProcessingStatus('Parsing PDF pages...');
+        setProcessingStatus('Parsing PDF...');
         const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
         GlobalWorkerOptions.workerSrc = pdfWorker;
         
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await getDocument(arrayBuffer).promise;
         let fullText = '';
+        let hasText = false;
+
         for (let i = 1; i <= pdf.numPages; i++) {
           setProcessingStatus(`Parsing PDF page ${i} of ${pdf.numPages}...`);
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          fullText += content.items.map((item: any) => item.str).join(' ') + '\n';
+          const pageText = content.items.map((item: any) => item.str).join(' ');
+          if (pageText.trim().length > 10) hasText = true;
+          fullText += pageText + '\n';
         }
-        text = fullText;
+
+        if (!hasText) {
+          setProcessingStatus('PDF appears to be scanned. Preparing for AI OCR...');
+          // For scanned PDFs, we'll send the first few pages as images to Gemini
+          // Since we can't easily convert all pages to images in the browser without a canvas for each,
+          // and sending many images might hit limits, we'll try to send the first 5 pages.
+          // For now, let's just inform the user or try to send the PDF directly if supported by the SDK version.
+          // Actually, let's try to send the PDF as a base64 part.
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+            reader.readAsDataURL(file);
+          });
+          fileData = { data: base64, mimeType: 'application/pdf' };
+        } else {
+          text = fullText;
+        }
+      } else if (file.type.startsWith('image/')) {
+        setProcessingStatus('Preparing image for AI analysis...');
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+        fileData = { data: base64, mimeType: file.type };
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         setProcessingStatus('Converting Word document...');
         const mammoth = await import('mammoth');
@@ -1436,7 +1466,10 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         const rawQuestions = JSON.parse(content);
         const questions = (Array.isArray(rawQuestions) ? rawQuestions : [rawQuestions]).map(q => ({
           ...q,
-          subject: q.subject || selectedSubject
+          subject: q.subject || selectedSubject,
+          paper: q.paper || selectedPaper,
+          year: q.year || selectedYear,
+          session: q.session || selectedSession
         }));
         setPreviewQuestions(questions);
         setIsProcessing(false);
@@ -1446,7 +1479,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         setProcessingStatus('Reading CSV data...');
         text = await file.text();
       } else {
-        throw new Error('Unsupported file type. Please upload a PDF, Word, CSV, or JSON document.');
+        throw new Error('Unsupported file type. Please upload a PDF, Word, Image (JPG/PNG), CSV, or JSON document.');
       }
 
       setProcessingStatus('Analyzing with AI (this may take a moment)...');
@@ -1455,23 +1488,14 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       if (window.aistudio && !(await window.aistudio.hasSelectedApiKey())) {
         setProcessingStatus('Please select an API key to continue...');
         await window.aistudio.openSelectKey();
-        // After opening the dialog, we assume the user will select a key.
-        // However, we should stop here and let them try again once the key is selected
-        // as process.env.API_KEY might not be immediately updated in this context.
         setIsProcessing(false);
         setProcessingStatus('');
-        toast(
-          'Please select an API key in the dialog and then try processing the file again.',
-          { icon: 'ℹ️' }
-        );
+        toast('Please select an API key in the dialog and then try processing the file again.', { icon: 'ℹ️' });
         return;
       }
 
-      // Use Gemini to parse the text into questions
       const apiKey = await getApiKey();
-      
       if (!apiKey) {
-        // If still missing, try to open the dialog again or show a helpful message
         if (window.aistudio) {
           await window.aistudio.openSelectKey();
           setIsProcessing(false);
@@ -1479,34 +1503,45 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
           toast.error('Gemini API Key is missing. Please select a key in the dialog and try again.');
           return;
         }
-        throw new Error('Gemini API Key is missing. Please add API key in Settings or ensure you have selected an API key in the platform settings.');
+        throw new Error('Gemini API Key is missing. Please add API key in Settings.');
       }
       
       const ai = new GoogleGenAI({ apiKey });
-      
       const validTopics = Object.values(SUBJECT_TOPICS[selectedSubject]).flat().join(', ');
+
+      const prompt = `Extract ALL exam questions for the subject "${selectedSubject}" from the provided data.
+      
+      OBJECTIVES:
+      1. Detect the Paper Type (Paper 1: MCQ, Paper 2: Structured, Paper 3: Practical/Case Study).
+      2. Extract every single question, including sub-parts (e.g., 1a, 1b, 1c).
+      3. For Paper 1 (MCQ), extract options A, B, C, D and the correct letter.
+      4. For Paper 2/3, extract the full question text and the expected marking scheme/answer.
+      5. Map each question to the most relevant topic from this list: ${validTopics}.
+      
+      Return an array of objects with these fields:
+      - questionText: The full text of the question (including sub-part labels like "1a)").
+      - options: For Paper 1, an object with A, B, C, D keys. For others, null.
+      - correctAnswer: For Paper 1, 'A', 'B', 'C', or 'D'. For others, the marking scheme text.
+      - explanation: A brief explanation of the answer.
+      - paper: Detect and return 'Paper 1', 'Paper 2', or 'Paper 3'.
+      - topic: Closest match from the provided topic list.
+      - marks: Number of marks (integer).
+      - difficulty: 'Easy', 'Medium', or 'Hard'.
+      - section: 'A', 'B', or 'C' (if applicable).
+      
+      If the data is an image or scanned PDF, perform high-accuracy OCR first.
+      If you cannot detect the paper type, default to "${selectedPaper}".`;
+
+      const contents: any[] = [{ text: prompt }];
+      if (fileData) {
+        contents.push({ inlineData: fileData });
+      } else {
+        contents.push({ text: `Data Content:\n${text.substring(0, 100000)}` });
+      }
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Extract ALL exam questions for the subject "${selectedSubject}" and "${selectedPaper}" from the following text/data. 
-        This is a full "${selectedPaper}" question paper. 
-        ${selectedPaper === 'Paper 1' ? 'Expect exactly 50 multiple-choice questions.' : 'Expect structured questions (usually 8-10 main questions).'}
-        IMPORTANT: For structured papers (Paper 2/3), if a question has sub-parts (e.g., 1a, 1b, 1c), please extract each sub-part as a separate question if they cover different topics, or group them if they are part of the same topic.
-        Please be thorough and extract every single question found in the text.
-        
-        Return an array of objects with these fields: 
-        - questionText: The full text of the question (including any context or sub-part labels like "1a)").
-        - options: For Paper 1 (MCQ), provide an object with A, B, C, D keys. For Paper 2/3, this should be null or empty.
-        - correctAnswer: For Paper 1, this MUST be exactly 'A', 'B', 'C', or 'D'. For Paper 2 or Paper 3, this should be the full marking scheme or expected answer text.
-        - explanation: A brief explanation of the answer.
-        - paper: MUST be exactly '${selectedPaper}'.
-        - topic: MUST be the most relevant topic from this list: ${validTopics}. If no exact match, pick the closest one.
-        - marks: The number of marks awarded for the question.
-        - difficulty: 'Easy', 'Medium', or 'Hard'.
-        - imageUrl: (optional) any URL found in the text associated with the question.
-        
-        Data:
-        ${text.substring(0, 100000)}`, // Increased limit significantly for full papers
+        contents: { parts: contents.map(c => (typeof c === 'string' ? { text: c } : c)) },
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
@@ -1531,7 +1566,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                 topic: { type: Type.STRING },
                 marks: { type: Type.NUMBER },
                 difficulty: { type: Type.STRING },
-                imageUrl: { type: Type.STRING }
+                section: { type: Type.STRING }
               },
               required: ['questionText', 'correctAnswer', 'paper', 'topic']
             }
@@ -1541,20 +1576,18 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
 
       const aiResponseText = response.text;
       if (!aiResponseText) {
-        throw new Error('AI failed to extract questions from the PDF. Please try again or use a different file.');
+        throw new Error('AI failed to extract questions. The document might be too complex or unreadable.');
       }
 
-      console.log('AI Response:', aiResponseText);
       const questions = JSON.parse(aiResponseText).map((q: any) => ({
         ...q,
         subject: selectedSubject,
-        paper: selectedPaper, // Enforce the selected paper
         year: selectedYear,
         session: selectedSession
       }));
       
       if (questions.length === 0) {
-        throw new Error('No questions were found in the PDF.');
+        throw new Error('No questions were found in the document.');
       }
 
       setPreviewQuestions(questions);
@@ -1708,13 +1741,14 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
 
             <div className="p-8 border-2 border-dashed border-gray-300 rounded-xl text-center">
               <FileUp className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 mb-4">Upload a PDF, Word, CSV, or JSON document containing exam questions.</p>
+              <p className="text-gray-600 mb-4">Upload a PDF, Word, Image (JPG/PNG), CSV, or JSON document containing exam questions.</p>
               <div className="flex flex-col items-center gap-2 mb-4">
-                <p className="text-xs text-slate-400">CSV/JSON should include: questionText, options, correctAnswer, paper, topic, imageUrl (optional)</p>
+                <p className="text-xs text-slate-400">AI will automatically detect paper type and extract questions.</p>
+                <p className="text-xs text-slate-400">CSV/JSON should include: questionText, options, correctAnswer, paper, topic, section (optional)</p>
               </div>
               <input 
                 type="file" 
-                accept=".pdf,.docx,.csv,.json" 
+                accept=".pdf,.docx,.csv,.json,.jpg,.jpeg,.png" 
                 onChange={handleFileChange}
                 className="hidden" 
                 id="bulk-file"
@@ -1787,7 +1821,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                         />
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paper</label>
                           <select 
@@ -1804,6 +1838,23 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                             <option value="Paper 1">Paper 1</option>
                             <option value="Paper 2">Paper 2</option>
                             <option value="Paper 3">Paper 3</option>
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Section</label>
+                          <select 
+                            className="w-full px-4 py-2 bg-slate-50 border rounded-lg text-sm"
+                            value={q.section || ''}
+                            onChange={e => {
+                              const next = [...previewQuestions];
+                              next[i] = { ...next[i], section: e.target.value as any };
+                              setPreviewQuestions(next);
+                            }}
+                          >
+                            <option value="">None</option>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
                           </select>
                         </div>
                         <div className="space-y-2">
@@ -1899,6 +1950,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
                           <Badge variant="secondary">{q.paper}</Badge>
+                          {q.section && <Badge variant="secondary" className="text-[10px] bg-indigo-50 text-indigo-600 border-indigo-100">Section {q.section}</Badge>}
                           <Badge variant="secondary" className="text-[10px]">{q.topic}</Badge>
                         </div>
                         <div className="flex items-center gap-2">
