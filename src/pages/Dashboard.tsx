@@ -43,6 +43,7 @@ const MOCK_PAPER_DATA = [
 ];
 
 import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
+import { getSystemSettings } from '../services/settingsService';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -169,32 +170,51 @@ export default function Dashboard() {
     });
 
     // Fetch Daily Drill
-    const currentDay = getCurrentDayNumber();
-    setDaysRemaining(getDaysRemaining());
+    const fetchDrillData = async () => {
+      const settings = await getSystemSettings();
+      const startDate = settings?.challengeStartDate;
+      
+      const currentDay = getCurrentDayNumber(startDate);
+      setDaysRemaining(getDaysRemaining(startDate));
 
-    const drillQ = query(
-      collection(db, 'daily_drills'), 
-      where('day', '==', currentDay)
-    );
-    
-    getDocs(drillQ).then(drillSnapshot => {
-      if (!drillSnapshot.empty) {
-        const drillData = { id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill;
-        setTodayDrill(drillData);
+      const drillQ = query(
+        collection(db, 'daily_drills'), 
+        where('day', '==', currentDay)
+      );
+      
+      return getDocs(drillQ).then(drillSnapshot => {
+        if (!drillSnapshot.empty) {
+          const drillData = { id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill;
+          setTodayDrill(drillData);
 
-        // Check if already submitted today
-        const subQ = query(
-          collection(db, 'drill_submissions'),
-          where('userId', '==', user.uid),
-          where('day', '==', currentDay)
-        );
-        getDocs(subQ).then(subSnapshot => {
-          if (!subSnapshot.empty) {
-            setHasSubmittedToday(true);
-          }
-        });
-      }
-    });
+          // Check if already submitted today
+          const subQ = query(
+            collection(db, 'drill_submissions'),
+            where('userId', '==', user.uid),
+            where('day', '==', currentDay)
+          );
+          return getDocs(subQ).then(subSnapshot => {
+            if (!subSnapshot.empty) {
+              setHasSubmittedToday(true);
+            }
+          }).catch(err => {
+            console.error("Dashboard Submission Check Error:", err);
+          });
+        } else {
+          console.log(`No drill found for day ${currentDay}`);
+          setTodayDrill(null);
+        }
+      }).catch(err => {
+        console.error("Dashboard Drill Fetch Error:", err);
+        try {
+          handleFirestoreError(err, OperationType.GET, 'daily_drills');
+        } catch (e) {
+          // Error already logged
+        }
+      });
+    };
+
+    const drillPromise = fetchDrillData();
 
     // Fetch Sample Questions if unpaid
     if (user.paymentStatus !== 'paid') {
@@ -248,7 +268,10 @@ export default function Dashboard() {
       }
     });
 
-    setLoading(false);
+    // Wait for all non-snapshot fetches to complete
+    Promise.all([drillPromise]).finally(() => {
+      setLoading(false);
+    });
 
     return () => {
       userUnsub();
@@ -483,12 +506,12 @@ export default function Dashboard() {
                   <Badge variant="secondary" className="bg-amber-400 text-amber-950 border-none">Daily Drill</Badge>
                 </div>
                 <h2 className="text-3xl font-black mb-2 tracking-tight">
-                  {todayDrill ? `Today's Topic: ${todayDrill.topic}` : "Today's Drill is Loading..."}
+                  {todayDrill ? `Today's Topic: ${todayDrill.topic}` : (loading ? "Today's Drill is Loading..." : "No Drill Scheduled for Today")}
                 </h2>
                 <p className="text-indigo-100 font-medium mb-6 max-w-xl">
                   {todayDrill 
                     ? `Master ${todayDrill.topic} with today's ${todayDrill.subject} drill. Keep your streak alive!`
-                    : "Get ready for your daily challenge. Consistency is key to achieving an A grade."}
+                    : (loading ? "Get ready for your daily challenge. Consistency is key to achieving an A grade." : "Check back tomorrow for a new challenge or practice with sample questions below.")}
                 </p>
                 <div className="flex flex-wrap gap-4">
                   {user.paymentStatus === 'paid' || (todayDrill && (todayDrill.day === 1 || todayDrill.isFree)) ? (

@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Settings, Key, Save, CheckCircle, AlertCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Settings, Key, Save, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, Calendar, RotateCcw, CreditCard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getSystemSettings, updateSystemSettings } from '../services/settingsService';
 import { toast } from 'react-hot-toast';
 import { GoogleGenAI } from '@google/genai';
 import Sidebar from '../components/Sidebar';
+import { formatDate } from '../utils/dateUtils';
+import { DEFAULT_CHALLENGE_START_DATE, getCurrentDayNumber } from '../utils/challenge';
 
 export default function AdminSettings() {
   const { user } = useAuth();
   const [apiKey, setApiKey] = useState('');
+  const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
+  const [paymentPrice, setPaymentPrice] = useState(1000);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
@@ -21,6 +25,12 @@ export default function AdminSettings() {
       const settings = await getSystemSettings();
       if (settings) {
         setApiKey(settings.geminiApiKey);
+        if (settings.challengeStartDate) {
+          setChallengeStartDate(settings.challengeStartDate);
+        }
+        if (settings.paymentPrice) {
+          setPaymentPrice(settings.paymentPrice);
+        }
       }
       setIsLoading(false);
     };
@@ -33,15 +43,31 @@ export default function AdminSettings() {
       return;
     }
 
+    if (!challengeStartDate) {
+      toast.error('Challenge Start Date cannot be empty');
+      return;
+    }
+
+    if (paymentPrice < 0) {
+      toast.error('Payment Price cannot be negative');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await updateSystemSettings(apiKey.trim(), user?.uid || 'unknown');
+      await updateSystemSettings(apiKey.trim(), challengeStartDate, paymentPrice, user?.uid || 'unknown');
       toast.success('Settings updated successfully');
     } catch (error) {
       toast.error('Failed to update settings');
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const resetToToday = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setChallengeStartDate(today);
+    toast.success('Start date set to today. Remember to save!');
   };
 
   const testConnection = async () => {
@@ -133,27 +159,15 @@ export default function AdminSettings() {
                     />
                     <ShieldCheck className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                   </div>
-                  <p className="mt-2 text-xs text-slate-400">
-                    This key is stored securely in Firestore and is only accessible by administrators.
-                  </p>
                 </div>
 
-                <div className="flex flex-wrap gap-4 pt-4">
-                  <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-indigo-200"
-                  >
-                    {isSaving ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                    Save Settings
-                  </button>
-
+                <div className="flex flex-wrap gap-4 pt-2">
                   <button
                     onClick={testConnection}
                     disabled={isTesting || !apiKey}
-                    className="px-8 py-4 bg-white text-indigo-600 border-2 border-indigo-600 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-50 transition-all disabled:opacity-50 flex items-center gap-2"
+                    className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-600 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-50 transition-all disabled:opacity-50 flex items-center gap-2 text-sm"
                   >
-                    {isTesting ? <RefreshCw className="w-5 h-5 animate-spin" /> : <RefreshCw className="w-5 h-5" />}
+                    {isTesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                     Test Gemini Connection
                   </button>
                 </div>
@@ -179,6 +193,106 @@ export default function AdminSettings() {
                 )}
               </div>
             </motion.section>
+
+            {/* Challenge Configuration Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-amber-50 rounded-2xl">
+                  <Calendar className="w-6 h-6 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Challenge Configuration</h2>
+                  <p className="text-sm text-slate-500">Manage the 60-day challenge timeline and start date.</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Challenge Start Date
+                  </label>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
+                      <input
+                        type="date"
+                        value={challengeStartDate}
+                        onChange={(e) => setChallengeStartDate(e.target.value)}
+                        className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
+                      />
+                    </div>
+                    <button
+                      onClick={resetToToday}
+                      className="px-6 py-4 bg-amber-100 text-amber-700 rounded-2xl font-bold uppercase tracking-wider hover:bg-amber-200 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                    >
+                      <RotateCcw className="w-5 h-5" />
+                      Reset to Today
+                    </button>
+                  </div>
+                  <p className="mt-3 text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <strong>Current Day:</strong> {getCurrentDayNumber(challengeStartDate)} / 60
+                    <br />
+                    Changing this will affect which daily drill is active for all students.
+                  </p>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* Payment Configuration Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-emerald-50 rounded-2xl">
+                  <CreditCard className="w-6 h-6 text-emerald-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Payment Configuration</h2>
+                  <p className="text-sm text-slate-500">Manage the price for the premium plan.</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Premium Plan Price (FCFA)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={paymentPrice}
+                      onChange={(e) => setPaymentPrice(parseInt(e.target.value) || 0)}
+                      className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-bold text-lg"
+                    />
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold">
+                      FCFA
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">
+                    This price will be displayed to all students on the payment page.
+                  </p>
+                </div>
+              </div>
+            </motion.section>
+
+            {/* Save Button Section */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="px-12 py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center gap-3 shadow-xl shadow-indigo-200 text-lg"
+              >
+                {isSaving ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
+                Save All Settings
+              </button>
+            </div>
 
             {/* Info Section */}
             <section className="bg-slate-100 rounded-3xl p-8 border border-slate-200">

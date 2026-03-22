@@ -147,9 +147,14 @@ export default function AdminDailyDrill() {
   };
 
   const fetchDailyDrills = async () => {
-    const q = query(collection(db, 'daily_drills'), orderBy('day', 'asc'));
-    const snapshot = await getDocs(q);
-    setDrills(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyDrill)));
+    try {
+      const q = query(collection(db, 'daily_drills'), orderBy('day', 'asc'));
+      const snapshot = await getDocs(q);
+      setDrills(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyDrill)));
+    } catch (err: any) {
+      console.error("Error fetching daily drills:", err);
+      setError(err.message || 'Failed to fetch daily drills.');
+    }
   };
 
   const fetchSubmissions = async () => {
@@ -1579,12 +1584,24 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         throw new Error('AI failed to extract questions. The document might be too complex or unreadable.');
       }
 
-      const questions = JSON.parse(aiResponseText).map((q: any) => ({
-        ...q,
-        subject: selectedSubject,
-        year: selectedYear,
-        session: selectedSession
-      }));
+      const questions = JSON.parse(aiResponseText).map((q: any) => {
+        const paper = q.paper || selectedPaper;
+        return {
+          ...q,
+          paper,
+          subject: selectedSubject,
+          year: selectedYear,
+          session: selectedSession,
+          questionText: String(q.questionText || ''),
+          options: paper === 'Paper 1' ? (q.options || { A: '', B: '', C: '', D: '' }) : (q.options || null),
+          correctAnswer: String(q.correctAnswer || ''),
+          explanation: String(q.explanation || ''),
+          topic: String(q.topic || 'General'),
+          marks: Number(q.marks || 1),
+          difficulty: String(q.difficulty || 'Medium'),
+          section: q.section ? String(q.section) : undefined
+        };
+      });
       
       if (questions.length === 0) {
         throw new Error('No questions were found in the document.');

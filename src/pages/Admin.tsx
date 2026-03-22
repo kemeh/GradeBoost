@@ -17,6 +17,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-hot-toast';
+import { getSystemSettings } from '../services/settingsService';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -32,6 +33,7 @@ export default function Admin() {
   const [manualRequests, setManualRequests] = useState<any[]>([]);
   const [sampleQuestions, setSampleQuestions] = useState<SampleQuestion[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [paymentPrice, setPaymentPrice] = useState(1000);
 
   const setActiveTab = (tab: 'papers' | 'payments' | 'manual' | 'samples') => {
     setSearchParams({ tab });
@@ -70,8 +72,20 @@ export default function Admin() {
       fetchUsers();
       fetchManualRequests();
       fetchSampleQuestions();
+      fetchSettings();
     }
   }, [isAdmin]);
+
+  const fetchSettings = async () => {
+    try {
+      const settings = await getSystemSettings();
+      if (settings?.paymentPrice) {
+        setPaymentPrice(settings.paymentPrice);
+      }
+    } catch (error) {
+      console.error("Error fetching system settings:", error);
+    }
+  };
 
   const fetchSampleQuestions = async () => {
     try {
@@ -131,7 +145,7 @@ export default function Admin() {
       try {
         await setDoc(auditRef, {
           userId,
-          amount: 1000,
+          amount: paymentPrice,
           provider: 'Manual',
           status: 'success',
           timestamp: serverTimestamp(),
@@ -168,7 +182,7 @@ export default function Admin() {
         try {
           await setDoc(auditRef, {
             userId,
-            amount: 1000,
+            amount: paymentPrice,
             provider: 'Manual',
             status: 'success',
             timestamp: serverTimestamp(),

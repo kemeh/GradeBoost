@@ -16,6 +16,7 @@ import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
 import FileUpload from '../components/FileUpload';
 
 import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
+import { getSystemSettings } from '../services/settingsService';
 
 enum OperationType {
   CREATE = 'create',
@@ -136,7 +137,10 @@ export default function DailyDrillSession() {
   const fetchTodayDrill = async () => {
     if (!user) return;
     try {
-      const currentDay = getCurrentDayNumber();
+      const settings = await getSystemSettings();
+      const startDate = settings?.challengeStartDate;
+      
+      const currentDay = getCurrentDayNumber(startDate);
       const dayToFetch = requestedDay ? parseInt(requestedDay) : currentDay;
 
       // Security check: if not paid, only allow Day 1 or drills marked as free sample
@@ -159,6 +163,11 @@ export default function DailyDrillSession() {
 
         // Fetch all questions
         const questionIds = currentDrill.questionIds || [];
+        if (questionIds.length === 0) {
+          setError('No questions assigned to this drill.');
+          setLoading(false);
+          return;
+        }
         const questionPromises = questionIds.map(id => getDoc(doc(db, 'exam_questions', id)));
         const questionSnaps = await Promise.all(questionPromises);
         

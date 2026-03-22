@@ -50,7 +50,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const isActive = (path: string) => {
     if (path === '#') return false;
-    return location.pathname === path || (path.includes('?') && location.pathname + location.search === path);
+    return location.pathname === path || (path?.includes('?') && location.pathname + location.search === path);
   };
 
   return (

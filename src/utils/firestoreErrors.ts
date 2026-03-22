@@ -50,7 +50,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   }
 
   // Log security-related errors to the server
-  if (errorMessage.toLowerCase().includes('permission-denied') || errorMessage.toLowerCase().includes('insufficient permissions')) {
+  if (errorMessage?.toLowerCase().includes('permission-denied') || errorMessage?.toLowerCase().includes('insufficient permissions')) {
     fetch('/api/security/audit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

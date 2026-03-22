@@ -54,12 +54,14 @@
 //   - options: map (required, A-D)
 //   - correctAnswer: string (required, A-D)
 //   - explanation: string (optional)
+//   - subject: string (required, enum)
 //   - paper: string (required, Paper 1, 2, 3)
 //   - section: string (optional, A, B, C)
 //   - topic: string (required)
 //   - marks: number (optional)
 //   - difficulty: string (optional, Easy, Medium, Hard)
 //   - year: number (optional)
+//   - session: string (optional)
 //   - isDailyDrill: bool (required)
 //   - createdAt: timestamp (required)
 //
@@ -67,8 +69,8 @@
 // Document ID: {drillId}
 // Fields:
 //   - day: number (required, 1-60)
-//   - questionId: string (required, docId)
-//   - paper: string (required)
+//   - questionIds: list (required, docIds)
+//   - subject: string (required)
 //   - topic: string (required)
 //   - isFree: bool (required)
 //   - createdAt: timestamp (required)
@@ -173,7 +175,7 @@ service cloud.firestore {
         (
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          request.auth.token.email == "kemehhilary@gmail.com"
+          (request.auth.token.email == "kemehhilary@gmail.com" && request.auth.token.email_verified == true)
         );
     }
 
@@ -290,21 +292,23 @@ service cloud.firestore {
     function isValidExamQuestion(data) {
       return data.questionText is string &&
              (data.paper == "Paper 1" ? (data.options is map && data.correctAnswer in ["A", "B", "C", "D"]) : (data.correctAnswer is string)) &&
+             data.subject in ["Computer Science", "ICT"] &&
              data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
+             (!('section' in data) || data.section in ["A", "B", "C"]) &&
              data.topic is string &&
              data.isDailyDrill is bool &&
              (!('imageUrl' in data) || data.imageUrl == "" || data.imageUrl == null || isValidUrl(data.imageUrl)) &&
              (!('session' in data) || data.session is string) &&
-             data.year is number &&
+             (!('year' in data) || data.year is number) &&
              data.createdAt is timestamp &&
-             data.marks is number &&
-             data.difficulty in ["Easy", "Medium", "Hard"];
+             (!('marks' in data) || data.marks is number) &&
+             (!('difficulty' in data) || data.difficulty in ["Easy", "Medium", "Hard"]);
     }
 
     function isValidDailyDrillV2(data) {
-      return data.day is number && data.day >= 1 && data.day <= 60 &&
-             data.questionId is string &&
-             data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
+      return data.day is number && data.day >= 1 && data.day <= 365 &&
+             data.questionIds is list &&
+             data.subject in ["Computer Science", "ICT"] &&
              data.topic is string &&
              data.isFree is bool &&
              data.createdAt is timestamp;

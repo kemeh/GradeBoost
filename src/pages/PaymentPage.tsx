@@ -14,6 +14,7 @@ import { auth, db } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { QuestionPaper, DailyDrill } from '../types';
+import { getSystemSettings } from '../services/settingsService';
 
 export default function PaymentPage() {
   const { user } = useAuth();
@@ -23,6 +24,7 @@ export default function PaymentPage() {
   const [success, setSuccess] = useState(false);
   const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'success' | 'failed' | 'manual'>('form');
   const [reference, setReference] = useState('');
+  const [paymentPrice, setPaymentPrice] = useState(1000);
   const [manualData, setManualData] = useState({
     transactionId: '',
     method: 'MTN Mobile Money' as string,
@@ -31,6 +33,21 @@ export default function PaymentPage() {
   const [freeSample, setFreeSample] = useState<QuestionPaper | DailyDrill | null>(null);
   const [loadingSample, setLoadingSample] = useState(true);
   const { isAdmin } = useAuth();
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settings = await getSystemSettings();
+        if (settings?.paymentPrice) {
+          setPaymentPrice(settings.paymentPrice);
+          setManualData(prev => ({ ...prev, amount: settings.paymentPrice }));
+        }
+      } catch (error) {
+        console.error("Error fetching system settings:", error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     // If user is already paid and not an admin, redirect to dashboard
@@ -134,6 +151,13 @@ export default function PaymentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reference: ref, userId: user?.uid })
       });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Verification response not OK:", response.status, errorText);
+        return false;
+      }
+
       const data = await response.json();
       
       if (data.status === 'SUCCESSFUL') {
@@ -200,11 +224,26 @@ export default function PaymentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: formData.phone,
-          amount: 1000,
+          amount: paymentPrice,
           description: `GradeBoost 60 - ${user.name}`,
           external_reference: `gb60_${user.uid}_${Date.now()}`
         })
       });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = 'Failed to initiate payment';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          console.error("Failed to parse error JSON:", errorText);
+          if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html')) {
+            errorMessage = "Server error (HTML returned). Please contact support.";
+          }
+        }
+        throw new Error(errorMessage);
+      }
 
       const data = await response.json();
       if (data.reference) {
@@ -279,7 +318,7 @@ export default function PaymentPage() {
               </h1>
               <p className="text-xl text-slate-500 font-medium max-w-2xl">
                 Unlock full access to all Advanced Level <span className="text-indigo-600 font-black">{user.subject}</span> practice materials.
-                Start your journey to an A grade — just 1000 FCFA to unlock everything.
+                Start your journey to an A grade — just {paymentPrice} FCFA to unlock everything.
               </p>
             </div>
             <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm min-w-[240px]">
@@ -475,7 +514,7 @@ export default function PaymentPage() {
 
                       <div className="p-4 bg-slate-900 rounded-2xl flex items-center justify-between">
                         <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Amount</span>
-                        <span className="text-xl font-black text-white">1000 FCFA</span>
+                        <span className="text-xl font-black text-white">{paymentPrice} FCFA</span>
                       </div>
 
                       <Button type="submit" className="w-full" size="lg">

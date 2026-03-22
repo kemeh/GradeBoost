@@ -5,8 +5,8 @@ import './index.css';
 
 // Handle chunk load errors (common in SPAs when a new version is deployed)
 window.addEventListener('error', (e) => {
-  if (e.message.includes('Failed to fetch dynamically imported module') || 
-      e.message.includes('Importing a module script failed')) {
+  if (e.message?.includes('Failed to fetch dynamically imported module') || 
+      e.message?.includes('Importing a module script failed')) {
     console.warn('Chunk load error detected, reloading page...', e);
     window.location.reload();
   }

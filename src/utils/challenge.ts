@@ -1,25 +1,27 @@
 
-export const CHALLENGE_START_DATE = '2026-03-01'; // Global start date for the 60-day challenge
+export const DEFAULT_CHALLENGE_START_DATE = '2026-03-22'; // Default start date
 
-export function getCurrentDayNumber(): number {
-  const startDate = new Date(CHALLENGE_START_DATE);
+export function getCurrentDayNumber(startDateString?: string): number {
+  const startDate = new Date(startDateString || DEFAULT_CHALLENGE_START_DATE);
   const today = new Date();
   
-  // Calculate difference in days
+  // Reset time to midnight for accurate day calculation
+  startDate.setHours(0, 0, 0, 0);
+  today.setHours(0, 0, 0, 0);
+
   const diffTime = today.getTime() - startDate.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
   
-  // Clamp between 1 and 60
-  return Math.min(Math.max(diffDays, 1), 60);
+  return Math.max(1, Math.min(60, diffDays));
 }
 
-export function getDaysRemaining(): number {
-  const currentDay = getCurrentDayNumber();
-  return 60 - currentDay;
+export function getDaysRemaining(startDateString?: string): number {
+  const currentDay = getCurrentDayNumber(startDateString);
+  return Math.max(0, 60 - currentDay);
 }
 
-export function isDrillAccessible(drillDayNumber: number, isPaid: boolean = false, expiryDate?: string, isFreeSample: boolean = false): boolean {
-  const currentDay = getCurrentDayNumber();
+export function isDrillAccessible(drillDayNumber: number, isPaid: boolean = false, expiryDate?: string, isFreeSample: boolean = false, startDateString?: string): boolean {
+  const currentDay = getCurrentDayNumber(startDateString);
   
   // Day 1 or any drill marked as free sample is always accessible
   if (drillDayNumber === 1 || isFreeSample) return true;

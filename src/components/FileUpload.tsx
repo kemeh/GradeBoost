@@ -121,7 +121,7 @@ export default function FileUpload({
     
     try {
       // If it's a firebase storage URL, try to delete it
-      if (downloadUrl.includes('firebasestorage.googleapis.com')) {
+      if (downloadUrl?.includes('firebasestorage.googleapis.com')) {
         const fileRef = ref(storage, downloadUrl);
         await deleteObject(fileRef);
       }

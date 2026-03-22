@@ -14,6 +14,7 @@ import { Button, Card, Badge, Progress, cn } from '../components/ui';
 import { QuestionPaper, ExamResult, Subject } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import FileUpload from '../components/FileUpload';
+import { getSystemSettings } from '../services/settingsService';
 
 export default function PracticeSession() {
   const { paperId } = useParams();
@@ -29,6 +30,21 @@ export default function PracticeSession() {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [resultsSummary, setResultsSummary] = useState<{ score: number; grade: string } | null>(null);
+  const [paymentPrice, setPaymentPrice] = useState(1000);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settings = await getSystemSettings();
+        if (settings?.paymentPrice) {
+          setPaymentPrice(settings.paymentPrice);
+        }
+      } catch (error) {
+        console.error("Error fetching system settings:", error);
+      }
+    };
+    fetchSettings();
+  }, []);
 
   useEffect(() => {
     const fetchPaper = async () => {
@@ -438,7 +454,7 @@ export default function PracticeSession() {
                       <div className="flex gap-3">
                         <Zap className="text-amber-600 shrink-0" size={20} />
                         <p className="text-sm font-bold text-amber-900">
-                          Unlock detailed corrections, explanations, and Paper 2 & 3 interactive practice for just 1000 FCFA.
+                          Unlock detailed corrections, explanations, and Paper 2 & 3 interactive practice for just {paymentPrice} FCFA.
                         </p>
                       </div>
                     </div>

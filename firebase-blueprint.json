@@ -97,17 +97,17 @@
     },
     "DailyDrill": {
       "title": "Daily Drill",
-      "description": "Maps a day (1-60) to a specific question from the exam_questions collection.",
+      "description": "Maps a day (1-365) to specific questions from the exam_questions collection.",
       "type": "object",
       "properties": {
-        "day": { "type": "integer", "description": "Day number (1-60)." },
-        "questionId": { "type": "string" },
-        "paper": { "type": "string", "enum": ["Paper 1", "Paper 2", "Paper 3"] },
+        "day": { "type": "integer", "description": "Day number (1-365)." },
+        "questionIds": { "type": "array", "items": { "type": "string" }, "description": "List of question IDs." },
+        "subject": { "type": "string", "enum": ["Computer Science", "ICT"] },
         "topic": { "type": "string" },
         "isFree": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["day", "questionId", "paper", "topic", "createdAt"]
+      "required": ["day", "questionIds", "subject", "topic", "createdAt"]
     },
     "DrillSubmission": {
       "title": "Drill Submission",
@@ -201,14 +201,16 @@
     },
     "SystemSettings": {
       "title": "System Settings",
-      "description": "Stores global system configuration like API keys.",
+      "description": "Stores global system configuration like API keys, challenge start date, and payment price.",
       "type": "object",
       "properties": {
         "geminiApiKey": { "type": "string", "description": "The active Gemini API key." },
+        "challengeStartDate": { "type": "string", "format": "date", "description": "The start date of the 60-day challenge (YYYY-MM-DD)." },
+        "paymentPrice": { "type": "number", "description": "The price of the premium plan in FCFA." },
         "updatedAt": { "type": "string", "format": "date-time" },
         "updatedBy": { "type": "string" }
       },
-      "required": ["geminiApiKey", "updatedAt", "updatedBy"]
+      "required": ["geminiApiKey", "challengeStartDate", "paymentPrice", "updatedAt", "updatedBy"]
     }
   },
   "firestore": {

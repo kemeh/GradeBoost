@@ -16,7 +16,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = getAdminFirestore();
+const db = getAdminFirestore(admin.apps[0], "ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d");
 
 const CAMPAY_BASE_URL = process.env.CAMPAY_ENVIRONMENT === 'prod' 
   ? 'https://www.campay.net/api' 
@@ -56,13 +56,28 @@ async function startServer() {
   app.use("/api/payment/", paymentLimiter);
 
   // CamPay API Routes
-  app.post("/api/payment/collect", async (req, res) => {
+  app.post("/api/payment/collect", async (req, res, next) => {
     const { phone, amount, description, external_reference } = req.body;
     
     try {
+      // Fetch dynamic price from Firestore to ensure security
+      let finalAmount = amount;
+      try {
+        const settingsDoc = await db.collection('system_settings').doc('settings').get();
+        if (settingsDoc.exists) {
+          const settings = settingsDoc.data();
+          if (settings?.paymentPrice) {
+            finalAmount = settings.paymentPrice;
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching dynamic price in server:", err);
+        // Fallback to the amount sent from client if fetching fails
+      }
+
       const token = await getCampayToken();
       const response = await axios.post(`${CAMPAY_BASE_URL}/collect/`, {
-        amount,
+        amount: finalAmount,
         currency: "XAF",
         from: phone,
         description,
@@ -75,8 +90,7 @@ async function startServer() {
       
       res.json(response.data);
     } catch (error: any) {
-      console.error("CamPay Collect Error:", error.response?.data || error.message);
-      res.status(500).json({ error: "Failed to initiate payment" });
+      next(error);
     }
   });
 
@@ -170,6 +184,15 @@ async function startServer() {
       console.error("Security Audit Error:", error);
       res.status(500).json({ error: "Failed to log security audit" });
     }
+  });
+
+  // Global Error Handler
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error("Global Error Handler:", err);
+    res.status(err.status || 500).json({
+      error: err.message || "Internal Server Error",
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    });
   });
 
   // Vite middleware for development

@@ -3,6 +3,8 @@ import { db } from '../firebase';
 
 export interface SystemSettings {
   geminiApiKey: string;
+  challengeStartDate: string;
+  paymentPrice: number;
   updatedAt: any;
   updatedBy: string;
 }
@@ -23,11 +25,13 @@ export const getSystemSettings = async (): Promise<SystemSettings | null> => {
   }
 };
 
-export const updateSystemSettings = async (apiKey: string, userId: string): Promise<void> => {
+export const updateSystemSettings = async (apiKey: string, challengeStartDate: string, paymentPrice: number, userId: string): Promise<void> => {
   try {
     const docRef = doc(db, 'system_settings', SETTINGS_DOC_ID);
     await setDoc(docRef, {
       geminiApiKey: apiKey,
+      challengeStartDate,
+      paymentPrice,
       updatedAt: serverTimestamp(),
       updatedBy: userId,
     });
