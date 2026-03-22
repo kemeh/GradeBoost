@@ -94,6 +94,7 @@ export interface ExamQuestion {
   marks: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   year: number;
+  session?: string;
   isDailyDrill: boolean;
   imageUrl?: string;
   createdAt: any;

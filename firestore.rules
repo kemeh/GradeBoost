@@ -289,13 +289,16 @@ service cloud.firestore {
 
     function isValidExamQuestion(data) {
       return data.questionText is string &&
-             data.options is map &&
-             data.correctAnswer in ["A", "B", "C", "D"] &&
+             (data.paper == "Paper 1" ? (data.options is map && data.correctAnswer in ["A", "B", "C", "D"]) : (data.correctAnswer is string)) &&
              data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
              data.topic is string &&
              data.isDailyDrill is bool &&
-             (!('imageUrl' in data) || isValidUrl(data.imageUrl)) &&
-             data.createdAt is timestamp;
+             (!('imageUrl' in data) || data.imageUrl == "" || data.imageUrl == null || isValidUrl(data.imageUrl)) &&
+             (!('session' in data) || data.session is string) &&
+             data.year is number &&
+             data.createdAt is timestamp &&
+             data.marks is number &&
+             data.difficulty in ["Easy", "Medium", "Hard"];
     }
 
     function isValidDailyDrillV2(data) {

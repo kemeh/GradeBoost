@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp, deleteDoc, writeBatch } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { 
@@ -75,6 +75,7 @@ export default function AdminDailyDrill() {
     marks: 1,
     difficulty: 'Medium',
     year: new Date().getFullYear(),
+    session: 'June',
     isDailyDrill: true
   });
 
@@ -214,8 +215,19 @@ export default function AdminDailyDrill() {
       }
       setShowQuestionModal(false);
       fetchQuestionsBank();
-    } catch (err) {
-      setError('Failed to save question.');
+    } catch (err: any) {
+      console.error('Save error:', err);
+      let msg = 'Failed to save question.';
+      if (err.message) {
+        try {
+          const parsed = JSON.parse(err.message);
+          if (parsed.error) msg = parsed.error;
+        } catch (e) {
+          msg = err.message;
+        }
+      }
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -1071,6 +1083,31 @@ export default function AdminDailyDrill() {
                     </div>
                   </div>
 
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={questionForm.year}
+                        onChange={(e) => setQuestionForm({ ...questionForm, year: parseInt(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Session</label>
+                      <select
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={questionForm.session}
+                        onChange={(e) => setQuestionForm({ ...questionForm, session: e.target.value })}
+                      >
+                        <option value="June">June (May/June)</option>
+                        <option value="November">November (Oct/Nov)</option>
+                        <option value="Specimen">Specimen Paper</option>
+                        <option value="Other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Topic</label>
                     <select
@@ -1291,8 +1328,9 @@ export default function AdminDailyDrill() {
           {showImportModal && (
             <BulkImportModal 
               onClose={() => setShowImportModal(false)} 
-              onImported={() => {
-                fetchQuestionsBank();
+              onImported={(subject) => {
+                setFilters(prev => ({ ...prev, subject }));
+                fetchData();
                 setShowImportModal(false);
               }}
             />
@@ -1305,17 +1343,19 @@ export default function AdminDailyDrill() {
 
 interface BulkImportModalProps {
   onClose: () => void;
-  onImported: () => void;
+  onImported: (subject: SubjectName) => void;
 }
 
 function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Computer Science');
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedSession, setSelectedSession] = useState<string>('June');
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingStatus, setProcessingStatus] = useState('');
   const [previewQuestions, setPreviewQuestions] = useState<Partial<ExamQuestion>[]>([]);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState('');
-  const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Computer Science');
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
 
   useEffect(() => {
@@ -1447,7 +1487,9 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
 
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
-        contents: `Extract exam questions for the subject "${selectedSubject}" from the following text/data. 
+        contents: `Extract ALL exam questions for the subject "${selectedSubject}" from the following text/data. 
+        This is a full question paper. Please be thorough and extract every single question found in the text.
+        
         Return an array of objects with these fields: 
         - questionText: The full text of the question.
         - options: For Paper 1 (MCQ), provide an object with A, B, C, D keys. For Paper 2/3, this should be null or empty.
@@ -1460,7 +1502,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         - imageUrl: (optional) any URL found in the text associated with the question.
         
         Data:
-        ${text.substring(0, 15000)}`, // Increased limit slightly
+        ${text.substring(0, 100000)}`, // Increased limit significantly for full papers
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
@@ -1501,7 +1543,9 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       console.log('AI Response:', aiResponseText);
       const questions = JSON.parse(aiResponseText).map((q: any) => ({
         ...q,
-        subject: selectedSubject
+        subject: selectedSubject,
+        year: selectedYear,
+        session: selectedSession
       }));
       
       if (questions.length === 0) {
@@ -1523,25 +1567,41 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
     if (previewQuestions.length === 0) return;
     setIsProcessing(true);
     setProcessingStatus('Importing to database...');
+    setError('');
+    
     try {
-      const batch = previewQuestions.map(async (q) => {
-        try {
-          await addDoc(collection(db, 'exam_questions'), {
-            ...q,
-            isDailyDrill: true,
-            year: new Date().getFullYear(),
-            createdAt: serverTimestamp()
-          });
-        } catch (err) {
-          handleFirestoreError(err, OperationType.CREATE, 'exam_questions');
-        }
+      const batch = writeBatch(db);
+      
+      previewQuestions.forEach((q) => {
+        const newDocRef = doc(collection(db, 'exam_questions'));
+        batch.set(newDocRef, {
+          ...q,
+          isDailyDrill: true,
+          createdAt: serverTimestamp()
+        });
       });
-      await Promise.all(batch);
+
+      try {
+        await batch.commit();
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, 'exam_questions');
+      }
+      
       toast.success(`Successfully imported ${previewQuestions.length} questions!`);
-      onImported();
+      onImported(selectedSubject);
     } catch (err: any) {
       console.error('Import error:', err);
-      toast.error(err.message || 'Failed to import questions to database.');
+      let msg = 'Failed to import questions to database.';
+      if (err.message) {
+        try {
+          const parsed = JSON.parse(err.message);
+          if (parsed.error) msg = parsed.error;
+        } catch (e) {
+          msg = err.message;
+        }
+      }
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsProcessing(false);
       setProcessingStatus('');
@@ -1591,7 +1651,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Target Subject</label>
                 <select
@@ -1601,6 +1661,30 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                 >
                   <option value="Computer Science">Computer Science (0795)</option>
                   <option value="ICT">ICT (0796)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  min={2000}
+                  max={2100}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Session</label>
+                <select
+                  className="w-full px-4 py-2 border rounded-lg"
+                  value={selectedSession}
+                  onChange={(e) => setSelectedSession(e.target.value)}
+                >
+                  <option value="June">June (May/June)</option>
+                  <option value="November">November (Oct/Nov)</option>
+                  <option value="Specimen">Specimen Paper</option>
+                  <option value="Other">Other</option>
                 </select>
               </div>
             </div>
