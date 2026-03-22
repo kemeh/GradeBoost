@@ -8,7 +8,7 @@ import {
   Play, HelpCircle, ChevronRight, LockKeyhole,
   LogOut
 } from 'lucide-react';
-import { doc, updateDoc, serverTimestamp, collection, query, where, limit, getDocs, orderBy, addDoc, setDoc } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, collection, query, where, limit, getDocs, orderBy, addDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
@@ -35,18 +35,21 @@ export default function PaymentPage() {
   const { isAdmin } = useAuth();
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const settings = await getSystemSettings();
+    // Real-time listener for system settings
+    const docRef = doc(db, 'system_settings', 'global');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const settings = docSnap.data();
         if (settings?.paymentPrice) {
           setPaymentPrice(settings.paymentPrice);
           setManualData(prev => ({ ...prev, amount: settings.paymentPrice }));
         }
-      } catch (error) {
-        console.error("Error fetching system settings:", error);
       }
-    };
-    fetchSettings();
+    }, (err) => {
+      console.error("Error listening to system settings:", err);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

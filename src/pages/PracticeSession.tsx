@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, limit, getDocs, orderBy } from 'firebase/firestore';
+import { doc, getDoc, addDoc, collection, serverTimestamp, query, where, limit, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ArrowLeft, FileText, Send, Clock, 
@@ -33,17 +33,20 @@ export default function PracticeSession() {
   const [paymentPrice, setPaymentPrice] = useState(1000);
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const settings = await getSystemSettings();
+    // Real-time listener for system settings
+    const docRef = doc(db, 'system_settings', 'global');
+    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const settings = docSnap.data();
         if (settings?.paymentPrice) {
           setPaymentPrice(settings.paymentPrice);
         }
-      } catch (error) {
-        console.error("Error fetching system settings:", error);
       }
-    };
-    fetchSettings();
+    }, (err) => {
+      console.error("Error listening to system settings:", err);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {

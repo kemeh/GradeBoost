@@ -16,7 +16,7 @@ if (!admin.apps.length) {
   });
 }
 
-const db = getAdminFirestore(admin.apps[0], "ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d");
+const db = getAdminFirestore(admin.app(), "ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d");
 
 const CAMPAY_BASE_URL = process.env.CAMPAY_ENVIRONMENT === 'prod' 
   ? 'https://www.campay.net/api' 
@@ -40,11 +40,20 @@ const paymentLimiter = rateLimit({
 });
 
 async function getCampayToken() {
-  const response = await axios.post(`${CAMPAY_BASE_URL}/token/`, {
-    username: process.env.CAMPAY_APP_USERNAME,
-    password: process.env.CAMPAY_APP_PASSWORD
-  });
-  return response.data.token;
+  if (!process.env.CAMPAY_APP_USERNAME || !process.env.CAMPAY_APP_PASSWORD) {
+    throw new Error("CamPay credentials missing in environment variables.");
+  }
+
+  try {
+    const response = await axios.post(`${CAMPAY_BASE_URL}/token/`, {
+      username: process.env.CAMPAY_APP_USERNAME,
+      password: process.env.CAMPAY_APP_PASSWORD
+    });
+    return response.data.token;
+  } catch (error: any) {
+    console.error("CamPay Token Error:", error.response?.data || error.message);
+    throw new Error(`Failed to authenticate with CamPay: ${error.response?.data?.error || error.message}`);
+  }
 }
 
 async function startServer() {
@@ -60,6 +69,8 @@ async function startServer() {
     let { phone, amount, description, external_reference } = req.body;
     
     try {
+      console.log(`Initiating payment for ${phone}, amount: ${amount}`);
+      
       // Ensure phone number has country code (237 for Cameroon)
       if (phone && phone.length === 9 && (phone.startsWith('6') || phone.startsWith('2'))) {
         phone = `237${phone}`;
@@ -71,12 +82,15 @@ async function startServer() {
       // Fetch dynamic price from Firestore to ensure security
       let finalAmount = amount;
       try {
-        const settingsDoc = await db.collection('system_settings').doc('settings').get();
+        const settingsDoc = await db.collection('system_settings').doc('global').get();
         if (settingsDoc.exists) {
           const settings = settingsDoc.data();
           if (settings?.paymentPrice) {
             finalAmount = settings.paymentPrice;
+            console.log(`Using dynamic price from Firestore: ${finalAmount}`);
           }
+        } else {
+          console.warn("System settings document 'global' not found. Using client-provided amount.");
         }
       } catch (err) {
         console.error("Error fetching dynamic price in server:", err);
@@ -84,8 +98,10 @@ async function startServer() {
       }
 
       const token = await getCampayToken();
+      console.log("CamPay token obtained successfully.");
+
       const response = await axios.post(`${CAMPAY_BASE_URL}/collect/`, {
-        amount: finalAmount,
+        amount: String(finalAmount),
         currency: "XAF",
         from: phone,
         description,
@@ -96,8 +112,10 @@ async function startServer() {
         }
       });
       
+      console.log("CamPay response:", response.data);
       res.json(response.data);
     } catch (error: any) {
+      console.error("Payment Collection Error:", error.response?.data || error.message);
       next(error);
     }
   });

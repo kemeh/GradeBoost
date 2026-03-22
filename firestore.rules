@@ -494,7 +494,8 @@ service cloud.firestore {
     }
 
     match /system_settings/{settingId} {
-      allow read, write: if isAdmin();
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     // Default deny
