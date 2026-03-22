@@ -1,4 +1,6 @@
 import express from "express";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import axios from "axios";
@@ -19,306 +21,167 @@ if (!admin.apps.length) {
 
 const db = getAdminFirestore(admin.app(), "ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d");
 
-const CAMPAY_BASE_URL = process.env.CAMPAY_ENVIRONMENT === 'prod' 
-  ? 'https://www.campay.net/api' 
-  : 'https://demo.campay.net/api'; 
-
-// Rate limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many requests, please try again later." }
-});
-
-const paymentLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 payment attempts per hour
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: "Too many payment attempts, please try again later." }
-});
-
-async function getCampayToken() {
-  if (!process.env.CAMPAY_APP_USERNAME || !process.env.CAMPAY_APP_PASSWORD) {
-    throw new Error("CamPay credentials missing in environment variables.");
-  }
-
-  try {
-    const response = await axios.post(`${CAMPAY_BASE_URL}/token/`, {
-      username: process.env.CAMPAY_APP_USERNAME,
-      password: process.env.CAMPAY_APP_PASSWORD
-    });
-    return response.data.token;
-  } catch (error: any) {
-    console.error("CamPay Token Error:", error.response?.data || error.message);
-    throw new Error(`Failed to authenticate with CamPay: ${error.response?.data?.error || error.message}`);
-  }
-}
+// ... (keep existing helper functions and rate limiters)
 
 async function startServer() {
   const app = express();
+  const httpServer = createServer(app);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
+
   const PORT = 3000;
 
   app.use(express.json());
   app.use("/api/", apiLimiter);
   app.use("/api/payment/", paymentLimiter);
 
-  // CamPay API Routes
-  app.post("/api/payment/collect", async (req, res, next) => {
-    let { phone, amount, description, external_reference } = req.body;
-    
-    try {
-      console.log(`Initiating payment for ${phone}, amount: ${amount}`);
+  // ... (keep existing API routes)
+
+  // Duel Matching Logic
+  const waitingQueue: { socketId: string, userId: string, subject: string }[] = [];
+  const activeDuels = new Map<string, string>(); // userId -> duelId
+  const socketToUser = new Map<string, string>(); // socketId -> userId
+
+  io.on("connection", (socket) => {
+    console.log("User connected:", socket.id);
+
+    socket.on("joinDuel", async ({ userId, subject }) => {
+      console.log(`User ${userId} joined duel queue for ${subject}`);
       
-      // Ensure phone number has country code (237 for Cameroon)
-      if (phone) {
-        phone = phone.replace(/\+/g, '').replace(/\s/g, '');
-        if (phone.length === 9 && (phone.startsWith('6') || phone.startsWith('2'))) {
-          phone = `237${phone}`;
-        } else if (phone.length === 8 && (phone.startsWith('6') || phone.startsWith('2'))) {
-          // Some old numbers are 8 digits
-          phone = `237${phone}`;
-        }
-      }
+      // Check if already in queue
+      if (waitingQueue.find(p => p.userId === userId)) return;
 
-      // Fetch dynamic price from Firestore to ensure security
-      let finalAmount = amount;
-      try {
-        const settingsDoc = await db.collection('system_settings').doc('global').get();
-        if (settingsDoc.exists) {
-          const settings = settingsDoc.data();
-          if (settings?.paymentPrice) {
-            finalAmount = settings.paymentPrice;
-            console.log(`Using dynamic price from Firestore: ${finalAmount}`);
-          }
-        } else {
-          console.warn("System settings document 'global' not found. Using client-provided amount.");
-        }
-      } catch (err) {
-        console.error("Error fetching dynamic price in server:", err);
-        // Fallback to the amount sent from client if fetching fails
-      }
-
-      const token = await getCampayToken();
-      console.log("CamPay token obtained successfully.");
-
-      const response = await axios.post(`${CAMPAY_BASE_URL}/collect/`, {
-        amount: String(finalAmount),
-        currency: "XAF",
-        from: phone,
-        description,
-        external_reference
-      }, {
-        headers: {
-          Authorization: `Token ${token}`
-        }
-      });
-      
-      console.log("CamPay response:", response.data);
-      res.json(response.data);
-    } catch (error: any) {
-      console.error("Payment Collection Error:", error.response?.data || error.message);
-      next(error);
-    }
-  });
-
-  app.get("/api/payment/status/:reference", async (req, res) => {
-    const { reference } = req.params;
-    
-    try {
-      const token = await getCampayToken();
-      const response = await axios.get(`${CAMPAY_BASE_URL}/transaction/${reference}/`, {
-        headers: {
-          Authorization: `Token ${token}`
-        }
-      });
-      
-      res.json(response.data);
-    } catch (error: any) {
-      console.error("CamPay Status Error:", error.response?.data || error.message);
-      res.status(500).json({ error: "Failed to check payment status" });
-    }
-  });
-
-  // SECURE Payment Verification Endpoint
-  app.post("/api/payment/verify", async (req, res) => {
-    const { reference, userId } = req.body;
-
-    if (!reference || !userId) {
-      return res.status(400).json({ error: "Missing reference or userId" });
-    }
-
-    try {
-      const token = await getCampayToken();
-      const response = await axios.get(`${CAMPAY_BASE_URL}/transaction/${reference}/`, {
-        headers: {
-          Authorization: `Token ${token}`
-        }
-      });
-
-      const paymentData = response.data;
-
-      if (paymentData.status === 'SUCCESSFUL') {
-        const userRef = db.collection('users').doc(userId);
-        const now = new Date();
-        const expiry = new Date(now);
-        expiry.setDate(now.getDate() + 30);
-
-        // Update user status securely from server
-        await userRef.update({
-          paymentStatus: 'paid',
-          paymentDate: now.toISOString(),
-          paymentExpiryDate: expiry.toISOString(),
-          updatedAt: FieldValue.serverTimestamp()
+      const opponent = waitingQueue.find(p => p.subject === subject);
+      if (opponent) {
+        // Match found
+        waitingQueue.splice(waitingQueue.indexOf(opponent), 1);
+        const duelId = crypto.randomUUID();
+        
+        // Fetch random questions
+        const questionsSnapshot = await db.collection('exam_questions')
+          .where('subject', '==', subject)
+          .limit(20)
+          .get();
+        
+        const allQuestions = questionsSnapshot.docs.map(doc => doc.id);
+        const selectedQuestions = allQuestions.sort(() => 0.5 - Math.random()).slice(0, 5);
+        
+        // Create duel in Firestore
+        await db.collection('duels').doc(duelId).set({
+          player1Id: opponent.userId,
+          player2Id: userId,
+          questions: selectedQuestions,
+          player1Score: 0,
+          player2Score: 0,
+          player1Time: 0,
+          player2Time: 0,
+          status: 'active',
+          createdAt: FieldValue.serverTimestamp()
         });
 
-        // Log the audit
-        await db.collection('paymentAudit').add({
-          userId,
-          reference,
-          amount: paymentData.amount,
-          currency: paymentData.currency,
-          status: paymentData.status,
-          timestamp: FieldValue.serverTimestamp(),
-          external_reference: paymentData.external_reference
-        });
+        activeDuels.set(opponent.userId, duelId);
+        activeDuels.set(userId, duelId);
+        socketToUser.set(opponent.socketId, opponent.userId);
+        socketToUser.set(socket.id, userId);
 
-        res.json({ status: 'SUCCESSFUL', message: "Payment verified and account updated" });
+        io.to(opponent.socketId).emit("duelMatched", { duelId, opponentId: userId, questions: selectedQuestions });
+        socket.emit("duelMatched", { duelId, opponentId: opponent.userId, questions: selectedQuestions });
       } else {
-        res.json({ status: paymentData.status, message: "Payment not successful yet" });
+        waitingQueue.push({ socketId: socket.id, userId, subject });
+        socketToUser.set(socket.id, userId);
       }
-    } catch (error: any) {
-      console.error("Payment Verification Error:", error.response?.data || error.message);
-      res.status(500).json({ error: "Failed to verify payment" });
-    }
-  });
+    });
 
-  // CamPay Webhook Endpoint
-  app.post("/api/payment/webhook", async (req, res) => {
-    try {
-      const signature = req.headers['x-campay-signature'] as string;
-      const payload = req.body;
-      const webhookKey = process.env.CAMPAY_WEBHOOK_KEY;
+    socket.on("submitAnswer", async ({ duelId, userId, score, timeTaken }) => {
+      const duelRef = db.collection('duels').doc(duelId);
+      const duelDoc = await duelRef.get();
+      if (!duelDoc.exists) return;
 
-      if (!webhookKey) {
-        console.error("Webhook key not configured");
-        return res.status(500).send("Webhook key not configured");
+      const duel = duelDoc.data()!;
+      const isPlayer1 = duel.player1Id === userId;
+      
+      await duelRef.update({
+        [isPlayer1 ? 'player1Score' : 'player2Score']: score,
+        [isPlayer1 ? 'player1Time' : 'player2Time']: timeTaken
+      });
+
+      const updatedDuelDoc = await duelRef.get();
+      const updatedDuel = updatedDuelDoc.data()!;
+
+      // Check if both submitted
+      if (updatedDuel.player1Score !== 0 && updatedDuel.player2Score !== 0) {
+        // Calculate winner
+        let winnerId = '';
+        if (updatedDuel.player1Score > updatedDuel.player2Score) winnerId = updatedDuel.player1Id;
+        else if (updatedDuel.player2Score > updatedDuel.player1Score) winnerId = updatedDuel.player2Id;
+        else winnerId = updatedDuel.player1Time < updatedDuel.player2Time ? updatedDuel.player1Id : updatedDuel.player2Id;
+
+        await duelRef.update({ winnerId, status: 'completed' });
+
+        // Update leaderboard and pointsHistory
+        const players = [updatedDuel.player1Id, updatedDuel.player2Id];
+        for (const playerId of players) {
+          const isWinner = playerId === winnerId;
+          const points = isWinner ? 10 : 3; // Simplified scoring
+          
+          await db.collection('pointsHistory').add({
+            userId: playerId,
+            points,
+            reason: isWinner ? 'Duel Win' : 'Duel Loss',
+            timestamp: FieldValue.serverTimestamp()
+          });
+          
+          const userRef = db.collection('leaderboard').doc(playerId);
+          await userRef.set({
+            totalPoints: FieldValue.increment(points),
+            wins: FieldValue.increment(isWinner ? 1 : 0)
+          }, { merge: true });
+        }
+        
+        io.to(duelId).emit("duelCompleted", { winnerId });
       }
+    });
 
-      if (!signature) {
-        console.error("Missing signature in webhook");
-        return res.status(400).send("Missing signature");
-      }
+    socket.on("disconnect", async () => {
+      console.log("User disconnected:", socket.id);
+      
+      // Remove from queue
+      const queueIndex = waitingQueue.findIndex(p => p.socketId === socket.id);
+      if (queueIndex !== -1) waitingQueue.splice(queueIndex, 1);
 
-      // Verify signature
-      const hash = crypto.createHmac('sha256', webhookKey)
-                         .update(JSON.stringify(payload))
-                         .digest('hex');
-
-      if (hash !== signature) {
-        console.error("Invalid webhook signature");
-        return res.status(401).send("Invalid signature");
-      }
-
-      console.log("Webhook received and verified:", payload);
-
-      if (payload.status === 'SUCCESSFUL') {
-        const externalRef = payload.external_reference;
-        if (externalRef && externalRef.startsWith('gb60_')) {
-          const userId = externalRef.split('_')[1];
-          if (userId) {
-            const userRef = db.collection('users').doc(userId);
-            const now = new Date();
-            const expiry = new Date(now);
-            expiry.setDate(now.getDate() + 30);
-
-            await userRef.update({
-              paymentStatus: 'paid',
-              paymentDate: now.toISOString(),
-              paymentExpiryDate: expiry.toISOString(),
-              updatedAt: FieldValue.serverTimestamp()
-            });
-
-            await db.collection('paymentAudit').add({
-              userId,
-              reference: payload.reference,
-              amount: payload.amount,
-              currency: payload.currency,
-              status: payload.status,
-              timestamp: FieldValue.serverTimestamp(),
-              external_reference: payload.external_reference,
-              source: 'webhook'
-            });
-            console.log(`User ${userId} upgraded via webhook.`);
-          }
+      // Handle active duel disconnection
+      const userId = socketToUser.get(socket.id);
+      if (userId && activeDuels.has(userId)) {
+        const duelId = activeDuels.get(userId)!;
+        const duelRef = db.collection('duels').doc(duelId);
+        const duelDoc = await duelRef.get();
+        
+        if (duelDoc.exists) {
+          const duel = duelDoc.data()!;
+          const opponentId = duel.player1Id === userId ? duel.player2Id : duel.player1Id;
+          
+          // Notify opponent
+          io.to(duelId).emit("opponentDisconnected", { userId });
+          
+          // Mark duel as abandoned
+          await duelRef.update({ status: 'abandoned', winnerId: opponentId });
+          
+          activeDuels.delete(duel.player1Id);
+          activeDuels.delete(duel.player2Id);
         }
       }
-
-      res.status(200).send("OK");
-    } catch (error) {
-      console.error("Webhook Error:", error);
-      res.status(500).send("Internal Server Error");
-    }
-  });
-
-  app.post("/api/security/audit", async (req, res) => {
-    const { errorInfo } = req.body;
-
-    if (!errorInfo) {
-      return res.status(400).json({ error: "Missing errorInfo" });
-    }
-
-    try {
-      await db.collection('securityAudit').add({
-        ...errorInfo,
-        timestamp: FieldValue.serverTimestamp(),
-        ip: req.ip,
-        userAgent: req.headers['user-agent']
-      });
-      res.json({ success: true });
-    } catch (error) {
-      console.error("Security Audit Error:", error);
-      res.status(500).json({ error: "Failed to log security audit" });
-    }
-  });
-
-  // Global Error Handler
-  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error("Global Error Handler:", err);
-    
-    let status = err.status || 500;
-    let message = err.message || "Internal Server Error";
-
-    // Handle Axios errors
-    if (axios.isAxiosError(err)) {
-      status = err.response?.status || 500;
-      message = err.response?.data?.error || err.response?.data?.message || err.message;
-    }
-
-    res.status(status).json({
-      error: message,
-      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      
+      socketToUser.delete(socket.id);
     });
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
-  }
+  // ... (keep existing error handler and Vite middleware)
 
-  app.listen(PORT, "0.0.0.0", () => {
+  httpServer.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }

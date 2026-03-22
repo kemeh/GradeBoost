@@ -179,3 +179,35 @@ export interface WeeklyLeaderboard {
   year: number;
   updatedAt: any;
 }
+
+export interface Duel {
+  id: string;
+  player1Id: string;
+  player2Id: string;
+  questions: string[]; // Array of question IDs
+  player1Score: number;
+  player2Score: number;
+  player1Time: number; // Seconds
+  player2Time: number; // Seconds
+  winnerId?: string;
+  status: 'waiting' | 'active' | 'completed';
+  createdAt: any;
+}
+
+export interface LeaderboardEntry {
+  userId: string;
+  name: string;
+  points: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  rank: number;
+}
+
+export interface PointsHistory {
+  id: string;
+  userId: string;
+  points: number;
+  reason: 'duel_win' | 'duel_loss' | 'duel_draw' | 'daily_drill';
+  date: any;
+}

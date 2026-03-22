@@ -199,6 +199,51 @@
       },
       "required": ["userId", "userName", "totalScore", "position", "weekNumber", "year", "updatedAt"]
     },
+    "Duel": {
+      "title": "Duel",
+      "description": "Stores duel battle sessions.",
+      "type": "object",
+      "properties": {
+        "player1Id": { "type": "string" },
+        "player2Id": { "type": "string" },
+        "questions": { "type": "array", "items": { "type": "string" } },
+        "player1Score": { "type": "number" },
+        "player2Score": { "type": "number" },
+        "player1Time": { "type": "number" },
+        "player2Time": { "type": "number" },
+        "winnerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["waiting", "active", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["player1Id", "questions", "player1Score", "player2Score", "player1Time", "player2Time", "status", "createdAt"]
+    },
+    "LeaderboardEntry": {
+      "title": "Leaderboard Entry",
+      "description": "Stores student leaderboard stats.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "points": { "type": "number" },
+        "wins": { "type": "integer" },
+        "losses": { "type": "integer" },
+        "draws": { "type": "integer" },
+        "rank": { "type": "integer" }
+      },
+      "required": ["userId", "name", "points", "wins", "losses", "draws", "rank"]
+    },
+    "PointsHistory": {
+      "title": "Points History",
+      "description": "Logs points earned.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "points": { "type": "number" },
+        "reason": { "type": "string", "enum": ["duel_win", "duel_loss", "duel_draw", "daily_drill"] },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "points", "reason", "date"]
+    },
     "SystemSettings": {
       "title": "System Settings",
       "description": "Stores global system configuration like API keys, challenge start date, and payment price.",
@@ -264,6 +309,18 @@
     "/weekly_leaderboard/{leaderboardId}": {
       "schema": "WeeklyLeaderboard",
       "description": "Weekly leaderboard rankings."
+    },
+    "/duels/{duelId}": {
+      "schema": "Duel",
+      "description": "Duel battle sessions."
+    },
+    "/leaderboard/{userId}": {
+      "schema": "LeaderboardEntry",
+      "description": "Student leaderboard stats."
+    },
+    "/pointsHistory/{recordId}": {
+      "schema": "PointsHistory",
+      "description": "Points earned logs."
     },
     "/system_settings/{settingId}": {
       "schema": "SystemSettings",
