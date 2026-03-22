@@ -26,6 +26,7 @@ import { calculateWeeklyLeaderboard } from '../utils/leaderboard';
 import { toast } from 'react-hot-toast';
 import { SUBJECT_TOPICS, getGroupedTopicsForSubject, SubjectName } from '../constants/topics';
 import { getGeminiApiKey } from '../services/settingsService';
+import { GoogleGenAI, Type } from '@google/genai';
 // @ts-ignore
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
@@ -1426,8 +1427,6 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       }
 
       // Use Gemini to parse the text into questions
-      const { GoogleGenAI, Type } = await import('@google/genai');
-      
       const apiKey = await getApiKey();
       
       if (!apiKey) {
