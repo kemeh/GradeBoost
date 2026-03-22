@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, Target, Trophy, 
-  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen
+  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { cn } from './ui';
+import { FeedbackModal } from './FeedbackModal';
 
 interface SidebarProps {
   className?: string;
@@ -19,6 +20,7 @@ export default function Sidebar({ className }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -31,6 +33,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const studentLinks = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Zap, label: 'Duel Battle', path: '/duel' },
     { icon: Target, label: 'Daily Drills', path: '/daily-drill' },
     { icon: FileText, label: 'Practice Papers', path: '/practice' },
     { icon: Target, label: 'Diagnostic', path: '/diagnostic' },
@@ -40,6 +43,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const adminLinks = [
     { icon: ShieldCheck, label: 'Admin Panel', path: '/admin' },
+    { icon: Zap, label: 'Duel Battle', path: '/duel' },
     { icon: CreditCard, label: 'Payments', path: '/admin?tab=payments' },
     { icon: FileText, label: 'Manage Papers', path: '/admin?tab=papers' },
     { icon: Target, label: 'Daily Drills', path: '/admin/daily-drill' },
@@ -108,6 +112,13 @@ export default function Sidebar({ className }: SidebarProps) {
               {item.label}
             </Link>
           ))}
+          <button
+            onClick={() => setIsFeedbackOpen(true)}
+            className="flex w-full items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
+          >
+            <MessageSquare size={20} />
+            Send Feedback
+          </button>
         </nav>
 
         {/* Footer */}
@@ -132,6 +143,7 @@ export default function Sidebar({ className }: SidebarProps) {
           </button>
         </div>
       </aside>
+      <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
     </>
   );
 }

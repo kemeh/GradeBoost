@@ -569,6 +569,64 @@ export default function Dashboard() {
           </Card>
         </section>
 
+        {/* Duel Battle Highlight */}
+        <section className="mb-12">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <Card className="lg:col-span-2 p-8 bg-slate-900 text-white relative overflow-hidden">
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
+                    <Zap size={20} className="text-white" />
+                  </div>
+                  <h2 className="text-2xl font-black tracking-tight">Duel Battle</h2>
+                </div>
+                <h3 className="text-3xl font-black mb-4 tracking-tight">Challenge Other Students!</h3>
+                <p className="text-slate-400 font-medium mb-8 max-w-lg">
+                  Test your knowledge in real-time against other students. Earn points, climb the leaderboard, and prove you're the best in {user.subject}.
+                </p>
+                <Button 
+                  onClick={() => navigate('/duel')}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-black px-8 py-6 rounded-2xl"
+                >
+                  Find an Opponent
+                  <ArrowRight className="ml-2" size={20} />
+                </Button>
+              </div>
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+              <div className="absolute bottom-0 right-0 p-8 opacity-10">
+                <Trophy size={160} />
+              </div>
+            </Card>
+
+            <Card className="p-8 bg-white border-slate-100 flex flex-col justify-between">
+              <div>
+                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center mb-6">
+                  <Trophy size={24} />
+                </div>
+                <h3 className="text-xl font-black text-slate-900 mb-2 tracking-tight">Battle Stats</h3>
+                <p className="text-slate-500 text-sm font-medium mb-6">Your performance in real-time duels.</p>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Wins</span>
+                    <span className="text-lg font-black text-emerald-600">0</span>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">Losses</span>
+                    <span className="text-lg font-black text-rose-600">0</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+                  Win duels to earn extra points!
+                </p>
+              </div>
+            </Card>
+          </div>
+        </section>
+
         {/* 60-Day Challenge Tracker */}
         {user.paymentStatus === 'paid' && (
           <section className="mb-12">

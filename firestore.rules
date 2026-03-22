@@ -383,6 +383,24 @@ service cloud.firestore {
              data.updatedAt is timestamp;
     }
 
+    function isValidFeedback(data) {
+      return data.userId is string &&
+             data.type in ["question", "explanation", "general"] &&
+             (!('contextId' in data) || data.contextId is string) &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             (!('comment' in data) || data.comment is string && data.comment.size() <= 1000) &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidFeedback(data) {
+      return data.userId is string &&
+             data.type in ["question", "explanation", "general"] &&
+             (!('contextId' in data) || data.contextId is string) &&
+             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+             (!('comment' in data) || data.comment is string && data.comment.size() <= 1000) &&
+             data.createdAt is timestamp;
+    }
+
     function getCurrentDay() {
       let start = timestamp.value('2026-03-01T00:00:00Z');
       let diff = request.time - start;
@@ -498,6 +516,11 @@ service cloud.firestore {
     match /system_settings/{settingId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
+    }
+
+    match /feedback/{feedbackId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidFeedback(request.resource.data);
     }
 
     // Default deny

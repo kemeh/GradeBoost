@@ -21,7 +21,23 @@ if (!admin.apps.length) {
 
 const db = getAdminFirestore(admin.app(), "ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d");
 
-// ... (keep existing helper functions and rate limiters)
+// Rate Limiters
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const paymentLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: "Too many payment attempts, please try again later",
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// ... (keep existing helper functions)
 
 async function startServer() {
   const app = express();

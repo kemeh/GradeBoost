@@ -28,14 +28,15 @@ export default function Admin() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const activeTab = (searchParams.get('tab') as 'papers' | 'payments' | 'manual' | 'samples') || 'papers';
+  const activeTab = (searchParams.get('tab') as 'papers' | 'payments' | 'manual' | 'samples' | 'duels') || 'papers';
   const [users, setUsers] = useState<any[]>([]);
   const [manualRequests, setManualRequests] = useState<any[]>([]);
   const [sampleQuestions, setSampleQuestions] = useState<SampleQuestion[]>([]);
+  const [duels, setDuels] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentPrice, setPaymentPrice] = useState(1000);
 
-  const setActiveTab = (tab: 'papers' | 'payments' | 'manual' | 'samples') => {
+  const setActiveTab = (tab: 'papers' | 'payments' | 'manual' | 'samples' | 'duels') => {
     setSearchParams({ tab });
   };
 
@@ -72,9 +73,20 @@ export default function Admin() {
       fetchUsers();
       fetchManualRequests();
       fetchSampleQuestions();
+      fetchDuels();
       fetchSettings();
     }
   }, [isAdmin]);
+
+  const fetchDuels = async () => {
+    try {
+      const q = query(collection(db, 'duels'), orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
+      setDuels(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (err) {
+      console.error("Error fetching duels:", err);
+    }
+  };
 
   const fetchSettings = async () => {
     try {
@@ -488,6 +500,15 @@ export default function Admin() {
           >
             Sample Questions
           </button>
+          <button
+            onClick={() => setActiveTab('duels')}
+            className={cn(
+              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
+              activeTab === 'duels' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
+            )}
+          >
+            Duels
+          </button>
         </div>
 
         {error && (
@@ -688,6 +709,65 @@ export default function Admin() {
                     <tr>
                       <td colSpan={5} className="px-8 py-12 text-center">
                         <p className="text-slate-400 font-medium">No sample questions found.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : activeTab === 'duels' ? (
+          <Card className="overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">Active & Completed Duels</h2>
+              <div className="flex items-center gap-4">
+                <Badge variant="info">{duels.length} Total Duels</Badge>
+              </div>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 border-b border-slate-100">
+                  <tr>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Duel ID</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Players</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Score</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {duels.map((duel) => (
+                    <tr key={duel.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-8 py-4">
+                        <code className="text-[10px] font-mono bg-slate-100 px-2 py-1 rounded">{duel.id.slice(0, 8)}...</code>
+                      </td>
+                      <td className="px-8 py-4">
+                        <div className="flex flex-col gap-1">
+                          <p className="text-xs font-bold text-slate-900">P1: {duel.player1Id.slice(0, 8)}...</p>
+                          <p className="text-xs font-bold text-slate-900">P2: {duel.player2Id ? `${duel.player2Id.slice(0, 8)}...` : 'Waiting...'}</p>
+                        </div>
+                      </td>
+                      <td className="px-8 py-4">
+                        <Badge variant={duel.status === 'completed' ? 'success' : duel.status === 'active' ? 'warning' : 'default'}>
+                          {duel.status}
+                        </Badge>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span className="text-sm font-black text-slate-900">
+                          {duel.player1Score} - {duel.player2Score}
+                        </span>
+                      </td>
+                      <td className="px-8 py-4">
+                        <span className="text-xs font-bold text-slate-400">
+                          {duel.createdAt?.toDate ? formatDate(duel.createdAt.toDate().toISOString()) : 'N/A'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                  {duels.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-12 text-center">
+                        <p className="text-slate-400 font-medium">No duels found.</p>
                       </td>
                     </tr>
                   )}

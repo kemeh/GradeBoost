@@ -244,6 +244,20 @@
       },
       "required": ["userId", "points", "reason", "date"]
     },
+    "Feedback": {
+      "title": "Feedback",
+      "description": "Stores user feedback on questions, explanations, or the application.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "type": { "type": "string", "enum": ["question", "explanation", "general"] },
+        "contextId": { "type": "string", "description": "Optional ID of the question or explanation." },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "rating", "createdAt"]
+    },
     "SystemSettings": {
       "title": "System Settings",
       "description": "Stores global system configuration like API keys, challenge start date, and payment price.",
@@ -325,6 +339,10 @@
     "/system_settings/{settingId}": {
       "schema": "SystemSettings",
       "description": "Global system settings."
+    },
+    "/feedback/{feedbackId}": {
+      "schema": "Feedback",
+      "description": "User feedback."
     }
   }
 }

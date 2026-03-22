@@ -1373,6 +1373,8 @@ export default function AdminDailyDrill() {
                 fetchData();
                 setShowImportModal(false);
               }}
+              confirmDialog={confirmDialog}
+              setConfirmDialog={setConfirmDialog}
             />
           )}
         </AnimatePresence>
@@ -1384,9 +1386,11 @@ export default function AdminDailyDrill() {
 interface BulkImportModalProps {
   onClose: () => void;
   onImported: (subject: SubjectName) => void;
+  confirmDialog: any;
+  setConfirmDialog: (dialog: any) => void;
 }
 
-function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
+function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog }: BulkImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Computer Science');
   const [selectedPaper, setSelectedPaper] = useState<PaperType>('Paper 1');
