@@ -33,7 +33,7 @@ export async function calculateWeeklyLeaderboard() {
 
     // 3. Fetch user names for these users
     const userIds = Object.keys(userScores);
-    const userProfiles: Record<string, string> = {};
+    const userProfiles: Record<string, { name: string; photoURL?: string }> = {};
     
     // Firestore 'in' query limit is 10, so we might need to chunk or fetch individually
     // For simplicity in this app, we'll fetch individually or in chunks if needed
@@ -43,7 +43,10 @@ export async function calculateWeeklyLeaderboard() {
         const userDoc = await getDoc(doc(db, 'users', userId));
         if (userDoc.exists()) {
           const userData = userDoc.data() as UserProfile;
-          userProfiles[userId] = userData.name || userData.firstName || 'Student';
+          userProfiles[userId] = {
+            name: userData.name || userData.firstName || 'Student',
+            photoURL: userData.photoURL
+          };
         }
       } catch (err) {
         console.error(`Error fetching user ${userId}:`, err);
@@ -54,7 +57,8 @@ export async function calculateWeeklyLeaderboard() {
     const sortedLeaderboard = Object.entries(userScores)
       .map(([userId, totalScore]) => ({
         userId,
-        userName: userProfiles[userId] || 'Student',
+        userName: userProfiles[userId]?.name || 'Student',
+        photoURL: userProfiles[userId]?.photoURL,
         totalScore,
         weekNumber,
         year

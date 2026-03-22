@@ -234,7 +234,6 @@ export default function Profile() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                     {ACHIEVEMENTS.map((achievement) => {
                       const isEarned = user.badges?.includes(achievement.id);
-                      const Icon = achievement.icon === 'Zap' ? Zap : achievement.icon === 'Trophy' ? Trophy : Star;
                       
                       return (
                         <div 
@@ -247,10 +246,14 @@ export default function Profile() {
                           )}
                         >
                           <div className={cn(
-                            "w-12 h-12 rounded-2xl flex items-center justify-center mb-3",
-                            isEarned ? "bg-amber-500 text-white shadow-lg shadow-amber-200" : "bg-slate-200 text-slate-400"
+                            "w-16 h-16 rounded-2xl flex items-center justify-center mb-3 overflow-hidden",
+                            isEarned ? "bg-white shadow-lg shadow-amber-200" : "bg-slate-200 text-slate-400"
                           )}>
-                            <Icon size={24} />
+                            {achievement.imageUrl ? (
+                              <img src={achievement.imageUrl} alt={achievement.title} className="w-10 h-10 object-contain" referrerPolicy="no-referrer" />
+                            ) : (
+                              <span className="text-2xl">{achievement.icon}</span>
+                            )}
                           </div>
                           <span className={cn(
                             "text-[10px] font-black uppercase tracking-wider mb-1",

@@ -51,6 +51,7 @@ export interface Achievement {
   title: string;
   description: string;
   icon: string;
+  imageUrl?: string;
   criteria: string;
   points?: number;
 }
@@ -186,6 +187,7 @@ export interface WeeklyLeaderboard {
   id: string;
   userId: string;
   userName: string;
+  photoURL?: string;
   totalScore: number;
   position: number;
   weekNumber: number;
@@ -210,6 +212,7 @@ export interface Duel {
 export interface LeaderboardEntry {
   userId: string;
   name: string;
+  photoURL?: string;
   points: number;
   wins: number;
   losses: number;

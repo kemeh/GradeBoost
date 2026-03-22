@@ -148,6 +148,7 @@ async function startServer() {
           const userDoc = await db.collection('users').doc(playerId).get();
           const userData = userDoc.data();
           const userName = userData?.name || userData?.firstName || 'Student';
+          const photoURL = userData?.photoURL || '';
 
           await db.collection('pointsHistory').add({
             userId: playerId,
@@ -160,6 +161,7 @@ async function startServer() {
           await userRef.set({
             name: userName,
             userId: playerId,
+            photoURL,
             points: FieldValue.increment(points),
             wins: FieldValue.increment(isWinner ? 1 : 0),
             losses: FieldValue.increment(isWinner ? 0 : 1),

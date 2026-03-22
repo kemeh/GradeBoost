@@ -40,11 +40,9 @@ export default function FileUpload({
   const [error, setError] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState(initialUrl);
   const [uploadTask, setUploadTask] = useState<any>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
+  const handleFile = (selectedFile: File) => {
     if (maxSizeMB && selectedFile.size > maxSizeMB * 1024 * 1024) {
       toast.error(`File size must be less than ${maxSizeMB}MB`);
       return;
@@ -53,6 +51,49 @@ export default function FileUpload({
     setFile(selectedFile);
     setError(null);
     startUpload(selectedFile);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) handleFile(selectedFile);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    if (droppedFile) {
+      // Check if file type is accepted
+      const isAccepted = accept === '*' || 
+        accept.split(',').some(type => {
+          const trimmedType = type.trim();
+          if (trimmedType.startsWith('.')) {
+            return droppedFile.name.toLowerCase().endsWith(trimmedType.toLowerCase());
+          }
+          return droppedFile.type.match(new RegExp(trimmedType.replace('*', '.*')));
+        });
+
+      if (!isAccepted) {
+        toast.error(`Invalid file type. Please upload ${accept}`);
+        return;
+      }
+
+      handleFile(droppedFile);
+    }
   };
 
   const startUpload = useCallback((fileToUpload: File) => {
@@ -160,12 +201,28 @@ export default function FileUpload({
           />
           <label
             htmlFor={inputId}
-            className="flex flex-col items-center justify-center w-full p-8 border-2 border-dashed border-slate-200 rounded-[2rem] bg-slate-50/50 hover:bg-slate-50 hover:border-indigo-600 cursor-pointer transition-all group"
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={cn(
+              "flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-[2rem] bg-slate-50/50 cursor-pointer transition-all group",
+              isDragging 
+                ? "border-indigo-600 bg-indigo-50/50 scale-[1.02]" 
+                : "border-slate-200 hover:bg-slate-50 hover:border-indigo-600"
+            )}
           >
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
-              <Upload className="text-indigo-600" size={24} />
+            <div className={cn(
+              "w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4 transition-transform",
+              isDragging ? "scale-110 text-indigo-600" : "group-hover:scale-110"
+            )}>
+              <Upload className={cn(isDragging ? "text-indigo-600" : "text-slate-400 group-hover:text-indigo-600")} size={24} />
             </div>
-            <span className="text-sm font-black text-slate-900 uppercase tracking-widest">{label}</span>
+            <span className={cn(
+              "text-sm font-black uppercase tracking-widest transition-colors",
+              isDragging ? "text-indigo-600" : "text-slate-900"
+            )}>
+              {isDragging ? 'Drop to Upload' : label}
+            </span>
             <span className="text-xs font-medium text-slate-400 mt-1">Max size: {maxSizeMB}MB</span>
           </label>
         </div>

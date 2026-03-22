@@ -22,10 +22,10 @@ export default function Leaderboard() {
 
     const q = timeframe === 'weekly' 
       ? query(
-          collection(db, 'leaderboards'),
-          where('week', '==', week),
+          collection(db, 'weekly_leaderboard'),
+          where('weekNumber', '==', week),
           where('year', '==', year),
-          orderBy('score', 'desc'),
+          orderBy('totalScore', 'desc'),
           limit(50)
         )
       : query(
@@ -46,6 +46,7 @@ export default function Leaderboard() {
             id: doc.id,
             userId: doc.id,
             userName: userData.name || userData.firstName || 'Student',
+            photoURL: userData.photoURL,
             totalScore: userData.points || 0,
             weekNumber: 0,
             year: 0,
@@ -118,8 +119,12 @@ export default function Leaderboard() {
               >
                 <Card className="p-8 text-center bg-white border-slate-100 relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-full h-1 bg-slate-300" />
-                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400">
-                    <Medal size={32} />
+                  <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 text-slate-400 overflow-hidden">
+                    {leaderboard[1].photoURL ? (
+                      <img src={leaderboard[1].photoURL} alt={leaderboard[1].userName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Medal size={32} />
+                    )}
                   </div>
                   <h3 className="text-lg font-black text-slate-900 mb-1">{leaderboard[1].userName}</h3>
                   <p className="text-sm font-black text-indigo-600">{leaderboard[1].totalScore} PTS</p>
@@ -137,8 +142,12 @@ export default function Leaderboard() {
               >
                 <Card className="p-10 text-center bg-indigo-600 text-white border-none relative overflow-hidden shadow-2xl shadow-indigo-200 scale-110 z-10">
                   <div className="absolute top-0 left-0 w-full h-2 bg-amber-400" />
-                  <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-6 text-amber-400">
-                    <Crown size={40} />
+                  <div className="w-20 h-20 bg-white/10 rounded-3xl flex items-center justify-center mx-auto mb-6 text-amber-400 overflow-hidden">
+                    {leaderboard[0].photoURL ? (
+                      <img src={leaderboard[0].photoURL} alt={leaderboard[0].userName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Crown size={40} />
+                    )}
                   </div>
                   <h3 className="text-2xl font-black mb-1">{leaderboard[0].userName}</h3>
                   <p className="text-lg font-black text-indigo-200">{leaderboard[0].totalScore} PTS</p>
@@ -158,8 +167,12 @@ export default function Leaderboard() {
               >
                 <Card className="p-8 text-center bg-white border-slate-100 relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-full h-1 bg-amber-600/30" />
-                  <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-600/60">
-                    <Medal size={32} />
+                  <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto mb-4 text-amber-600/60 overflow-hidden">
+                    {leaderboard[2].photoURL ? (
+                      <img src={leaderboard[2].photoURL} alt={leaderboard[2].userName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                    ) : (
+                      <Medal size={32} />
+                    )}
                   </div>
                   <h3 className="text-lg font-black text-slate-900 mb-1">{leaderboard[2].userName}</h3>
                   <p className="text-sm font-black text-indigo-600">{leaderboard[2].totalScore} PTS</p>
@@ -222,9 +235,13 @@ export default function Leaderboard() {
                         </td>
                         <td className="px-8 py-6">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-black text-sm">
-                              {entry.userName.charAt(0)}
-                            </div>
+                            {entry.photoURL ? (
+                              <img src={entry.photoURL} alt={entry.userName} className="w-10 h-10 rounded-xl object-cover" referrerPolicy="no-referrer" />
+                            ) : (
+                              <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 font-black text-sm">
+                                {entry.userName.charAt(0)}
+                              </div>
+                            )}
                             <div className="flex flex-col">
                               <span className="text-sm font-black text-slate-900">{entry.userName}</span>
                               {entry.userId === user?.uid && (

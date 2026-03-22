@@ -3,11 +3,51 @@ import { db } from '../firebase';
 import { UserProfile, Achievement } from '../types';
 
 export const ACHIEVEMENTS: Achievement[] = [
-  { id: 'first_drill', title: 'First Step', description: 'Complete your first daily drill', icon: '🎯', criteria: 'drills_completed >= 1', points: 50 },
-  { id: 'streak_3', title: 'Consistent Learner', description: 'Maintain a 3-day streak', icon: '🔥', criteria: 'streak >= 3', points: 100 },
-  { id: 'streak_7', title: 'Study Warrior', description: 'Maintain a 7-day streak', icon: '⚔️', criteria: 'streak >= 7', points: 250 },
-  { id: 'duel_winner', title: 'Arena Champion', description: 'Win your first duel', icon: '🏆', criteria: 'duels_won >= 1', points: 150 },
-  { id: 'perfect_score', title: 'Perfect Score', description: 'Get 100% on a paper', icon: '💯', criteria: 'perfect_scores >= 1', points: 500 },
+  { 
+    id: 'first_drill', 
+    title: 'First Step', 
+    description: 'Complete your first daily drill', 
+    icon: '🎯', 
+    imageUrl: 'https://cdn-icons-png.flaticon.com/512/6159/6159871.png',
+    criteria: 'drills_completed >= 1', 
+    points: 50 
+  },
+  { 
+    id: 'streak_3', 
+    title: 'Consistent Learner', 
+    description: 'Maintain a 3-day streak', 
+    icon: '🔥', 
+    imageUrl: 'https://cdn-icons-png.flaticon.com/512/426/426833.png',
+    criteria: 'streak >= 3', 
+    points: 100 
+  },
+  { 
+    id: 'streak_7', 
+    title: 'Study Warrior', 
+    description: 'Maintain a 7-day streak', 
+    icon: '⚔️', 
+    imageUrl: 'https://cdn-icons-png.flaticon.com/512/2582/2582614.png',
+    criteria: 'streak >= 7', 
+    points: 250 
+  },
+  { 
+    id: 'duel_winner', 
+    title: 'Arena Champion', 
+    description: 'Win your first duel', 
+    icon: '🏆', 
+    imageUrl: 'https://cdn-icons-png.flaticon.com/512/3112/3112946.png',
+    criteria: 'duels_won >= 1', 
+    points: 150 
+  },
+  { 
+    id: 'perfect_score', 
+    title: 'Perfect Score', 
+    description: 'Get 100% on a paper', 
+    icon: '💯', 
+    imageUrl: 'https://cdn-icons-png.flaticon.com/512/190/190411.png',
+    criteria: 'perfect_scores >= 1', 
+    points: 500 
+  },
 ];
 
 export async function updatePoints(userId: string, points: number, reason: string) {

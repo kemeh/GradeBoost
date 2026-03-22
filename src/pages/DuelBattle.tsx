@@ -196,8 +196,12 @@ export default function DuelBattle() {
                       <Card className="p-4 bg-indigo-600 text-white border-none">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                              <Sword size={20} />
+                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center overflow-hidden">
+                              {user?.photoURL ? (
+                                <img src={user.photoURL} alt={user.name} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                <Sword size={20} />
+                              )}
                             </div>
                             <div>
                               <p className="text-[10px] font-black uppercase tracking-widest opacity-60">You</p>
@@ -347,7 +351,14 @@ export default function DuelBattle() {
                         )}>
                           {i + 1}
                         </span>
-                        <p className="text-xs font-bold text-slate-900 truncate max-w-[100px]">{entry.name}</p>
+                        {entry.photoURL ? (
+                          <img src={entry.photoURL} alt={entry.name} className="w-8 h-8 rounded-lg object-cover" referrerPolicy="no-referrer" />
+                        ) : (
+                          <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center text-slate-400 font-black text-[10px]">
+                            {entry.name.charAt(0)}
+                          </div>
+                        )}
+                        <p className="text-xs font-bold text-slate-900 truncate max-w-[80px]">{entry.name}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs font-black text-slate-900">{entry.points} pts</p>
