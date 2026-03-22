@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name: fUser.displayName || (isAdminEmail ? 'Admin' : 'Student'),
               email: fUser.email,
               subject: 'Computer Science',
-              school: 'GradeBoost 60',
+              school: 'Online',
               region: isAdminEmail ? 'Admin' : 'Unknown',
               assignedPapers: ['paper1', 'paper2', 'paper3'],
               targetGrade: 'A',

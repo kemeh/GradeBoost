@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { Button, Card, Badge, Progress, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
@@ -65,6 +66,7 @@ const QUESTIONS = [
 
 export default function Diagnostic() {
   const { user } = useAuth();
+  const { appName, logoUrl } = useSettings();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<any>({});
@@ -196,17 +198,10 @@ export default function Diagnostic() {
       <header className="h-20 bg-white border-b border-slate-100 px-8 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <img 
-            src="/logo.svg" 
-            alt="GradeBoost 60 Logo" 
+            src={logoUrl} 
+            alt={`${appName} Logo`} 
             className="h-10 w-auto"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
           />
-          <div className="hidden w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-            <Target className="text-white" size={20} />
-          </div>
           <span className="text-lg font-black text-slate-900 tracking-tight">Diagnostic Test</span>
         </div>
         <div className="flex items-center gap-6">

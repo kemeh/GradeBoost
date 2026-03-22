@@ -15,9 +15,11 @@ import { Button, Card, Badge, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { QuestionPaper, DailyDrill } from '../types';
 import { getSystemSettings } from '../services/settingsService';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function PaymentPage() {
   const { user } = useAuth();
+  const { appName, logoUrl, contactEmail } = useSettings();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -228,7 +230,7 @@ export default function PaymentPage() {
         body: JSON.stringify({
           phone: formData.phone,
           amount: paymentPrice,
-          description: `GradeBoost 60 - ${user.name}`,
+          description: `${appName} - ${user.name}`,
           external_reference: `gb60_${user.uid}_${Date.now()}`
         })
       });
@@ -242,7 +244,7 @@ export default function PaymentPage() {
         } catch (e) {
           console.error("Failed to parse error JSON:", errorText);
           if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html')) {
-            errorMessage = "Server error (HTML returned). Please contact support.";
+            errorMessage = `Server error (HTML returned). Please contact ${contactEmail}.`;
           }
         }
         throw new Error(errorMessage);
@@ -290,18 +292,10 @@ export default function PaymentPage() {
       <header className="h-20 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-4">
           <img 
-            src="/logo.svg" 
-            alt="GradeBoost 60 Logo" 
+            src={logoUrl} 
+            alt={`${appName} Logo`} 
             className="h-10 w-auto"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
-            }}
           />
-          <div className="hidden w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-            <TrendingUp className="text-white" size={20} />
-          </div>
-          <span className="text-xl font-black text-slate-900 tracking-tight">GradeBoost 60</span>
         </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" onClick={() => auth.signOut()}>
@@ -364,7 +358,7 @@ export default function PaymentPage() {
                       </h3>
                       <p className="text-slate-500 font-medium">
                         {freeSample 
-                          ? (('day' in freeSample) ? 'Try our Day 1 Daily Drill to see how GradeBoost 60 keeps you sharp every day.' : 'Try a full Paper 1 MCQ quiz to see how GradeBoost 60 helps you improve.')
+                          ? (('day' in freeSample) ? `Try our Day 1 Daily Drill to see how ${appName} keeps you sharp every day.` : `Try a full Paper 1 MCQ quiz to see how ${appName} helps you improve.`)
                           : isAdmin 
                             ? `You haven't uploaded any samples for ${userSubject} yet. Go to the Admin dashboard to upload one.`
                             : `No free samples available yet. Check back soon.`}
@@ -680,10 +674,11 @@ export default function PaymentPage() {
       <footer className="bg-white border-t border-slate-100 py-12 px-8 mt-12">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
-              <TrendingUp className="text-white" size={16} />
-            </div>
-            <span className="text-lg font-black text-slate-900 tracking-tight">GradeBoost 60</span>
+            <img 
+              src={logoUrl} 
+              alt={`${appName} Logo`} 
+              className="h-8 w-auto"
+            />
           </div>
           <div className="text-center md:text-right">
             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">

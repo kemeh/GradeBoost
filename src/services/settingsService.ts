@@ -5,6 +5,9 @@ export interface SystemSettings {
   geminiApiKey: string;
   challengeStartDate: string;
   paymentPrice: number;
+  appName?: string;
+  logoUrl?: string;
+  contactEmail?: string;
   updatedAt: any;
   updatedBy: string;
 }
@@ -25,13 +28,24 @@ export const getSystemSettings = async (): Promise<SystemSettings | null> => {
   }
 };
 
-export const updateSystemSettings = async (apiKey: string, challengeStartDate: string, paymentPrice: number, userId: string): Promise<void> => {
+export const updateSystemSettings = async (
+  apiKey: string, 
+  challengeStartDate: string, 
+  paymentPrice: number, 
+  appName: string,
+  logoUrl: string,
+  contactEmail: string,
+  userId: string
+): Promise<void> => {
   try {
     const docRef = doc(db, 'system_settings', SETTINGS_DOC_ID);
     await setDoc(docRef, {
       geminiApiKey: apiKey,
       challengeStartDate,
       paymentPrice,
+      appName,
+      logoUrl,
+      contactEmail,
       updatedAt: serverTimestamp(),
       updatedBy: userId,
     });

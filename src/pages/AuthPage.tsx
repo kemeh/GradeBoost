@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, BookOpen, ArrowRight, AlertCircle, CheckCircle2, TrendingUp, School, MapPin, Eye, EyeOff } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { Subject } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
@@ -18,6 +19,7 @@ export default function AuthPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
+  const { appName, logoUrl } = useSettings();
   const { user, loading: authLoading, isAdmin } = useAuth();
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export default function AuthPage() {
       case 'auth/invalid-email':
         return 'Please enter a valid email address.';
       case 'auth/user-disabled':
-        return 'This account has been disabled. Please contact support.';
+        return `This account has been disabled. Please contact ${contactEmail}.`;
       case 'auth/user-not-found':
         return 'No account found with this email. Please sign up.';
       case 'auth/wrong-password':
@@ -160,18 +162,10 @@ export default function AuthPage() {
         <div className="text-center space-y-2">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
             <img 
-              src="/logo.svg" 
-              alt="GradeBoost 60 Logo" 
+              src={logoUrl} 
+              alt={`${appName} Logo`} 
               className="h-12 w-auto"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
             />
-            <div className="hidden w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-              <TrendingUp className="text-white" size={20} />
-            </div>
-            <span className="text-xl font-black text-slate-900 tracking-tight">GradeBoost 60</span>
           </Link>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">
             {isForgot ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Create Account'}

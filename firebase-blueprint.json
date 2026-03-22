@@ -207,6 +207,9 @@
         "geminiApiKey": { "type": "string", "description": "The active Gemini API key." },
         "challengeStartDate": { "type": "string", "format": "date", "description": "The start date of the 60-day challenge (YYYY-MM-DD)." },
         "paymentPrice": { "type": "number", "description": "The price of the premium plan in FCFA." },
+        "appName": { "type": "string", "description": "The name of the application." },
+        "logoUrl": { "type": "string", "description": "The URL of the application logo." },
+        "contactEmail": { "type": "string", "description": "The contact email for the application." },
         "updatedAt": { "type": "string", "format": "date-time" },
         "updatedBy": { "type": "string" }
       },

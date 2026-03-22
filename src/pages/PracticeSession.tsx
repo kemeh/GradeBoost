@@ -15,10 +15,12 @@ import { QuestionPaper, ExamResult, Subject } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import FileUpload from '../components/FileUpload';
 import { getSystemSettings } from '../services/settingsService';
+import { useSettings } from '../contexts/SettingsContext';
 
 export default function PracticeSession() {
   const { paperId } = useParams();
   const { user } = useAuth();
+  const { appName, logoUrl } = useSettings();
   const navigate = useNavigate();
   const [paper, setPaper] = useState<QuestionPaper | null>(null);
   const [loading, setLoading] = useState(true);
@@ -194,17 +196,14 @@ export default function PracticeSession() {
             <ArrowLeft size={24} />
           </button>
           <img 
-            src="/logo.svg" 
-            alt="GradeBoost 60 Logo" 
+            src={logoUrl.replace('.svg', '-white.svg')} 
+            alt={`${appName} Logo`} 
             className="h-10 w-auto"
             onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+              // Fallback to regular logo if white version doesn't exist
+              e.currentTarget.src = logoUrl;
             }}
           />
-          <div className="hidden w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center">
-            <TrendingUp className="text-white" size={20} />
-          </div>
           <div>
             <h1 className="text-lg font-black text-white tracking-tight">{paper.title}</h1>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{paper.subject} • {paper.paperType}</p>

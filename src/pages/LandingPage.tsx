@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import { BookOpen, Target, TrendingUp, ArrowRight, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { Button, Card, Badge, cn } from '../components/ui';
 
 export default function LandingPage() {
   const { user, loading, isAdmin } = useAuth();
+  const { appName, logoUrl } = useSettings();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,18 +30,10 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img 
-              src="/logo.svg" 
-              alt="GradeBoost 60 Logo" 
+              src={logoUrl} 
+              alt={`${appName} Logo`} 
               className="h-10 w-auto"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-              }}
             />
-            <div className="hidden w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-              <TrendingUp className="text-white" size={20} />
-            </div>
-            <span className="text-xl font-black text-slate-900 tracking-tight">GradeBoost 60</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#features" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors">Features</a>
@@ -165,7 +159,7 @@ export default function LandingPage() {
             Ready to secure your A grade?
           </h2>
           <p className="text-slate-400 text-lg max-w-2xl mx-auto font-medium relative z-10">
-            Join hundreds of students mastering Computer Science and ICT with GradeBoost 60.
+            Join hundreds of students mastering Computer Science and ICT with {appName}.
           </p>
           <div className="relative z-10">
             <Link to="/auth">
@@ -180,18 +174,10 @@ export default function LandingPage() {
           <div className="flex flex-col items-center md:items-start gap-2">
             <div className="flex items-center gap-2">
               <img 
-                src="/logo.svg" 
-                alt="GradeBoost 60 Logo" 
+                src={logoUrl} 
+                alt={`${appName} Logo`} 
                 className="h-8 w-auto"
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                }}
               />
-              <div className="hidden w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
-                <TrendingUp className="text-white" size={16} />
-              </div>
-              <span className="text-lg font-black text-slate-900 tracking-tight">GradeBoost 60</span>
             </div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Built by Vertexon Technologies</p>
           </div>

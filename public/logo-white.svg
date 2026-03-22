@@ -6,20 +6,20 @@
     <rect x="20" y="55" width="14" height="30" fill="#D32027"/>
     <!-- Red Bar 2 -->
     <rect x="38" y="45" width="14" height="40" fill="#D32027"/>
-    <!-- Blue Bar 3 -->
-    <rect x="56" y="35" width="14" height="50" fill="#005A9C"/>
+    <!-- Blue Bar 3 (White for dark mode) -->
+    <rect x="56" y="35" width="14" height="50" fill="#FFFFFF"/>
 
-    <!-- Jagged Line Arrow (Dark Blue) -->
-    <path d="M 8 55 L 35 28 L 45 38 L 70 13 L 62 13 L 80 0 L 85 22 L 75 16 L 45 46 L 35 36 L 12 59 Z" fill="#005A9C"/>
+    <!-- Jagged Line Arrow (White) -->
+    <path d="M 8 55 L 35 28 L 45 38 L 70 13 L 62 13 L 80 0 L 85 22 L 75 16 L 45 46 L 35 36 L 12 59 Z" fill="#FFFFFF"/>
 
-    <!-- Curved Arrow (Dark Blue) -->
-    <path d="M 6 65 C 5 95, 30 105, 65 90 L 75 85 L 70 75 L 90 70 L 85 90 L 80 80 C 40 100, 10 100, 12 65 Z" fill="#005A9C"/>
+    <!-- Curved Arrow (White) -->
+    <path d="M 6 65 C 5 95, 30 105, 65 90 L 75 85 L 70 75 L 90 70 L 85 90 L 80 80 C 40 100, 10 100, 12 65 Z" fill="#FFFFFF"/>
   </g>
 
   <!-- Text Group -->
   <text x="100" y="72" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="48" letter-spacing="-1">
-    <tspan fill="#005A9C">Grade</tspan>
+    <tspan fill="#FFFFFF">Grade</tspan>
     <tspan fill="#D32027">Boost</tspan>
-    <tspan fill="#005A9C"> 60</tspan>
+    <tspan fill="#FFFFFF"> 60</tspan>
   </text>
 </svg>

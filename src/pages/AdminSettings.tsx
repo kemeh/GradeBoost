@@ -14,6 +14,9 @@ export default function AdminSettings() {
   const [apiKey, setApiKey] = useState('');
   const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
   const [paymentPrice, setPaymentPrice] = useState(1000);
+  const [appName, setAppName] = useState('GradeBoost 60');
+  const [logoUrl, setLogoUrl] = useState('/logo.svg');
+  const [contactEmail, setContactEmail] = useState('support@gradeboost60.com');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
@@ -28,8 +31,17 @@ export default function AdminSettings() {
         if (settings.challengeStartDate) {
           setChallengeStartDate(settings.challengeStartDate);
         }
-        if (settings.paymentPrice) {
+        if (settings.paymentPrice !== undefined) {
           setPaymentPrice(settings.paymentPrice);
+        }
+        if (settings.appName) {
+          setAppName(settings.appName);
+        }
+        if (settings.logoUrl) {
+          setLogoUrl(settings.logoUrl);
+        }
+        if (settings.contactEmail) {
+          setContactEmail(settings.contactEmail);
         }
       }
       setIsLoading(false);
@@ -53,9 +65,27 @@ export default function AdminSettings() {
       return;
     }
 
+    if (!appName.trim()) {
+      toast.error('App Name cannot be empty');
+      return;
+    }
+
+    if (!logoUrl.trim()) {
+      toast.error('Logo URL cannot be empty');
+      return;
+    }
+
     setIsSaving(true);
     try {
-      await updateSystemSettings(apiKey.trim(), challengeStartDate, paymentPrice, user?.uid || 'unknown');
+      await updateSystemSettings(
+        apiKey.trim(), 
+        challengeStartDate, 
+        paymentPrice, 
+        appName.trim(),
+        logoUrl.trim(),
+        contactEmail.trim(),
+        user?.uid || 'unknown'
+      );
       toast.success('Settings updated successfully');
     } catch (error) {
       toast.error('Failed to update settings');
@@ -191,6 +221,70 @@ export default function AdminSettings() {
                     </div>
                   </motion.div>
                 )}
+              </div>
+            </motion.section>
+
+            {/* App Branding & Details Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-blue-50 rounded-2xl">
+                  <Settings className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">App Branding & Details</h2>
+                  <p className="text-sm text-slate-500">Configure the application name, logo, and contact information.</p>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    App Name
+                  </label>
+                  <input
+                    type="text"
+                    value={appName}
+                    onChange={(e) => setAppName(e.target.value)}
+                    placeholder="e.g. GradeBoost 60"
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Logo URL
+                  </label>
+                  <input
+                    type="text"
+                    value={logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                    placeholder="e.g. /logo.svg or https://..."
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
+                  />
+                  {logoUrl && (
+                    <div className="mt-4 p-4 bg-slate-100 rounded-xl inline-block">
+                      <img src={logoUrl} alt="Logo Preview" className="h-10 w-auto object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Contact Email
+                  </label>
+                  <input
+                    type="email"
+                    value={contactEmail}
+                    onChange={(e) => setContactEmail(e.target.value)}
+                    placeholder="e.g. support@example.com"
+                    className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
+                  />
+                </div>
               </div>
             </motion.section>
 

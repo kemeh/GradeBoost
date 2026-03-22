@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { cn } from './ui';
 
 interface SidebarProps {
@@ -14,6 +15,7 @@ interface SidebarProps {
 
 export default function Sidebar({ className }: SidebarProps) {
   const { user, isAdmin } = useAuth();
+  const { appName, logoUrl } = useSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -79,14 +81,13 @@ export default function Sidebar({ className }: SidebarProps) {
         className
       )}>
         {/* Branding */}
-        <div className="flex items-center gap-2 mb-12">
-          <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center">
-            <TrendingUp className="text-white" size={20} />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-black text-slate-900 tracking-tight">GradeBoost 60</span>
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">by Vertexon Technologies</span>
-          </div>
+        <div className="flex flex-col gap-1 mb-12">
+          <img 
+            src={logoUrl} 
+            alt={`${appName} Logo`} 
+            className="h-10 w-auto object-contain object-left"
+          />
+          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">by Vertexon Technologies</span>
         </div>
 
         {/* Navigation */}

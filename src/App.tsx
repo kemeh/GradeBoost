@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 
@@ -54,29 +55,31 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/auth" element={<AuthPage />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
-          
-          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-          <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
-          <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
-          <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
-          <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
-          <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
-          
-          <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-          <Route path="/admin/daily-drill" element={<AdminRoute><AdminDailyDrill /></AdminRoute>} />
-          <Route path="/admin/resources" element={<AdminRoute><AdminManagement /></AdminRoute>} />
-          <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-          
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+    <SettingsProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
+            
+            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
+            <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
+            <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
+            <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
+            <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
+            
+            <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+            <Route path="/admin/daily-drill" element={<AdminRoute><AdminDailyDrill /></AdminRoute>} />
+            <Route path="/admin/resources" element={<AdminRoute><AdminManagement /></AdminRoute>} />
+            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+            
+            <Route path="*" element={<Navigate to="/" />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </SettingsProvider>
   );
 }

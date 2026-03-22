@@ -17,6 +17,7 @@ import FileUpload from '../components/FileUpload';
 
 import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
 import { getSystemSettings } from '../services/settingsService';
+import { useSettings } from '../contexts/SettingsContext';
 
 enum OperationType {
   CREATE = 'create',
@@ -48,6 +49,7 @@ interface FirestoreErrorInfo {
 
 export default function DailyDrillSession() {
   const { user } = useAuth();
+  const { contactEmail } = useSettings();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedDay = searchParams.get('day');
@@ -275,7 +277,7 @@ export default function DailyDrillSession() {
 
     } catch (err) {
       console.error("Error submitting drill:", err);
-      setError('Failed to submit your answers. Please check your connection or contact support.');
+      setError(`Failed to submit your answers. Please check your connection or contact ${contactEmail}.`);
     } finally {
       setSubmitting(false);
     }
@@ -324,7 +326,7 @@ export default function DailyDrillSession() {
           </div>
           <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-4">No Drill Found</h2>
           <p className="text-slate-500 font-medium mb-8">
-            There are no drills available for your subject today. Please check back later or contact support.
+            There are no drills available for your subject today. Please check back later or contact {contactEmail}.
           </p>
           <Button onClick={() => navigate('/dashboard')} variant="outline" className="w-full">
             Back to Dashboard
