@@ -57,9 +57,17 @@ async function startServer() {
 
   // CamPay API Routes
   app.post("/api/payment/collect", async (req, res, next) => {
-    const { phone, amount, description, external_reference } = req.body;
+    let { phone, amount, description, external_reference } = req.body;
     
     try {
+      // Ensure phone number has country code (237 for Cameroon)
+      if (phone && phone.length === 9 && (phone.startsWith('6') || phone.startsWith('2'))) {
+        phone = `237${phone}`;
+      } else if (phone && phone.length === 8 && (phone.startsWith('6') || phone.startsWith('2'))) {
+        // Some old numbers are 8 digits
+        phone = `237${phone}`;
+      }
+
       // Fetch dynamic price from Firestore to ensure security
       let finalAmount = amount;
       try {
@@ -189,8 +197,18 @@ async function startServer() {
   // Global Error Handler
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error("Global Error Handler:", err);
-    res.status(err.status || 500).json({
-      error: err.message || "Internal Server Error",
+    
+    let status = err.status || 500;
+    let message = err.message || "Internal Server Error";
+
+    // Handle Axios errors
+    if (axios.isAxiosError(err)) {
+      status = err.response?.status || 500;
+      message = err.response?.data?.error || err.response?.data?.message || err.message;
+    }
+
+    res.status(status).json({
+      error: message,
       stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
     });
   });

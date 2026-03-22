@@ -498,18 +498,19 @@ export default function PaymentPage() {
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number</label>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone Number (MTN/Orange)</label>
                         <div className="relative">
                           <Smartphone className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                           <input 
                             type="tel"
                             required
-                            placeholder="6xx xxx xxx"
+                            placeholder="e.g. 677 123 456"
                             className="w-full pl-14 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
                             value={formData.phone}
-                            onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                            onChange={e => setFormData({ ...formData, phone: e.target.value.replace(/\s/g, '') })}
                           />
                         </div>
+                        <p className="text-[10px] text-slate-400 font-medium ml-1">Enter your 9-digit mobile money number.</p>
                       </div>
 
                       <div className="p-4 bg-slate-900 rounded-2xl flex items-center justify-between">
