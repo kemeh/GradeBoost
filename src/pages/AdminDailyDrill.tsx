@@ -18,13 +18,14 @@ import { Button, Card, Badge, cn } from '../components/ui';
 import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
 import { ExamQuestion, DailyDrill, DrillSubmission, Subject, PaperType, Grade, WeeklyLeaderboard } from '../types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate, getWeekNumber } from '../utils/dateUtils';
 import { calculateWeeklyLeaderboard } from '../utils/leaderboard';
 import { toast } from 'react-hot-toast';
 import { SUBJECT_TOPICS, getGroupedTopicsForSubject, SubjectName } from '../constants/topics';
+import { getGeminiApiKey } from '../services/settingsService';
 // @ts-ignore
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
 
@@ -1314,6 +1315,15 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Computer Science');
+  const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
+
+  useEffect(() => {
+    const checkApiKey = async () => {
+      const apiKey = await getApiKey();
+      setIsApiKeyMissing(!apiKey);
+    };
+    checkApiKey();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -1321,6 +1331,31 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       setFile(selectedFile);
       setError('');
     }
+  };
+
+  const getApiKey = async () => {
+    // 1. Check platform-injected process.env
+    try {
+      if (typeof process !== 'undefined' && process.env) {
+        if (process.env.API_KEY) return process.env.API_KEY;
+        if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+      }
+    } catch (e) {}
+
+    // 2. Check Vite-specific import.meta.env
+    const metaEnv = (import.meta as any).env;
+    if (metaEnv?.VITE_GEMINI_API_KEY) return metaEnv.VITE_GEMINI_API_KEY as string;
+
+    // 3. Check window-level globals
+    if ((window as any).GEMINI_API_KEY) return (window as any).GEMINI_API_KEY;
+    if ((window as any).process?.env?.API_KEY) return (window as any).process.env.API_KEY;
+    if ((window as any).process?.env?.GEMINI_API_KEY) return (window as any).process.env.GEMINI_API_KEY;
+
+    // 4. Check Firestore System Settings
+    const firestoreKey = await getGeminiApiKey();
+    if (firestoreKey) return firestoreKey;
+
+    return null;
   };
 
   const processFile = async () => {
@@ -1393,9 +1428,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       // Use Gemini to parse the text into questions
       const { GoogleGenAI, Type } = await import('@google/genai');
       
-      // Use process.env.API_KEY which is injected by the platform after key selection
-      // Fallback to GEMINI_API_KEY if available
-      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || (window as any).GEMINI_API_KEY;
+      const apiKey = await getApiKey();
       
       if (!apiKey) {
         // If still missing, try to open the dialog again or show a helpful message
@@ -1406,7 +1439,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
           toast.error('Gemini API Key is missing. Please select a key in the dialog and try again.');
           return;
         }
-        throw new Error('Gemini API Key is missing. Please ensure you have selected an API key in the settings or the dialog.');
+        throw new Error('Gemini API Key is missing. Please add API key in Settings or ensure you have selected an API key in the platform settings.');
       }
       
       const ai = new GoogleGenAI({ apiKey });
@@ -1548,6 +1581,17 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
 
         {!previewQuestions.length ? (
           <div className="space-y-6">
+            {isApiKeyMissing && (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-amber-900">Gemini API Key is missing</p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    AI-powered bulk upload requires a Gemini API key. Please add one in the <Link to="/admin/settings" className="font-bold underline">System Settings</Link> page.
+                  </p>
+                </div>
+              </div>
+            )}
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Target Subject</label>

@@ -42,6 +42,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: FileText, label: 'Manage Papers', path: '/admin?tab=papers' },
     { icon: Target, label: 'Daily Drills', path: '/admin/daily-drill' },
     { icon: BookOpen, label: 'Resources & Assignments', path: '/admin/resources' },
+    { icon: Settings, label: 'System Settings', path: '/admin/settings' },
     { icon: LayoutDashboard, label: 'Student View', path: '/dashboard' },
   ];
 

@@ -5,6 +5,14 @@ declare global {
       openSelectKey: () => Promise<void>;
     };
   }
+
+  interface ImportMeta {
+    readonly env: ImportMetaEnv;
+  }
+
+  interface ImportMetaEnv {
+    readonly [key: string]: any;
+  }
 }
 
 export type Subject = 'Computer Science' | 'ICT';

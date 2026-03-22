@@ -13,6 +13,7 @@ import Profile from './pages/Profile';
 import PaymentPage from './pages/PaymentPage';
 import AdminDailyDrill from './pages/AdminDailyDrill';
 import AdminManagement from './pages/AdminManagement';
+import AdminSettings from './pages/AdminSettings';
 import DailyDrillSession from './pages/DailyDrillSession';
 import VerifyEmail from './pages/VerifyEmail';
 
@@ -71,6 +72,7 @@ export default function App() {
           <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
           <Route path="/admin/daily-drill" element={<AdminRoute><AdminDailyDrill /></AdminRoute>} />
           <Route path="/admin/resources" element={<AdminRoute><AdminManagement /></AdminRoute>} />
+          <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
           
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

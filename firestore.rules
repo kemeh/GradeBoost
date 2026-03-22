@@ -143,6 +143,13 @@
 //   - year: number (required)
 //   - updatedAt: timestamp (required)
 //
+// Collection: system_settings
+// Document ID: global
+// Fields:
+//   - geminiApiKey: string (required)
+//   - updatedAt: timestamp (required)
+//   - updatedBy: string (required, uid)
+//
 // ===============================================================
 
 rules_version = '2';
@@ -477,6 +484,10 @@ service cloud.firestore {
     match /weekly_leaderboard/{leaderboardId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAdmin() && isValidWeeklyLeaderboard(request.resource.data);
+    }
+
+    match /system_settings/{settingId} {
+      allow read, write: if isAdmin();
     }
 
     // Default deny

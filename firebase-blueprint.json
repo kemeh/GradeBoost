@@ -198,6 +198,17 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "userName", "totalScore", "position", "weekNumber", "year", "updatedAt"]
+    },
+    "SystemSettings": {
+      "title": "System Settings",
+      "description": "Stores global system configuration like API keys.",
+      "type": "object",
+      "properties": {
+        "geminiApiKey": { "type": "string", "description": "The active Gemini API key." },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string" }
+      },
+      "required": ["geminiApiKey", "updatedAt", "updatedBy"]
     }
   },
   "firestore": {
@@ -248,6 +259,10 @@
     "/weekly_leaderboard/{leaderboardId}": {
       "schema": "WeeklyLeaderboard",
       "description": "Weekly leaderboard rankings."
+    },
+    "/system_settings/{settingId}": {
+      "schema": "SystemSettings",
+      "description": "Global system settings."
     }
   }
 }
