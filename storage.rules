@@ -10,19 +10,14 @@ service firebase.storage {
     function isAdmin() {
       return isAuthenticated() && 
         (
+          request.auth.token.email == "kemehhilary@gmail.com" ||
           (firestore.exists(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)) && 
-           firestore.get(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email == "kemehhilary@gmail.com")
+           firestore.get(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)).data.role == 'admin')
         );
     }
     
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Default deny
-    match /{allPaths=**} {
-      allow read, write: if false;
     }
 
     // Question Papers (Admin only upload, all authenticated can read)
@@ -65,6 +60,11 @@ service firebase.storage {
       allow read: if isAuthenticated();
       allow write: if isAuthenticated() && 
                    request.resource.size < 10 * 1024 * 1024; // 10MB limit
+    }
+
+    // Default deny
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

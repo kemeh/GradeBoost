@@ -75,7 +75,11 @@ export default function Dashboard() {
         setFirstName(userData.firstName || userData.name?.split(' ')[0] || 'Student');
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+      try {
+        handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
+      } catch (e) {
+        console.error("Dashboard UserProfile Error:", e);
+      }
     });
 
     // Fetch Results
@@ -89,7 +93,11 @@ export default function Dashboard() {
       const resultsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamResult));
       setResults(resultsData);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'results');
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'results');
+      } catch (e) {
+        console.error("Dashboard Results Error:", e);
+      }
     });
 
     // Fetch Drill Submissions
@@ -102,7 +110,11 @@ export default function Dashboard() {
       const subsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DrillSubmission));
       setSubmissions(subsData);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'drill_submissions');
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'drill_submissions');
+      } catch (e) {
+        console.error("Dashboard Submissions Error:", e);
+      }
     });
 
     // Fetch Learning Resources
@@ -115,7 +127,11 @@ export default function Dashboard() {
       const resourcesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LearningResource));
       setLearningResources(resourcesData);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'learning_resources');
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'learning_resources');
+      } catch (e) {
+        console.error("Dashboard LearningResources Error:", e);
+      }
     });
 
     // Fetch Resources (PDFs, etc.)
@@ -128,7 +144,11 @@ export default function Dashboard() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource));
       setResources(data);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'resources');
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'resources');
+      } catch (e) {
+        console.error("Dashboard Resources Error:", e);
+      }
     });
 
     // Fetch Assignments
@@ -141,7 +161,11 @@ export default function Dashboard() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assignment));
       setAssignments(data);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'assignments');
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'assignments');
+      } catch (e) {
+        console.error("Dashboard Assignments Error:", e);
+      }
     });
 
     // Fetch Daily Drill
@@ -201,7 +225,11 @@ export default function Dashboard() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WeeklyLeaderboard));
       setLeaderboard(data);
     }, (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'weekly_leaderboard');
+      try {
+        handleFirestoreError(error, OperationType.LIST, 'weekly_leaderboard');
+      } catch (e) {
+        console.error("Dashboard Leaderboard Error:", e);
+      }
     });
 
     // Fetch user's position
@@ -213,7 +241,11 @@ export default function Dashboard() {
         setUserLeaderboard(null);
       }
     }, (error) => {
-      handleFirestoreError(error, OperationType.GET, `weekly_leaderboard/${userLeaderboardId}`);
+      try {
+        handleFirestoreError(error, OperationType.GET, `weekly_leaderboard/${userLeaderboardId}`);
+      } catch (e) {
+        console.error("Dashboard UserLeaderboard Error:", e);
+      }
     });
 
     setLoading(false);

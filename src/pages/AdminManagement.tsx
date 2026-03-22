@@ -73,7 +73,11 @@ export default function AdminManagement() {
         setResources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource)));
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, 'resources');
+        try {
+          handleFirestoreError(error, OperationType.LIST, 'resources');
+        } catch (e) {
+          console.error("AdminManagement Resources Error:", e);
+        }
       }
     );
 
@@ -83,7 +87,11 @@ export default function AdminManagement() {
         setAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assignment)));
       },
       (error) => {
-        handleFirestoreError(error, OperationType.LIST, 'assignments');
+        try {
+          handleFirestoreError(error, OperationType.LIST, 'assignments');
+        } catch (e) {
+          console.error("AdminManagement Assignments Error:", e);
+        }
       }
     );
 

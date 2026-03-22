@@ -1379,16 +1379,33 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
         setProcessingStatus('Please select an API key to continue...');
         await window.aistudio.openSelectKey();
         // After opening the dialog, we assume the user will select a key.
-        // The next call to GoogleGenAI will use the newly selected key.
+        // However, we should stop here and let them try again once the key is selected
+        // as process.env.API_KEY might not be immediately updated in this context.
+        setIsProcessing(false);
+        setProcessingStatus('');
+        toast(
+          'Please select an API key in the dialog and then try processing the file again.',
+          { icon: 'ℹ️' }
+        );
+        return;
       }
 
       // Use Gemini to parse the text into questions
       const { GoogleGenAI, Type } = await import('@google/genai');
       
       // Use process.env.API_KEY which is injected by the platform after key selection
-      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+      // Fallback to GEMINI_API_KEY if available
+      const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY || (window as any).GEMINI_API_KEY;
       
       if (!apiKey) {
+        // If still missing, try to open the dialog again or show a helpful message
+        if (window.aistudio) {
+          await window.aistudio.openSelectKey();
+          setIsProcessing(false);
+          setProcessingStatus('');
+          toast.error('Gemini API Key is missing. Please select a key in the dialog and try again.');
+          return;
+        }
         throw new Error('Gemini API Key is missing. Please ensure you have selected an API key in the settings or the dialog.');
       }
       

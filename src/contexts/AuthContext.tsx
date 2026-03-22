@@ -82,7 +82,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           setLoading(false);
         }, (error) => {
-          handleFirestoreError(error, OperationType.GET, `users/${fUser.uid}`);
+          // Log error but don't throw to prevent app hang
+          try {
+            handleFirestoreError(error, OperationType.GET, `users/${fUser.uid}`);
+          } catch (e) {
+            console.error("AuthContext Firestore Error (Handled):", e);
+          }
           setLoading(false);
         });
       } else {
