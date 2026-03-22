@@ -333,60 +333,62 @@ export default function PracticeSession() {
               <div className="space-y-8">
                 {user.subject === 'Computer Science' ? (
                   <div className="space-y-8">
-                    <div className="space-y-3">
-                      <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Programming / Logic Task</label>
-                      <textarea 
-                        className="w-full p-6 bg-slate-900 border border-slate-800 rounded-2xl font-mono text-indigo-400 focus:border-indigo-600 outline-none min-h-[400px] transition-all"
-                        placeholder="// Write your code or logic here..."
-                        value={answers['p3'] || ''}
-                        onChange={e => setAnswers({ ...answers, 'p3': e.target.value })}
-                      />
-                      <div className="mt-4">
-                        <FileUpload 
-                          onUploadComplete={(url) => {
-                            setFileUrls(prev => ({ ...prev, 'p3': url }));
-                          }}
-                          onDelete={() => {
-                            setFileUrls(prev => {
-                              const next = { ...prev };
-                              delete next['p3'];
-                              return next;
-                            });
-                          }}
-                          initialUrl={fileUrls['p3']}
-                          folder={`submissions/${user.uid}/practice/${paper.id}`}
-                          label="Upload Code/Project File"
-                          accept="*/*"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-8">
-                    {['PowerPoint', 'Access', 'HTML', 'Programming', 'Excel'].map(module => (
-                      <div key={module} className="space-y-3">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">{module} Module</label>
+                    {['Section A: Database', 'Section B: Programming'].map(section => (
+                      <div key={section} className="space-y-3">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">{section}</label>
                         <textarea 
-                          className="w-full p-6 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-slate-900 focus:bg-white focus:border-indigo-600 outline-none min-h-[120px] transition-all"
-                          placeholder={`Enter your ${module} findings or code...`}
-                          value={answers[module] || ''}
-                          onChange={e => setAnswers({ ...answers, [module]: e.target.value })}
+                          className="w-full p-6 bg-slate-900 border border-slate-800 rounded-2xl font-mono text-indigo-400 focus:border-indigo-600 outline-none min-h-[200px] transition-all"
+                          placeholder={`// Write your code or logic for ${section} here...`}
+                          value={answers[section] || ''}
+                          onChange={e => setAnswers({ ...answers, [section]: e.target.value })}
                         />
-                        <div className="mt-2">
+                        <div className="mt-4">
                           <FileUpload 
                             onUploadComplete={(url) => {
-                              setFileUrls(prev => ({ ...prev, [module]: url }));
+                              setFileUrls(prev => ({ ...prev, [section]: url }));
                             }}
                             onDelete={() => {
                               setFileUrls(prev => {
                                 const next = { ...prev };
-                                delete next[module];
+                                delete next[section];
                                 return next;
                               });
                             }}
-                            initialUrl={fileUrls[module]}
+                            initialUrl={fileUrls[section]}
                             folder={`submissions/${user.uid}/practice/${paper.id}`}
-                            label={`Upload ${module} File`}
+                            label={`Upload Code/Project File for ${section}`}
+                            accept="*/*"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {['Task A: Database', 'Task B: Spreadsheet', 'Task C: Presentation'].map(task => (
+                      <div key={task} className="space-y-3">
+                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">{task}</label>
+                        <textarea 
+                          className="w-full p-6 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-slate-900 focus:bg-white focus:border-indigo-600 outline-none min-h-[120px] transition-all"
+                          placeholder={`Enter your findings or code for ${task}...`}
+                          value={answers[task] || ''}
+                          onChange={e => setAnswers({ ...answers, [task]: e.target.value })}
+                        />
+                        <div className="mt-2">
+                          <FileUpload 
+                            onUploadComplete={(url) => {
+                              setFileUrls(prev => ({ ...prev, [task]: url }));
+                            }}
+                            onDelete={() => {
+                              setFileUrls(prev => {
+                                const next = { ...prev };
+                                delete next[task];
+                                return next;
+                              });
+                            }}
+                            initialUrl={fileUrls[task]}
+                            folder={`submissions/${user.uid}/practice/${paper.id}`}
+                            label={`Upload File for ${task}`}
                             accept="*/*"
                           />
                         </div>

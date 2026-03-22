@@ -89,7 +89,7 @@ export interface ExamQuestion {
   explanation: string;
   subject: Subject;
   paper: PaperType;
-  section?: 'A' | 'B' | 'C';
+  section?: string;
   topic: string;
   marks: number;
   difficulty: 'Easy' | 'Medium' | 'Hard';

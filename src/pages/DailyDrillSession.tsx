@@ -382,7 +382,7 @@ export default function DailyDrillSession() {
               Question {currentQuestionIndex + 1} of {questions.length}
             </h2>
             <span className="text-xs font-black text-slate-400 uppercase tracking-widest">
-              {currentQuestion?.paper} {currentQuestion?.section && `- Section ${currentQuestion.section}`} - {drill.topic}
+              {currentQuestion?.paper} {currentQuestion?.section && (currentQuestion.section.startsWith('Section') || currentQuestion.section.startsWith('Task') ? `- ${currentQuestion.section}` : `- Section ${currentQuestion.section}`)} - {drill.topic}
             </span>
           </div>
           

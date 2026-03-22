@@ -924,12 +924,29 @@ export default function AdminDailyDrill() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
                       <select
                         className="w-full px-4 py-2 border rounded-lg"
-                        value={questionForm.section}
-                        onChange={(e) => setQuestionForm({ ...questionForm, section: e.target.value as any })}
+                        value={questionForm.section || 'A'}
+                        onChange={(e) => setQuestionForm({ ...questionForm, section: e.target.value })}
                       >
-                        <option value="A">Section A</option>
-                        <option value="B">Section B</option>
-                        <option value="C">Section C</option>
+                        {questionForm.paper === 'Paper 3' ? (
+                          questionForm.subject === 'Computer Science' ? (
+                            <>
+                              <option value="Section A: Database">Section A: Database</option>
+                              <option value="Section B: Programming">Section B: Programming</option>
+                            </>
+                          ) : (
+                            <>
+                              <option value="Task A: Database">Task A: Database</option>
+                              <option value="Task B: Spreadsheet">Task B: Spreadsheet</option>
+                              <option value="Task C: Presentation">Task C: Presentation</option>
+                            </>
+                          )
+                        ) : (
+                          <>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                          </>
+                        )}
                       </select>
                     </div>
                     <div>
@@ -1532,7 +1549,7 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
       - topic: Closest match from the provided topic list.
       - marks: Number of marks (integer).
       - difficulty: 'Easy', 'Medium', or 'Hard'.
-      - section: 'A', 'B', or 'C' (if applicable).
+      - section: 'A', 'B', 'C', 'Section A: Database', 'Section B: Programming', 'Task A: Database', 'Task B: Spreadsheet', or 'Task C: Presentation' (if applicable).
       
       If the data is an image or scanned PDF, perform high-accuracy OCR first.
       If you cannot detect the paper type, default to "${selectedPaper}".`;
@@ -1864,14 +1881,31 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
                             value={q.section || ''}
                             onChange={e => {
                               const next = [...previewQuestions];
-                              next[i] = { ...next[i], section: e.target.value as any };
+                              next[i] = { ...next[i], section: e.target.value };
                               setPreviewQuestions(next);
                             }}
                           >
                             <option value="">None</option>
-                            <option value="A">Section A</option>
-                            <option value="B">Section B</option>
-                            <option value="C">Section C</option>
+                            {q.paper === 'Paper 3' ? (
+                              q.subject === 'Computer Science' ? (
+                                <>
+                                  <option value="Section A: Database">Section A: Database</option>
+                                  <option value="Section B: Programming">Section B: Programming</option>
+                                </>
+                              ) : (
+                                <>
+                                  <option value="Task A: Database">Task A: Database</option>
+                                  <option value="Task B: Spreadsheet">Task B: Spreadsheet</option>
+                                  <option value="Task C: Presentation">Task C: Presentation</option>
+                                </>
+                              )
+                            ) : (
+                              <>
+                                <option value="A">Section A</option>
+                                <option value="B">Section B</option>
+                                <option value="C">Section C</option>
+                              </>
+                            )}
                           </select>
                         </div>
                         <div className="space-y-2">
