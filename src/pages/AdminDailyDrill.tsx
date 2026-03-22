@@ -175,12 +175,18 @@ export default function AdminDailyDrill() {
     const now = new Date();
     const weekNumber = getWeekNumber(now);
     const year = now.getFullYear();
-    const q = query(
+    let q = query(
       collection(db, 'weekly_leaderboard'),
       where('weekNumber', '==', weekNumber),
-      where('year', '==', year),
-      orderBy('position', 'asc')
+      where('year', '==', year)
     );
+    
+    if (drillSubjectFilter) {
+      q = query(q, where('subject', '==', drillSubjectFilter));
+    }
+    
+    q = query(q, orderBy('position', 'asc'));
+    
     const snapshot = await getDocs(q);
     setLeaderboard(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WeeklyLeaderboard)));
   };

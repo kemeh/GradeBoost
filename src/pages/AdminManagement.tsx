@@ -4,7 +4,7 @@ import {
   Plus, Search, Edit2, Trash2, ExternalLink, 
   BookOpen, Save, X, AlertCircle, CheckCircle2,
   FileText, Calendar, Link as LinkIcon, Eye, EyeOff,
-  Upload, Loader2, FileUp, RefreshCw
+  Upload, Loader2, FileUp, RefreshCw, ArrowRight
 } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { 
@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
   Tabs, TabsList, TabsTrigger, TabsContent, Progress
 } from '../components/ui';
-import { Resource, Assignment, Subject } from '../types';
+import { Resource, Assignment, Subject, LearningResource } from '../types';
 import { toast } from 'react-hot-toast';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
@@ -61,6 +61,18 @@ export default function AdminManagement() {
     active: true
   });
 
+  // Learning Resources State
+  const [learningResources, setLearningResources] = useState<LearningResource[]>([]);
+  const [isLearningResourceDialogOpen, setIsLearningResourceDialogOpen] = useState(false);
+  const [editingLearningResource, setEditingLearningResource] = useState<LearningResource | null>(null);
+  const [learningResourceForm, setLearningResourceForm] = useState({
+    title: '',
+    description: '',
+    topic: '',
+    subject: 'Computer Science' as Subject,
+    link: ''
+  });
+
   useEffect(() => {
     if (!user || user.role !== 'admin') {
       navigate('/dashboard');
@@ -95,10 +107,25 @@ export default function AdminManagement() {
       }
     );
 
+    const unsubLearningResources = onSnapshot(
+      query(collection(db, 'learning_resources'), orderBy('createdAt', 'desc')),
+      (snapshot) => {
+        setLearningResources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LearningResource)));
+      },
+      (error) => {
+        try {
+          handleFirestoreError(error, OperationType.LIST, 'learning_resources');
+        } catch (e) {
+          console.error("AdminManagement LearningResources Error:", e);
+        }
+      }
+    );
+
     setLoading(false);
     return () => {
       unsubResources();
       unsubAssignments();
+      unsubLearningResources();
     };
   }, [user, navigate]);
 
@@ -260,6 +287,70 @@ export default function AdminManagement() {
     }
   };
 
+  // Learning Resource Handlers
+  const handleOpenLearningResourceDialog = (resource: LearningResource | null = null) => {
+    if (resource) {
+      setEditingLearningResource(resource);
+      setLearningResourceForm({
+        title: resource.title,
+        description: resource.description,
+        topic: resource.topic,
+        subject: resource.subject,
+        link: resource.link
+      });
+    } else {
+      setEditingLearningResource(null);
+      setLearningResourceForm({
+        title: '',
+        description: '',
+        topic: '',
+        subject: 'Computer Science',
+        link: ''
+      });
+    }
+    setIsLearningResourceDialogOpen(true);
+  };
+
+  const handleSaveLearningResource = async () => {
+    if (!learningResourceForm.title || !learningResourceForm.link) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    try {
+      const data = {
+        ...learningResourceForm,
+        updatedAt: serverTimestamp()
+      };
+
+      if (editingLearningResource) {
+        await updateDoc(doc(db, 'learning_resources', editingLearningResource.id), data);
+        toast.success('Learning resource updated');
+      } else {
+        await addDoc(collection(db, 'learning_resources'), {
+          ...data,
+          createdAt: serverTimestamp()
+        });
+        toast.success('Learning resource created');
+      }
+      setIsLearningResourceDialogOpen(false);
+    } catch (error) {
+      handleFirestoreError(error, editingLearningResource ? OperationType.UPDATE : OperationType.CREATE, 'learning_resources');
+      toast.error('Failed to save learning resource');
+    }
+  };
+
+  const handleDeleteLearningResource = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this learning resource?')) return;
+    try {
+      await deleteDoc(doc(db, 'learning_resources', id));
+      toast.success('Learning resource deleted');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `learning_resources/${id}`);
+      toast.error('Failed to delete');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
@@ -276,7 +367,7 @@ export default function AdminManagement() {
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Admin Management</h1>
-            <p className="text-slate-500 font-medium">Manage student resources and assignments.</p>
+            <p className="text-slate-500 font-medium">Manage student resources, assignments, and learning links.</p>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-3">
             <Button 
@@ -288,11 +379,15 @@ export default function AdminManagement() {
               Bulk Import
             </Button>
             <Button 
-              onClick={() => activeTab === 'resources' ? handleOpenResourceDialog() : handleOpenAssignmentDialog()}
+              onClick={() => {
+                if (activeTab === 'resources') handleOpenResourceDialog();
+                else if (activeTab === 'assignments') handleOpenAssignmentDialog();
+                else handleOpenLearningResourceDialog();
+              }}
               className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-4 rounded-2xl flex items-center gap-2"
             >
               <Plus size={20} />
-              Add {activeTab === 'resources' ? 'Resource' : 'Assignment'}
+              Add {activeTab === 'resources' ? 'Resource' : activeTab === 'assignments' ? 'Assignment' : 'Learning Link'}
             </Button>
           </div>
         </header>
@@ -301,6 +396,7 @@ export default function AdminManagement() {
           <TabsList className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
             <TabsTrigger value="resources" className="px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Resources</TabsTrigger>
             <TabsTrigger value="assignments" className="px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Assignments</TabsTrigger>
+            <TabsTrigger value="learning-links" className="px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Learning Links</TabsTrigger>
           </TabsList>
 
           <TabsContent value="resources" className="space-y-8">
@@ -388,6 +484,45 @@ export default function AdminManagement() {
                       </div>
                       <a href={asgn.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600">
                         <LinkIcon size={16} />
+                      </a>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="learning-links" className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {learningResources.length === 0 ? (
+                <div className="col-span-full p-12 text-center bg-white rounded-[2rem] border-2 border-dashed border-slate-100">
+                  <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <BookOpen className="text-slate-300" size={32} />
+                  </div>
+                  <p className="text-slate-400 font-bold">No learning links available yet.</p>
+                </div>
+              ) : (
+                learningResources.map((res) => (
+                  <Card key={res.id} className="p-6 flex flex-col group">
+                    <div className="flex items-center justify-between mb-4">
+                      <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                        {res.subject}
+                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => handleOpenLearningResourceDialog(res)} className="p-2 text-slate-400 hover:text-indigo-600 transition-colors">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDeleteLearningResource(res.id)} className="p-2 text-slate-400 hover:text-rose-600 transition-colors">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    <h3 className="font-bold text-slate-900 mb-1">{res.title}</h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-2">{res.topic}</p>
+                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{res.description}</p>
+                    <div className="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                      <a href={res.link} target="_blank" rel="noopener noreferrer" className="text-indigo-600 font-bold text-xs flex items-center gap-1 hover:gap-2 transition-all">
+                        View Link <ArrowRight size={16} />
                       </a>
                     </div>
                   </Card>
@@ -553,6 +688,81 @@ export default function AdminManagement() {
               <Button onClick={handleSaveAssignment} className="bg-indigo-600 text-white">
                 <Save className="mr-2" size={20} />
                 {editingAssignment ? 'Update' : 'Save'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Learning Resource Dialog */}
+        <Dialog open={isLearningResourceDialogOpen} onOpenChange={setIsLearningResourceDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black tracking-tight">
+                {editingLearningResource ? 'Edit Learning Link' : 'Add New Learning Link'}
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="space-y-6 py-4">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Title *</label>
+                <input 
+                  type="text" 
+                  className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-indigo-600 outline-none"
+                  value={learningResourceForm.title}
+                  onChange={(e) => setLearningResourceForm({ ...learningResourceForm, title: e.target.value })}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Description</label>
+                <textarea 
+                  className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-indigo-600 outline-none min-h-[100px]"
+                  value={learningResourceForm.description}
+                  onChange={(e) => setLearningResourceForm({ ...learningResourceForm, description: e.target.value })}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Topic</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-indigo-600 outline-none"
+                    placeholder="e.g., Data Structures"
+                    value={learningResourceForm.topic}
+                    onChange={(e) => setLearningResourceForm({ ...learningResourceForm, topic: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Subject</label>
+                  <select 
+                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-indigo-600 outline-none"
+                    value={learningResourceForm.subject}
+                    onChange={(e) => setLearningResourceForm({ ...learningResourceForm, subject: e.target.value as any })}
+                  >
+                    <option value="Computer Science">Computer Science</option>
+                    <option value="ICT">ICT</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Link *</label>
+                <input 
+                  type="url" 
+                  className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-indigo-600 outline-none"
+                  placeholder="https://..."
+                  value={learningResourceForm.link}
+                  onChange={(e) => setLearningResourceForm({ ...learningResourceForm, link: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsLearningResourceDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveLearningResource} className="bg-indigo-600 text-white">
+                <Save className="mr-2" size={20} />
+                {editingLearningResource ? 'Update' : 'Save'}
               </Button>
             </DialogFooter>
           </DialogContent>

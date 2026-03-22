@@ -25,11 +25,13 @@ export default function Leaderboard() {
           collection(db, 'weekly_leaderboard'),
           where('weekNumber', '==', week),
           where('year', '==', year),
+          where('subject', '==', user.subject),
           orderBy('totalScore', 'desc'),
           limit(50)
         )
       : query(
           collection(db, 'users'),
+          where('subject', '==', user.subject),
           orderBy('points', 'desc'),
           limit(50)
         );

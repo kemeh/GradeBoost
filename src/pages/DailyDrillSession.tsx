@@ -162,7 +162,8 @@ export default function DailyDrillSession() {
       // Security check: if not paid, only allow Day 1 or drills marked as free sample
       const q = query(
         collection(db, 'daily_drills'), 
-        where('day', '==', dayToFetch)
+        where('day', '==', dayToFetch),
+        where('subject', '==', user.subject)
       );
       const snapshot = await getDocs(q);
       

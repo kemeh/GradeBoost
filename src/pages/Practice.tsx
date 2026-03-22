@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { 
   FileText, Search, Filter, ArrowRight, 
   Calendar, BookOpen, Clock, ChevronRight,
-  LayoutDashboard, LogOut, Target, Trophy, Settings, TrendingUp
+  LayoutDashboard, LogOut, Target, Trophy, Settings, TrendingUp, Lock
 } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -127,11 +127,20 @@ export default function Practice() {
                   {paper.description}
                 </p>
 
-                <Link to={`/practice/${paper.id}`} className="mt-auto">
-                  <Button className="w-full group/btn">
-                    Start Practice <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
+                {user.paymentStatus === 'paid' ? (
+                  <Link to={`/practice/${paper.id}`} className="mt-auto">
+                    <Button className="w-full group/btn">
+                      Start Practice <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
+                    </Button>
+                  </Link>
+                ) : (
+                  <Button 
+                    className="w-full group/btn bg-slate-100 text-slate-400 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                    onClick={() => navigate('/payment')}
+                  >
+                    <Lock className="mr-2" size={16} /> Unlock Paper <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
                   </Button>
-                </Link>
+                )}
               </Card>
             ))}
           </div>

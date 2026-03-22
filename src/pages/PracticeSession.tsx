@@ -68,6 +68,12 @@ export default function PracticeSession() {
         if (docSnap.exists()) {
           const paperData = { id: docSnap.id, ...docSnap.data() } as QuestionPaper;
           
+          // Subject separation check
+          if (paperData.subject !== user.subject && !isAdmin) {
+            navigate('/dashboard');
+            return;
+          }
+          
           // If not paid and not admin, check if it's a free sample
           if ((!isPaid || hasExpired) && !isAdmin) {
             if (!user.subject) {

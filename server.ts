@@ -163,6 +163,7 @@ async function startServer() {
             name: userName,
             userId: playerId,
             photoURL,
+            subject: userData?.subject || 'ICT', // Default to ICT if not found
             points: FieldValue.increment(points),
             wins: FieldValue.increment(isWinner ? 1 : 0),
             losses: FieldValue.increment(isWinner ? 0 : 1),

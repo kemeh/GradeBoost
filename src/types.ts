@@ -157,6 +157,7 @@ export interface LearningResource {
   title: string;
   description: string;
   topic: string;
+  subject: Subject;
   link: string;
   createdAt: any;
 }

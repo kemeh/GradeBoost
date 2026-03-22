@@ -13,7 +13,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { Button, Card, Badge, Progress, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
-const QUESTIONS = [
+const CS_QUESTIONS = [
   {
     id: 'p1_1',
     paper: 'Paper 1',
@@ -64,8 +64,60 @@ const QUESTIONS = [
   }
 ];
 
+const ICT_QUESTIONS = [
+  {
+    id: 'p1_1',
+    paper: 'Paper 1',
+    text: 'Which of the following is a primary function of a spreadsheet software?',
+    options: [
+      'Creating complex databases',
+      'Performing calculations and data analysis',
+      'Editing high-resolution videos',
+      'Designing 3D models'
+    ],
+    correct: 1
+  },
+  {
+    id: 'p1_2',
+    paper: 'Paper 1',
+    text: 'What does HTML stand for in web development?',
+    options: [
+      'High Tech Modern Language',
+      'HyperText Markup Language',
+      'Hyperlink and Text Management Language',
+      'Home Tool Markup Language'
+    ],
+    correct: 1
+  },
+  {
+    id: 'p1_3',
+    paper: 'Paper 1',
+    text: 'Which of these is an example of an input device?',
+    options: [
+      'Monitor',
+      'Keyboard',
+      'Printer',
+      'Speakers'
+    ],
+    correct: 1
+  },
+  {
+    id: 'p2_1',
+    paper: 'Paper 2',
+    text: 'Explain the benefits of using cloud storage for a small business.',
+    type: 'text'
+  },
+  {
+    id: 'p3_1',
+    paper: 'Paper 3',
+    text: 'Describe the steps involved in creating a simple relational database for a library system.',
+    type: 'text'
+  }
+];
+
 export default function Diagnostic() {
   const { user } = useAuth();
+  const QUESTIONS = user?.subject === 'ICT' ? ICT_QUESTIONS : CS_QUESTIONS;
   const { appName, logoUrl } = useSettings();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);

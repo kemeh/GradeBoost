@@ -132,6 +132,7 @@ export default function Dashboard() {
     // Fetch Learning Resources
     const resourcesQuery = query(
       collection(db, 'learning_resources'),
+      where('subject', '==', user.subject),
       orderBy('createdAt', 'desc'),
       limit(6)
     );
@@ -150,6 +151,7 @@ export default function Dashboard() {
     const pdfResourcesQuery = query(
       collection(db, 'resources'),
       where('visible', '==', true),
+      where('subject', '==', user.subject),
       orderBy('createdAt', 'desc')
     );
     const pdfResourcesUnsub = onSnapshot(pdfResourcesQuery, (snapshot) => {
@@ -167,6 +169,7 @@ export default function Dashboard() {
     const assignmentsQuery = query(
       collection(db, 'assignments'),
       where('active', '==', true),
+      where('subject', '==', user.subject),
       orderBy('dueDate', 'asc')
     );
     const assignmentsUnsub = onSnapshot(assignmentsQuery, (snapshot) => {
@@ -190,7 +193,8 @@ export default function Dashboard() {
 
       const drillQ = query(
         collection(db, 'daily_drills'), 
-        where('day', '==', currentDay)
+        where('day', '==', currentDay),
+        where('subject', '==', user.subject)
       );
       
       return getDocs(drillQ).then(drillSnapshot => {
@@ -248,6 +252,7 @@ export default function Dashboard() {
       collection(db, 'weekly_leaderboard'),
       where('weekNumber', '==', weekNumber),
       where('year', '==', year),
+      where('subject', '==', user.subject),
       orderBy('position', 'asc'),
       limit(5)
     );
@@ -876,39 +881,49 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {assignments.length > 0 ? (
-              assignments.map((assignment) => (
-                <Card key={assignment.id} className="p-6 border-l-4 border-l-amber-500">
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
-                        {assignment.subject}
-                      </Badge>
-                      <span className={cn(
-                        "text-xs font-bold px-2 py-1 rounded-lg",
-                        calculateRemainingDays(assignment.dueDate) === 'Overdue' 
-                          ? "bg-rose-100 text-rose-600" 
-                          : "bg-amber-100 text-amber-600"
-                      )}>
-                        {calculateRemainingDays(assignment.dueDate)}
-                      </span>
+            {user.paymentStatus === 'paid' ? (
+              assignments.length > 0 ? (
+                assignments.map((assignment) => (
+                  <Card key={assignment.id} className="p-6 border-l-4 border-l-amber-500">
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-center justify-between mb-4">
+                        <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                          {assignment.subject}
+                        </Badge>
+                        <span className={cn(
+                          "text-xs font-bold px-2 py-1 rounded-lg",
+                          calculateRemainingDays(assignment.dueDate) === 'Overdue' 
+                            ? "bg-rose-100 text-rose-600" 
+                            : "bg-amber-100 text-amber-600"
+                        )}>
+                          {calculateRemainingDays(assignment.dueDate)}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-slate-900 mb-1">{assignment.title}</h3>
+                      <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-4">{assignment.paper}</p>
+                      <div className="mt-auto">
+                        <Button 
+                          className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold"
+                          onClick={() => window.open(assignment.link, '_blank')}
+                        >
+                          Start Now
+                        </Button>
+                      </div>
                     </div>
-                    <h3 className="font-bold text-slate-900 mb-1">{assignment.title}</h3>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-4">{assignment.paper}</p>
-                    <div className="mt-auto">
-                      <Button 
-                        className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold"
-                        onClick={() => window.open(assignment.link, '_blank')}
-                      >
-                        Start Now
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                  <p className="text-slate-400 font-bold">No assignments currently active.</p>
+                </div>
+              )
             ) : (
-              <div className="col-span-full p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                <p className="text-slate-400 font-bold">No assignments currently active.</p>
+              <div className="col-span-full p-12 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 group cursor-pointer hover:border-indigo-200 transition-all" onClick={() => navigate('/payment')}>
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 group-hover:text-indigo-600 transition-colors">
+                  <Lock size={24} />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 mb-1">Unlock Assignments</h3>
+                <p className="text-slate-500 font-medium text-sm">Get personalized assignments to boost your grade to an A.</p>
               </div>
             )}
           </div>
@@ -925,32 +940,42 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {resources.length > 0 ? (
-              resources.map((res) => (
-                <Card 
-                  key={res.id} 
-                  className="p-6 hover:shadow-md transition-all cursor-pointer group"
-                  onClick={() => window.open(res.fileUrl, '_blank')}
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-                      <FileText size={24} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-slate-900 truncate">{res.title}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{res.type}</span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{res.fileSize}</span>
+            {user.paymentStatus === 'paid' ? (
+              resources.length > 0 ? (
+                resources.map((res) => (
+                  <Card 
+                    key={res.id} 
+                    className="p-6 hover:shadow-md transition-all cursor-pointer group"
+                    onClick={() => window.open(res.fileUrl, '_blank')}
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                        <FileText size={24} />
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-slate-900 truncate">{res.title}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{res.type}</span>
+                          <span className="text-slate-300">•</span>
+                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{res.fileSize}</span>
+                        </div>
+                      </div>
+                      <ArrowRight size={16} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
                     </div>
-                    <ArrowRight size={16} className="text-slate-300 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                  <p className="text-slate-400 font-bold">No resources available yet.</p>
+                </div>
+              )
             ) : (
-              <div className="col-span-full p-8 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                <p className="text-slate-400 font-bold">No resources available yet.</p>
+              <div className="col-span-full p-12 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 group cursor-pointer hover:border-indigo-200 transition-all" onClick={() => navigate('/payment')}>
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 group-hover:text-indigo-600 transition-colors">
+                  <Lock size={24} />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 mb-1">Unlock PDF Resources</h3>
+                <p className="text-slate-500 font-medium text-sm">Access exclusive study guides and past paper solutions.</p>
               </div>
             )}
           </div>
@@ -967,33 +992,43 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {learningResources.length > 0 ? (
-              learningResources.map((resource) => (
-                <Card key={resource.id} className="p-6 hover:border-indigo-200 transition-all group">
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-center justify-between mb-4">
-                      <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
-                        {resource.topic}
-                      </Badge>
+            {user.paymentStatus === 'paid' ? (
+              learningResources.length > 0 ? (
+                learningResources.map((resource) => (
+                  <Card key={resource.id} className="p-6 hover:border-indigo-200 transition-all group">
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-center justify-between mb-4">
+                        <Badge variant="secondary" className="text-[10px] font-black uppercase tracking-widest">
+                          {resource.topic}
+                        </Badge>
+                      </div>
+                      <h3 className="font-bold text-slate-900 mb-2">{resource.title}</h3>
+                      <p className="text-sm text-slate-500 mb-4 line-clamp-2">{resource.description}</p>
+                      <div className="mt-auto">
+                        <a 
+                          href={resource.link} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-indigo-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all"
+                        >
+                          View Resource <ArrowRight size={16} />
+                        </a>
+                      </div>
                     </div>
-                    <h3 className="font-bold text-slate-900 mb-2">{resource.title}</h3>
-                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{resource.description}</p>
-                    <div className="mt-auto">
-                      <a 
-                        href={resource.link} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all"
-                      >
-                        View Resource <ArrowRight size={16} />
-                      </a>
-                    </div>
-                  </div>
-                </Card>
-              ))
+                  </Card>
+                ))
+              ) : (
+                <div className="col-span-full p-12 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                  <p className="text-slate-400 font-bold">No learning resources available yet.</p>
+                </div>
+              )
             ) : (
-              <div className="col-span-full p-12 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
-                <p className="text-slate-400 font-bold">No learning resources available yet.</p>
+              <div className="col-span-full p-12 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 group cursor-pointer hover:border-indigo-200 transition-all" onClick={() => navigate('/payment')}>
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-slate-300 mx-auto mb-4 group-hover:text-indigo-600 transition-colors">
+                  <Lock size={24} />
+                </div>
+                <h3 className="text-lg font-black text-slate-900 mb-1">Unlock Learning Resources</h3>
+                <p className="text-slate-500 font-medium text-sm">Access curated video lessons and interactive tutorials.</p>
               </div>
             )}
           </div>

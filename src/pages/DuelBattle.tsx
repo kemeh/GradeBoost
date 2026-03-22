@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { io, Socket } from 'socket.io-client';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
-import { Zap, Trophy, Users, Timer, Target, CheckCircle2, XCircle, Loader2, Sword, Shield, Crown } from 'lucide-react';
+import { Zap, Trophy, Users, Timer, Target, CheckCircle2, XCircle, Loader2, Sword, Shield, Crown, Lock } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { LeaderboardEntry } from '../types';
@@ -21,11 +22,13 @@ interface Question {
 
 export default function DuelBattle() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [status, setStatus] = useState<'idle' | 'searching' | 'matched' | 'playing' | 'result'>('idle');
   const [duelId, setDuelId] = useState<string | null>(null);
   const [opponentId, setOpponentId] = useState<string | null>(null);
   const [opponentName, setOpponentName] = useState<string>('Opponent');
+  const [opponentPhotoURL, setOpponentPhotoURL] = useState<string | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -42,11 +45,12 @@ export default function DuelBattle() {
       setDuelId(duelId);
       setOpponentId(opponentId);
       
-      // Fetch opponent name
+      // Fetch opponent details
       const oppDoc = await getDoc(doc(db, 'users', opponentId));
       if (oppDoc.exists()) {
         const oppData = oppDoc.data();
         setOpponentName(oppData.name || oppData.firstName || 'Opponent');
+        setOpponentPhotoURL(oppData.photoURL || null);
       }
 
       // Fetch questions from Firestore
@@ -74,6 +78,7 @@ export default function DuelBattle() {
     // Fetch Duel Leaderboard
     const leaderboardQuery = query(
       collection(db, 'leaderboard'),
+      where('subject', '==', user.subject),
       orderBy('points', 'desc'),
       limit(10)
     );
@@ -94,6 +99,10 @@ export default function DuelBattle() {
 
   const startDuel = () => {
     if (!socket || !user) return;
+    if (user.paymentStatus !== 'paid') {
+      navigate('/payment');
+      return;
+    }
     setStatus('searching');
     socket.emit('joinDuel', { userId: user.uid, subject: user.subject });
   };
@@ -151,8 +160,22 @@ export default function DuelBattle() {
                           Challenge other students in {user?.subject}. Win duels to earn points and climb the global leaderboard.
                         </p>
                       </div>
-                      <Button size="lg" onClick={startDuel} className="px-12 h-16 text-lg shadow-xl shadow-indigo-200">
-                        Find an Opponent
+                      <Button 
+                        size="lg" 
+                        onClick={startDuel} 
+                        className={cn(
+                          "px-12 h-16 text-lg shadow-xl",
+                          user?.paymentStatus === 'paid' ? "shadow-indigo-200" : "bg-slate-100 text-slate-400 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 shadow-none"
+                        )}
+                      >
+                        {user?.paymentStatus === 'paid' ? (
+                          'Find an Opponent'
+                        ) : (
+                          <>
+                            <Lock className="mr-2" size={20} />
+                            Unlock Arena
+                          </>
+                        )}
                       </Button>
                     </Card>
                   </motion.div>
@@ -214,8 +237,12 @@ export default function DuelBattle() {
                       <Card className="p-4 bg-slate-900 text-white border-none">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                              <Shield size={20} />
+                            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center overflow-hidden">
+                              {opponentPhotoURL ? (
+                                <img src={opponentPhotoURL} alt={opponentName} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                              ) : (
+                                <Shield size={20} />
+                              )}
                             </div>
                             <div>
                               <p className="text-[10px] font-black uppercase tracking-widest opacity-60">Opponent</p>
