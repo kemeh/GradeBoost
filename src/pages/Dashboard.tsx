@@ -5,7 +5,7 @@ import {
   TrendingUp, Target, BookOpen, Sparkles, 
   ArrowRight, LogOut, LayoutDashboard, 
   FileText, Settings, Trophy, AlertCircle,
-  Zap, ChevronRight, CheckCircle2, Lock
+  Zap, ChevronRight, CheckCircle2, Lock, Calendar, X
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, 
@@ -284,6 +284,10 @@ export default function Dashboard() {
       userLeaderboardUnsub();
     };
   }, [user]);
+
+  const submittedDays = useMemo(() => {
+    return new Set(submissions.map(s => s.day));
+  }, [submissions]);
 
   const stats = useMemo(() => {
     const totalDrills = submissions.length;
@@ -564,6 +568,62 @@ export default function Dashboard() {
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/20 rounded-full -ml-32 -mb-32 blur-3xl"></div>
           </Card>
         </section>
+
+        {/* 60-Day Challenge Tracker */}
+        {user.paymentStatus === 'paid' && (
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                  <Calendar size={20} />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">60-Day Challenge Tracker</h2>
+              </div>
+            </div>
+            <Card className="p-6">
+              <div className="grid grid-cols-5 sm:grid-cols-10 lg:grid-cols-12 gap-2">
+                {Array.from({ length: 60 }).map((_, i) => {
+                  const dayNum = i + 1;
+                  const isCompleted = submittedDays.has(dayNum);
+                  const currentDay = 60 - daysRemaining;
+                  const isCurrent = dayNum === currentDay;
+                  const isPast = dayNum < currentDay;
+                  const isLocked = dayNum > currentDay;
+
+                  let statusClass = "bg-slate-50 border-slate-100 text-slate-400"; // Locked
+                  if (isCompleted) {
+                    statusClass = "bg-emerald-50 border-emerald-200 text-emerald-600";
+                  } else if (isCurrent) {
+                    statusClass = "bg-indigo-50 border-indigo-300 text-indigo-600 ring-2 ring-indigo-100";
+                  } else if (isPast) {
+                    statusClass = "bg-rose-50 border-rose-200 text-rose-500 opacity-75"; // Missed / Struck off
+                  }
+
+                  const isClickable = isCompleted || isCurrent;
+
+                  return (
+                    <div 
+                      key={dayNum}
+                      onClick={() => isClickable && navigate(`/daily-drill?day=${dayNum}`)}
+                      className={cn(
+                        "aspect-square rounded-xl border-2 flex flex-col items-center justify-center relative transition-all",
+                        statusClass,
+                        isClickable ? "cursor-pointer hover:scale-105 hover:shadow-md" : "cursor-not-allowed"
+                      )}
+                      title={`Day ${dayNum}${isCompleted ? ' (Completed)' : isCurrent ? ' (Today)' : isPast ? ' (Missed)' : ' (Locked)'}`}
+                    >
+                      <span className="text-xs font-black">{dayNum}</span>
+                      {isCompleted && <CheckCircle2 size={14} className="mt-1" />}
+                      {isPast && !isCompleted && <X size={14} className="mt-1" />}
+                      {isCurrent && !isCompleted && <Zap size={14} className="mt-1 animate-pulse" />}
+                      {isLocked && <Lock size={12} className="mt-1 opacity-50" />}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          </section>
+        )}
 
         {/* Free Sample Questions for Unpaid Users */}
         {user.paymentStatus !== 'paid' && sampleQuestions.length > 0 && (

@@ -51,6 +51,12 @@ export default function AdminDailyDrill() {
   const [gradingSubmission, setGradingSubmission] = useState<any | null>(null);
   const [leaderboard, setLeaderboard] = useState<WeeklyLeaderboard[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
+  const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, title: string, message: string, onConfirm: () => void}>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {}
+  });
 
   // Filters
   const [filters, setFilters] = useState({
@@ -333,25 +339,37 @@ export default function AdminDailyDrill() {
   };
 
   const handleDeleteQuestion = async (id: string) => {
-    if (!window.confirm('Delete this question from bank?')) return;
-    try {
-      await deleteDoc(doc(db, 'exam_questions', id));
-      fetchQuestionsBank();
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `exam_questions/${id}`);
-      setError('Failed to delete question.');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Question',
+      message: 'Are you sure you want to delete this question from the bank?',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'exam_questions', id));
+          fetchQuestionsBank();
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `exam_questions/${id}`);
+          setError('Failed to delete question.');
+        }
+      }
+    });
   };
 
   const handleDeleteDrill = async (id: string) => {
-    if (!window.confirm('Remove this question from daily drills?')) return;
-    try {
-      await deleteDoc(doc(db, 'daily_drills', id));
-      fetchDailyDrills();
-    } catch (err) {
-      handleFirestoreError(err, OperationType.DELETE, `daily_drills/${id}`);
-      setError('Failed to delete drill.');
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Remove Drill',
+      message: 'Are you sure you want to remove this question from daily drills?',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'daily_drills', id));
+          fetchDailyDrills();
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `daily_drills/${id}`);
+          setError('Failed to delete drill.');
+        }
+      }
+    });
   };
 
   const handleGradeSubmission = async (e: React.FormEvent) => {
@@ -2073,6 +2091,45 @@ function BulkImportModal({ onClose, onImported }: BulkImportModalProps) {
           </div>
         )}
       </motion.div>
+
+      {/* Confirmation Modal */}
+      {confirmDialog.isOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8"
+          >
+            <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <AlertCircle size={32} />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 text-center mb-4 tracking-tight">{confirmDialog.title}</h2>
+            <p className="text-slate-500 text-center mb-8 font-medium leading-relaxed">
+              {confirmDialog.message}
+            </p>
+            <div className="flex gap-4">
+              <Button 
+                variant="outline" 
+                className="flex-1 py-6 rounded-2xl font-bold"
+                onClick={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+              >
+                Cancel
+              </Button>
+              <Button 
+                className="flex-1 py-6 rounded-2xl font-bold bg-rose-600 hover:bg-rose-700 text-white"
+                onClick={() => {
+                  confirmDialog.onConfirm();
+                  setConfirmDialog({ ...confirmDialog, isOpen: false });
+                }}
+              >
+                Confirm
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
+
+

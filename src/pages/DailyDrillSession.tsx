@@ -84,6 +84,8 @@ export default function DailyDrillSession() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [unansweredCount, setUnansweredCount] = useState(0);
   
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submission, setSubmission] = useState<DrillSubmission | null>(null);
@@ -108,7 +110,7 @@ export default function DailyDrillSession() {
 
   useEffect(() => {
     fetchTodayDrill();
-  }, [user]);
+  }, [user, requestedDay]);
 
   // Anti-tamper measures
   useEffect(() => {
@@ -138,6 +140,17 @@ export default function DailyDrillSession() {
 
   const fetchTodayDrill = async () => {
     if (!user) return;
+    setLoading(true);
+    setError('');
+    setHasSubmitted(false);
+    setShowResults(false);
+    setAnswers({});
+    setFileUrls({});
+    setCurrentQuestionIndex(0);
+    setSubmissions([]);
+    setDrill(null);
+    setQuestions([]);
+    
     try {
       const settings = await getSystemSettings();
       const startDate = settings?.challengeStartDate;
@@ -186,6 +199,7 @@ export default function DailyDrillSession() {
           where('drillId', '==', currentDrill.id)
         );
         const subSnapshot = await getDocs(subQ);
+        
         if (!subSnapshot.empty) {
           setHasSubmitted(true);
           const allSubs = subSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DrillSubmission));
@@ -199,6 +213,10 @@ export default function DailyDrillSession() {
           });
           setAnswers(reconstructedAnswers);
           setShowResults(true);
+        } else if (currentDrill.day < currentDay) {
+          setError('This drill was missed and is no longer available.');
+          setLoading(false);
+          return;
         }
       } else {
         setDrill(null);
@@ -215,17 +233,20 @@ export default function DailyDrillSession() {
     setAnswers({ ...answers, [questionId]: option });
   };
 
+  const handleInitialSubmit = () => {
+    if (!user || !drill || questions.length === 0) return;
+    const count = questions.filter(q => !answers[q.id]).length;
+    if (count > 0) {
+      setUnansweredCount(count);
+      setShowConfirmModal(true);
+    } else {
+      handleSubmit();
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user || !drill || questions.length === 0) return;
-
-    // Check if all questions are answered
-    const unansweredCount = questions.filter(q => !answers[q.id]).length;
-    if (unansweredCount > 0) {
-      if (!window.confirm(`You have ${unansweredCount} unanswered questions. Submit anyway?`)) {
-        return;
-      }
-    }
-
+    setShowConfirmModal(false);
     setSubmitting(true);
     setError('');
     try {
@@ -579,7 +600,7 @@ export default function DailyDrillSession() {
                       Finish Review
                     </Button>
                   ) : (
-                    <Button onClick={handleSubmit} disabled={submitting}>
+                    <Button onClick={handleInitialSubmit} disabled={submitting}>
                       {submitting ? 'Submitting...' : 'Finish & Submit'}
                     </Button>
                   )
@@ -601,6 +622,41 @@ export default function DailyDrillSession() {
           </div>
         )}
       </main>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8"
+          >
+            <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+              <AlertCircle size={32} />
+            </div>
+            <h2 className="text-2xl font-black text-slate-900 text-center mb-4 tracking-tight">Unanswered Questions</h2>
+            <p className="text-slate-500 text-center mb-8 font-medium leading-relaxed">
+              You have {unansweredCount} unanswered {unansweredCount === 1 ? 'question' : 'questions'}. Are you sure you want to submit anyway?
+            </p>
+            <div className="flex gap-4">
+              <Button 
+                variant="outline" 
+                className="flex-1 py-6 rounded-2xl font-bold"
+                onClick={() => setShowConfirmModal(false)}
+              >
+                Go Back
+              </Button>
+              <Button 
+                className="flex-1 py-6 rounded-2xl font-bold bg-indigo-600 hover:bg-indigo-700"
+                onClick={handleSubmit}
+                disabled={submitting}
+              >
+                {submitting ? 'Submitting...' : 'Submit Anyway'}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
