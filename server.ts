@@ -1,7 +1,6 @@
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import axios from "axios";
 import dotenv from "dotenv";
@@ -58,24 +57,20 @@ async function startServer() {
   // ... (keep existing API routes)
 
   // CamPay API Helper
-  const getCampayToken = async () => {
+  const getCampayAuth = () => {
     const username = process.env.CAMPAY_APP_USERNAME;
     const password = process.env.CAMPAY_APP_PASSWORD;
     const env = process.env.CAMPAY_ENVIRONMENT || 'dev';
     
     if (!username || !password) {
       console.warn("CamPay credentials not configured. Using mock payment gateway.");
-      return { token: 'mock_token', baseUrl: 'mock' };
+      return { authHeader: 'mock_token', baseUrl: 'mock' };
     }
 
     const baseUrl = env === 'dev' ? 'https://demo.campay.net/api' : 'https://www.campay.net/api';
+    const authHeader = "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
 
-    const response = await axios.post(`${baseUrl}/token/`, {
-      username,
-      password
-    });
-
-    return { token: response.data.token, baseUrl };
+    return { authHeader, baseUrl };
   };
 
   // Payment Routes
@@ -83,9 +78,9 @@ async function startServer() {
     try {
       const { phone, amount, description, external_reference } = req.body;
       
-      const { token, baseUrl } = await getCampayToken();
+      const { authHeader, baseUrl } = getCampayAuth();
 
-      if (token === 'mock_token') {
+      if (authHeader === 'mock_token') {
         // Mock payment response
         return res.json({ reference: `mock_ref_${Date.now()}` });
       }
@@ -98,7 +93,7 @@ async function startServer() {
         external_reference
       }, {
         headers: {
-          'Authorization': `Token ${token}`,
+          'Authorization': authHeader,
           'Content-Type': 'application/json'
         }
       });
@@ -106,7 +101,7 @@ async function startServer() {
       res.json(response.data);
     } catch (error: any) {
       console.error("Payment collect error:", error.response?.data || error.message);
-      res.status(500).json({ error: error.response?.data?.message || "Failed to initiate payment" });
+      res.status(500).json({ error: error.response?.data?.message || error.response?.data || "Failed to initiate payment" });
     }
   });
 
@@ -114,17 +109,17 @@ async function startServer() {
     try {
       const { reference, userId } = req.body;
       
-      const { token, baseUrl } = await getCampayToken();
+      const { authHeader, baseUrl } = getCampayAuth();
 
       let status = 'PENDING';
 
-      if (token === 'mock_token') {
+      if (authHeader === 'mock_token') {
         // Mock verification response
         status = 'SUCCESSFUL';
       } else {
         const response = await axios.get(`${baseUrl}/transaction/${reference}/`, {
           headers: {
-            'Authorization': `Token ${token}`,
+            'Authorization': authHeader,
             'Content-Type': 'application/json'
           }
         });
@@ -311,6 +306,7 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
