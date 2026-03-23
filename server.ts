@@ -58,20 +58,24 @@ async function startServer() {
   // ... (keep existing API routes)
 
   // CamPay API Helper
-  const getCampayAuth = () => {
+  const getCampayToken = async () => {
     const username = process.env.CAMPAY_APP_USERNAME;
     const password = process.env.CAMPAY_APP_PASSWORD;
     const env = process.env.CAMPAY_ENVIRONMENT || 'dev';
     
     if (!username || !password) {
       console.warn("CamPay credentials not configured. Using mock payment gateway.");
-      return { authHeader: 'mock_token', baseUrl: 'mock' };
+      return { token: 'mock_token', baseUrl: 'mock' };
     }
 
     const baseUrl = env === 'dev' ? 'https://demo.campay.net/api' : 'https://www.campay.net/api';
-    const authHeader = "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
 
-    return { authHeader, baseUrl };
+    const response = await axios.post(`${baseUrl}/token/`, {
+      username,
+      password
+    });
+
+    return { token: response.data.token, baseUrl };
   };
 
   // Payment Routes
@@ -79,9 +83,9 @@ async function startServer() {
     try {
       const { phone, amount, description, external_reference } = req.body;
       
-      const { authHeader, baseUrl } = getCampayAuth();
+      const { token, baseUrl } = await getCampayToken();
 
-      if (authHeader === 'mock_token') {
+      if (token === 'mock_token') {
         // Mock payment response
         return res.json({ reference: `mock_ref_${Date.now()}` });
       }
@@ -94,7 +98,7 @@ async function startServer() {
         external_reference
       }, {
         headers: {
-          'Authorization': authHeader,
+          'Authorization': `Token ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -110,17 +114,17 @@ async function startServer() {
     try {
       const { reference, userId } = req.body;
       
-      const { authHeader, baseUrl } = getCampayAuth();
+      const { token, baseUrl } = await getCampayToken();
 
       let status = 'PENDING';
 
-      if (authHeader === 'mock_token') {
+      if (token === 'mock_token') {
         // Mock verification response
         status = 'SUCCESSFUL';
       } else {
         const response = await axios.get(`${baseUrl}/transaction/${reference}/`, {
           headers: {
-            'Authorization': authHeader,
+            'Authorization': `Token ${token}`,
             'Content-Type': 'application/json'
           }
         });

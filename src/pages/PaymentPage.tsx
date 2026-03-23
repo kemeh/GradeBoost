@@ -224,11 +224,16 @@ export default function PaymentPage() {
     setPaymentStep('processing');
 
     try {
+      let formattedPhone = formData.phone.replace(/\s+/g, '').replace('+', '');
+      if (!formattedPhone.startsWith('237')) {
+        formattedPhone = `237${formattedPhone}`;
+      }
+
       const response = await fetch('/api/payment/collect', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          phone: formData.phone,
+          phone: formattedPhone,
           amount: paymentPrice,
           description: `${appName} - ${user.name}`,
           external_reference: `gb60_${user.uid}_${Date.now()}`
