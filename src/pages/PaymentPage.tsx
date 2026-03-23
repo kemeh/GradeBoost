@@ -245,7 +245,11 @@ export default function PaymentPage() {
         let errorMessage = 'Failed to initiate payment';
         try {
           const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorMessage;
+          if (errorData.error) {
+            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
+          } else if (errorData.detail) {
+            errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
+          }
         } catch (e) {
           console.error("Failed to parse error JSON:", errorText);
           if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html')) {
