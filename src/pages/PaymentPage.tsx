@@ -186,10 +186,8 @@ export default function PaymentPage() {
       return false;
     } catch (err) {
       console.error("Status check error:", err);
-      // Stop polling and show error as requested
-      setPaymentStep('failed');
-      setError('Payment verification failed. Contact admin.');
-      return true; // Return true to stop polling
+      // Return false to keep polling in case of temporary network issues
+      return false;
     }
   };
 

@@ -50,6 +50,9 @@ async function startServer() {
   // ... (keep existing API routes)
 
   // CamPay API Helper
+  let cachedCampayToken: string | null = null;
+  let tokenExpiryTime: number = 0;
+
   const getCampayToken = async () => {
     const username = process.env.CAMPAY_APP_USERNAME;
     const password = process.env.CAMPAY_APP_PASSWORD;
@@ -63,6 +66,11 @@ async function startServer() {
     const isDemo = env.toUpperCase() === 'DEMO' || env.toUpperCase() === 'DEV';
     const baseUrl = isDemo ? 'https://demo.campay.net/api' : 'https://www.campay.net/api';
     
+    // Use cached token if valid (assuming token lasts at least 1 hour, we cache for 50 minutes)
+    if (cachedCampayToken && Date.now() < tokenExpiryTime) {
+      return { token: cachedCampayToken, baseUrl };
+    }
+
     const tokenRes = await fetch(`${baseUrl}/token/`, {
       method: "POST",
       headers: {
@@ -80,6 +88,9 @@ async function startServer() {
       console.error("CamPay token error:", tokenData);
       throw new Error("Failed to authenticate with payment gateway");
     }
+
+    cachedCampayToken = tokenData.token;
+    tokenExpiryTime = Date.now() + (50 * 60 * 1000); // Cache for 50 minutes
 
     return { token: tokenData.token, baseUrl };
   };
@@ -133,26 +144,49 @@ async function startServer() {
         return res.status(400).json({ error: "Reference is required" });
       }
 
-      const { token, baseUrl } = await getCampayToken();
+      let token, baseUrl;
+      try {
+        const auth = await getCampayToken();
+        token = auth.token;
+        baseUrl = auth.baseUrl;
+      } catch (tokenError: any) {
+        console.error("Campay token error in status check:", tokenError.message);
+        // Return PENDING so the frontend keeps polling
+        return res.json({ status: 'PENDING' });
+      }
 
       let status = 'PENDING';
 
       if (token === 'mock_token') {
         status = 'SUCCESSFUL';
       } else {
-        const response = await fetch(`${baseUrl}/transaction/${reference}/`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Token ${token}`,
-            "Content-Type": "application/json"
-          }
-        });
+        let response;
+        try {
+          response = await fetch(`${baseUrl}/transaction/${reference}/`, {
+            method: "GET",
+            headers: {
+              "Authorization": `Token ${token}`,
+              "Content-Type": "application/json"
+            }
+          });
+        } catch (fetchError: any) {
+          console.error("Campay fetch error:", fetchError.message);
+          // Return PENDING so the frontend keeps polling
+          return res.json({ status: 'PENDING' });
+        }
         
-        const data = await response.json();
-        if (response.ok) {
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error("Failed to parse Campay status response:", await response.text().catch(() => ''));
+          data = null;
+        }
+
+        if (response.ok && data) {
           status = data.status;
         } else {
-          console.error("Payment status error response:", data);
+          console.error("Payment status error response:", data || response.statusText);
         }
       }
 
@@ -161,15 +195,20 @@ async function startServer() {
         const expiryDate = new Date();
         expiryDate.setFullYear(expiryDate.getFullYear() + 1); // 1 year access
         
-        await db.collection('users').doc(userId).update({
-          paymentStatus: 'paid',
-          isPaid: true,
-          paymentDate: new Date().toISOString(),
-          paymentExpiryDate: expiryDate.toISOString(),
-          paid: true,
-          paidAt: new Date().toISOString(),
-          paymentReference: reference
-        });
+        try {
+          await db.collection('users').doc(userId).update({
+            paymentStatus: 'paid',
+            isPaid: true,
+            paymentDate: new Date().toISOString(),
+            paymentExpiryDate: expiryDate.toISOString(),
+            paid: true,
+            paidAt: new Date().toISOString(),
+            paymentReference: reference
+          });
+        } catch (dbError: any) {
+          console.error("Backend Firestore update failed:", dbError.message);
+          // Don't throw here, let the frontend handle the update if backend fails
+        }
       }
 
       res.json({ status });
