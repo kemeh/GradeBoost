@@ -50,21 +50,38 @@ async function startServer() {
   // ... (keep existing API routes)
 
   // CamPay API Helper
-  const getCampayAuth = () => {
+  const getCampayToken = async () => {
     const username = process.env.CAMPAY_APP_USERNAME;
     const password = process.env.CAMPAY_APP_PASSWORD;
     const env = process.env.CAMPAY_ENVIRONMENT || 'DEMO';
     
     if (!username || !password) {
       console.warn("CamPay credentials not configured. Using mock payment gateway.");
-      return { authHeader: 'mock_token', baseUrl: 'mock' };
+      return { token: 'mock_token', baseUrl: 'mock' };
     }
 
     const isDemo = env.toUpperCase() === 'DEMO' || env.toUpperCase() === 'DEV';
     const baseUrl = isDemo ? 'https://demo.campay.net/api' : 'https://www.campay.net/api';
-    const authHeader = "Basic " + Buffer.from(`${username}:${password}`).toString("base64");
+    
+    const tokenRes = await fetch(`${baseUrl}/token/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password
+      })
+    });
 
-    return { authHeader, baseUrl };
+    const tokenData = await tokenRes.json();
+
+    if (!tokenRes.ok) {
+      console.error("CamPay token error:", tokenData);
+      throw new Error("Failed to authenticate with payment gateway");
+    }
+
+    return { token: tokenData.token, baseUrl };
   };
 
   // New Payment Routes
@@ -72,16 +89,16 @@ async function startServer() {
     try {
       const { phone, amount, description, external_reference } = req.body;
       
-      const { authHeader, baseUrl } = getCampayAuth();
+      const { token, baseUrl } = await getCampayToken();
 
-      if (authHeader === 'mock_token') {
+      if (token === 'mock_token') {
         return res.json({ reference: `mock_ref_${Date.now()}` });
       }
 
       const response = await fetch(`${baseUrl}/collect/`, {
         method: "POST",
         headers: {
-          "Authorization": authHeader,
+          "Authorization": `Token ${token}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
@@ -116,17 +133,17 @@ async function startServer() {
         return res.status(400).json({ error: "Reference is required" });
       }
 
-      const { authHeader, baseUrl } = getCampayAuth();
+      const { token, baseUrl } = await getCampayToken();
 
       let status = 'PENDING';
 
-      if (authHeader === 'mock_token') {
+      if (token === 'mock_token') {
         status = 'SUCCESSFUL';
       } else {
         const response = await fetch(`${baseUrl}/transaction/${reference}/`, {
           method: "GET",
           headers: {
-            "Authorization": authHeader,
+            "Authorization": `Token ${token}`,
             "Content-Type": "application/json"
           }
         });
