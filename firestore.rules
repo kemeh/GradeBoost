@@ -392,13 +392,27 @@ service cloud.firestore {
              data.createdAt is timestamp;
     }
 
-    function isValidFeedback(data) {
-      return data.userId is string &&
-             data.type in ["question", "explanation", "general"] &&
-             (!('contextId' in data) || data.contextId is string) &&
-             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
-             (!('comment' in data) || data.comment is string && data.comment.size() <= 1000) &&
+    function isValidDuel(data) {
+      return data.subject in ["Computer Science", "ICT"] &&
+             data.status in ["waiting", "playing", "finished"] &&
+             data.player1 is map &&
+             data.player1.uid is string &&
+             data.player1.score is number &&
+             (!('player2' in data) || data.player2 == null || (data.player2 is map && data.player2.uid is string && data.player2.score is number)) &&
+             data.questions is list &&
+             (!('winnerId' in data) || data.winnerId is string || data.winnerId == null) &&
              data.createdAt is timestamp;
+    }
+
+    function isValidLeaderboardEntry(data) {
+      return data.userId is string &&
+             data.name is string &&
+             data.subject in ["Computer Science", "ICT"] &&
+             data.points is number &&
+             data.wins is number &&
+             data.losses is number &&
+             data.draws is number &&
+             data.updatedAt is timestamp;
     }
 
     function getCurrentDay() {
@@ -508,13 +522,26 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin() && isValidAssignment(request.resource.data);
     }
 
+    match /duels/{duelId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidDuel(request.resource.data) && request.resource.data.player1.uid == request.auth.uid;
+      allow update: if isAuthenticated() && isValidDuel(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /leaderboard/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated() && request.resource.data.userId == request.auth.uid && isValidLeaderboardEntry(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
     match /weekly_leaderboard/{leaderboardId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isAdmin() && isValidWeeklyLeaderboard(request.resource.data);
     }
 
     match /system_settings/{settingId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 

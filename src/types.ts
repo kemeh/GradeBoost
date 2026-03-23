@@ -39,6 +39,9 @@ export interface UserProfile {
   paymentStatus?: 'unpaid' | 'paid' | 'pending';
   paymentDate?: string;
   paymentExpiryDate?: string;
+  paid?: boolean;
+  paidAt?: string;
+  paymentReference?: string;
   photoURL?: string;
   points: number;
   streak: number;

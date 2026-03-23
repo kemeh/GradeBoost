@@ -1,9 +1,8 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { io, Socket } from 'socket.io-client';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
-import { doc, getDoc, collection, query, where, orderBy, limit, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, orderBy, limit, onSnapshot, setDoc, updateDoc, serverTimestamp, getDocs, runTransaction } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Trophy, Users, Timer, Target, CheckCircle2, XCircle, Loader2, Sword, Shield, Crown, Lock } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
@@ -11,8 +10,6 @@ import { Button, Card, Badge, cn } from '../components/ui';
 import { LeaderboardEntry } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { toast } from 'react-hot-toast';
-
-const SOCKET_URL = window.location.origin;
 
 interface Question {
   id: string;
@@ -24,12 +21,11 @@ interface Question {
 export default function DuelBattle() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [status, setStatus] = useState<'idle' | 'searching' | 'matched' | 'playing' | 'result'>('idle');
+  const [status, setStatus] = useState<'idle' | 'searching' | 'playing' | 'result'>('idle');
   const [duelId, setDuelId] = useState<string | null>(null);
-  const [opponentId, setOpponentId] = useState<string | null>(null);
   const [opponentName, setOpponentName] = useState<string>('Opponent');
   const [opponentPhotoURL, setOpponentPhotoURL] = useState<string | null>(null);
+  const [opponentScore, setOpponentScore] = useState<number | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -37,64 +33,11 @@ export default function DuelBattle() {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [timeTaken, setTimeTaken] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const unsubscribeDuelRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    const newSocket = io(SOCKET_URL);
-    setSocket(newSocket);
-
-    newSocket.on('duelStarted', async ({ duelId, opponentId, questions: questionIds }) => {
-      setDuelId(duelId);
-      setOpponentId(opponentId);
-      
-      // Fetch opponent details
-      const oppDoc = await getDoc(doc(db, 'users', opponentId));
-      let oppName = 'Opponent';
-      if (oppDoc.exists()) {
-        const oppData = oppDoc.data();
-        oppName = oppData.name || oppData.firstName || 'Opponent';
-        setOpponentName(oppName);
-        setOpponentPhotoURL(oppData.photoURL || null);
-      }
-
-      // Fetch questions from Firestore
-      const questionData: Question[] = [];
-      for (const id of questionIds) {
-        const qDoc = await getDoc(doc(db, 'exam_questions', id));
-        if (qDoc.exists()) {
-          questionData.push({ id: qDoc.id, ...qDoc.data() } as Question);
-        }
-      }
-      setQuestions(questionData);
-      setStatus('playing');
-      setTimeTaken(0);
-      timerRef.current = setInterval(() => {
-        setTimeTaken(prev => prev + 1);
-      }, 1000);
-      
-      toast.success(`Duel started against ${oppName}!`);
-    });
-
-    newSocket.on('duelCompleted', ({ winnerId }) => {
-      setWinnerId(winnerId);
-      setStatus('result');
-      if (timerRef.current) clearInterval(timerRef.current);
-      
-      if (winnerId === user.uid) {
-        toast.success('Duel completed! You won! 🎉');
-      } else if (winnerId) {
-        toast.error('Duel completed! You lost. 😢');
-      } else {
-        toast.success('Duel completed! It\'s a draw!');
-      }
-    });
-
-    newSocket.on('opponentDisconnected', () => {
-      toast.error('Opponent disconnected. You win by default!');
-      setWinnerId(user.uid);
-      setStatus('result');
-      if (timerRef.current) clearInterval(timerRef.current);
-    });
-
+    if (!user) return;
+    
     // Fetch Duel Leaderboard
     const leaderboardQuery = query(
       collection(db, 'leaderboard'),
@@ -111,23 +54,165 @@ export default function DuelBattle() {
     });
 
     return () => {
-      newSocket.disconnect();
       if (timerRef.current) clearInterval(timerRef.current);
+      if (unsubscribeDuelRef.current) unsubscribeDuelRef.current();
       unsub();
     };
-  }, []);
+  }, [user]);
 
-  const startDuel = () => {
-    if (!socket || !user) return;
+  const startDuel = async () => {
+    if (!user) return;
     if (user.paymentStatus !== 'paid') {
       navigate('/payment');
       return;
     }
     setStatus('searching');
-    socket.emit('joinDuel', { userId: user.uid, subject: user.subject });
+    setScore(0);
+    setTimeTaken(0);
+    setCurrentQuestionIndex(0);
+    setQuestions([]);
+    setWinnerId(null);
+    setOpponentScore(null);
+
+    try {
+      // 1. Look for a waiting duel
+      const waitingQuery = query(
+        collection(db, 'duels'),
+        where('subject', '==', user.subject),
+        where('status', '==', 'waiting'),
+        limit(1)
+      );
+      
+      const waitingSnapshot = await getDocs(waitingQuery);
+      
+      let currentDuelId = '';
+
+      if (!waitingSnapshot.empty) {
+        // Join existing duel
+        const duelDoc = waitingSnapshot.docs[0];
+        currentDuelId = duelDoc.id;
+        
+        // Prevent joining our own duel if we somehow got stuck
+        if (duelDoc.data().player1.uid !== user.uid) {
+          await updateDoc(doc(db, 'duels', currentDuelId), {
+            player2: {
+              uid: user.uid,
+              name: user.name || 'Student',
+              photoURL: user.photoURL || null,
+              score: 0,
+              timeTaken: 0,
+              finished: false
+            },
+            status: 'playing'
+          });
+        }
+      } else {
+        // Create new duel
+        const newDuelRef = doc(collection(db, 'duels'));
+        currentDuelId = newDuelRef.id;
+        
+        // Fetch 5 random questions
+        const qQuery = query(
+          collection(db, 'exam_questions'),
+          where('subject', '==', user.subject),
+          where('isDailyDrill', '==', false),
+          limit(20)
+        );
+        const qSnapshot = await getDocs(qQuery);
+        const allQ = qSnapshot.docs.map(d => d.id);
+        const shuffled = allQ.sort(() => 0.5 - Math.random());
+        const selectedQ = shuffled.slice(0, 5);
+
+        await setDoc(newDuelRef, {
+          subject: user.subject,
+          status: 'waiting',
+          player1: {
+            uid: user.uid,
+            name: user.name || 'Student',
+            photoURL: user.photoURL || null,
+            score: 0,
+            timeTaken: 0,
+            finished: false
+          },
+          player2: null,
+          questions: selectedQ,
+          winnerId: null,
+          createdAt: serverTimestamp()
+        });
+      }
+
+      setDuelId(currentDuelId);
+      listenToDuel(currentDuelId);
+
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, 'duels');
+      setStatus('idle');
+      toast.error("Failed to find or create a duel.");
+    }
   };
 
-  const handleAnswer = (answer: string) => {
+  const listenToDuel = (dId: string) => {
+    if (unsubscribeDuelRef.current) {
+      unsubscribeDuelRef.current();
+    }
+
+    unsubscribeDuelRef.current = onSnapshot(doc(db, 'duels', dId), async (snapshot) => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+
+      // Determine who is opponent
+      const isPlayer1 = data.player1.uid === user?.uid;
+      const opponent = isPlayer1 ? data.player2 : data.player1;
+
+      if (opponent) {
+        setOpponentName(opponent.name);
+        setOpponentPhotoURL(opponent.photoURL);
+        setOpponentScore(opponent.score);
+      }
+
+      if (data.status === 'playing' && status !== 'playing' && status !== 'result') {
+        // Game started! Fetch questions
+        const qData: Question[] = [];
+        for (const qId of data.questions) {
+          const qDoc = await getDoc(doc(db, 'exam_questions', qId));
+          if (qDoc.exists()) {
+            qData.push({ id: qDoc.id, ...qDoc.data() } as Question);
+          }
+        }
+        setQuestions(qData);
+        setStatus('playing');
+        setTimeTaken(0);
+        if (timerRef.current) clearInterval(timerRef.current);
+        timerRef.current = setInterval(() => {
+          setTimeTaken(prev => prev + 1);
+        }, 1000);
+        toast.success(`Duel started against ${opponent?.name || 'Opponent'}!`);
+      }
+
+      if (data.status === 'finished' && status !== 'result') {
+        setWinnerId(data.winnerId);
+        setStatus('result');
+        if (timerRef.current) clearInterval(timerRef.current);
+        
+        if (data.winnerId === user?.uid) {
+          toast.success('Duel completed! You won! 🎉');
+        } else if (data.winnerId === 'draw') {
+          toast.success('Duel completed! It\'s a draw!');
+        } else {
+          toast.error('Duel completed! You lost. 😢');
+        }
+        
+        // Update leaderboard locally
+        updateLeaderboard(data.winnerId);
+      }
+    }, (error) => {
+      handleFirestoreError(error, OperationType.GET, 'duels');
+    });
+  };
+
+  const handleAnswer = async (answer: string) => {
+    if (!user || !duelId) return;
+
     const isCorrect = answer === questions[currentQuestionIndex].correctAnswer;
     const newScore = isCorrect ? score + 1 : score;
     setScore(newScore);
@@ -135,11 +220,115 @@ export default function DuelBattle() {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else {
-      // Duel finished
+      // Finished all questions
       if (timerRef.current) clearInterval(timerRef.current);
-      socket?.emit('submitAnswer', { duelId, userId: user?.uid, score: newScore, timeTaken });
-      setStatus('result');
+      setStatus('result'); // Wait for opponent
+
+      try {
+        const duelRef = doc(db, 'duels', duelId);
+        
+        await runTransaction(db, async (transaction) => {
+          const duelDoc = await transaction.get(duelRef);
+          if (!duelDoc.exists()) return;
+          
+          const data = duelDoc.data();
+          const isPlayer1 = data.player1.uid === user.uid;
+          
+          const myKey = isPlayer1 ? 'player1' : 'player2';
+          const oppKey = isPlayer1 ? 'player2' : 'player1';
+          
+          const myData = { ...data[myKey], score: newScore, timeTaken, finished: true };
+          const oppData = data[oppKey];
+
+          const updates: any = {
+            [myKey]: myData
+          };
+
+          if (oppData && oppData.finished) {
+            // Both finished, determine winner
+            updates.status = 'finished';
+            if (myData.score > oppData.score) {
+              updates.winnerId = myData.uid;
+            } else if (oppData.score > myData.score) {
+              updates.winnerId = oppData.uid;
+            } else {
+              // Tie breaker by time
+              if (myData.timeTaken < oppData.timeTaken) {
+                updates.winnerId = myData.uid;
+              } else if (oppData.timeTaken < myData.timeTaken) {
+                updates.winnerId = oppData.uid;
+              } else {
+                updates.winnerId = 'draw';
+              }
+            }
+          }
+
+          transaction.update(duelRef, updates);
+        });
+
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'duels');
+      }
     }
+  };
+
+  const updateLeaderboard = async (wId: string | null) => {
+    if (!user) return;
+    try {
+      const lbRef = doc(db, 'leaderboard', user.uid);
+      const lbDoc = await getDoc(lbRef);
+      
+      let pointsToAdd = 3; // Participation
+      let wins = 0;
+      let losses = 0;
+      let draws = 0;
+
+      if (wId === user.uid) {
+        pointsToAdd = 10;
+        wins = 1;
+      } else if (wId === 'draw') {
+        pointsToAdd = 5;
+        draws = 1;
+      } else if (wId) {
+        losses = 1;
+      }
+
+      if (lbDoc.exists()) {
+        const data = lbDoc.data();
+        await updateDoc(lbRef, {
+          points: (data.points || 0) + pointsToAdd,
+          wins: (data.wins || 0) + wins,
+          losses: (data.losses || 0) + losses,
+          draws: (data.draws || 0) + draws,
+          updatedAt: serverTimestamp()
+        });
+      } else {
+        await setDoc(lbRef, {
+          userId: user.uid,
+          name: user.name || 'Student',
+          subject: user.subject,
+          points: pointsToAdd,
+          wins,
+          losses,
+          draws,
+          updatedAt: serverTimestamp()
+        });
+      }
+    } catch (error) {
+      console.error("Error updating leaderboard", error);
+    }
+  };
+
+  const cancelSearch = async () => {
+    if (duelId) {
+      try {
+        await updateDoc(doc(db, 'duels', duelId), { status: 'finished' });
+      } catch (e) {
+        // Ignore
+      }
+    }
+    setStatus('idle');
+    if (unsubscribeDuelRef.current) unsubscribeDuelRef.current();
   };
 
   return (
@@ -220,7 +409,7 @@ export default function DuelBattle() {
                         <h2 className="text-2xl font-black text-slate-900">Searching for Opponent</h2>
                         <p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-xs animate-pulse">Matching you with a worthy adversary...</p>
                       </div>
-                      <Button variant="outline" onClick={() => setStatus('idle')} className="text-red-600 border-red-100 hover:bg-red-50">
+                      <Button variant="outline" onClick={cancelSearch} className="text-red-600 border-red-100 hover:bg-red-50">
                         Cancel Search
                       </Button>
                     </Card>
@@ -269,7 +458,7 @@ export default function DuelBattle() {
                               <p className="font-black truncate">{opponentName}</p>
                             </div>
                           </div>
-                          <div className="text-2xl font-black">?</div>
+                          <div className="text-2xl font-black">{opponentScore !== null ? opponentScore : '?'}</div>
                         </div>
                       </Card>
                     </div>
@@ -329,6 +518,10 @@ export default function DuelBattle() {
                       )}>
                         {winnerId === user?.uid ? (
                           <Crown size={64} className="text-amber-500" />
+                        ) : winnerId === 'draw' ? (
+                          <Users size={64} className="text-slate-400" />
+                        ) : winnerId === null ? (
+                          <Loader2 size={64} className="text-slate-400 animate-spin" />
                         ) : (
                           <Trophy size={64} className="text-slate-400" />
                         )}
@@ -336,10 +529,10 @@ export default function DuelBattle() {
 
                       <div>
                         <h2 className="text-4xl font-black text-slate-900 tracking-tight">
-                          {winnerId === user?.uid ? 'VICTORY!' : 'DEFEAT'}
+                          {winnerId === user?.uid ? 'VICTORY!' : winnerId === 'draw' ? 'DRAW!' : winnerId === null ? 'WAITING FOR OPPONENT...' : 'DEFEAT'}
                         </h2>
                         <p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-xs">
-                          {winnerId === user?.uid ? 'You dominated the arena' : 'A valiant effort, warrior'}
+                          {winnerId === user?.uid ? 'You dominated the arena' : winnerId === 'draw' ? 'A perfectly matched battle' : winnerId === null ? 'Opponent is still finishing...' : 'A valiant effort, warrior'}
                         </p>
                       </div>
 
@@ -356,7 +549,7 @@ export default function DuelBattle() {
 
                       <div className="flex gap-4 pt-8">
                         <Button onClick={() => setStatus('idle')} variant="outline" className="flex-1">Back to Arena</Button>
-                        <Button onClick={startDuel} className="flex-1">Rematch</Button>
+                        <Button onClick={startDuel} className="flex-1" disabled={winnerId === null}>Rematch</Button>
                       </div>
                     </Card>
                   </motion.div>

@@ -151,21 +151,30 @@ export default function PaymentPage() {
 
   const checkStatus = async (ref: string) => {
     try {
-      const response = await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reference: ref, userId: user?.uid })
-      });
+      const response = await fetch(`/api/status?reference=${ref}&userId=${user?.uid}`);
       
       if (!response.ok) {
         const errorText = await response.text();
         console.error("Verification response not OK:", response.status, errorText);
-        return false;
+        setPaymentStep('failed');
+        setError('Payment verification failed. Contact admin.');
+        return true;
       }
 
       const data = await response.json();
       
       if (data.status === 'SUCCESSFUL') {
+        // Update Firestore user locally as requested
+        try {
+          await updateDoc(doc(db, 'users', user!.uid), {
+            paid: true,
+            paidAt: new Date().toISOString(),
+            paymentReference: ref
+          });
+        } catch (e) {
+          console.error("Failed to update user doc locally:", e);
+        }
+
         setPaymentStep('success');
         setSuccess(true);
         return true;
@@ -177,7 +186,10 @@ export default function PaymentPage() {
       return false;
     } catch (err) {
       console.error("Status check error:", err);
-      return false;
+      // Stop polling and show error as requested
+      setPaymentStep('failed');
+      setError('Payment verification failed. Contact admin.');
+      return true; // Return true to stop polling
     }
   };
 
@@ -229,7 +241,7 @@ export default function PaymentPage() {
         formattedPhone = `237${formattedPhone}`;
       }
 
-      const response = await fetch('/api/payment/collect', {
+      const response = await fetch('/api/pay', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -241,24 +253,7 @@ export default function PaymentPage() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = 'Failed to initiate payment';
-        try {
-          const errorData = JSON.parse(errorText);
-          if (errorData.error) {
-            errorMessage = typeof errorData.error === 'string' ? errorData.error : JSON.stringify(errorData.error);
-          } else if (errorData.detail) {
-            errorMessage = typeof errorData.detail === 'string' ? errorData.detail : JSON.stringify(errorData.detail);
-          }
-        } catch (e) {
-          console.error("Failed to parse error JSON:", errorText);
-          if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html')) {
-            errorMessage = `Server error (HTML returned). Please contact ${contactEmail}.`;
-          } else if (errorText) {
-            errorMessage = errorText; // Use the raw text (e.g., rate limit message)
-          }
-        }
-        throw new Error(errorMessage);
+        throw new Error("Unable to initiate payment. Please try again.");
       }
 
       const data = await response.json();
@@ -284,11 +279,11 @@ export default function PaymentPage() {
           }
         }, 300000);
       } else {
-        throw new Error(data.error || 'Failed to initiate payment');
+        throw new Error('Unable to initiate payment. Please try again.');
       }
     } catch (err: any) {
       setPaymentStep('form');
-      setError(err.message || 'Payment failed to initiate. Please check your connection.');
+      setError(err.message || 'Unable to initiate payment. Please try again.');
       setLoading(false);
     }
   };
