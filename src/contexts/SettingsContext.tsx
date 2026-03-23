@@ -9,6 +9,10 @@ interface SettingsContextType {
   contactEmail: string;
   whatsappNumber: string;
   whatsappGroupLink: string;
+  momoNumber: string;
+  momoName: string;
+  omNumber: string;
+  omName: string;
   refreshSettings: () => Promise<void>;
 }
 
@@ -41,6 +45,10 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     contactEmail: settings?.contactEmail || 'support@gradeboost60.com',
     whatsappNumber: settings?.whatsappNumber || '',
     whatsappGroupLink: settings?.whatsappGroupLink || '',
+    momoNumber: settings?.momoNumber || '677 123 456',
+    momoName: settings?.momoName || 'Admin Name',
+    omNumber: settings?.omNumber || '699 123 456',
+    omName: settings?.omName || 'Admin Name',
     refreshSettings: fetchSettings
   };
 

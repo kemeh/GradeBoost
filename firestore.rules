@@ -21,6 +21,19 @@
 //   - createdAt: timestamp (required)
 //   - updatedAt: timestamp (optional)
 //
+// Collection: payments
+// Document ID: {paymentId}
+// Fields:
+//   - userId: string (required, uid)
+//   - amount: number (required)
+//   - paymentCode: string (required)
+//   - transactionId: string (required)
+//   - network: string (required, enum: ["MTN MoMo", "Orange Money"])
+//   - status: string (required, enum: ["pending", "approved", "rejected"])
+//   - screenshotUrl: string (optional, url)
+//   - createdAt: timestamp (required)
+//   - updatedAt: timestamp (required)
+//
 // Collection: questionPapers
 // Document ID: {paperId}
 // Fields:
@@ -232,6 +245,8 @@ service cloud.firestore {
              data.role in ["student", "admin"] &&
              (!('createdAt' in data) || data.createdAt is timestamp) &&
              (!('isPaid' in data) || data.isPaid is bool) &&
+             (!('paid' in data) || data.paid is bool) &&
+             (!('paidAt' in data) || data.paidAt is string || data.paidAt == null) &&
              (!('paymentStatus' in data) || data.paymentStatus in ["unpaid", "paid", "pending"]) &&
              (!('paymentExpiryDate' in data) || data.paymentExpiryDate is string || data.paymentExpiryDate == null) &&
              (!('school' in data) || data.school is string) &&
@@ -256,15 +271,16 @@ service cloud.firestore {
               data.timestamp is timestamp);
     }
 
-    function isValidManualPaymentRequest(data) {
+    function isValidPayment(data) {
       return data.userId is string &&
-             data.userName is string &&
-             data.userEmail is string &&
-             data.method is string &&
-             data.reference is string &&
              data.amount is number &&
-             data.status in ['pending', 'approved', 'rejected'] &&
-             (!('timestamp' in data) || data.timestamp is timestamp);
+             data.paymentCode is string &&
+             data.transactionId is string &&
+             data.network in ["MTN MoMo", "Orange Money"] &&
+             data.status in ["pending", "approved", "rejected"] &&
+             (!('screenshotUrl' in data) || data.screenshotUrl is string || data.screenshotUrl == null) &&
+             data.createdAt is timestamp &&
+             data.updatedAt is timestamp;
     }
 
     function isValidQuestionPaper(data) {
@@ -450,13 +466,13 @@ service cloud.firestore {
                       );
     }
 
-    match /manualPaymentRequests/{requestId} {
+    match /payments/{paymentId} {
       allow read: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid);
       allow create: if isAuthenticated() && 
                       request.resource.data.userId == request.auth.uid &&
                       request.resource.data.status == 'pending' &&
-                      isValidManualPaymentRequest(request.resource.data);
-      allow update: if isAdmin() && isValidManualPaymentRequest(request.resource.data);
+                      isValidPayment(request.resource.data);
+      allow update: if isAdmin() && isValidPayment(request.resource.data);
       allow delete: if isAdmin();
     }
 

@@ -273,6 +273,23 @@
         "updatedBy": { "type": "string" }
       },
       "required": ["geminiApiKey", "challengeStartDate", "paymentPrice", "updatedAt", "updatedBy"]
+    },
+    "Payment": {
+      "title": "Payment",
+      "description": "Stores manual mobile money payment submissions.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "paymentCode": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "network": { "type": "string", "enum": ["MTN", "Orange"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "screenshotUrl": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "amount", "paymentCode", "transactionId", "network", "status", "createdAt", "updatedAt"]
     }
   },
   "firestore": {
@@ -339,6 +356,10 @@
     "/system_settings/{settingId}": {
       "schema": "SystemSettings",
       "description": "Global system settings."
+    },
+    "/payments/{paymentId}": {
+      "schema": "Payment",
+      "description": "Manual mobile money payment submissions."
     },
     "/feedback/{feedbackId}": {
       "schema": "Feedback",

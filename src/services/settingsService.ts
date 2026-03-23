@@ -10,6 +10,10 @@ export interface SystemSettings {
   contactEmail?: string;
   whatsappNumber?: string;
   whatsappGroupLink?: string;
+  momoNumber?: string;
+  momoName?: string;
+  omNumber?: string;
+  omName?: string;
   updatedAt: any;
   updatedBy: string;
 }
@@ -39,6 +43,10 @@ export const updateSystemSettings = async (
   contactEmail: string,
   whatsappNumber: string,
   whatsappGroupLink: string,
+  momoNumber: string,
+  momoName: string,
+  omNumber: string,
+  omName: string,
   userId: string
 ): Promise<void> => {
   try {
@@ -52,6 +60,10 @@ export const updateSystemSettings = async (
       contactEmail,
       whatsappNumber,
       whatsappGroupLink,
+      momoNumber,
+      momoName,
+      omNumber,
+      omName,
       updatedAt: serverTimestamp(),
       updatedBy: userId,
     });

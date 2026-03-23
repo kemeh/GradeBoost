@@ -23,6 +23,10 @@ export default function AdminSettings() {
   const [contactEmail, setContactEmail] = useState('support@gradeboost60.com');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
+  const [momoNumber, setMomoNumber] = useState('677 123 456');
+  const [momoName, setMomoName] = useState('Admin Name');
+  const [omNumber, setOmNumber] = useState('699 123 456');
+  const [omName, setOmName] = useState('Admin Name');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
@@ -54,6 +58,18 @@ export default function AdminSettings() {
         }
         if (settings.whatsappGroupLink) {
           setWhatsappGroupLink(settings.whatsappGroupLink);
+        }
+        if (settings.momoNumber) {
+          setMomoNumber(settings.momoNumber);
+        }
+        if (settings.momoName) {
+          setMomoName(settings.momoName);
+        }
+        if (settings.omNumber) {
+          setOmNumber(settings.omNumber);
+        }
+        if (settings.omName) {
+          setOmName(settings.omName);
         }
       }
       setIsLoading(false);
@@ -98,6 +114,10 @@ export default function AdminSettings() {
         contactEmail.trim(),
         whatsappNumber.trim(),
         whatsappGroupLink.trim(),
+        momoNumber.trim(),
+        momoName.trim(),
+        omNumber.trim(),
+        omName.trim(),
         user?.uid || 'unknown'
       );
       await refreshSettings();
@@ -425,6 +445,62 @@ export default function AdminSettings() {
                   <p className="mt-2 text-xs text-slate-400">
                     This price will be displayed to all students on the payment page.
                   </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-yellow-400 rounded-full" />
+                      MTN MoMo Details
+                    </h3>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">MoMo Number</label>
+                      <input
+                        type="text"
+                        value={momoNumber}
+                        onChange={(e) => setMomoNumber(e.target.value)}
+                        placeholder="e.g. 677 123 456"
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-0 transition-all font-medium text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Account Name</label>
+                      <input
+                        type="text"
+                        value={momoName}
+                        onChange={(e) => setMomoName(e.target.value)}
+                        placeholder="e.g. JOHN DOE"
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-0 transition-all font-medium text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                      Orange Money Details
+                    </h3>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">OM Number</label>
+                      <input
+                        type="text"
+                        value={omNumber}
+                        onChange={(e) => setOmNumber(e.target.value)}
+                        placeholder="e.g. 699 123 456"
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-0 transition-all font-medium text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1">Account Name</label>
+                      <input
+                        type="text"
+                        value={omName}
+                        onChange={(e) => setOmName(e.target.value)}
+                        placeholder="e.g. JOHN DOE"
+                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-0 transition-all font-medium text-sm"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.section>

@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap } from 'lucide-react';
+import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard } from 'lucide-react';
 import { ACHIEVEMENTS } from '../services/gamificationService';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext';
 import { db, storage } from '../firebase';
@@ -20,11 +20,34 @@ export default function Profile() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     school: user?.school || '',
     region: user?.region || '',
   });
+
+  useEffect(() => {
+    const fetchPaymentHistory = async () => {
+      if (!user) return;
+      try {
+        const q = query(
+          collection(db, 'payments'),
+          where('userId', '==', user.uid),
+          orderBy('createdAt', 'desc')
+        );
+        const querySnapshot = await getDocs(q);
+        setPaymentHistory(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (err) {
+        console.error("Error fetching payment history:", err);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+
+    fetchPaymentHistory();
+  }, [user]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -217,15 +240,53 @@ export default function Profile() {
                 </form>
               </Card>
 
+              {/* Payment History Section */}
+              <Card className="p-8 lg:p-12">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2 text-indigo-600">
+                    <CreditCard size={20} />
+                    <span className="text-sm font-black uppercase tracking-widest">Payment History</span>
+                  </div>
+                  
+                  {loadingHistory ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="animate-spin text-slate-400" size={24} />
+                    </div>
+                  ) : paymentHistory.length > 0 ? (
+                    <div className="space-y-4">
+                      {paymentHistory.map((payment) => (
+                        <div key={payment.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 gap-4">
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{payment.amount} FCFA</p>
+                            <p className="text-xs text-slate-500 font-medium">Ref: {payment.transactionId}</p>
+                            <p className="text-[10px] text-slate-400 mt-1">{payment.createdAt?.toDate ? formatDate(payment.createdAt.toDate().toISOString()) : 'N/A'}</p>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge variant="default">{payment.network}</Badge>
+                            <Badge variant={payment.status === 'approved' ? 'success' : payment.status === 'rejected' ? 'danger' : 'warning'}>
+                              {payment.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 bg-slate-50 rounded-2xl border border-slate-100">
+                      <p className="text-sm text-slate-500 font-medium">No payment history found.</p>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
               {/* Badges Section */}
               <Card className="p-8 lg:p-12">
                 <div className="space-y-8">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2 text-amber-600">
                       <Trophy size={20} />
                       <span className="text-sm font-black uppercase tracking-widest">Achievements & Badges</span>
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-100">
+                    <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-100 w-fit">
                       <Zap className="text-amber-500" size={16} />
                       <span className="text-sm font-black text-amber-700">{user.streak || 0} Day Streak</span>
                     </div>

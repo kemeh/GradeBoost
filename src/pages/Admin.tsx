@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Upload, FileText, Trash2, 
   Users, BarChart3, ShieldCheck, 
-  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard, AlertCircle, CheckCircle2, Loader2
+  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard, AlertCircle, CheckCircle2, Loader2, Eye, ExternalLink
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -123,7 +123,7 @@ export default function Admin() {
 
   const fetchManualRequests = async () => {
     try {
-      const q = query(collection(db, 'manualPaymentRequests'), orderBy('timestamp', 'desc'));
+      const q = query(collection(db, 'payments'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       setManualRequests(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (err) {
@@ -200,13 +200,13 @@ export default function Admin() {
     }
   };
 
-  const handleManualApproval = async (requestId: string, userId: string, approve: boolean) => {
+  const handleManualApproval = async (paymentId: string, userId: string, approve: boolean) => {
     if (!window.confirm(`Are you sure you want to ${approve ? 'approve' : 'reject'} this request?`)) return;
     try {
       setError('');
       const now = new Date();
       const expiry = new Date(now);
-      expiry.setDate(now.getDate() + 30);
+      expiry.setFullYear(now.getFullYear() + 1); // 1 year access
 
       if (approve) {
         // Log in audit
@@ -218,7 +218,7 @@ export default function Admin() {
             provider: 'Manual',
             status: 'success',
             timestamp: serverTimestamp(),
-            reference: `manual_${requestId}`
+            reference: `manual_${paymentId}`
           });
         } catch (err: any) {
           handleFirestoreError(err, OperationType.CREATE, 'paymentAudit');
@@ -227,8 +227,11 @@ export default function Admin() {
         // Update user
         await updateDoc(doc(db, 'users', userId), {
           paymentStatus: 'paid',
+          isPaid: true,
           paymentDate: now.toISOString(),
           paymentExpiryDate: expiry.toISOString(),
+          paid: true,
+          paidAt: now.toISOString()
         });
       } else {
         // Update user back to unpaid
@@ -237,18 +240,18 @@ export default function Admin() {
         });
       }
 
-      // Update request status
-      await updateDoc(doc(db, 'manualPaymentRequests', requestId), {
+      // Update payment record status
+      await updateDoc(doc(db, 'payments', paymentId), {
         status: approve ? 'approved' : 'rejected',
-        processedAt: serverTimestamp()
+        updatedAt: serverTimestamp()
       });
 
       fetchManualRequests();
       fetchUsers();
+      toast.success(`Payment request ${approve ? 'approved' : 'rejected'} successfully.`);
     } catch (err: any) {
       console.error("Error processing manual request:", err);
-      setError('Failed to process manual request.');
-      try { handleFirestoreError(err, OperationType.UPDATE, `manualPaymentRequests/${requestId}`); } catch(e) {}
+      toast.error("Failed to process request.");
     }
   };
 
@@ -856,9 +859,9 @@ export default function Admin() {
                   <tr>
                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Student</th>
                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Method</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reference</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Code / Ref</th>
                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Screenshot</th>
                     <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                   </tr>
                 </thead>
@@ -866,51 +869,60 @@ export default function Admin() {
                   {manualRequests.map((req) => (
                     <tr key={req.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-8 py-4">
-                        <p className="text-sm font-bold text-slate-900">{req.userName}</p>
-                        <p className="text-[10px] text-slate-500">{req.userEmail}</p>
+                        <p className="text-sm font-bold text-slate-900">{userMap[req.userId] || 'Unknown Student'}</p>
+                        <p className="text-[10px] text-slate-500">{req.userId}</p>
                       </td>
                       <td className="px-8 py-4">
-                        <Badge variant="default">{req.method}</Badge>
+                        <Badge variant="default">{req.network || 'Manual'}</Badge>
                       </td>
                       <td className="px-8 py-4">
-                        <code className="text-xs font-mono bg-slate-100 px-2 py-1 rounded">{req.reference}</code>
+                        <div className="flex flex-col gap-1">
+                          <code className="text-[10px] font-mono bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded w-fit">{req.paymentCode}</code>
+                          <code className="text-[10px] font-mono bg-slate-100 px-2 py-0.5 rounded w-fit">{req.transactionId}</code>
+                        </div>
                       </td>
                       <td className="px-8 py-4">
                         <span className="text-sm font-black text-slate-900">{req.amount} XAF</span>
                       </td>
                       <td className="px-8 py-4">
-                        <Badge variant={req.status === 'approved' ? 'success' : req.status === 'rejected' ? 'danger' : 'warning'}>
-                          {req.status}
-                        </Badge>
+                        {req.screenshotUrl ? (
+                          <a 
+                            href={req.screenshotUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline"
+                          >
+                            <Eye size={14} /> View
+                          </a>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">None</span>
+                        )}
                       </td>
                       <td className="px-8 py-4">
-                        {req.status === 'pending' && (
-                          <div className="flex gap-2">
-                            <Button 
-                              size="sm" 
-                              variant="success"
-                              onClick={() => handleManualApproval(req.id, req.userId, true)}
-                              className="text-[10px] h-8"
-                            >
-                              Approve
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              variant="outline"
-                              onClick={() => handleManualApproval(req.id, req.userId, false)}
-                              className="text-[10px] h-8 text-red-600 border-red-100 hover:bg-red-50"
-                            >
-                              Reject
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2">
+                          <Button 
+                            size="sm" 
+                            className="bg-emerald-600 hover:bg-emerald-700 h-8 px-3 text-[10px]"
+                            onClick={() => handleManualApproval(req.id, req.userId, true)}
+                          >
+                            Approve
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="border-red-200 text-red-600 hover:bg-red-50 h-8 px-3 text-[10px]"
+                            onClick={() => handleManualApproval(req.id, req.userId, false)}
+                          >
+                            Reject
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                   {manualRequests.length === 0 && (
                     <tr>
                       <td colSpan={6} className="px-8 py-12 text-center">
-                        <p className="text-slate-400 font-medium">No manual payment requests found.</p>
+                        <p className="text-slate-400 font-medium">No pending manual requests.</p>
                       </td>
                     </tr>
                   )}
@@ -918,8 +930,7 @@ export default function Admin() {
               </table>
             </div>
           </Card>
-        )
-}
+        )}
 
         {/* Sample Question Modal */}
         {showSampleModal && (
