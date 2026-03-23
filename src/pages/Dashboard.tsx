@@ -372,9 +372,17 @@ export default function Dashboard() {
   }, [results]);
 
   const readiness = useMemo(() => {
-    if (submissions.length === 0) return 0;
-    return stats.avgScore;
-  }, [submissions, stats]);
+    const drillAvg = stats.avgScore;
+    const examAvg = paperData.length > 0 
+      ? Math.round(paperData.reduce((acc, curr) => acc + curr.score, 0) / paperData.length)
+      : 0;
+
+    if (results.length === 0) return drillAvg;
+    if (submissions.length === 0) return examAvg;
+
+    // Weighted average: 40% drills, 60% exams (exams are more representative of final readiness)
+    return Math.round((drillAvg * 0.4) + (examAvg * 0.6));
+  }, [stats.avgScore, paperData, results.length, submissions.length]);
 
   const predictedGrade = useMemo((): Grade => {
     if (readiness >= 80) return 'A';
@@ -405,24 +413,42 @@ export default function Dashboard() {
 
   const insights = useMemo(() => {
     const paperScores = paperData.filter(p => p.score > 0);
+    const list = [];
+
+    // Topic-level insights from drills
+    if (stats.totalDrills > 0 && stats.weakness !== 'N/A') {
+      const weakTopicData = submissions.filter(s => s.topic === stats.weakness);
+      const weakTopicAvg = weakTopicData.reduce((acc, curr) => acc + (curr.score || 0), 0) / weakTopicData.length;
+
+      if (weakTopicAvg < 70) {
+        list.push({
+          type: 'weakness',
+          title: `Topic Gap: ${stats.weakness}`,
+          desc: `Your performance in ${stats.weakness} is at ${Math.round(weakTopicAvg)}%. Review the study materials for this topic.`,
+          icon: AlertCircle,
+          color: 'text-rose-600',
+          bg: 'bg-rose-50'
+        });
+      }
+    }
+
     if (paperScores.length === 0) {
-      return [
-        { 
+      if (list.length === 0) {
+        list.push({ 
           type: 'action', 
           title: 'Get Started', 
           desc: 'Complete your first practice session to unlock smart insights.',
           icon: Zap,
           color: 'text-amber-600',
           bg: 'bg-amber-50'
-        }
-      ];
+        });
+      }
+      return list;
     }
 
     const sorted = [...paperScores].sort((a, b) => a.score - b.score);
     const weakest = sorted[0];
     const strongest = sorted[sorted.length - 1];
-
-    const list = [];
 
     if (weakest.score < 70) {
       list.push({
@@ -456,7 +482,25 @@ export default function Dashboard() {
     }
 
     return list;
-  }, [paperData]);
+  }, [paperData, stats, submissions]);
+
+  const topicData = useMemo(() => {
+    const topicScores: { [key: string]: { total: number, count: number } } = {};
+    submissions.forEach(sub => {
+      if (sub.topic) {
+        if (!topicScores[sub.topic]) {
+          topicScores[sub.topic] = { total: 0, count: 0 };
+        }
+        topicScores[sub.topic].total += sub.score || 0;
+        topicScores[sub.topic].count += 1;
+      }
+    });
+
+    return Object.entries(topicScores).map(([name, data]) => ({
+      name,
+      score: Math.round(data.total / data.count)
+    })).sort((a, b) => b.score - a.score).slice(0, 5); // Top 5 topics
+  }, [submissions]);
 
   const handleLogout = () => {
     auth.signOut();
@@ -1146,6 +1190,43 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
+          {/* Topic Performance */}
+          <Card className="p-8">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-8">Topic Performance</h2>
+            {topicData.length > 0 ? (
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={topicData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                    <XAxis type="number" domain={[0, 100]} hide />
+                    <YAxis 
+                      dataKey="name" 
+                      type="category" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fontSize: 10, fontWeight: 700, fill: '#475569' }}
+                      width={120}
+                    />
+                    <Tooltip 
+                      cursor={{ fill: '#f8fafc' }}
+                      contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="score" radius={[0, 8, 8, 0]} barSize={24}>
+                      {topicData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.score >= 80 ? '#10b981' : entry.score >= 60 ? '#6366f1' : '#f43f5e'} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : (
+              <div className="h-64 flex flex-col items-center justify-center text-center p-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                <AlertCircle className="text-slate-300 mb-2" size={32} />
+                <p className="text-slate-400 font-bold">Complete daily drills to see topic performance.</p>
+              </div>
+            )}
+          </Card>
+
           {/* Paper Comparison */}
           <Card className="p-8">
             <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-8">Paper Comparison</h2>
@@ -1175,7 +1256,9 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
           </Card>
+        </div>
 
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mt-8">
           {/* Exam Readiness Meter */}
           <Card className="p-8 flex flex-col justify-center">
             <div className="text-center space-y-6">
@@ -1209,15 +1292,48 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="space-y-2">
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">Almost there!</h3>
+                <h3 className="text-xl font-black text-slate-900 tracking-tight">
+                  {readiness >= 80 ? 'Excellent Progress!' : readiness >= 60 ? 'Almost there!' : 'Keep Pushing!'}
+                </h3>
                 <p className="text-sm text-slate-500 font-medium max-w-xs mx-auto">
-                  You need to improve your Paper 2 score by 16% to reach your target Grade A.
+                  {insights.find(i => i.type === 'weakness')?.desc || 'Keep practicing to reach your target Grade A.'}
                 </p>
+                <div className="pt-4">
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">
+                    Calculation: 40% Drills + 60% Exams
+                  </p>
+                </div>
               </div>
               <Link to="/practice">
                 <Button className="w-full">Start Practice Session</Button>
               </Link>
             </div>
+          </Card>
+
+          {/* Smart Insights */}
+          <Card className="p-8 flex flex-col justify-between">
+            <div className="flex items-center gap-3 mb-8">
+              <Sparkles className="text-indigo-600" size={24} />
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Smart Insights</h2>
+            </div>
+
+            <div className="space-y-6 mb-8">
+              {insights.map((insight, i) => (
+                <div key={i} className="flex gap-4">
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", insight.bg, insight.color)}>
+                    <insight.icon size={20} />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-black text-slate-900">{insight.title}</p>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">{insight.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Button variant="outline" className="w-full group" onClick={() => navigate('/practice')}>
+              View Focus Path <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" size={16} />
+            </Button>
           </Card>
         </div>
       </main>
