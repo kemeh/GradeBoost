@@ -85,23 +85,32 @@ async function startServer() {
         return res.json({ reference: `mock_ref_${Date.now()}` });
       }
 
-      const response = await axios.post(`${baseUrl}/collect/`, {
-        amount,
-        currency: "XAF",
-        from: phone,
-        description: description || "GradeBoost Payment",
-        external_reference
-      }, {
+      const response = await fetch(`${baseUrl}/collect/`, {
+        method: "POST",
         headers: {
-          'Authorization': authHeader,
-          'Content-Type': 'application/json'
-        }
+          "Authorization": authHeader,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          amount: amount,
+          currency: "XAF",
+          from: phone,
+          description: description || "GradeBoost Payment",
+          external_reference: external_reference
+        })
       });
 
-      res.json(response.data);
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error("Payment collect error response:", data);
+        return res.status(response.status).json({ error: data.message || data || "Failed to initiate payment" });
+      }
+
+      res.json(data);
     } catch (error: any) {
-      console.error("Payment collect error:", error.response?.data || error.message);
-      res.status(500).json({ error: error.response?.data?.message || error.response?.data || "Failed to initiate payment" });
+      console.error("Payment collect error:", error.message);
+      res.status(500).json({ error: "Payment failed" });
     }
   });
 
@@ -117,13 +126,20 @@ async function startServer() {
         // Mock verification response
         status = 'SUCCESSFUL';
       } else {
-        const response = await axios.get(`${baseUrl}/transaction/${reference}/`, {
+        const response = await fetch(`${baseUrl}/transaction/${reference}/`, {
+          method: "GET",
           headers: {
-            'Authorization': authHeader,
-            'Content-Type': 'application/json'
+            "Authorization": authHeader,
+            "Content-Type": "application/json"
           }
         });
-        status = response.data.status;
+        
+        const data = await response.json();
+        if (response.ok) {
+          status = data.status;
+        } else {
+          console.error("Payment verify error response:", data);
+        }
       }
 
       if (status === 'SUCCESSFUL' && userId) {
