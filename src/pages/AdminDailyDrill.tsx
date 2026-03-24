@@ -1484,6 +1484,8 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
+  const [showPasteArea, setShowPasteArea] = useState(false);
+  const [pastedJson, setPastedJson] = useState('');
 
   useEffect(() => {
     const checkApiKey = async () => {
@@ -1522,6 +1524,86 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
     if (firestoreKey) return firestoreKey;
 
     return null;
+  };
+
+  const handlePasteJson = async () => {
+    if (!pastedJson.trim()) {
+      setError('Please paste JSON data first.');
+      return;
+    }
+
+    try {
+      setIsProcessing(true);
+      setProcessingStatus('Processing pasted JSON...');
+      const data = JSON.parse(pastedJson);
+      
+      let flattenedQuestions: any[] = [];
+
+      // Handle nested structure: { sections: [ { questions: [ { subparts: [] } ] } ] }
+      if (data.sections && Array.isArray(data.sections)) {
+        data.sections.forEach((sec: any) => {
+          const sectionLabel = sec.section || '';
+          if (sec.questions && Array.isArray(sec.questions)) {
+            sec.questions.forEach((q: any) => {
+              const mainText = q.questionText || '';
+              if (q.subparts && Array.isArray(q.subparts)) {
+                q.subparts.forEach((sub: any) => {
+                  flattenedQuestions.push({
+                    questionText: `${mainText}\n\n${sub.text}`,
+                    marks: sub.marks || q.marks || 0,
+                    section: sectionLabel,
+                    subject: data.subject || selectedSubject,
+                    paper: q.paper || data.paper || selectedPaper,
+                    year: data.year || selectedYear,
+                    session: data.session || selectedSession,
+                    difficulty: q.difficulty || 'Medium',
+                    topic: q.topic || (mainText.toLowerCase().includes('sql') || mainText.toLowerCase().includes('table') ? 'Database' : 'General'),
+                    correctAnswer: '',
+                    isDailyDrill: true
+                  });
+                });
+              } else {
+                flattenedQuestions.push({
+                  ...q,
+                  section: sectionLabel,
+                  subject: data.subject || selectedSubject,
+                  paper: q.paper || data.paper || selectedPaper,
+                  year: data.year || selectedYear,
+                  session: data.session || selectedSession,
+                  correctAnswer: q.correctAnswer || '',
+                  isDailyDrill: true
+                });
+              }
+            });
+          }
+        });
+      } else {
+        flattenedQuestions = Array.isArray(data) ? data : [data];
+      }
+
+      const questions = flattenedQuestions.map(q => ({
+        ...q,
+        subject: q.subject || selectedSubject,
+        paper: q.paper || selectedPaper,
+        year: q.year || selectedYear,
+        session: q.session || selectedSession,
+        isDailyDrill: true,
+        createdAt: new Date(),
+        correctAnswer: q.correctAnswer || '',
+        topic: q.topic || 'General'
+      }));
+
+      setPreviewQuestions(questions);
+      setShowPasteArea(false);
+      setPastedJson('');
+      setIsProcessing(false);
+      setProcessingStatus('');
+    } catch (err) {
+      console.error('JSON Parse Error:', err);
+      setError('Invalid JSON format. Please check your data.');
+      setIsProcessing(false);
+      setProcessingStatus('');
+    }
   };
 
   const processFile = async () => {
@@ -1589,14 +1671,58 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
       } else if (file.type === 'application/json') {
         setProcessingStatus('Parsing JSON data...');
         const content = await file.text();
-        const rawQuestions = JSON.parse(content);
-        const questions = (Array.isArray(rawQuestions) ? rawQuestions : [rawQuestions]).map(q => ({
+        const data = JSON.parse(content);
+        
+        let flattenedQuestions: any[] = [];
+
+        // Handle nested structure: { sections: [ { questions: [ { subparts: [] } ] } ] }
+        if (data.sections && Array.isArray(data.sections)) {
+          data.sections.forEach((sec: any) => {
+            const sectionLabel = sec.section || '';
+            if (sec.questions && Array.isArray(sec.questions)) {
+              sec.questions.forEach((q: any) => {
+                const mainText = q.questionText || '';
+                if (q.subparts && Array.isArray(q.subparts)) {
+                  q.subparts.forEach((sub: any) => {
+                    flattenedQuestions.push({
+                      questionText: `${mainText}\n\n${sub.text}`,
+                      marks: sub.marks || q.marks || 0,
+                      section: sectionLabel,
+                      subject: data.subject || selectedSubject,
+                      paper: q.paper || data.paper || selectedPaper,
+                      year: data.year || selectedYear,
+                      session: data.session || selectedSession,
+                      difficulty: q.difficulty || 'Medium',
+                      topic: q.topic || (mainText.toLowerCase().includes('sql') || mainText.toLowerCase().includes('table') ? 'Database' : 'General')
+                    });
+                  });
+                } else {
+                  flattenedQuestions.push({
+                    ...q,
+                    section: sectionLabel,
+                    subject: data.subject || selectedSubject,
+                    paper: q.paper || data.paper || selectedPaper,
+                    year: data.year || selectedYear,
+                    session: data.session || selectedSession
+                  });
+                }
+              });
+            }
+          });
+        } else {
+          flattenedQuestions = Array.isArray(data) ? data : [data];
+        }
+
+        const questions = flattenedQuestions.map(q => ({
           ...q,
           subject: q.subject || selectedSubject,
           paper: q.paper || selectedPaper,
           year: q.year || selectedYear,
-          session: q.session || selectedSession
+          session: q.session || selectedSession,
+          isDailyDrill: true,
+          createdAt: new Date()
         }));
+
         setPreviewQuestions(questions);
         setIsProcessing(false);
         setProcessingStatus('');
@@ -1713,7 +1839,28 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
       }
 
       const questions = JSON.parse(aiResponseText).map((q: any) => {
-        const paper = q.paper || selectedPaper;
+        let paper = q.paper || selectedPaper;
+        if (paper === '1' || paper === 1) paper = 'Paper 1';
+        if (paper === '2' || paper === 2) paper = 'Paper 2';
+        if (paper === '3' || paper === 3) paper = 'Paper 3';
+        if (!['Paper 1', 'Paper 2', 'Paper 3'].includes(paper)) paper = selectedPaper;
+
+        let rawAnswer = String(q.correctAnswer || '').trim().toUpperCase();
+        if (paper === 'Paper 1') {
+          // Find the first occurrence of A, B, C, or D
+          const match = rawAnswer.match(/[A-D]/);
+          if (match) rawAnswer = match[0];
+          else rawAnswer = 'A'; // Default to A if no valid letter found for Paper 1
+        }
+
+        let difficulty = String(q.difficulty || 'Medium').trim();
+        difficulty = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
+        if (!['Easy', 'Medium', 'Hard'].includes(difficulty)) difficulty = 'Medium';
+
+        let section = q.section ? String(q.section).trim().toUpperCase() : undefined;
+        if (section && section.includes('SECTION ')) section = section.replace('SECTION ', '');
+        if (section && !['A', 'B', 'C'].includes(section)) section = undefined;
+
         return {
           ...q,
           paper,
@@ -1722,12 +1869,12 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
           session: selectedSession,
           questionText: String(q.questionText || ''),
           options: paper === 'Paper 1' ? (q.options || { A: '', B: '', C: '', D: '' }) : (q.options || null),
-          correctAnswer: String(q.correctAnswer || ''),
+          correctAnswer: rawAnswer,
           explanation: String(q.explanation || ''),
           topic: String(q.topic || 'General'),
           marks: Number(q.marks || 1),
-          difficulty: String(q.difficulty || 'Medium'),
-          section: q.section ? String(q.section) : undefined
+          difficulty,
+          section
         };
       });
       
@@ -1893,19 +2040,51 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                 <p className="text-xs text-slate-400">AI will automatically detect paper type and extract questions.</p>
                 <p className="text-xs text-slate-400">CSV/JSON should include: questionText, options, correctAnswer, paper, topic, section (optional)</p>
               </div>
-              <input 
-                type="file" 
-                accept=".pdf,.docx,.csv,.json,.jpg,.jpeg,.png" 
-                onChange={handleFileChange}
-                className="hidden" 
-                id="bulk-file"
-              />
-              <label 
-                htmlFor="bulk-file"
-                className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer hover:bg-indigo-700 transition-colors"
-              >
-                {file ? file.name : 'Select File'}
-              </label>
+              
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center gap-3">
+                  <input 
+                    type="file" 
+                    accept=".pdf,.docx,.csv,.json,.jpg,.jpeg,.png" 
+                    onChange={handleFileChange}
+                    className="hidden" 
+                    id="bulk-file"
+                  />
+                  <label 
+                    htmlFor="bulk-file"
+                    className="inline-flex items-center px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold cursor-pointer hover:bg-indigo-700 transition-colors"
+                  >
+                    {file ? file.name : 'Select File'}
+                  </label>
+                  
+                  <span className="text-gray-400 font-medium">OR</span>
+                  
+                  <button
+                    onClick={() => setShowPasteArea(!showPasteArea)}
+                    className="inline-flex items-center px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 rounded-xl font-bold cursor-pointer hover:bg-indigo-50 transition-colors"
+                  >
+                    {showPasteArea ? 'Hide Paste Area' : 'Paste JSON Data'}
+                  </button>
+                </div>
+
+                {showPasteArea && (
+                  <div className="w-full mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <textarea
+                      className="w-full h-40 p-4 border rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      placeholder='Paste your JSON here... Example: { "sections": [...] } or [ { "questionText": "..." }, ... ]'
+                      value={pastedJson}
+                      onChange={(e) => setPastedJson(e.target.value)}
+                    />
+                    <button
+                      onClick={handlePasteJson}
+                      disabled={!pastedJson.trim() || isProcessing}
+                      className="mt-2 w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                    >
+                      {isProcessing ? 'Processing JSON...' : 'Process JSON Data'}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {error && (
