@@ -1763,9 +1763,16 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
 
       const prompt = `Extract ALL exam questions for the subject "${selectedSubject}" from the provided data.
       
+      CRITICAL INSTRUCTIONS FOR NESTED QUESTIONS:
+      If the document contains sections (e.g., Section A, Section B) or questions with multiple sub-parts (e.g., 1a, 1b, 1c):
+      - Extract EACH sub-part as a SEPARATE self-contained question entry in the array.
+      - IMPORTANT: PREPEND the main question context or heading to the 'questionText' of each sub-part. 
+      - Example: If Question 1 says "Consider the table 'Students'..." and part (a) says "Write a query...", the 'questionText' for part (a) must be "Consider the table 'Students'...\n\n(a) Write a query...".
+      - Ensure 'marks' are correctly assigned to each sub-part.
+      
       OBJECTIVES:
       1. Detect the Paper Type (Paper 1: MCQ, Paper 2: Structured, Paper 3: Practical/Case Study).
-      2. Extract every single question, including sub-parts (e.g., 1a, 1b, 1c).
+      2. Extract every single question, including sub-parts as individual entries.
       3. For Paper 1 (MCQ), extract options A, B, C, D and the correct letter.
       4. For Paper 2/3, extract the full question text and the expected marking scheme/answer.
       5. Map each question to the most relevant topic from this list: ${validTopics}.
@@ -1857,9 +1864,17 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
         difficulty = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
         if (!['Easy', 'Medium', 'Hard'].includes(difficulty)) difficulty = 'Medium';
 
-        let section = q.section ? String(q.section).trim().toUpperCase() : undefined;
-        if (section && section.includes('SECTION ')) section = section.replace('SECTION ', '');
-        if (section && !['A', 'B', 'C'].includes(section)) section = undefined;
+        let section = q.section ? String(q.section).trim() : undefined;
+        if (section) {
+          // Normalize common patterns
+          if (section.toUpperCase().includes('SECTION ')) section = section.toUpperCase().replace('SECTION ', '');
+          if (section.toUpperCase().includes('TASK ')) section = section.toUpperCase().replace('TASK ', '');
+          
+          // If it's just a single letter or A/B/C, keep it clean
+          if (section.length > 1 && !section.includes(':')) {
+             // Keep as is if it's descriptive like "Database"
+          }
+        }
 
         return {
           ...q,
