@@ -246,9 +246,9 @@ export default function Admin() {
           paidAt: now.toISOString()
         });
       } else {
-        // Update user back to unpaid
+        // Update user back to rejected
         await updateDoc(doc(db, 'users', userId), {
-          paymentStatus: 'unpaid'
+          paymentStatus: 'rejected'
         });
       }
 

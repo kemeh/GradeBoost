@@ -544,6 +544,27 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="flex-1 lg:ml-72 p-6 md:p-12 pt-24 lg:pt-12">
+        {user.paymentStatus === 'pending' && (
+          <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
+            <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={20} />
+            <div>
+              <h3 className="text-sm font-black text-amber-900">Payment Pending Verification</h3>
+              <p className="text-xs text-amber-700 font-medium mt-1">Your payment is currently being reviewed by our team. You will get full access once approved.</p>
+            </div>
+          </div>
+        )}
+        {user.paymentStatus === 'rejected' && (
+          <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3">
+            <AlertCircle className="text-red-600 shrink-0 mt-0.5" size={20} />
+            <div className="flex-1">
+              <h3 className="text-sm font-black text-red-900">Payment Rejected</h3>
+              <p className="text-xs text-red-700 font-medium mt-1">We could not verify your recent payment submission. Please check your details and try again.</p>
+            </div>
+            <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-100" onClick={() => navigate('/payment')}>
+              Submit New Payment
+            </Button>
+          </div>
+        )}
         <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Welcome, {firstName}! Ready to improve to an A grade?</h1>

@@ -16,7 +16,7 @@
 //   - role: string (required, enum: ["student", "admin"])
 //   - hasTakenDiagnostic: bool (optional)
 //   - diagnosticResults: map (optional)
-//   - paymentStatus: string (optional, enum: ["unpaid", "paid", "pending"])
+//   - paymentStatus: string (optional, enum: ["unpaid", "paid", "pending", "rejected"])
 //   - paymentExpiryDate: string (optional, ISO date)
 //   - createdAt: timestamp (required)
 //   - updatedAt: timestamp (optional)
@@ -247,7 +247,7 @@ service cloud.firestore {
              (!('isPaid' in data) || data.isPaid is bool) &&
              (!('paid' in data) || data.paid is bool) &&
              (!('paidAt' in data) || data.paidAt is string || data.paidAt == null) &&
-             (!('paymentStatus' in data) || data.paymentStatus in ["unpaid", "paid", "pending"]) &&
+             (!('paymentStatus' in data) || data.paymentStatus in ["unpaid", "paid", "pending", "rejected"]) &&
              (!('paymentExpiryDate' in data) || data.paymentExpiryDate is string || data.paymentExpiryDate == null) &&
              (!('school' in data) || data.school is string) &&
              (!('region' in data) || data.region is string) &&
@@ -464,7 +464,7 @@ service cloud.firestore {
                          areImmutableFieldsUnchanged(['role', 'email', 'createdAt', 'paymentDate', 'paymentExpiryDate']) &&
                          (
                            request.resource.data.paymentStatus == resource.data.paymentStatus || 
-                           (resource.data.paymentStatus == 'unpaid' && request.resource.data.paymentStatus == 'pending') ||
+                           (resource.data.paymentStatus in ['unpaid', 'rejected'] && request.resource.data.paymentStatus == 'pending') ||
                            isAdmin()
                          )) || 
                         isAdmin()

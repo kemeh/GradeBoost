@@ -324,13 +324,21 @@ export default function AuthPage() {
                       type="button"
                       onClick={() => setFormData({ ...formData, subject: sub.name })}
                       className={cn(
-                        "p-4 rounded-2xl border-2 transition-all text-sm font-bold text-center",
+                        "p-4 rounded-2xl border-2 transition-all text-sm font-bold text-center flex flex-col items-center justify-center gap-1",
                         formData.subject === sub.name 
                           ? "border-indigo-600 bg-indigo-50 text-indigo-600" 
                           : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
                       )}
                     >
-                      {sub.name}
+                      <span>{sub.name}</span>
+                      {sub.level && (
+                        <span className={cn(
+                          "text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full",
+                          formData.subject === sub.name ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-500"
+                        )}>
+                          {sub.level}
+                        </span>
+                      )}
                     </button>
                   ))}
                 </div>

@@ -17,7 +17,7 @@
         "role": { "type": "string", "enum": ["student", "admin"], "description": "The user's role in the system." },
         "hasTakenDiagnostic": { "type": "boolean", "description": "Whether the student has completed the diagnostic test." },
         "diagnosticResults": { "type": "object", "description": "Results from the diagnostic test." },
-        "paymentStatus": { "type": "string", "enum": ["unpaid", "paid", "pending"] },
+        "paymentStatus": { "type": "string", "enum": ["unpaid", "paid", "pending", "rejected"] },
         "paymentDate": { "type": "string", "format": "date-time" },
         "paymentExpiryDate": { "type": "string", "format": "date-time" },
         "createdAt": { "type": "string", "format": "date-time", "description": "When the user was created." },

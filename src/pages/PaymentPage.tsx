@@ -26,7 +26,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [paymentStep, setPaymentStep] = useState<'processing' | 'success' | 'failed' | 'manual'>('manual');
+  const [paymentStep, setPaymentStep] = useState<'success' | 'failed' | 'manual' | 'rejected' | 'pending'>('manual');
   const [paymentPrice, setPaymentPrice] = useState(1000);
   const [manualData, setManualData] = useState({
     transactionId: '',
@@ -61,11 +61,19 @@ export default function PaymentPage() {
   }, []);
 
   useEffect(() => {
-    // If user is already paid and not an admin, redirect to dashboard
-    if (user && user.paymentStatus === 'paid' && !isAdmin) {
-      const hasExpired = user.paymentExpiryDate && new Date(user.paymentExpiryDate) < new Date();
-      if (!hasExpired) {
-        navigate('/dashboard');
+    if (user) {
+      if (user.paymentStatus === 'pending') {
+        setPaymentStep('pending');
+      } else if (user.paymentStatus === 'rejected') {
+        setPaymentStep('rejected');
+      } else if (user.paymentStatus === 'paid' && !isAdmin) {
+        const hasExpired = user.paymentExpiryDate && new Date(user.paymentExpiryDate) < new Date();
+        if (!hasExpired) {
+          setPaymentStep('success');
+          setTimeout(() => {
+            navigate('/dashboard');
+          }, 3000);
+        }
       }
     }
   }, [user, isAdmin, navigate]);
@@ -194,7 +202,7 @@ export default function PaymentPage() {
         paymentStatus: 'pending'
       });
 
-      setPaymentStep('success');
+      setPaymentStep('pending');
       setSuccess(true);
       toast.success('Payment submitted for verification!');
     } catch (err) {
@@ -464,9 +472,9 @@ export default function PaymentPage() {
                   </motion.div>
                 )}
 
-                {paymentStep === 'processing' && (
+                {paymentStep === 'pending' && (
                   <motion.div
-                    key="processing"
+                    key="pending"
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 1.05 }}
@@ -477,9 +485,32 @@ export default function PaymentPage() {
                     <Smartphone className="absolute inset-0 m-auto text-indigo-600" size={32} />
                   </div>
                   <div className="space-y-2">
-                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Submitting Payment</h3>
-                    <p className="text-sm text-slate-500 font-medium">Please wait while we process your request.</p>
+                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Payment Pending Verification</h3>
+                    <p className="text-sm text-slate-500 font-medium">Your payment has been submitted and is currently being reviewed by our team. This usually takes a few minutes.</p>
                   </div>
+                </motion.div>
+              )}
+
+              {paymentStep === 'rejected' && (
+                <motion.div
+                  key="rejected"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="py-8 flex flex-col items-center text-center space-y-8"
+                >
+                  <div className="w-20 h-20 bg-red-50 text-red-600 rounded-full flex items-center justify-center">
+                    <AlertCircle size={40} />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Payment Rejected</h3>
+                    <p className="text-sm text-slate-500 font-medium">We could not verify your payment. Please ensure you entered the correct transaction ID or try submitting again.</p>
+                  </div>
+                  <Button size="lg" className="w-full" onClick={() => {
+                    setManualData({ ...manualData, transactionId: '', screenshot: null });
+                    setPaymentStep('manual');
+                  }}>
+                    Submit New Payment <ArrowRight className="ml-2" />
+                  </Button>
                 </motion.div>
               )}
 

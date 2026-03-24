@@ -364,15 +364,29 @@ export default function Profile() {
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subscription Status</span>
                   <div className="flex items-center justify-between">
                     <h3 className="text-xl font-black">{user.paymentStatus === 'paid' ? 'Premium Plan' : 'Free Plan'}</h3>
-                    <Badge variant={user.paymentStatus === 'paid' ? 'success' : 'secondary'}>
-                      {user.paymentStatus === 'paid' ? 'Active' : 'Limited'}
+                    <Badge 
+                      variant={
+                        user.paymentStatus === 'paid' ? 'success' : 
+                        user.paymentStatus === 'pending' ? 'warning' : 
+                        user.paymentStatus === 'rejected' ? 'danger' : 
+                        'secondary'
+                      }
+                    >
+                      {
+                        user.paymentStatus === 'paid' ? 'Active' : 
+                        user.paymentStatus === 'pending' ? 'Pending Verification' : 
+                        user.paymentStatus === 'rejected' ? 'Payment Rejected' : 
+                        'Limited'
+                      }
                     </Badge>
                   </div>
                 </div>
                 
                 {user.paymentStatus !== 'paid' && (
                   <Button className="w-full bg-white text-slate-900 hover:bg-slate-100" onClick={() => navigate('/payment')}>
-                    Upgrade Now
+                    {user.paymentStatus === 'pending' ? 'View Payment Status' : 
+                     user.paymentStatus === 'rejected' ? 'Submit New Payment' : 
+                     'Upgrade Now'}
                   </Button>
                 )}
 

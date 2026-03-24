@@ -21,6 +21,7 @@ export interface SubjectModel {
   id: string;
   name: string;
   description?: string;
+  level?: 'Ordinary level' | 'Advance level';
   isActive: boolean;
   createdAt: any;
 }
@@ -45,7 +46,7 @@ export interface UserProfile {
   hasTakenDiagnostic: boolean;
   diagnosticResults?: DiagnosticResult;
   isPaid?: boolean;
-  paymentStatus?: 'unpaid' | 'paid' | 'pending';
+  paymentStatus?: 'unpaid' | 'paid' | 'pending' | 'rejected';
   paymentDate?: string;
   paymentExpiryDate?: string;
   paid?: boolean;

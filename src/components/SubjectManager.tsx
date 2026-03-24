@@ -12,9 +12,15 @@ export default function SubjectManager() {
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    level: 'Ordinary level' | 'Advance level';
+    isActive: boolean;
+  }>({
     name: '',
     description: '',
+    level: 'Ordinary level',
     isActive: true
   });
 
@@ -51,6 +57,7 @@ export default function SubjectManager() {
         await updateDoc(doc(db, 'subjects', editingId), {
           name: formData.name.trim(),
           description: formData.description.trim(),
+          level: formData.level,
           isActive: formData.isActive
         });
         toast.success('Subject updated successfully');
@@ -58,13 +65,14 @@ export default function SubjectManager() {
         await addDoc(collection(db, 'subjects'), {
           name: formData.name.trim(),
           description: formData.description.trim(),
+          level: formData.level,
           isActive: formData.isActive,
           createdAt: serverTimestamp()
         });
         toast.success('Subject added successfully');
       }
       
-      setFormData({ name: '', description: '', isActive: true });
+      setFormData({ name: '', description: '', level: 'Ordinary level', isActive: true });
       setIsAdding(false);
       setEditingId(null);
       fetchSubjects();
@@ -78,6 +86,7 @@ export default function SubjectManager() {
     setFormData({
       name: subject.name,
       description: subject.description || '',
+      level: subject.level || 'Ordinary level',
       isActive: subject.isActive
     });
     setEditingId(subject.id);
@@ -98,7 +107,7 @@ export default function SubjectManager() {
   };
 
   const cancelEdit = () => {
-    setFormData({ name: '', description: '', isActive: true });
+    setFormData({ name: '', description: '', level: 'Ordinary level', isActive: true });
     setIsAdding(false);
     setEditingId(null);
   };
@@ -136,6 +145,17 @@ export default function SubjectManager() {
                 placeholder="e.g. Computer Science"
                 className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-0 transition-all font-medium text-sm"
               />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Level</label>
+              <select
+                value={formData.level}
+                onChange={(e) => setFormData({ ...formData, level: e.target.value as 'Ordinary level' | 'Advance level' })}
+                className="w-full px-4 py-2 bg-white border border-slate-200 rounded-xl focus:border-indigo-500 focus:ring-0 transition-all font-medium text-sm"
+              >
+                <option value="Ordinary level">Ordinary level</option>
+                <option value="Advance level">Advance level</option>
+              </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Status</label>
@@ -182,6 +202,11 @@ export default function SubjectManager() {
               <div>
                 <div className="flex items-center gap-3 mb-1">
                   <h4 className="font-bold text-slate-900">{subject.name}</h4>
+                  {subject.level && (
+                    <Badge variant="info" className="text-[10px] uppercase tracking-widest">
+                      {subject.level}
+                    </Badge>
+                  )}
                   <Badge variant={subject.isActive ? 'success' : 'secondary'} className="text-[10px] uppercase tracking-widest">
                     {subject.isActive ? 'Active' : 'Inactive'}
                   </Badge>
