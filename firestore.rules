@@ -316,7 +316,7 @@ service cloud.firestore {
              (data.paper == "Paper 1" ? (data.options is map && data.correctAnswer in ["A", "B", "C", "D"]) : (data.correctAnswer is string)) &&
              data.subject is string &&
              data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
-             (!('section' in data) || data.section in ["A", "B", "C"]) &&
+             (!('section' in data) || data.section is string) &&
              data.topic is string &&
              data.isDailyDrill is bool &&
              (!('imageUrl' in data) || data.imageUrl == "" || data.imageUrl == null || isValidUrl(data.imageUrl)) &&

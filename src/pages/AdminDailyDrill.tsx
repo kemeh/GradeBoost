@@ -1581,17 +1581,39 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
         flattenedQuestions = Array.isArray(data) ? data : [data];
       }
 
-      const questions = flattenedQuestions.map(q => ({
-        ...q,
-        subject: q.subject || selectedSubject,
-        paper: q.paper || selectedPaper,
-        year: q.year || selectedYear,
-        session: q.session || selectedSession,
-        isDailyDrill: true,
-        createdAt: new Date(),
-        correctAnswer: q.correctAnswer || '',
-        topic: q.topic || 'General'
-      }));
+      const questions = flattenedQuestions.map(q => {
+        let paper = q.paper || data.paper || selectedPaper;
+        if (paper === '1' || paper === 1) paper = 'Paper 1';
+        if (paper === '2' || paper === 2) paper = 'Paper 2';
+        if (paper === '3' || paper === 3) paper = 'Paper 3';
+        if (!['Paper 1', 'Paper 2', 'Paper 3'].includes(paper)) paper = selectedPaper;
+
+        let rawAnswer = String(q.correctAnswer || '').trim().toUpperCase();
+        if (paper === 'Paper 1') {
+          const match = rawAnswer.match(/[A-D]/);
+          if (match) rawAnswer = match[0];
+          else rawAnswer = 'A'; // Default to A for Paper 1 if invalid
+        }
+
+        let difficulty = String(q.difficulty || 'Medium').trim();
+        difficulty = difficulty.charAt(0).toUpperCase() + difficulty.slice(1).toLowerCase();
+        if (!['Easy', 'Medium', 'Hard'].includes(difficulty)) difficulty = 'Medium';
+
+        return {
+          ...q,
+          subject: q.subject || data.subject || selectedSubject,
+          paper,
+          year: Number(q.year || data.year || selectedYear),
+          session: q.session || data.session || selectedSession,
+          isDailyDrill: true,
+          correctAnswer: rawAnswer,
+          topic: q.topic || 'General',
+          marks: Number(q.marks || 1),
+          difficulty,
+          options: paper === 'Paper 1' ? (q.options || { A: '', B: '', C: '', D: '' }) : (q.options || null),
+          section: q.section ? String(q.section).trim() : undefined
+        };
+      });
 
       setPreviewQuestions(questions);
       setShowPasteArea(false);
@@ -1915,27 +1937,54 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
     setError('');
     
     try {
-      const batch = writeBatch(db);
-      
-      previewQuestions.forEach((q) => {
-        const newDocRef = doc(collection(db, 'exam_questions'));
-        batch.set(newDocRef, {
-          ...q,
-          isDailyDrill: true,
-          createdAt: serverTimestamp()
-        });
-      });
+      // Use multiple batches if needed (Firestore limit is 500 per batch)
+      const BATCH_SIZE = 400;
+      const chunks = [];
+      for (let i = 0; i < previewQuestions.length; i += BATCH_SIZE) {
+        chunks.push(previewQuestions.slice(i, i + BATCH_SIZE));
+      }
 
-      try {
+      let importedCount = 0;
+      for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach((q) => {
+          const newDocRef = doc(collection(db, 'exam_questions'));
+          // Ensure all required fields are present and correctly typed
+          const questionData = {
+            questionText: String(q.questionText || ''),
+            options: q.paper === 'Paper 1' ? (q.options || { A: '', B: '', C: '', D: '' }) : (q.options || null),
+            correctAnswer: String(q.correctAnswer || ''),
+            explanation: String(q.explanation || ''),
+            subject: String(q.subject || selectedSubject),
+            paper: String(q.paper || selectedPaper),
+            topic: String(q.topic || 'General'),
+            marks: Number(q.marks || 1),
+            difficulty: String(q.difficulty || 'Medium'),
+            isDailyDrill: true,
+            createdAt: serverTimestamp(),
+            year: q.year ? Number(q.year) : null,
+            session: q.session ? String(q.session) : null,
+            section: q.section ? String(q.section) : null
+          };
+          
+          // Remove null fields to keep it clean
+          Object.keys(questionData).forEach(key => {
+            if ((questionData as any)[key] === null) {
+              delete (questionData as any)[key];
+            }
+          });
+
+          batch.set(newDocRef, questionData);
+        });
+        
         await batch.commit();
-      } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, 'exam_questions');
+        importedCount += chunk.length;
       }
       
-      toast.success(`Successfully imported ${previewQuestions.length} questions!`);
+      toast.success(`Successfully imported ${importedCount} questions!`);
       onImported(selectedSubject);
     } catch (err: any) {
-      console.error('Import error:', err);
+      console.error('Import error details:', err);
       let msg = 'Failed to import questions to database.';
       if (err.message) {
         try {
