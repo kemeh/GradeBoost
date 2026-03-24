@@ -1,25 +1,34 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+
+// Eagerly loaded components (critical path)
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 
-import Dashboard from './pages/Dashboard';
-import Practice from './pages/Practice';
-import PracticeSession from './pages/PracticeSession';
-import Admin from './pages/Admin';
-import Diagnostic from './pages/Diagnostic';
-import Profile from './pages/Profile';
-import PaymentPage from './pages/PaymentPage';
-import AdminDailyDrill from './pages/AdminDailyDrill';
-import AdminManagement from './pages/AdminManagement';
-import AdminSettings from './pages/AdminSettings';
-import DailyDrillSession from './pages/DailyDrillSession';
-import VerifyEmail from './pages/VerifyEmail';
-import DuelBattle from './pages/DuelBattle';
-import Leaderboard from './pages/Leaderboard';
+// Lazy loaded components (load balanced)
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Practice = lazy(() => import('./pages/Practice'));
+const PracticeSession = lazy(() => import('./pages/PracticeSession'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Diagnostic = lazy(() => import('./pages/Diagnostic'));
+const Profile = lazy(() => import('./pages/Profile'));
+const PaymentPage = lazy(() => import('./pages/PaymentPage'));
+const AdminDailyDrill = lazy(() => import('./pages/AdminDailyDrill'));
+const AdminManagement = lazy(() => import('./pages/AdminManagement'));
+const AdminSettings = lazy(() => import('./pages/AdminSettings'));
+const DailyDrillSession = lazy(() => import('./pages/DailyDrillSession'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const DuelBattle = lazy(() => import('./pages/DuelBattle'));
+const Leaderboard = lazy(() => import('./pages/Leaderboard'));
+
+const LoadingFallback = () => (
+  <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
+    Loading...
+  </div>
+);
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading, isEmailVerified } = useAuth();
@@ -62,28 +71,30 @@ export default function App() {
       <AuthProvider>
         <Router>
           <Toaster position="top-right" />
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
-            
-            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
-            <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
-            <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
-            <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
-            <Route path="/duel" element={<PrivateRoute><DuelBattle /></PrivateRoute>} />
-            <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
-            <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
-            
-            <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-            <Route path="/admin/daily-drill" element={<AdminRoute><AdminDailyDrill /></AdminRoute>} />
-            <Route path="/admin/resources" element={<AdminRoute><AdminManagement /></AdminRoute>} />
-            <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-            
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
+          <Suspense fallback={<LoadingFallback />}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
+              
+              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
+              <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
+              <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
+              <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
+              <Route path="/duel" element={<PrivateRoute><DuelBattle /></PrivateRoute>} />
+              <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
+              <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
+              
+              <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+              <Route path="/admin/daily-drill" element={<AdminRoute><AdminDailyDrill /></AdminRoute>} />
+              <Route path="/admin/resources" element={<AdminRoute><AdminManagement /></AdminRoute>} />
+              <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+              
+              <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+          </Suspense>
         </Router>
       </AuthProvider>
     </SettingsProvider>
