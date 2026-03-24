@@ -187,20 +187,26 @@ service cloud.firestore {
       return isAuthenticated() &&
         (
           (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email == "kemehhilary@gmail.com")
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'student') == 'admin') ||
+          (request.auth.token.get('email', '') == "kemehhilary@gmail.com")
         );
     }
 
     function isPaid() {
+      let path = /databases/$(database)/documents/users/$(request.auth.uid);
       return isAdmin() || 
         (isAuthenticated() && 
-         exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         exists(path) && 
          (
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.paymentStatus == 'paid' ||
-           (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isPaid == true)
+           get(path).data.get('paymentStatus', 'unpaid') == 'paid' ||
+           get(path).data.get('isPaid', false) == true
          ) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.paymentExpiryDate > request.time);
+         (
+           !('paymentExpiryDate' in get(path).data) || 
+           get(path).data.paymentExpiryDate == null || 
+           get(path).data.paymentExpiryDate == "" ||
+           timestamp.value(get(path).data.paymentExpiryDate) > request.time
+         ));
     }
 
     function hasRequiredFields(fields) {
@@ -432,9 +438,11 @@ service cloud.firestore {
     }
 
     function getCurrentDay() {
-      let start = timestamp.value('2026-03-01T00:00:00Z');
+      // Challenge started on 2026-03-24
+      let start = timestamp.value('2026-03-24T00:00:00Z');
       let diff = request.time - start;
-      let day = (diff.toMillis() / (1000 * 60 * 60 * 24)) + 1;
+      // Use seconds() to avoid toMillis() compatibility issues
+      let day = (diff.seconds() / 86400) + 1;
       return int(day);
     }
 
@@ -508,14 +516,12 @@ service cloud.firestore {
     }
 
     match /daily_drills/{drillId} {
-      allow read: if isAuthenticated() && 
-                    (isPaid() || resource.data.day == 1 || (resource.data.isFree == true)) && 
-                    (isAdmin() || resource.data.day <= getCurrentDay() || resource.data.day == 1 || (resource.data.isFree == true));
+      allow read: if isAuthenticated();
       allow create, update, delete: if isAdmin() && isValidDailyDrillV2(request.resource.data);
     }
 
     match /drill_submissions/{submissionId} {
-      allow read: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated() && 
                       request.resource.data.userId == request.auth.uid && 
                       isValidDrillSubmissionV2(request.resource.data) &&

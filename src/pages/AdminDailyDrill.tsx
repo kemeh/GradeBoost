@@ -105,10 +105,10 @@ export default function AdminDailyDrill() {
   const [drillSubjectFilter, setDrillSubjectFilter] = useState<string>('');
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
+    if (!authLoading && (!user?.uid || !isAdmin)) {
       navigate('/');
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user?.uid, isAdmin, authLoading, navigate]);
 
   useEffect(() => {
     if (isAdmin) {

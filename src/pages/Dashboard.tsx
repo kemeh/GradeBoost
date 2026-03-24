@@ -46,13 +46,13 @@ export default function Dashboard() {
   const [userStreak, setUserStreak] = useState(0);
 
   useEffect(() => {
-    if (user) {
+    if (user?.uid) {
       updateStreak(user.uid).catch(console.error);
     }
-  }, [user]);
+  }, [user?.uid]);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
 
     // Fetch User Profile for firstName
     const userUnsub = onSnapshot(doc(db, 'users', user.uid), (doc) => {
@@ -187,7 +187,7 @@ export default function Dashboard() {
       leaderboardUnsub();
       userLeaderboardUnsub();
     };
-  }, [user]);
+  }, [user?.uid, user?.subject, user?.paymentStatus]);
 
   const handleCheckAnswer = () => {
     if (!selectedSample || !selectedAnswer) return;
@@ -244,9 +244,9 @@ export default function Dashboard() {
         )}
         <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">
+            <div className="text-4xl font-black text-slate-900 tracking-tight">
               {firstName ? `Welcome, ${firstName}!` : <Skeleton className="h-10 w-64" />}
-            </h1>
+            </div>
             <p className="text-slate-500 font-medium mt-2">
               {user.paymentStatus === 'paid' 
                 ? "You have full access to all practice materials, interactive quizzes, and performance insights."
@@ -277,14 +277,14 @@ export default function Dashboard() {
                   </div>
                   <Badge variant="secondary" className="bg-amber-400 text-amber-950 border-none">Daily Drill</Badge>
                 </div>
-                <h2 className="text-3xl font-black mb-2 tracking-tight">
+                <div className="text-3xl font-black mb-2 tracking-tight">
                   {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (todayDrill ? `Today's Topic: ${todayDrill.topic}` : "No Drill Scheduled for Today")}
-                </h2>
-                <p className="text-indigo-100 font-medium mb-6 max-w-xl">
+                </div>
+                <div className="text-indigo-100 font-medium mb-6 max-w-xl">
                   {drillLoading ? <Skeleton className="h-4 w-full bg-white/20" /> : (todayDrill 
                     ? `Master ${todayDrill.topic} with today's ${todayDrill.subject} drill. Keep your streak alive!`
                     : "Check back tomorrow for a new challenge or practice with sample questions below.")}
-                </p>
+                </div>
                 <div className="flex flex-wrap gap-4">
                   {drillLoading ? <Skeleton className="h-14 w-40 bg-white/20" /> : (user.paymentStatus === 'paid' || (todayDrill && (todayDrill.day === 1 || todayDrill.isFree)) ? (
                     <Button 
@@ -439,17 +439,17 @@ export default function Dashboard() {
                 
                 <div className="space-y-6">
                   <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current Position</p>
-                    <p className="text-4xl font-black text-white tracking-tighter">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Current Position</div>
+                    <div className="text-4xl font-black text-white tracking-tighter">
                       {leaderboardLoading ? <Skeleton className="h-10 w-16 bg-white/20" /> : (userLeaderboard ? `#${userLeaderboard.position}` : 'N/A')}
-                    </p>
+                    </div>
                   </div>
                   
                   <div className="p-6 bg-white/5 rounded-3xl border border-white/10">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Weekly Points</p>
-                    <p className="text-4xl font-black text-white tracking-tighter">
+                    <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Weekly Points</div>
+                    <div className="text-4xl font-black text-white tracking-tighter">
                       {leaderboardLoading ? <Skeleton className="h-10 w-16 bg-white/20" /> : (userLeaderboard ? userLeaderboard.totalScore : '0')}
-                    </p>
+                    </div>
                   </div>
                 </div>
               </div>

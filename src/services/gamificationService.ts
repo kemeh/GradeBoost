@@ -93,10 +93,8 @@ export async function updateStreak(userId: string) {
       lastActiveDate: serverTimestamp()
     });
   } else if (diffDays === 0) {
-    // Already active today, do nothing or just update timestamp
-    await updateDoc(userRef, {
-      lastActiveDate: serverTimestamp()
-    });
+    // Already active today, do nothing to avoid infinite re-render loops
+    return;
   } else {
     // First time or something else
     await updateDoc(userRef, {
