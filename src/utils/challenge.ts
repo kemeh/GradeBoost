@@ -1,8 +1,10 @@
 
-export const DEFAULT_CHALLENGE_START_DATE = '2026-03-22'; // Default start date
+export const DEFAULT_CHALLENGE_START_DATE = '2026-03-24'; // Default start date
 
 export function getCurrentDayNumber(startDateString?: string): number {
-  const startDate = new Date(startDateString || DEFAULT_CHALLENGE_START_DATE);
+  const dateStr = startDateString || DEFAULT_CHALLENGE_START_DATE;
+  // Use T00:00:00 to ensure it's treated as a local date
+  const startDate = new Date(dateStr.includes('T') ? dateStr : `${dateStr}T00:00:00`);
   const today = new Date();
   
   // Reset time to midnight for accurate day calculation

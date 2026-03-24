@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Settings, Key, Save, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, Calendar, RotateCcw, CreditCard } from 'lucide-react';
+import { Settings, Key, Save, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, Calendar, RotateCcw, CreditCard, Trash2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { getSystemSettings, updateSystemSettings } from '../services/settingsService';
 import { toast } from 'react-hot-toast';
 import { GoogleGenAI } from '@google/genai';
+import { collection, getDocs, writeBatch } from 'firebase/firestore';
+import { db } from '../firebase';
 import Sidebar from '../components/Sidebar';
 import { formatDate } from '../utils/dateUtils';
 import { DEFAULT_CHALLENGE_START_DATE, getCurrentDayNumber } from '../utils/challenge';
@@ -131,9 +133,37 @@ export default function AdminSettings() {
   };
 
   const resetToToday = () => {
-    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const today = `${year}-${month}-${day}`;
     setChallengeStartDate(today);
     toast.success('Start date set to today. Remember to save!');
+  };
+
+  const handleResetAllSubmissions = async () => {
+    if (!window.confirm('CRITICAL: This will delete ALL student submissions for ALL drills. This action cannot be undone. Are you absolutely sure?')) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const submissionsSnap = await getDocs(collection(db, 'drill_submissions'));
+      const batch = writeBatch(db);
+      
+      submissionsSnap.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      toast.success(`Successfully cleared ${submissionsSnap.size} submissions`);
+    } catch (error) {
+      console.error('Error resetting submissions:', error);
+      toast.error('Failed to reset submissions');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const testConnection = async () => {
@@ -512,6 +542,39 @@ export default function AdminSettings() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </motion.section>
+
+            {/* Danger Zone Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-rose-50 rounded-3xl p-8 border border-rose-200"
+            >
+              <div className="flex items-center gap-3 mb-6 text-rose-700">
+                <div className="p-3 bg-rose-100 rounded-2xl">
+                  <AlertCircle className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold">Danger Zone</h2>
+                  <p className="text-sm opacity-80">Highly destructive actions. Use with extreme caution.</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-rose-100 shadow-sm">
+                <div>
+                  <h3 className="font-bold text-slate-900">Reset All Student Progress</h3>
+                  <p className="text-sm text-slate-500">Delete all student submissions for all daily drills. This is usually done at the start of a new 60-day cycle.</p>
+                </div>
+                <button
+                  onClick={handleResetAllSubmissions}
+                  disabled={isSaving}
+                  className="px-6 py-4 bg-rose-600 text-white rounded-2xl font-bold uppercase tracking-wider hover:bg-rose-700 transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  Reset All Submissions
+                </button>
               </div>
             </motion.section>
 
