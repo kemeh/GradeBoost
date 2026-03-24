@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
 import { collection, query, where, orderBy, getDocs, limit, onSnapshot, doc } from 'firebase/firestore';
 import Sidebar from '../components/Sidebar';
+import WelcomeDashboard from '../components/WelcomeDashboard';
 import { 
   Button, Card, Badge, cn,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -39,11 +40,8 @@ export default function Dashboard() {
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [showAnswer, setShowAnswer] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [firstName, setFirstName] = useState<string>('');
   const [leaderboard, setLeaderboard] = useState<WeeklyLeaderboard[]>([]);
   const [userLeaderboard, setUserLeaderboard] = useState<WeeklyLeaderboard | null>(null);
-  const [userPoints, setUserPoints] = useState(0);
-  const [userStreak, setUserStreak] = useState(0);
 
   useEffect(() => {
     if (user?.uid) {
@@ -53,22 +51,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (!user?.uid) return;
-
-    // Fetch User Profile for firstName
-    const userUnsub = onSnapshot(doc(db, 'users', user.uid), (doc) => {
-      if (doc.exists()) {
-        const userData = doc.data();
-        setFirstName(userData.firstName || userData.name?.split(' ')[0] || 'Student');
-        setUserPoints(userData.points || 0);
-        setUserStreak(userData.streak || 0);
-      }
-    }, (error) => {
-      try {
-        handleFirestoreError(error, OperationType.GET, `users/${user.uid}`);
-      } catch (e) {
-        console.error("Dashboard UserProfile Error:", e);
-      }
-    });
 
     // Fetch Daily Drill
     const fetchDrillData = async () => {
@@ -183,7 +165,6 @@ export default function Dashboard() {
     setLoading(false);
 
     return () => {
-      userUnsub();
       leaderboardUnsub();
       userLeaderboardUnsub();
     };
@@ -242,29 +223,8 @@ export default function Dashboard() {
             </Button>
           </div>
         )}
-        <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
-          <div>
-            <div className="text-4xl font-black text-slate-900 tracking-tight">
-              {firstName ? `Welcome, ${firstName}!` : <Skeleton className="h-10 w-64" />}
-            </div>
-            <p className="text-slate-500 font-medium mt-2">
-              {user.paymentStatus === 'paid' 
-                ? "You have full access to all practice materials, interactive quizzes, and performance insights."
-                : "Try our free sample questions or unlock the full course for complete access to all materials."}
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <Badge variant="primary" className="px-4 py-2">Target: Grade A</Badge>
-            <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-100">
-              <Zap className="text-amber-500" size={16} />
-              <span className="text-sm font-black text-amber-700">{userStreak} Day Streak</span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
-              <Trophy className="text-indigo-600" size={16} />
-              <span className="text-sm font-black text-indigo-700">{userPoints} Points</span>
-            </div>
-          </div>
-        </header>
+        
+        <WelcomeDashboard />
 
         {/* Daily Drill Highlight */}
         <section className="mb-12">
