@@ -1635,7 +1635,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
       }
       
       const ai = new GoogleGenAI({ apiKey });
-      const validTopics = Object.values(SUBJECT_TOPICS[selectedSubject]).flat().join(', ');
+      const validTopics = getAllTopicsForSubject(selectedSubject).join(', ');
 
       const prompt = `Extract ALL exam questions for the subject "${selectedSubject}" from the provided data.
       

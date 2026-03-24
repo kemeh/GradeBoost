@@ -101,10 +101,47 @@ export const SUBJECT_TOPICS = {
 export type SubjectName = string;
 
 export const getAllTopicsForSubject = (subject: string) => {
-  const modules = (SUBJECT_TOPICS as Record<string, Record<string, readonly string[]>>)[subject];
-  return modules ? Object.values(modules).flat() : [];
+  if (!subject) return [];
+  const normalizedSubject = subject.toLowerCase().trim();
+  
+  // Try exact match first
+  const exactMatch = Object.keys(SUBJECT_TOPICS).find(k => k.toLowerCase() === normalizedSubject);
+  if (exactMatch) {
+    const modules = (SUBJECT_TOPICS as any)[exactMatch];
+    return Object.values(modules).flat() as string[];
+  }
+
+  // Try partial match (e.g. "Computer Science (A-Level)" should match "Computer Science")
+  const partialMatch = Object.keys(SUBJECT_TOPICS).find(k => 
+    normalizedSubject.includes(k.toLowerCase()) || k.toLowerCase().includes(normalizedSubject)
+  );
+  
+  if (partialMatch) {
+    const modules = (SUBJECT_TOPICS as any)[partialMatch];
+    return Object.values(modules).flat() as string[];
+  }
+
+  return [];
 };
 
 export const getGroupedTopicsForSubject = (subject: string): Record<string, readonly string[]> => {
-  return ((SUBJECT_TOPICS as Record<string, Record<string, readonly string[]>>)[subject]) || {};
+  if (!subject) return {};
+  const normalizedSubject = subject.toLowerCase().trim();
+
+  // Try exact match first
+  const exactMatch = Object.keys(SUBJECT_TOPICS).find(k => k.toLowerCase() === normalizedSubject);
+  if (exactMatch) {
+    return (SUBJECT_TOPICS as any)[exactMatch];
+  }
+
+  // Try partial match
+  const partialMatch = Object.keys(SUBJECT_TOPICS).find(k => 
+    normalizedSubject.includes(k.toLowerCase()) || k.toLowerCase().includes(normalizedSubject)
+  );
+
+  if (partialMatch) {
+    return (SUBJECT_TOPICS as any)[partialMatch];
+  }
+
+  return {};
 };
