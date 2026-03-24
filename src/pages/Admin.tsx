@@ -743,8 +743,8 @@ export default function Admin() {
                         </td>
                         <td className="px-8 py-4">
                           <div className="flex flex-col gap-1">
-                            <p className="text-xs font-bold text-slate-900">P1: {userMap[duel.player1Id] || duel.player1Id.slice(0, 8)}</p>
-                            <p className="text-xs font-bold text-slate-900">P2: {duel.player2Id ? (userMap[duel.player2Id] || duel.player2Id.slice(0, 8)) : 'Waiting...'}</p>
+                            <p className="text-xs font-bold text-slate-900">P1: {userMap[duel.player1Id] || duel.player1Id?.slice(0, 8) || 'Unknown'}</p>
+                            <p className="text-xs font-bold text-slate-900">P2: {duel.player2Id ? (userMap[duel.player2Id] || duel.player2Id?.slice(0, 8)) : 'Waiting...'}</p>
                           </div>
                         </td>
                         <td className="px-8 py-4">
@@ -759,7 +759,7 @@ export default function Admin() {
                         </td>
                         <td className="px-8 py-4">
                           <span className="text-xs font-bold text-slate-400">
-                            {duel.createdAt?.toDate ? formatDate(duel.createdAt.toDate().toISOString()) : 'N/A'}
+                            {formatDate(duel.createdAt)}
                           </span>
                         </td>
                       </tr>
