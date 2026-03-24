@@ -325,6 +325,18 @@ export const TabsContent = ({ value, children, className, activeTab }: any) => {
 };
 
 /**
+ * Skeleton Component
+ */
+export const Skeleton = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
+  return (
+    <div
+      className={cn("animate-pulse rounded-2xl bg-slate-100", className)}
+      {...props}
+    />
+  );
+};
+
+/**
  * Label Component
  */
 export const Label = ({ children, htmlFor, className }: { children: React.ReactNode; htmlFor?: string; className?: string }) => (
