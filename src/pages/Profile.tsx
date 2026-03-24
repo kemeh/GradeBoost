@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard } from 'lucide-react';
+import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen } from 'lucide-react';
 import { ACHIEVEMENTS } from '../services/gamificationService';
 import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -22,11 +22,26 @@ export default function Profile() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     school: user?.school || '',
     region: user?.region || '',
+    subject: user?.subject || '',
   });
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const q = query(collection(db, 'subjects'), where('isActive', '==', true));
+        const snapshot = await getDocs(q);
+        setSubjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+      }
+    };
+    fetchSubjects();
+  }, []);
 
   useEffect(() => {
     const fetchPaymentHistory = async () => {
@@ -217,6 +232,23 @@ export default function Profile() {
                         onChange={e => setFormData({ ...formData, region: e.target.value })}
                         placeholder="Enter your region"
                       />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <BookOpen size={12} /> Target Subject
+                      </label>
+                      <select 
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none"
+                        value={formData.subject}
+                        onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                        required
+                      >
+                        <option value="">Select a Subject</option>
+                        {subjects.map(s => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 

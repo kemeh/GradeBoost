@@ -25,7 +25,7 @@ import { formatDate, getWeekNumber } from '../utils/dateUtils';
 import { calculateWeeklyLeaderboard } from '../utils/leaderboard';
 import { toast } from 'react-hot-toast';
 import { SUBJECT_TOPICS, getGroupedTopicsForSubject, getAllTopicsForSubject, SubjectName } from '../constants/topics';
-import { getGeminiApiKey } from '../services/settingsService';
+import { getGeminiApiKey, getSystemSettings } from '../services/settingsService';
 import { GoogleGenAI, Type } from '@google/genai';
 // @ts-ignore
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -38,6 +38,7 @@ export default function AdminDailyDrill() {
   const [submissions, setSubmissions] = useState<DrillSubmission[]>([]);
   const [filteredSubmissions, setFilteredSubmissions] = useState<DrillSubmission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentDay, setCurrentDay] = useState(1);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [showQuestionModal, setShowQuestionModal] = useState(false);
@@ -119,6 +120,10 @@ export default function AdminDailyDrill() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Fetch settings for current day
+      const settings = await getSystemSettings();
+      setCurrentDay(getCurrentDayNumber(settings?.challengeStartDate));
+
       // Fetch subjects first
       const subjectsQuery = query(collection(db, 'subjects'), where('isActive', '==', true));
       const subjectsSnapshot = await getDocs(subjectsQuery);
@@ -284,11 +289,15 @@ export default function AdminDailyDrill() {
         throw new Error('No questions found for the selected topic and subject.');
       }
 
-      // 2. Check if day exists
-      const q = query(collection(db, 'daily_drills'), where('day', '==', autoAssignForm.day));
+      // 2. Check if day exists for this subject
+      const q = query(
+        collection(db, 'daily_drills'), 
+        where('day', '==', autoAssignForm.day),
+        where('subject', '==', autoAssignForm.subject)
+      );
       const snap = await getDocs(q);
       if (!snap.empty) {
-        throw new Error(`Day ${autoAssignForm.day} already has an assigned drill.`);
+        throw new Error(`Day ${autoAssignForm.day} already has an assigned drill for ${autoAssignForm.subject}.`);
       }
 
       // 3. Create drill
@@ -329,11 +338,15 @@ export default function AdminDailyDrill() {
           handleFirestoreError(err, OperationType.UPDATE, `daily_drills/${editingId}`);
         }
       } else {
-        // Check if day already exists
-        const q = query(collection(db, 'daily_drills'), where('day', '==', drillForm.day));
+        // Check if day already exists for this subject
+        const q = query(
+          collection(db, 'daily_drills'), 
+          where('day', '==', drillForm.day),
+          where('subject', '==', drillForm.subject)
+        );
         const snap = await getDocs(q);
         if (!snap.empty) {
-          throw new Error(`Day ${drillForm.day} already has an assigned drill.`);
+          throw new Error(`Day ${drillForm.day} already has an assigned drill for ${drillForm.subject}.`);
         }
         try {
           await addDoc(collection(db, 'daily_drills'), data);
@@ -669,11 +682,16 @@ export default function AdminDailyDrill() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 bg-white">
-                      {drills.map((d) => (
-                        <tr key={d.id}>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm font-medium text-gray-900">Day {d.day}</div>
-                          </td>
+                        {drills.map((d) => (
+                          <tr key={d.id} className={d.day === currentDay ? "bg-indigo-50/50" : ""}>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-medium text-gray-900">Day {d.day}</div>
+                                {d.day === currentDay && (
+                                  <Badge variant="primary" className="bg-indigo-600 text-white text-[10px] py-0">TODAY</Badge>
+                                )}
+                              </div>
+                            </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <Badge variant="secondary">{d.subject}</Badge>
                           </td>

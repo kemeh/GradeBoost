@@ -54,6 +54,7 @@ export default function Dashboard() {
 
     // Fetch Daily Drill
     const fetchDrillData = async () => {
+      if (!user?.uid) return;
       setDrillLoading(true);
       try {
         const settings = await getSystemSettings();
@@ -62,10 +63,17 @@ export default function Dashboard() {
         const currentDay = getCurrentDayNumber(startDate);
         setDaysRemaining(getDaysRemaining(startDate));
 
+        if (!user.subject) {
+          console.warn("User has no subject assigned. Cannot fetch daily drill.");
+          setTodayDrill(null);
+          setDrillLoading(false);
+          return;
+        }
+
         const drillQ = query(
           collection(db, 'daily_drills'), 
           where('day', '==', currentDay),
-          where('subject', '==', user.subject || ''),
+          where('subject', '==', user.subject),
           limit(1)
         );
         
@@ -86,10 +94,14 @@ export default function Dashboard() {
             setHasSubmittedToday(true);
           }
         } else {
+          // Try to find ANY drill for today as a fallback for debugging or if subject-specific is missing
+          // But don't set it as todayDrill if it's the wrong subject, just log it
+          console.log(`No drill found for Day ${currentDay} and Subject ${user.subject}`);
           setTodayDrill(null);
         }
       } catch (err) {
         console.error("Dashboard Drill Fetch Error:", err);
+        handleFirestoreError(err, OperationType.GET, 'daily_drills');
       } finally {
         setDrillLoading(false);
       }
@@ -238,15 +250,32 @@ export default function Dashboard() {
                   <Badge variant="secondary" className="bg-amber-400 text-amber-950 border-none">Daily Drill</Badge>
                 </div>
                 <div className="text-3xl font-black mb-2 tracking-tight">
-                  {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (todayDrill ? `Today's Topic: ${todayDrill.topic}` : "No Drill Scheduled for Today")}
+                  {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (
+                    !user.subject ? "Subject Not Set" :
+                    todayDrill ? `Today's Topic: ${todayDrill.topic}` : "No Drill Scheduled for Today"
+                  )}
                 </div>
                 <div className="text-indigo-100 font-medium mb-6 max-w-xl">
-                  {drillLoading ? <Skeleton className="h-4 w-full bg-white/20" /> : (todayDrill 
+                  {drillLoading ? <Skeleton className="h-4 w-full bg-white/20" /> : (
+                    !user.subject ? "Please set your target subject in your profile to see daily drills." :
+                    todayDrill 
                     ? `Master ${todayDrill.topic} with today's ${todayDrill.subject} drill. Keep your streak alive!`
-                    : "Check back tomorrow for a new challenge or practice with sample questions below.")}
+                    : "Check back tomorrow for a new challenge or practice with sample questions below."
+                  )}
                 </div>
                 <div className="flex flex-wrap gap-4">
-                  {drillLoading ? <Skeleton className="h-14 w-40 bg-white/20" /> : (user.paymentStatus === 'paid' || (todayDrill && (todayDrill.day === 1 || todayDrill.isFree)) ? (
+                  {drillLoading ? <Skeleton className="h-14 w-40 bg-white/20" /> : (
+                    !user.subject ? (
+                      <Button 
+                        variant="secondary" 
+                        className="font-black px-8 py-6 rounded-2xl bg-white text-indigo-600 hover:bg-indigo-50"
+                        onClick={() => navigate('/profile')}
+                      >
+                        Set Subject in Profile
+                        <ArrowRight className="ml-2" size={20} />
+                      </Button>
+                    ) :
+                    (user.paymentStatus === 'paid' || (todayDrill && (todayDrill.day === 1 || todayDrill.isFree))) ? (
                     <Button 
                       variant="secondary" 
                       className={cn(
@@ -278,7 +307,8 @@ export default function Dashboard() {
                       <Lock className="mr-2" size={20} />
                       Unlock to Start
                     </Button>
-                  ))}
+                  )
+                )}
                   <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
                     <Trophy className="text-amber-400" size={20} />
                     <span className="text-sm font-bold">{daysRemaining} Days Left in Challenge</span>
