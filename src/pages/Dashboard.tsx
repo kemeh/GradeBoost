@@ -132,7 +132,7 @@ export default function Dashboard() {
     // Fetch Learning Resources
     const resourcesQuery = query(
       collection(db, 'learning_resources'),
-      where('subject', '==', user.subject),
+      where('subject', '==', user.subject || ''),
       orderBy('createdAt', 'desc'),
       limit(6)
     );
@@ -151,7 +151,7 @@ export default function Dashboard() {
     const pdfResourcesQuery = query(
       collection(db, 'resources'),
       where('visible', '==', true),
-      where('subject', '==', user.subject),
+      where('subject', '==', user.subject || ''),
       orderBy('createdAt', 'desc')
     );
     const pdfResourcesUnsub = onSnapshot(pdfResourcesQuery, (snapshot) => {
@@ -169,7 +169,7 @@ export default function Dashboard() {
     const assignmentsQuery = query(
       collection(db, 'assignments'),
       where('active', '==', true),
-      where('subject', '==', user.subject),
+      where('subject', '==', user.subject || ''),
       orderBy('dueDate', 'asc')
     );
     const assignmentsUnsub = onSnapshot(assignmentsQuery, (snapshot) => {
@@ -185,19 +185,20 @@ export default function Dashboard() {
 
     // Fetch Daily Drill
     const fetchDrillData = async () => {
-      const settings = await getSystemSettings();
-      const startDate = settings?.challengeStartDate;
-      
-      const currentDay = getCurrentDayNumber(startDate);
-      setDaysRemaining(getDaysRemaining(startDate));
+      try {
+        const settings = await getSystemSettings();
+        const startDate = settings?.challengeStartDate;
+        
+        const currentDay = getCurrentDayNumber(startDate);
+        setDaysRemaining(getDaysRemaining(startDate));
 
-      const drillQ = query(
-        collection(db, 'daily_drills'), 
-        where('day', '==', currentDay),
-        where('subject', '==', user.subject)
-      );
-      
-      return getDocs(drillQ).then(drillSnapshot => {
+        const drillQ = query(
+          collection(db, 'daily_drills'), 
+          where('day', '==', currentDay),
+          where('subject', '==', user.subject || '')
+        );
+        
+        const drillSnapshot = await getDocs(drillQ);
         if (!drillSnapshot.empty) {
           const drillData = { id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill;
           setTodayDrill(drillData);
@@ -208,39 +209,40 @@ export default function Dashboard() {
             where('userId', '==', user.uid),
             where('day', '==', currentDay)
           );
-          return getDocs(subQ).then(subSnapshot => {
-            if (!subSnapshot.empty) {
-              setHasSubmittedToday(true);
-            }
-          }).catch(err => {
-            console.error("Dashboard Submission Check Error:", err);
-          });
+          const subSnapshot = await getDocs(subQ);
+          if (!subSnapshot.empty) {
+            setHasSubmittedToday(true);
+          }
         } else {
           console.log(`No drill found for day ${currentDay}`);
           setTodayDrill(null);
         }
-      }).catch(err => {
+      } catch (err) {
         console.error("Dashboard Drill Fetch Error:", err);
         try {
           handleFirestoreError(err, OperationType.GET, 'daily_drills');
         } catch (e) {
           // Error already logged
         }
-      });
+      }
     };
 
     const drillPromise = fetchDrillData();
 
     // Fetch Sample Questions if unpaid
     if (user.paymentStatus !== 'paid') {
-      const samplesQ = query(
-        collection(db, 'sampleQuestions'),
-        where('subject', '==', user.subject),
-        limit(10)
-      );
-      getDocs(samplesQ).then(samplesSnapshot => {
-        setSampleQuestions(samplesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SampleQuestion)));
-      });
+      try {
+        const samplesQ = query(
+          collection(db, 'sampleQuestions'),
+          where('subject', '==', user.subject || ''),
+          limit(10)
+        );
+        getDocs(samplesQ).then(samplesSnapshot => {
+          setSampleQuestions(samplesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SampleQuestion)));
+        }).catch(err => console.error("Sample Questions Error:", err));
+      } catch (err) {
+        console.error("Sample Questions Query Error:", err);
+      }
     }
 
     // Fetch Weekly Leaderboard
@@ -248,33 +250,38 @@ export default function Dashboard() {
     const weekNumber = getWeekNumber(now);
     const year = now.getFullYear();
 
-    const leaderboardQuery = query(
-      collection(db, 'weekly_leaderboard'),
-      where('weekNumber', '==', weekNumber),
-      where('year', '==', year),
-      where('subject', '==', user.subject),
-      orderBy('position', 'asc'),
-      limit(5)
-    );
+    let leaderboardUnsub = () => {};
+    try {
+      const leaderboardQuery = query(
+        collection(db, 'weekly_leaderboard'),
+        where('weekNumber', '==', weekNumber),
+        where('year', '==', year),
+        where('subject', '==', user.subject || ''),
+        orderBy('position', 'asc'),
+        limit(5)
+      );
 
-    const leaderboardUnsub = onSnapshot(leaderboardQuery, (snapshot) => {
-      const data = snapshot.docs.map(doc => {
-        const d = doc.data();
-        const name = d.userName || 'Student';
-        return { 
-          id: doc.id, 
-          ...d, 
-          userName: name === 'Anonymous' ? 'Student' : name 
-        } as WeeklyLeaderboard;
+      leaderboardUnsub = onSnapshot(leaderboardQuery, (snapshot) => {
+        const data = snapshot.docs.map(doc => {
+          const d = doc.data();
+          const name = d.userName || 'Student';
+          return { 
+            id: doc.id, 
+            ...d, 
+            userName: name === 'Anonymous' ? 'Student' : name 
+          } as WeeklyLeaderboard;
+        });
+        setLeaderboard(data);
+      }, (error) => {
+        try {
+          handleFirestoreError(error, OperationType.LIST, 'weekly_leaderboard');
+        } catch (e) {
+          console.error("Dashboard Leaderboard Error:", e);
+        }
       });
-      setLeaderboard(data);
-    }, (error) => {
-      try {
-        handleFirestoreError(error, OperationType.LIST, 'weekly_leaderboard');
-      } catch (e) {
-        console.error("Dashboard Leaderboard Error:", e);
-      }
-    });
+    } catch (err) {
+      console.error("Leaderboard Query Error:", err);
+    }
 
     // Fetch user's position
     const userLeaderboardId = `${year}-W${weekNumber}-${user.uid}`;

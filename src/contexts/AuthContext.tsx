@@ -46,41 +46,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (fUser) {
         setLoading(true);
+        // Refresh token in the background without blocking
+        fUser.getIdToken(true).catch(console.error);
+        
         const userRef = doc(db, 'users', fUser.uid);
         
-        const docSnap = await getDoc(userRef);
-        if (!docSnap.exists()) {
-          // Auto-create profile if it doesn't exist
-          const isAdminEmail = fUser.email === 'kemehhilary@gmail.com';
-          try {
-            await setDoc(userRef, {
-              name: fUser.displayName || (isAdminEmail ? 'Admin' : 'Student'),
-              email: fUser.email,
-              subject: '',
-              school: 'Online',
-              region: isAdminEmail ? 'Admin' : 'Unknown',
-              assignedPapers: ['paper1', 'paper2', 'paper3'],
-              targetGrade: 'A',
-              role: isAdminEmail ? 'admin' : 'student',
-              hasTakenDiagnostic: isAdminEmail ? true : false,
-              isPaid: isAdminEmail ? true : false,
-              paymentStatus: isAdminEmail ? 'paid' : 'unpaid',
-              paymentExpiryDate: isAdminEmail ? new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
-              createdAt: serverTimestamp(),
-            });
-            console.log("User profile auto-created for UID:", fUser.uid);
-          } catch (err) {
-            console.error("Failed to auto-create user profile:", err);
-          }
-        }
-
-        unsubDoc = onSnapshot(userRef, (docSnap) => {
+        unsubDoc = onSnapshot(userRef, async (docSnap) => {
           if (docSnap.exists()) {
             setUser({ uid: fUser.uid, ...docSnap.data() } as UserProfile);
+            setLoading(false);
           } else {
-            setUser(null);
+            // Auto-create profile if it doesn't exist
+            const isAdminEmail = fUser.email === 'kemehhilary@gmail.com';
+            try {
+              await setDoc(userRef, {
+                name: fUser.displayName || (isAdminEmail ? 'Admin' : 'Student'),
+                email: fUser.email,
+                subject: '',
+                school: 'Online',
+                region: isAdminEmail ? 'Admin' : 'Unknown',
+                assignedPapers: ['paper1', 'paper2', 'paper3'],
+                targetGrade: 'A',
+                role: isAdminEmail ? 'admin' : 'student',
+                hasTakenDiagnostic: isAdminEmail ? true : false,
+                isPaid: isAdminEmail ? true : false,
+                paymentStatus: isAdminEmail ? 'paid' : 'unpaid',
+                paymentExpiryDate: isAdminEmail ? new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
+                createdAt: serverTimestamp(),
+              });
+              console.log("User profile auto-created for UID:", fUser.uid);
+            } catch (err) {
+              console.error("Failed to auto-create user profile:", err);
+              setUser(null);
+              setLoading(false);
+            }
           }
-          setLoading(false);
         }, (error) => {
           // Log error but don't throw to prevent app hang
           try {

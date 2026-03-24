@@ -5,6 +5,7 @@ import { SubjectModel } from '../types';
 import { Plus, Edit2, Trash2, Check, X, BookOpen } from 'lucide-react';
 import { Button, Card, Badge, cn } from './ui';
 import { toast } from 'react-hot-toast';
+import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 export default function SubjectManager() {
   const [subjects, setSubjects] = useState<SubjectModel[]>([]);
@@ -79,6 +80,7 @@ export default function SubjectManager() {
     } catch (error) {
       console.error('Error saving subject:', error);
       toast.error('Failed to save subject');
+      handleFirestoreError(error, editingId ? OperationType.UPDATE : OperationType.CREATE, 'subjects');
     }
   };
 
@@ -103,6 +105,7 @@ export default function SubjectManager() {
     } catch (error) {
       console.error('Error deleting subject:', error);
       toast.error('Failed to delete subject');
+      handleFirestoreError(error, OperationType.DELETE, `subjects/${id}`);
     }
   };
 
@@ -181,8 +184,8 @@ export default function SubjectManager() {
           </div>
           
           <div className="flex items-center justify-end gap-3 pt-2">
-            <Button variant="outline" onClick={cancelEdit}>Cancel</Button>
-            <Button onClick={handleSave} className="flex items-center gap-2">
+            <Button type="button" variant="outline" onClick={cancelEdit}>Cancel</Button>
+            <Button type="button" onClick={handleSave} className="flex items-center gap-2">
               <Check size={16} /> Save Subject
             </Button>
           </div>
