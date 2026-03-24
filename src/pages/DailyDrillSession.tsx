@@ -312,6 +312,33 @@ export default function DailyDrillSession() {
     }
   };
 
+  const handleRetake = async () => {
+    if (!user || !drill) return;
+    setSubmitting(true);
+    try {
+      const batch = writeBatch(db);
+      submissions.forEach(sub => {
+        if (sub.id) {
+          batch.delete(doc(db, 'drill_submissions', sub.id));
+        }
+      });
+      await batch.commit();
+      
+      setHasSubmitted(false);
+      setShowResults(false);
+      setAnswers({});
+      setFileUrls({});
+      setCurrentQuestionIndex(0);
+      setSubmissions([]);
+      setSuccess(false);
+    } catch (err) {
+      handleFirestoreError(err, OperationType.DELETE, 'drill_submissions');
+      setError('Failed to retake drill.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -398,9 +425,15 @@ export default function DailyDrillSession() {
             <Download size={16} />
             Download Daily Drill
           </Button>
-          <Button size="sm" onClick={handleSubmit} disabled={submitting || hasSubmitted}>
-            {submitting ? 'Submitting...' : hasSubmitted ? 'Submitted' : 'Submit Drill'}
-          </Button>
+          {hasSubmitted ? (
+            <Button size="sm" onClick={handleRetake} disabled={submitting} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+              {submitting ? 'Resetting...' : 'Retake Drill'}
+            </Button>
+          ) : (
+            <Button size="sm" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? 'Submitting...' : 'Submit Drill'}
+            </Button>
+          )}
         </div>
       </header>
 
@@ -604,9 +637,14 @@ export default function DailyDrillSession() {
               <div className="flex gap-4">
                 {currentQuestionIndex === questions.length - 1 ? (
                   showResults ? (
-                    <Button onClick={() => navigate('/dashboard')}>
-                      Finish Review
-                    </Button>
+                    <div className="flex gap-3">
+                      <Button variant="outline" onClick={handleRetake} disabled={submitting} className="text-red-600 border-red-200 hover:bg-red-50">
+                        {submitting ? 'Resetting...' : 'Retake Drill'}
+                      </Button>
+                      <Button onClick={() => navigate('/dashboard')}>
+                        Finish Review
+                      </Button>
+                    </div>
                   ) : (
                     <Button onClick={handleInitialSubmit} disabled={submitting}>
                       {submitting ? 'Submitting...' : 'Finish & Submit'}

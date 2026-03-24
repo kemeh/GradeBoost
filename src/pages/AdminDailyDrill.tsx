@@ -405,6 +405,24 @@ export default function AdminDailyDrill() {
     }
   };
 
+  const handleResetSubmission = async (id: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Reset Submission',
+      message: 'Are you sure you want to reset this submission? This will delete the student\'s answers and allow them to retake the drill.',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, 'drill_submissions', id));
+          fetchSubmissions();
+          setSuccess('Submission reset successfully.');
+        } catch (err) {
+          handleFirestoreError(err, OperationType.DELETE, `drill_submissions/${id}`);
+          setError('Failed to reset submission.');
+        }
+      }
+    });
+  };
+
   const handleCalculateLeaderboard = async () => {
     setIsCalculating(true);
     try {
@@ -764,13 +782,23 @@ export default function AdminDailyDrill() {
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setGradingSubmission({ ...s, tempScore: s.score })}
-                            >
-                              Grade
-                            </Button>
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setGradingSubmission({ ...s, tempScore: s.score })}
+                              >
+                                Grade
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-100"
+                                onClick={() => handleResetSubmission(s.id!)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -933,6 +961,7 @@ export default function AdminDailyDrill() {
                         value={questionForm.subject}
                         onChange={(e) => setQuestionForm({ ...questionForm, subject: e.target.value as Subject, topic: '' })}
                       >
+                        <option value="">Select Subject</option>
                         {subjects.map(s => (
                           <option key={s.id} value={s.name}>{s.name}</option>
                         ))}
@@ -1132,6 +1161,7 @@ export default function AdminDailyDrill() {
                         value={autoAssignForm.subject}
                         onChange={(e) => setAutoAssignForm({ ...autoAssignForm, subject: e.target.value as Subject, topic: '' })}
                       >
+                        <option value="">Select Subject</option>
                         {subjects.map(s => (
                           <option key={s.id} value={s.name}>{s.name}</option>
                         ))}
@@ -1239,17 +1269,51 @@ export default function AdminDailyDrill() {
                 </div>
 
                 <form onSubmit={handleSaveDrill} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Day (1-60)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="60"
-                      required
-                      className="w-full px-4 py-2 border rounded-lg"
-                      value={drillForm.day}
-                      onChange={(e) => setDrillForm({ ...drillForm, day: parseInt(e.target.value) })}
-                    />
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Day (1-60)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="60"
+                        required
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={drillForm.day}
+                        onChange={(e) => setDrillForm({ ...drillForm, day: parseInt(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                      <select
+                        required
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={drillForm.subject}
+                        onChange={(e) => setDrillForm({ ...drillForm, subject: e.target.value as Subject, topic: '' })}
+                      >
+                        <option value="">Select Subject</option>
+                        {subjects.map(s => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                      <select
+                        required
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={drillForm.topic}
+                        onChange={(e) => setDrillForm({ ...drillForm, topic: e.target.value })}
+                      >
+                        <option value="">Select Topic</option>
+                        {Object.entries(getGroupedTopicsForSubject(drillForm.subject as SubjectName)).map(([module, topics]) => (
+                          <optgroup key={module} label={module}>
+                            {topics.map(topic => (
+                              <option key={topic} value={topic}>{topic}</option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
                   </div>
 
                   <div>
@@ -1271,7 +1335,7 @@ export default function AdminDailyDrill() {
                       }}
                     >
                       {questionsBank
-                        .filter(q => !drillSubjectFilter || q.subject === drillSubjectFilter)
+                        .filter(q => !drillForm.subject || q.subject === drillForm.subject)
                         .map(q => (
                           <option key={q.id} value={q.id}>
                             [{q.subject}] [{q.paper}] {q.questionText.substring(0, 50)}...
@@ -1464,6 +1528,11 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
 
   const processFile = async () => {
     if (!file) return;
+    if (!selectedSubject) {
+      setError('Please select a target subject.');
+      toast.error('Please select a target subject.');
+      return;
+    }
     setIsProcessing(true);
     setProcessingStatus('Reading file...');
     setError('');
@@ -1769,6 +1838,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value as SubjectName)}
                 >
+                  <option value="">Select Subject</option>
                   {subjects.map(s => (
                     <option key={s.id} value={s.name}>{s.name}</option>
                   ))}

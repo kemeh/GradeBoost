@@ -183,6 +183,15 @@ export default function PracticeSession() {
     }
   };
 
+  const handleRetake = () => {
+    setShowResults(false);
+    setResultsSummary(null);
+    setAnswers({});
+    setFileUrls({});
+    setTimeLeft(10800);
+    setError('');
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Loading Session...</div>;
   
   if (error && !paper) {
@@ -489,6 +498,12 @@ export default function PracticeSession() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    <Button 
+                      className="w-full py-6 text-lg bg-indigo-600 hover:bg-indigo-700"
+                      onClick={handleRetake}
+                    >
+                      Retake Exam <Zap className="ml-2" size={20} />
+                    </Button>
                     <Button 
                       className="w-full py-6 text-lg bg-slate-900 hover:bg-black"
                       onClick={() => navigate('/dashboard')}
