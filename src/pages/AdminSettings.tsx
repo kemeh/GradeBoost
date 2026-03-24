@@ -12,6 +12,7 @@ import Sidebar from '../components/Sidebar';
 import { formatDate } from '../utils/dateUtils';
 import { DEFAULT_CHALLENGE_START_DATE, getCurrentDayNumber } from '../utils/challenge';
 import SubjectManager from '../components/SubjectManager';
+import { Badge, Button } from '../components/ui';
 
 import FileUpload from '../components/FileUpload';
 
@@ -431,10 +432,19 @@ export default function AdminSettings() {
                       Reset to Today
                     </button>
                   </div>
-                  <p className="mt-3 text-sm text-slate-500 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                    <strong>Current Day:</strong> {getCurrentDayNumber(challengeStartDate)} / 60
+                  <p className="mt-3 text-sm text-slate-500 bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-indigo-900 uppercase tracking-wider text-xs">Current Challenge Status</span>
+                      <Badge variant="primary" className="bg-indigo-600 text-white">Day {getCurrentDayNumber(challengeStartDate)}</Badge>
+                    </div>
+                    <span className="text-indigo-700 font-medium">
+                      Based on this start date, today is <strong>Day {getCurrentDayNumber(challengeStartDate)}</strong>. 
+                      Students will only see drills assigned to this specific day number.
+                    </span>
                     <br />
-                    Changing this will affect which daily drill is active for all students.
+                    <span className="text-indigo-400 text-[10px] mt-2 block">
+                      Changing this will affect which daily drill is active for all students.
+                    </span>
                   </p>
                 </div>
               </div>

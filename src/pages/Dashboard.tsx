@@ -252,7 +252,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-black mb-2 tracking-tight">
                   {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (
                     !user.subject ? "Subject Not Set" :
-                    todayDrill ? `Today's Topic: ${todayDrill.topic}` : "No Drill Scheduled for Today"
+                    todayDrill ? `Today's Topic: ${todayDrill.topic}` : `No ${user.subject} Drill for Day ${60 - daysRemaining}`
                   )}
                 </div>
                 <div className="text-indigo-100 font-medium mb-6 max-w-xl">
@@ -260,7 +260,7 @@ export default function Dashboard() {
                     !user.subject ? "Please set your target subject in your profile to see daily drills." :
                     todayDrill 
                     ? `Master ${todayDrill.topic} with today's ${todayDrill.subject} drill. Keep your streak alive!`
-                    : "Check back tomorrow for a new challenge or practice with sample questions below."
+                    : `An admin hasn't assigned a ${user.subject} drill for Day ${60 - daysRemaining} yet. Check back later!`
                   )}
                 </div>
                 <div className="flex flex-wrap gap-4">

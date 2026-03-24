@@ -75,6 +75,7 @@ export default function Profile() {
     try {
       await updateDoc(doc(db, 'users', user.uid), {
         ...formData,
+        subject: formData.subject.trim(),
         updatedAt: serverTimestamp(),
       });
       setSuccess(true);

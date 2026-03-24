@@ -143,7 +143,7 @@ export default function AuthPage() {
           await setDoc(doc(db, 'users', user.uid), {
             name: formData.name,
             email: formData.email,
-            subject: formData.subject,
+            subject: formData.subject.trim(),
             school: formData.school,
             region: formData.region,
             assignedPapers: ['paper1', 'paper2', 'paper3'],

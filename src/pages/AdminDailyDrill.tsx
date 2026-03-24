@@ -89,14 +89,20 @@ export default function AdminDailyDrill() {
 
   // Drill Form State
   const [drillForm, setDrillForm] = useState<Partial<DailyDrill>>({
-    day: 1,
+    day: currentDay,
     questionIds: [],
     subject: '',
     topic: '',
     isFree: false
   });
+
+  useEffect(() => {
+    setDrillForm(prev => ({ ...prev, day: currentDay }));
+    setAutoAssignForm(prev => ({ ...prev, day: currentDay }));
+  }, [currentDay]);
+
   const [autoAssignForm, setAutoAssignForm] = useState({
-    day: 1,
+    day: currentDay,
     subject: '' as Subject,
     topic: '',
     mcqCount: 10,
@@ -303,7 +309,7 @@ export default function AdminDailyDrill() {
       // 3. Create drill
       const data = {
         day: autoAssignForm.day,
-        subject: autoAssignForm.subject,
+        subject: autoAssignForm.subject.trim(),
         topic: autoAssignForm.topic,
         questionIds,
         isFree: autoAssignForm.day === 1,
@@ -328,6 +334,7 @@ export default function AdminDailyDrill() {
     try {
       const data = {
         ...drillForm,
+        subject: drillForm.subject.trim(),
         createdAt: serverTimestamp()
       };
       if (isEditing && editingId) {
@@ -529,6 +536,30 @@ export default function AdminDailyDrill() {
               {success}
             </div>
           )}
+
+          <div className="mb-8 p-6 bg-indigo-600 rounded-3xl text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl shadow-indigo-200">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+                <Calendar className="w-8 h-8" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tight">Current Challenge Day: {currentDay}</h2>
+                <p className="text-indigo-100 font-medium">Assign drills to Day {currentDay} for them to appear on student dashboards today.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="bg-white/20 text-white border-none px-4 py-2">
+                {60 - currentDay} Days Remaining
+              </Badge>
+              <Button 
+                variant="secondary" 
+                className="bg-white text-indigo-600 hover:bg-indigo-50"
+                onClick={() => navigate('/admin/settings')}
+              >
+                Change Start Date
+              </Button>
+            </div>
+          </div>
 
           <Tabs defaultValue="bank" value={activeTab} onValueChange={(v: any) => setActiveTab(v)}>
             <TabsList className="mb-8">
