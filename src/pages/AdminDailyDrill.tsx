@@ -1488,7 +1488,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
   useEffect(() => {
     const checkApiKey = async () => {
       const apiKey = await getApiKey();
-      setIsApiKeyMissing(!apiKey);
+      setIsApiKeyMissing(!apiKey || apiKey.trim() === '');
     };
     checkApiKey();
   }, []);
@@ -1502,13 +1502,11 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
   };
 
   const getApiKey = async () => {
-    // 1. Check platform-injected process.env
-    try {
-      if (typeof process !== 'undefined' && process.env) {
-        if (process.env.API_KEY) return process.env.API_KEY;
-        if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
-      }
-    } catch (e) {}
+    // 1. Check platform-injected process.env (exposed via vite.config.ts)
+    if (typeof process !== 'undefined' && process.env) {
+      if (process.env.API_KEY) return process.env.API_KEY;
+      if (process.env.GEMINI_API_KEY) return process.env.GEMINI_API_KEY;
+    }
 
     // 2. Check Vite-specific import.meta.env
     const metaEnv = (import.meta as any).env;
@@ -1623,18 +1621,18 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
       }
 
       const apiKey = await getApiKey();
-      if (!apiKey) {
+      if (!apiKey || apiKey.trim() === '') {
         if (window.aistudio) {
           await window.aistudio.openSelectKey();
           setIsProcessing(false);
           setProcessingStatus('');
-          toast.error('Gemini API Key is missing. Please select a key in the dialog and try again.');
+          toast.error('Gemini API Key is missing or empty. Please select a key in the dialog and try again.');
           return;
         }
         throw new Error('Gemini API Key is missing. Please add API key in Settings.');
       }
       
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
       const validTopics = getAllTopicsForSubject(selectedSubject).join(', ');
 
       const prompt = `Extract ALL exam questions for the subject "${selectedSubject}" from the provided data.
@@ -1701,6 +1699,12 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
             }
           }
         }
+      }).catch(err => {
+        console.error('Gemini API Fetch Error:', err);
+        if (err.message?.includes('fetch')) {
+          throw new Error('Failed to connect to AI service. Please check your internet connection or try a different API key.');
+        }
+        throw err;
       });
 
       const aiResponseText = response.text;

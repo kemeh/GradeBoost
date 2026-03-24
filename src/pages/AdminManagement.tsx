@@ -846,11 +846,19 @@ function BulkResourceImportModal({ onClose, onImported, subjects }: BulkResource
         },
         (error) => {
           console.error(`Upload error for ${fileData.file.name}:`, error);
+          let errorMessage = 'Upload failed';
+          if (error.message?.includes('fetch')) {
+            errorMessage = 'Failed to connect to storage service. Check your internet connection.';
+          } else if (error.code === 'storage/unauthorized') {
+            errorMessage = 'Permission denied. Check storage rules.';
+          }
+          
           setFiles(prev => {
             const next = [...prev];
             next[index] = { ...next[index], status: 'error' };
             return next;
           });
+          toast.error(`${fileData.file.name}: ${errorMessage}`);
           reject(error);
         },
         async () => {
