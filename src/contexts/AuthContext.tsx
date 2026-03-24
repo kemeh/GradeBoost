@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             await setDoc(userRef, {
               name: fUser.displayName || (isAdminEmail ? 'Admin' : 'Student'),
               email: fUser.email,
-              subject: 'Computer Science',
+              subject: '',
               school: 'Online',
               region: isAdminEmail ? 'Admin' : 'Unknown',
               assignedPapers: ['paper1', 'paper2', 'paper3'],

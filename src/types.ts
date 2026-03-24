@@ -15,7 +15,16 @@ declare global {
   }
 }
 
-export type Subject = 'Computer Science' | 'ICT';
+export type Subject = string;
+
+export interface SubjectModel {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: any;
+}
+
 export type PaperType = 'Paper 1' | 'Paper 2' | 'Paper 3';
 export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
 

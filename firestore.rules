@@ -10,7 +10,7 @@
 //   - name: string (required, 1-100 chars)
 //   - email: string (required, email format)
 //   - phone: string (optional, phone format)
-//   - subject: string (required, enum: ["Computer Science", "ICT"])
+//   - subject: string (required)
 //   - assignedPapers: list (optional, strings)
 //   - targetGrade: string (optional, enum: ["A", "B", "C", "D", "F"])
 //   - role: string (required, enum: ["student", "admin"])
@@ -241,7 +241,7 @@ service cloud.firestore {
              (!('lastName' in data) || data.lastName is string) &&
              isValidEmail(data.email) &&
              (!('phone' in data) || isValidPhone(data.phone)) &&
-             data.subject in ["Computer Science", "ICT"] &&
+             data.subject is string &&
              data.role in ["student", "admin"] &&
              (!('createdAt' in data) || data.createdAt is timestamp) &&
              (!('isPaid' in data) || data.isPaid is bool) &&
@@ -308,7 +308,7 @@ service cloud.firestore {
     function isValidExamQuestion(data) {
       return data.questionText is string &&
              (data.paper == "Paper 1" ? (data.options is map && data.correctAnswer in ["A", "B", "C", "D"]) : (data.correctAnswer is string)) &&
-             data.subject in ["Computer Science", "ICT"] &&
+             data.subject is string &&
              data.paper in ["Paper 1", "Paper 2", "Paper 3"] &&
              (!('section' in data) || data.section in ["A", "B", "C"]) &&
              data.topic is string &&
@@ -324,7 +324,7 @@ service cloud.firestore {
     function isValidDailyDrillV2(data) {
       return data.day is number && data.day >= 1 && data.day <= 365 &&
              data.questionIds is list &&
-             data.subject in ["Computer Science", "ICT"] &&
+             data.subject is string &&
              data.topic is string &&
              data.isFree is bool &&
              data.createdAt is timestamp;
@@ -348,7 +348,7 @@ service cloud.firestore {
     }
 
     function isValidSampleQuestion(data) {
-      return data.subject in ["Computer Science", "ICT"] &&
+      return data.subject is string &&
              data.topic is string && data.topic.size() > 0 && data.topic.size() <= 200 &&
              data.questionText is string && data.questionText.size() > 0 && data.questionText.size() <= 2000 &&
              data.options is list && data.options.size() == 4 &&
@@ -369,7 +369,7 @@ service cloud.firestore {
       return hasOnlyAllowedFields(['title', 'type', 'subject', 'fileUrl', 'fileSize', 'visible', 'createdAt', 'updatedAt']) &&
              data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
              data.type in ["PDF", "Video", "Link"] &&
-             data.subject in ["Computer Science", "ICT"] &&
+             data.subject is string &&
              isValidUrl(data.fileUrl) &&
              data.fileSize is string &&
              data.visible is bool &&
@@ -381,7 +381,7 @@ service cloud.firestore {
       return hasOnlyAllowedFields(['title', 'paper', 'subject', 'dueDate', 'link', 'active', 'createdAt', 'updatedAt']) &&
              data.title is string && data.title.size() > 0 && data.title.size() <= 200 &&
              data.paper is string &&
-             data.subject in ["Computer Science", "ICT"] &&
+             data.subject is string &&
              data.dueDate is timestamp &&
              isValidUrl(data.link) &&
              data.active is bool &&
@@ -409,7 +409,7 @@ service cloud.firestore {
     }
 
     function isValidDuel(data) {
-      return data.subject in ["Computer Science", "ICT"] &&
+      return data.subject is string &&
              data.status in ["waiting", "playing", "finished"] &&
              data.player1 is map &&
              data.player1.uid is string &&
@@ -423,7 +423,7 @@ service cloud.firestore {
     function isValidLeaderboardEntry(data) {
       return data.userId is string &&
              data.name is string &&
-             data.subject in ["Computer Science", "ICT"] &&
+             data.subject is string &&
              data.points is number &&
              data.wins is number &&
              data.losses is number &&
@@ -441,6 +441,11 @@ service cloud.firestore {
     // ===============================================================
     // Rules
     // ===============================================================
+
+    match /subjects/{subjectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();

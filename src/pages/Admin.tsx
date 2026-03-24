@@ -11,8 +11,8 @@ import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import FileUpload from '../components/FileUpload';
-import { Button, Card, Badge, cn } from '../components/ui';
-import { QuestionPaper, Subject, PaperType, SampleQuestion, LeaderboardEntry, Duel, UserProfile } from '../types';
+import { Button, Card, Badge, cn, Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui';
+import { QuestionPaper, Subject, PaperType, SampleQuestion, LeaderboardEntry, Duel, UserProfile, SubjectModel } from '../types';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate } from '../utils/dateUtils';
@@ -33,6 +33,7 @@ export default function Admin() {
   const [manualRequests, setManualRequests] = useState<any[]>([]);
   const [sampleQuestions, setSampleQuestions] = useState<SampleQuestion[]>([]);
   const [duels, setDuels] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<SubjectModel[]>([]);
   const [duelLeaderboard, setDuelLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentPrice, setPaymentPrice] = useState(1000);
@@ -44,7 +45,7 @@ export default function Admin() {
   const [formData, setFormData] = useState({
     title: '',
     year: new Date().getFullYear(),
-    subject: 'Computer Science' as Subject,
+    subject: '' as Subject,
     paperType: 'Paper 1' as PaperType,
     description: '',
     correctAnswersRaw: '', // Raw string for input
@@ -54,7 +55,7 @@ export default function Admin() {
   const [showSampleModal, setShowSampleModal] = useState(false);
   const [editingSample, setEditingSample] = useState<SampleQuestion | null>(null);
   const [sampleFormData, setSampleFormData] = useState({
-    subject: 'Computer Science' as Subject,
+    subject: '' as Subject,
     topic: '',
     questionText: '',
     options: ['', '', '', ''],
@@ -70,6 +71,7 @@ export default function Admin() {
 
   useEffect(() => {
     if (isAdmin) {
+      fetchSubjects();
       fetchPapers();
       fetchUsers();
       fetchManualRequests();
@@ -79,6 +81,16 @@ export default function Admin() {
       fetchSettings();
     }
   }, [isAdmin]);
+
+  const fetchSubjects = async () => {
+    try {
+      const q = query(collection(db, 'subjects'), where('isActive', '==', true));
+      const querySnapshot = await getDocs(q);
+      setSubjects(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[]);
+    } catch (err) {
+      console.error("Error fetching subjects:", err);
+    }
+  };
 
   const fetchDuelLeaderboard = async () => {
     try {
@@ -291,7 +303,7 @@ export default function Admin() {
       setFormData({
         title: '',
         year: new Date().getFullYear(),
-        subject: 'Computer Science' as Subject,
+        subject: subjects[0]?.name || '' as Subject,
         paperType: 'Paper 1' as PaperType,
         description: '',
         correctAnswersRaw: '',
@@ -364,7 +376,7 @@ export default function Admin() {
       setShowSampleModal(false);
       setEditingSample(null);
       setSampleFormData({
-        subject: 'Computer Science',
+        subject: subjects[0]?.name || '',
         topic: '',
         questionText: '',
         options: ['', '', '', ''],
@@ -486,68 +498,29 @@ export default function Admin() {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-2 mb-8 p-1 bg-white rounded-2xl border border-slate-100 w-fit">
-          <button
-            onClick={() => setActiveTab('papers')}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === 'papers' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            Papers
-          </button>
-          <button
-            onClick={() => setActiveTab('payments')}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === 'payments' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            Payments
-          </button>
-          <button
-            onClick={() => setActiveTab('manual')}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === 'manual' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            Manual Requests
-          </button>
-          <button
-            onClick={() => setActiveTab('samples')}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === 'samples' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            Sample Questions
-          </button>
-          <button
-            onClick={() => setActiveTab('duels')}
-            className={cn(
-              "px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-              activeTab === 'duels' ? "bg-slate-900 text-white shadow-lg" : "text-slate-500 hover:text-slate-900"
-            )}
-          >
-            Duels
-          </button>
-        </div>
+        <Tabs defaultValue="papers" value={activeTab} onValueChange={(val) => setActiveTab(val as any)}>
+          <TabsList className="mb-8 bg-white border border-slate-100 p-1 rounded-2xl h-auto flex-wrap justify-start">
+            <TabsTrigger value="papers" className="rounded-xl py-2.5">Papers</TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-xl py-2.5">Payments</TabsTrigger>
+            <TabsTrigger value="manual" className="rounded-xl py-2.5">Manual Requests</TabsTrigger>
+            <TabsTrigger value="samples" className="rounded-xl py-2.5">Sample Questions</TabsTrigger>
+            <TabsTrigger value="duels" className="rounded-xl py-2.5">Duels</TabsTrigger>
+          </TabsList>
 
-        {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600"
-          >
-            <AlertCircle size={20} />
-            <p className="text-sm font-bold">{error}</p>
-          </motion.div>
-        )}
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600"
+            >
+              <AlertCircle size={20} />
+              <p className="text-sm font-bold">{error}</p>
+            </motion.div>
+          )}
 
-        {/* Papers Table */}
-        {activeTab === 'papers' ? (
-          <Card className="overflow-hidden">
+          {/* Papers Table */}
+          <TabsContent value="papers">
+            <Card className="overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-xl font-black text-slate-900 tracking-tight">Question Papers</h2>
               <div className="relative w-64">
@@ -601,7 +574,8 @@ export default function Admin() {
               </table>
             </div>
           </Card>
-        ) : activeTab === 'payments' ? (
+          </TabsContent>
+          <TabsContent value="payments">
           <Card className="overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-xl font-black text-slate-900 tracking-tight">Student Payments</h2>
@@ -673,14 +647,15 @@ export default function Admin() {
               </table>
             </div>
           </Card>
-        ) : activeTab === 'samples' ? (
+          </TabsContent>
+          <TabsContent value="samples">
           <Card className="overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-black text-slate-900 tracking-tight">Free Sample Questions</h2>
                 <p className="text-xs text-slate-500 font-medium mt-1">Limit: 5-10 per subject. Unpaid users see these to sample the platform.</p>
               </div>
-              <Button onClick={() => { setEditingSample(null); setSampleFormData({ subject: 'Computer Science', topic: '', questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }); setShowSampleModal(true); }}>
+              <Button onClick={() => { setEditingSample(null); setSampleFormData({ subject: subjects[0]?.name || '', topic: '', questionText: '', options: ['', '', '', ''], correctAnswer: 'A', reasoning: '' }); setShowSampleModal(true); }}>
                 <Plus size={18} className="mr-2" /> Add Sample
               </Button>
             </div>
@@ -699,7 +674,7 @@ export default function Admin() {
                   {sampleQuestions.map((q) => (
                     <tr key={q.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-8 py-4">
-                        <Badge variant={q.subject === 'Computer Science' ? 'primary' : 'success'}>{q.subject}</Badge>
+                        <Badge variant={q.subject?.includes('Computer Science') ? 'primary' : 'success'}>{q.subject}</Badge>
                       </td>
                       <td className="px-8 py-4">
                         <span className="text-sm font-bold text-slate-900">{q.topic}</span>
@@ -739,7 +714,8 @@ export default function Admin() {
               </table>
             </div>
           </Card>
-        ) : activeTab === 'duels' ? (
+          </TabsContent>
+          <TabsContent value="duels">
           <div className="space-y-8">
             <Card className="overflow-hidden">
               <div className="p-8 border-b border-slate-100 flex items-center justify-between">
@@ -848,7 +824,8 @@ export default function Admin() {
               </div>
             </Card>
           </div>
-        ) : (
+          </TabsContent>
+          <TabsContent value="manual">
           <Card className="overflow-hidden">
             <div className="p-8 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-xl font-black text-slate-900 tracking-tight">Manual Payment Requests</h2>
@@ -930,7 +907,8 @@ export default function Admin() {
               </table>
             </div>
           </Card>
-        )}
+          </TabsContent>
+        </Tabs>
 
         {/* Sample Question Modal */}
         {showSampleModal && (
@@ -954,8 +932,9 @@ export default function Admin() {
                         value={sampleFormData.subject}
                         onChange={e => setSampleFormData({ ...sampleFormData, subject: e.target.value as Subject })}
                       >
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="ICT">ICT</option>
+                        {subjects.map(s => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-2">
@@ -1080,8 +1059,9 @@ export default function Admin() {
                         value={formData.subject}
                         onChange={e => setFormData({ ...formData, subject: e.target.value as Subject })}
                       >
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="ICT">ICT</option>
+                        {subjects.map(s => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
                       </select>
                     </div>
                     <div className="space-y-2">

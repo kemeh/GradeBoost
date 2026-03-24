@@ -9,6 +9,7 @@ import { GoogleGenAI } from '@google/genai';
 import Sidebar from '../components/Sidebar';
 import { formatDate } from '../utils/dateUtils';
 import { DEFAULT_CHALLENGE_START_DATE, getCurrentDayNumber } from '../utils/challenge';
+import SubjectManager from '../components/SubjectManager';
 
 import FileUpload from '../components/FileUpload';
 
@@ -407,6 +408,15 @@ export default function AdminSettings() {
                   </p>
                 </div>
               </div>
+            </motion.section>
+
+            {/* Subject Management Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+            >
+              <SubjectManager />
             </motion.section>
 
             {/* Payment Configuration Section */}

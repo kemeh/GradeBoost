@@ -16,7 +16,7 @@ import Sidebar from '../components/Sidebar';
 import FileUpload from '../components/FileUpload';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
-import { ExamQuestion, DailyDrill, DrillSubmission, Subject, PaperType, Grade, WeeklyLeaderboard } from '../types';
+import { ExamQuestion, DailyDrill, DrillSubmission, Subject, PaperType, Grade, WeeklyLeaderboard, SubjectModel } from '../types';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui';
 import { useNavigate, Link } from 'react-router-dom';
 import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
@@ -24,7 +24,7 @@ import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate, getWeekNumber } from '../utils/dateUtils';
 import { calculateWeeklyLeaderboard } from '../utils/leaderboard';
 import { toast } from 'react-hot-toast';
-import { SUBJECT_TOPICS, getGroupedTopicsForSubject, SubjectName } from '../constants/topics';
+import { SUBJECT_TOPICS, getGroupedTopicsForSubject, getAllTopicsForSubject, SubjectName } from '../constants/topics';
 import { getGeminiApiKey } from '../services/settingsService';
 import { GoogleGenAI, Type } from '@google/genai';
 // @ts-ignore
@@ -50,6 +50,7 @@ export default function AdminDailyDrill() {
   const [activeTab, setActiveTab] = useState<'bank' | 'drills' | 'grading' | 'leaderboard'>('bank');
   const [gradingSubmission, setGradingSubmission] = useState<any | null>(null);
   const [leaderboard, setLeaderboard] = useState<WeeklyLeaderboard[]>([]);
+  const [subjects, setSubjects] = useState<SubjectModel[]>([]);
   const [isCalculating, setIsCalculating] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState<{isOpen: boolean, title: string, message: string, onConfirm: () => void}>({
     isOpen: false,
@@ -74,7 +75,7 @@ export default function AdminDailyDrill() {
     options: { A: '', B: '', C: '', D: '' },
     correctAnswer: 'A',
     explanation: '',
-    subject: 'Computer Science',
+    subject: '',
     paper: 'Paper 1',
     section: 'A',
     topic: '',
@@ -89,13 +90,13 @@ export default function AdminDailyDrill() {
   const [drillForm, setDrillForm] = useState<Partial<DailyDrill>>({
     day: 1,
     questionIds: [],
-    subject: 'Computer Science',
+    subject: '',
     topic: '',
     isFree: false
   });
   const [autoAssignForm, setAutoAssignForm] = useState({
     day: 1,
-    subject: 'Computer Science' as Subject,
+    subject: '' as Subject,
     topic: '',
     mcqCount: 10,
     p2Count: 1,
@@ -118,6 +119,12 @@ export default function AdminDailyDrill() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Fetch subjects first
+      const subjectsQuery = query(collection(db, 'subjects'), where('isActive', '==', true));
+      const subjectsSnapshot = await getDocs(subjectsQuery);
+      const subjectsData = subjectsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
+      setSubjects(subjectsData);
+
       await Promise.all([
         fetchQuestionsBank(),
         fetchDailyDrills(),
@@ -429,7 +436,7 @@ export default function AdminDailyDrill() {
                   options: { A: '', B: '', C: '', D: '' },
                   correctAnswer: 'A',
                   explanation: '',
-                  subject: 'Computer Science',
+                  subject: subjects[0]?.name || '',
                   paper: 'Paper 1',
                   section: 'A',
                   topic: '',
@@ -446,7 +453,7 @@ export default function AdminDailyDrill() {
               <Button variant="outline" onClick={() => {
                 setAutoAssignForm({
                   day: drills.length + 1,
-                  subject: 'Computer Science',
+                  subject: subjects[0]?.name || '',
                   topic: '',
                   mcqCount: 10,
                   p2Count: 1,
@@ -462,7 +469,7 @@ export default function AdminDailyDrill() {
                 setDrillForm({
                   day: drills.length + 1,
                   questionIds: [],
-                  subject: 'Computer Science',
+                  subject: subjects[0]?.name || '',
                   topic: '',
                   isFree: false
                 });
@@ -508,8 +515,9 @@ export default function AdminDailyDrill() {
                   onChange={(e) => setFilters({ ...filters, subject: e.target.value, topic: '' })}
                 >
                   <option value="">All Subjects</option>
-                  <option value="Computer Science">Computer Science</option>
-                  <option value="ICT">ICT</option>
+                  {subjects.map(s => (
+                    <option key={s.id} value={s.name}>{s.name}</option>
+                  ))}
                 </select>
                 <select
                   className="px-4 py-2 border rounded-lg"
@@ -527,7 +535,7 @@ export default function AdminDailyDrill() {
                   onChange={(e) => setFilters({ ...filters, topic: e.target.value })}
                 >
                   <option value="">All Topics</option>
-                  {filters.subject && Object.values(SUBJECT_TOPICS[filters.subject as SubjectName]).flat().map(topic => (
+                  {filters.subject && getAllTopicsForSubject(filters.subject).map(topic => (
                     <option key={topic} value={topic}>{topic}</option>
                   ))}
                 </select>
@@ -925,8 +933,9 @@ export default function AdminDailyDrill() {
                         value={questionForm.subject}
                         onChange={(e) => setQuestionForm({ ...questionForm, subject: e.target.value as Subject, topic: '' })}
                       >
-                        <option value="Computer Science">Computer Science (0795)</option>
-                        <option value="ICT">ICT (0796)</option>
+                        {subjects.map(s => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -952,7 +961,7 @@ export default function AdminDailyDrill() {
                         onChange={(e) => setQuestionForm({ ...questionForm, section: e.target.value })}
                       >
                         {questionForm.paper === 'Paper 3' ? (
-                          questionForm.subject === 'Computer Science' ? (
+                          questionForm.subject?.includes('Computer Science') ? (
                             <>
                               <option value="Section A: Database">Section A: Database</option>
                               <option value="Section B: Programming">Section B: Programming</option>
@@ -1123,8 +1132,9 @@ export default function AdminDailyDrill() {
                         value={autoAssignForm.subject}
                         onChange={(e) => setAutoAssignForm({ ...autoAssignForm, subject: e.target.value as Subject, topic: '' })}
                       >
-                        <option value="Computer Science">Computer Science</option>
-                        <option value="ICT">ICT</option>
+                        {subjects.map(s => (
+                          <option key={s.id} value={s.name}>{s.name}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -1381,6 +1391,7 @@ export default function AdminDailyDrill() {
               }}
               confirmDialog={confirmDialog}
               setConfirmDialog={setConfirmDialog}
+              subjects={subjects}
             />
           )}
         </AnimatePresence>
@@ -1394,11 +1405,12 @@ interface BulkImportModalProps {
   onImported: (subject: SubjectName) => void;
   confirmDialog: any;
   setConfirmDialog: (dialog: any) => void;
+  subjects: SubjectModel[];
 }
 
-function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog }: BulkImportModalProps) {
+function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog, subjects }: BulkImportModalProps) {
   const [file, setFile] = useState<File | null>(null);
-  const [selectedSubject, setSelectedSubject] = useState<SubjectName>('Computer Science');
+  const [selectedSubject, setSelectedSubject] = useState<SubjectName>(subjects[0]?.name as SubjectName || '');
   const [selectedPaper, setSelectedPaper] = useState<PaperType>('Paper 1');
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedSession, setSelectedSession] = useState<string>('June');
@@ -1757,8 +1769,9 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog 
                   value={selectedSubject}
                   onChange={(e) => setSelectedSubject(e.target.value as SubjectName)}
                 >
-                  <option value="Computer Science">Computer Science (0795)</option>
-                  <option value="ICT">ICT (0796)</option>
+                  {subjects.map(s => (
+                    <option key={s.id} value={s.name}>{s.name}</option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -1913,7 +1926,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog 
                           >
                             <option value="">None</option>
                             {q.paper === 'Paper 3' ? (
-                              q.subject === 'Computer Science' ? (
+                              q.subject?.includes('Computer Science') ? (
                                 <>
                                   <option value="Section A: Database">Section A: Database</option>
                                   <option value="Section B: Programming">Section B: Programming</option>
@@ -1945,7 +1958,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog 
                               setPreviewQuestions(next);
                             }}
                           >
-                            {Object.values(SUBJECT_TOPICS[selectedSubject]).flat().map(topic => (
+                            {getAllTopicsForSubject(selectedSubject).map(topic => (
                               <option key={topic} value={topic}>{topic}</option>
                             ))}
                           </select>

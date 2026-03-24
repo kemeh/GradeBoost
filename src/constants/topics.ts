@@ -98,13 +98,13 @@ export const SUBJECT_TOPICS = {
   }
 } as const;
 
-export type SubjectName = keyof typeof SUBJECT_TOPICS;
+export type SubjectName = string;
 
-export const getAllTopicsForSubject = (subject: SubjectName) => {
-  const modules = SUBJECT_TOPICS[subject];
-  return Object.values(modules).flat();
+export const getAllTopicsForSubject = (subject: string) => {
+  const modules = (SUBJECT_TOPICS as Record<string, Record<string, readonly string[]>>)[subject];
+  return modules ? Object.values(modules).flat() : [];
 };
 
-export const getGroupedTopicsForSubject = (subject: SubjectName) => {
-  return SUBJECT_TOPICS[subject];
+export const getGroupedTopicsForSubject = (subject: string): Record<string, readonly string[]> => {
+  return ((SUBJECT_TOPICS as Record<string, Record<string, readonly string[]>>)[subject]) || {};
 };

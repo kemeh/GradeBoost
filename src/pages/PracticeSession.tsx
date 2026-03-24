@@ -343,7 +343,7 @@ export default function PracticeSession() {
               </div>
             ) : (
               <div className="space-y-8">
-                {user.subject === 'Computer Science' ? (
+                {user.subject?.includes('Computer Science') ? (
                   <div className="space-y-8">
                     {['Section A: Database', 'Section B: Programming'].map(section => (
                       <div key={section} className="space-y-3">

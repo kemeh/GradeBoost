@@ -10,7 +10,7 @@ import { db, storage } from '../firebase';
 import { 
   collection, addDoc, updateDoc, deleteDoc, 
   doc, onSnapshot, query, orderBy, serverTimestamp,
-  Timestamp
+  Timestamp, getDocs
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,7 +21,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
   Tabs, TabsList, TabsTrigger, TabsContent, Progress
 } from '../components/ui';
-import { Resource, Assignment, Subject, LearningResource } from '../types';
+import { Resource, Assignment, Subject, LearningResource, SubjectModel } from '../types';
 import { toast } from 'react-hot-toast';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
@@ -31,6 +31,7 @@ export default function AdminManagement() {
   const [activeTab, setActiveTab] = useState('resources');
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [subjects, setSubjects] = useState<SubjectModel[]>([]);
   
   // Resources State
   const [resources, setResources] = useState<Resource[]>([]);
@@ -42,7 +43,7 @@ export default function AdminManagement() {
   const [resourceForm, setResourceForm] = useState({
     title: '',
     type: 'PDF' as 'PDF' | 'Video' | 'Link',
-    subject: 'Computer Science' as Subject,
+    subject: '' as Subject,
     fileUrl: '',
     fileSize: '',
     visible: true
@@ -55,7 +56,7 @@ export default function AdminManagement() {
   const [assignmentForm, setAssignmentForm] = useState({
     title: '',
     paper: 'Paper 1',
-    subject: 'Computer Science' as Subject,
+    subject: '' as Subject,
     dueDate: '',
     link: '',
     active: true
@@ -69,7 +70,7 @@ export default function AdminManagement() {
     title: '',
     description: '',
     topic: '',
-    subject: 'Computer Science' as Subject,
+    subject: '' as Subject,
     link: ''
   });
 
@@ -78,6 +79,17 @@ export default function AdminManagement() {
       navigate('/dashboard');
       return;
     }
+
+    const fetchSubjects = async () => {
+      try {
+        const q = query(collection(db, 'subjects'), orderBy('name', 'asc'));
+        const snapshot = await getDocs(q);
+        setSubjects(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[]);
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+      }
+    };
+    fetchSubjects();
 
     const unsubResources = onSnapshot(
       query(collection(db, 'resources'), orderBy('createdAt', 'desc')),
@@ -146,7 +158,7 @@ export default function AdminManagement() {
       setResourceForm({
         title: '',
         type: 'PDF',
-        subject: 'Computer Science',
+        subject: '',
         fileUrl: '',
         fileSize: '',
         visible: true
@@ -223,7 +235,7 @@ export default function AdminManagement() {
       setAssignmentForm({
         title: '',
         paper: 'Paper 1',
-        subject: 'Computer Science',
+        subject: '',
         dueDate: '',
         link: '',
         active: true
@@ -304,7 +316,7 @@ export default function AdminManagement() {
         title: '',
         description: '',
         topic: '',
-        subject: 'Computer Science',
+        subject: '',
         link: ''
       });
     }
@@ -572,8 +584,9 @@ export default function AdminManagement() {
                     value={resourceForm.subject}
                     onChange={(e) => setResourceForm({ ...resourceForm, subject: e.target.value as any })}
                   >
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="ICT">ICT</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -655,8 +668,9 @@ export default function AdminManagement() {
                     value={assignmentForm.subject}
                     onChange={(e) => setAssignmentForm({ ...assignmentForm, subject: e.target.value as any })}
                   >
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="ICT">ICT</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -740,8 +754,9 @@ export default function AdminManagement() {
                     value={learningResourceForm.subject}
                     onChange={(e) => setLearningResourceForm({ ...learningResourceForm, subject: e.target.value as any })}
                   >
-                    <option value="Computer Science">Computer Science</option>
-                    <option value="ICT">ICT</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.name}>{s.name}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -773,6 +788,7 @@ export default function AdminManagement() {
           <BulkResourceImportModal 
             onClose={() => setIsBulkImportOpen(false)}
             onImported={() => setIsBulkImportOpen(false)}
+            subjects={subjects}
           />
         )}
       </main>
@@ -783,12 +799,13 @@ export default function AdminManagement() {
 interface BulkResourceImportModalProps {
   onClose: () => void;
   onImported: () => void;
+  subjects: SubjectModel[];
 }
 
-function BulkResourceImportModal({ onClose, onImported }: BulkResourceImportModalProps) {
+function BulkResourceImportModal({ onClose, onImported, subjects }: BulkResourceImportModalProps) {
   const [files, setFiles] = useState<{ file: File, progress: number, status: 'idle' | 'uploading' | 'success' | 'error', url?: string, size?: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedSubject, setSelectedSubject] = useState<Subject>('Computer Science');
+  const [selectedSubject, setSelectedSubject] = useState<Subject>(subjects[0]?.name || '');
   const [error, setError] = useState('');
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -922,8 +939,9 @@ function BulkResourceImportModal({ onClose, onImported }: BulkResourceImportModa
               value={selectedSubject}
               onChange={(e) => setSelectedSubject(e.target.value as Subject)}
             >
-              <option value="Computer Science">Computer Science</option>
-              <option value="ICT">ICT</option>
+              {subjects.map(s => (
+                <option key={s.id} value={s.name}>{s.name}</option>
+              ))}
             </select>
           </div>
 

@@ -1,19 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Mail, Lock, User, BookOpen, ArrowRight, AlertCircle, CheckCircle2, TrendingUp, School, MapPin, Eye, EyeOff } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { Button, Card, Badge, cn } from '../components/ui';
-import { Subject } from '../types';
+import { Subject, SubjectModel } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgot, setIsForgot] = useState(false);
+  const [subjects, setSubjects] = useState<SubjectModel[]>([]);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const q = query(collection(db, 'subjects'), where('isActive', '==', true));
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
+        setSubjects(data);
+        if (data.length > 0 && !formData.subject) {
+          setFormData(prev => ({ ...prev, subject: data[0].name }));
+        }
+      } catch (error) {
+        console.error('Error fetching subjects:', error);
+      }
+    };
+    fetchSubjects();
+  }, []);
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,7 +57,7 @@ export default function AuthPage() {
     name: '',
     email: '',
     password: '',
-    subject: 'Computer Science' as Subject,
+    subject: '' as Subject,
     school: '',
     region: '',
   });
@@ -295,23 +314,23 @@ export default function AuthPage() {
               </div>
             )}
 
-            {!isLogin && !isForgot && (
+            {!isLogin && !isForgot && subjects.length > 0 && (
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Selection</label>
                 <div className="grid grid-cols-2 gap-4">
-                  {(['Computer Science', 'ICT'] as Subject[]).map(sub => (
+                  {subjects.map(sub => (
                     <button
-                      key={sub}
+                      key={sub.id}
                       type="button"
-                      onClick={() => setFormData({ ...formData, subject: sub })}
+                      onClick={() => setFormData({ ...formData, subject: sub.name })}
                       className={cn(
                         "p-4 rounded-2xl border-2 transition-all text-sm font-bold text-center",
-                        formData.subject === sub 
+                        formData.subject === sub.name 
                           ? "border-indigo-600 bg-indigo-50 text-indigo-600" 
                           : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
                       )}
                     >
-                      {sub}
+                      {sub.name}
                     </button>
                   ))}
                 </div>
