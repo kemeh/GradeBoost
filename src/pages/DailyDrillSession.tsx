@@ -159,20 +159,26 @@ export default function DailyDrillSession() {
       const currentDay = getCurrentDayNumber(startDate);
       const dayToFetch = requestedDay ? parseInt(requestedDay) : currentDay;
 
-      // Security check: if not paid, only allow Day 1 or drills marked as free sample
+      // Fetch drill with more resilience
       const q = query(
         collection(db, 'daily_drills'), 
-        where('day', '==', dayToFetch),
-        where('subject', '==', user.subject.trim())
+        where('day', '==', dayToFetch)
       );
       
       console.log("Session: Querying drill for:", { day: dayToFetch, subject: user.subject.trim() });
       
       const snapshot = await getDocs(q);
+      const userSub = user.subject?.trim().toLowerCase();
       
-      if (!snapshot.empty) {
-        const currentDrill = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as DailyDrill;
-        console.log("Session: Found drill:", currentDrill);
+      // Filter in memory for case-insensitive match
+      const matchingDrillDoc = snapshot.docs.find(doc => {
+        const d = doc.data();
+        return d.subject?.trim().toLowerCase() === userSub;
+      });
+      
+      if (matchingDrillDoc) {
+        const currentDrill = { id: matchingDrillDoc.id, ...matchingDrillDoc.data() } as DailyDrill;
+        console.log("Session: Found matching drill:", currentDrill);
         setDrill(currentDrill);
         
         // Check access

@@ -237,6 +237,12 @@ export default function AdminSettings() {
         if (data.topic && data.topic !== data.topic.trim()) {
           updates.topic = data.topic.trim();
         }
+        if (data.day !== undefined && typeof data.day !== 'number') {
+          const dayNum = parseInt(data.day);
+          if (!isNaN(dayNum)) {
+            updates.day = dayNum;
+          }
+        }
         if (Object.keys(updates).length > 0) {
           drillBatch.update(doc.ref, updates);
           totalFixed++;

@@ -70,6 +70,13 @@ export default function Dashboard() {
         setCurrentDay(currentDayNum);
         setDaysRemaining(getDaysRemaining(startDate));
 
+        console.log("DEBUG: Dashboard Drill Fetch", {
+          currentDayNum,
+          userSubject: user.subject,
+          trimmedSubject: user.subject?.trim(),
+          startDate
+        });
+
         if (!user.subject) {
           console.warn("User has no subject assigned. Cannot fetch daily drill.");
           setTodayDrill(null);
@@ -90,21 +97,26 @@ export default function Dashboard() {
         const subsSnapshot = await getDocs(subsQ);
         setRecentSubmissions(subsSnapshot.docs.map(doc => doc.data().day));
 
+        // Fetch today's drill with more resilience
         const drillQ = query(
           collection(db, 'daily_drills'), 
-          where('day', '==', currentDayNum),
-          where('subject', '==', user.subject.trim()),
-          limit(1)
+          where('day', '==', currentDayNum)
         );
         
-        console.log("Querying drill for:", { day: currentDayNum, subject: user.subject.trim() });
-        
         const drillSnapshot = await getDocs(drillQ);
-        if (!drillSnapshot.empty) {
-          const drillData = { id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill;
-          console.log("Found drill:", drillData);
-          setTodayDrill(drillData);
+        const userSub = user.subject?.trim().toLowerCase();
+        
+        // Filter in memory for case-insensitive match
+        const matchingDrill = drillSnapshot.docs.find(doc => {
+          const d = doc.data();
+          return d.subject?.trim().toLowerCase() === userSub;
+        });
 
+        if (matchingDrill) {
+          const drillData = { id: matchingDrill.id, ...matchingDrill.data() } as DailyDrill;
+          console.log("Found matching drill:", drillData);
+          setTodayDrill(drillData);
+          
           // Check if already submitted today
           const subQ = query(
             collection(db, 'drill_submissions'),
@@ -121,22 +133,18 @@ export default function Dashboard() {
           
           // Debug: Check what drills DO exist for today
           try {
-            const anyDrillQ = query(
-              collection(db, 'daily_drills'),
-              where('day', '==', currentDayNum)
-            );
-            const anyDrillSnap = await getDocs(anyDrillQ);
-            if (!anyDrillSnap.empty) {
-              const availableSubjects = anyDrillSnap.docs.map(d => d.data().subject);
+            if (!drillSnapshot.empty) {
+              const availableSubjects = drillSnapshot.docs.map(d => d.data().subject);
               console.log(`Drills ARE available for Day ${currentDayNum} for these subjects:`, availableSubjects);
             } else {
               console.log(`Absolutely NO drills found for Day ${currentDayNum} for ANY subject.`);
               
               // Check if there are ANY drills at all
-              const allDrillsQ = query(collection(db, 'daily_drills'), limit(5));
+              const allDrillsQ = query(collection(db, 'daily_drills'), limit(100));
               const allDrillsSnap = await getDocs(allDrillsQ);
               if (!allDrillsSnap.empty) {
-                console.log("Sample of drills in DB:", allDrillsSnap.docs.map(d => ({ day: d.data().day, subject: d.data().subject })));
+                const allDrills = allDrillsSnap.docs.map(d => ({ day: d.data().day, subject: d.data().subject }));
+                console.log("ALL drills in DB (first 100):", allDrills);
               } else {
                 console.log("The daily_drills collection is EMPTY.");
               }
@@ -312,7 +320,17 @@ export default function Dashboard() {
                   {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (
                     !user.subject ? "Subject Not Set" :
                     todayDrill ? `Today's Topic: ${todayDrill.topic}` : 
-                    fallbackQuestions.length > 0 ? `Random ${user.subject} Drill` : `No ${user.subject} Drill for Day ${currentDay}`
+                    fallbackQuestions.length > 0 ? (
+                      <div className="space-y-1">
+                        <div>Random {user.subject} Drill</div>
+                        <div className="text-xs text-white/60 font-medium">No specific drill assigned for Day {currentDay} yet.</div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div>No {user.subject} Drill for Day {currentDay}</div>
+                        <div className="text-xs text-white/60 font-medium italic">Check Admin settings to assign a drill to this day.</div>
+                      </div>
+                    )
                   )}
                 </div>
                 <div className="text-indigo-100 font-medium mb-6 max-w-xl">
