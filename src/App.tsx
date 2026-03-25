@@ -23,6 +23,7 @@ const DailyDrillSession = lazy(() => import('./pages/DailyDrillSession'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const DuelBattle = lazy(() => import('./pages/DuelBattle'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
+const DailyDrill = lazy(() => import('./pages/DailyDrill'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
@@ -83,6 +84,7 @@ export default function App() {
               <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
               <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
               <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
+              <Route path="/daily-drill-new" element={<PrivateRoute><DailyDrill /></PrivateRoute>} />
               <Route path="/duel" element={<PrivateRoute><DuelBattle /></PrivateRoute>} />
               <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
               <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />

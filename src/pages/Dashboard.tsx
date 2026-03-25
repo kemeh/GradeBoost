@@ -25,6 +25,7 @@ import { updateStreak } from '../services/gamificationService';
 
 import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
 import { getSystemSettings } from '../services/settingsService';
+import { fetchDailyDrill } from '../services/dailyDrillService';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const [drillLoading, setDrillLoading] = useState(true);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [todayDrill, setTodayDrill] = useState<DailyDrill | null>(null);
+  const [fallbackQuestions, setFallbackQuestions] = useState<any[]>([]);
   const [hasSubmittedToday, setHasSubmittedToday] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(60);
   const [sampleQuestions, setSampleQuestions] = useState<SampleQuestion[]>([]);
@@ -115,10 +117,43 @@ export default function Dashboard() {
             setHasSubmittedToday(true);
           }
         } else {
-          // Try to find ANY drill for today as a fallback for debugging or if subject-specific is missing
-          // But don't set it as todayDrill if it's the wrong subject, just log it
-          console.log(`No drill found for Day ${currentDay} and Subject ${user.subject}`);
+          console.log(`No drill found for Day ${currentDayNum} and Subject "${user.subject}"`);
+          
+          // Debug: Check what drills DO exist for today
+          try {
+            const anyDrillQ = query(
+              collection(db, 'daily_drills'),
+              where('day', '==', currentDayNum)
+            );
+            const anyDrillSnap = await getDocs(anyDrillQ);
+            if (!anyDrillSnap.empty) {
+              const availableSubjects = anyDrillSnap.docs.map(d => d.data().subject);
+              console.log(`Drills ARE available for Day ${currentDayNum} for these subjects:`, availableSubjects);
+            } else {
+              console.log(`Absolutely NO drills found for Day ${currentDayNum} for ANY subject.`);
+              
+              // Check if there are ANY drills at all
+              const allDrillsQ = query(collection(db, 'daily_drills'), limit(5));
+              const allDrillsSnap = await getDocs(allDrillsQ);
+              if (!allDrillsSnap.empty) {
+                console.log("Sample of drills in DB:", allDrillsSnap.docs.map(d => ({ day: d.data().day, subject: d.data().subject })));
+              } else {
+                console.log("The daily_drills collection is EMPTY.");
+              }
+            }
+          } catch (debugErr) {
+            console.error("Debug query failed:", debugErr);
+          }
+          
           setTodayDrill(null);
+          
+          // Fallback: Try the new Daily Drill service (random 10 questions)
+          console.log("Attempting fallback to random 10 questions...");
+          const fbQuestions = await fetchDailyDrill(user.subject.trim(), "Paper 1");
+          if (fbQuestions.length > 0) {
+            console.log("Found fallback questions:", fbQuestions.length);
+            setFallbackQuestions(fbQuestions);
+          }
         }
       } catch (err) {
         console.error("Dashboard Drill Fetch Error:", err);
@@ -276,7 +311,8 @@ export default function Dashboard() {
                 <div className="text-3xl font-black mb-2 tracking-tight">
                   {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (
                     !user.subject ? "Subject Not Set" :
-                    todayDrill ? `Today's Topic: ${todayDrill.topic}` : `No ${user.subject} Drill for Day ${currentDay}`
+                    todayDrill ? `Today's Topic: ${todayDrill.topic}` : 
+                    fallbackQuestions.length > 0 ? `Random ${user.subject} Drill` : `No ${user.subject} Drill for Day ${currentDay}`
                   )}
                 </div>
                 <div className="text-indigo-100 font-medium mb-6 max-w-xl">
@@ -284,6 +320,8 @@ export default function Dashboard() {
                     !user.subject ? "Please set your target subject in your profile to see daily drills." :
                     todayDrill 
                     ? `Master ${todayDrill.topic} with today's ${todayDrill.subject} drill. Keep your streak alive!`
+                    : fallbackQuestions.length > 0
+                    ? `We don't have a specific drill for Day ${currentDay} yet, but you can practice with 10 random questions!`
                     : `An admin hasn't assigned a ${user.subject} drill for Day ${currentDay} yet. Check back later!`
                   )}
                 </div>
@@ -308,7 +346,7 @@ export default function Dashboard() {
                           ? "bg-emerald-400 text-emerald-950 cursor-default" 
                           : "bg-white text-indigo-600 hover:bg-indigo-50"
                       )}
-                      onClick={() => !hasSubmittedToday && navigate('/daily-drill')}
+                      onClick={() => !hasSubmittedToday && navigate(todayDrill ? '/daily-drill' : '/daily-drill-new')}
                     >
                       {hasSubmittedToday ? (
                         <>
@@ -317,10 +355,19 @@ export default function Dashboard() {
                         </>
                       ) : (
                         <>
-                          Start Drill Now
+                          {todayDrill ? 'Start Drill Now' : 'Start Random Drill'}
                           <ArrowRight className="ml-2" size={20} />
                         </>
                       )}
+                    </Button>
+                  ) : fallbackQuestions.length > 0 ? (
+                    <Button 
+                      variant="secondary" 
+                      className="font-black px-8 py-6 rounded-2xl bg-white text-indigo-600 hover:bg-indigo-50"
+                      onClick={() => navigate('/daily-drill-new')}
+                    >
+                      Start Random Drill
+                      <ArrowRight className="ml-2" size={20} />
                     </Button>
                   ) : (
                     <Button 

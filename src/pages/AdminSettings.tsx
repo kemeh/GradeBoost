@@ -275,6 +275,18 @@ export default function AdminSettings() {
         await questionBatch.commit();
       }
 
+      // 4. Fix Users
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const userBatch = writeBatch(db);
+      usersSnap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.subject && data.subject !== data.subject.trim()) {
+          userBatch.update(doc.ref, { subject: data.subject.trim() });
+          totalFixed++;
+        }
+      });
+      await userBatch.commit();
+
       setFixResult(`Successfully fixed ${totalFixed} records.`);
       toast.success(`Fixed ${totalFixed} records!`);
     } catch (error: any) {
