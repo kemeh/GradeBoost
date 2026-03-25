@@ -5,7 +5,7 @@ import {
   TrendingUp, Target, BookOpen, 
   ArrowRight, LogOut, 
   FileText, Settings, Trophy, AlertCircle,
-  Zap, ChevronRight, CheckCircle2, Lock
+  Zap, ChevronRight, CheckCircle2, Lock, Calendar
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
@@ -42,6 +42,8 @@ export default function Dashboard() {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [leaderboard, setLeaderboard] = useState<WeeklyLeaderboard[]>([]);
   const [userLeaderboard, setUserLeaderboard] = useState<WeeklyLeaderboard | null>(null);
+  const [recentSubmissions, setRecentSubmissions] = useState<number[]>([]);
+  const [currentDay, setCurrentDay] = useState(1);
 
   useEffect(() => {
     if (user?.uid) {
@@ -60,7 +62,8 @@ export default function Dashboard() {
         const settings = await getSystemSettings();
         const startDate = settings?.challengeStartDate;
         
-        const currentDay = getCurrentDayNumber(startDate);
+        const currentDayNum = getCurrentDayNumber(startDate);
+        setCurrentDay(currentDayNum);
         setDaysRemaining(getDaysRemaining(startDate));
 
         if (!user.subject) {
@@ -70,9 +73,22 @@ export default function Dashboard() {
           return;
         }
 
+        // Fetch recent submissions for calendar
+        const startDay = Math.max(1, Math.min(51, currentDayNum - 4));
+        const endDay = Math.min(60, startDay + 9);
+        
+        const subsQ = query(
+          collection(db, 'drill_submissions'),
+          where('userId', '==', user.uid),
+          where('day', '>=', startDay),
+          where('day', '<=', endDay)
+        );
+        const subsSnapshot = await getDocs(subsQ);
+        setRecentSubmissions(subsSnapshot.docs.map(doc => doc.data().day));
+
         const drillQ = query(
           collection(db, 'daily_drills'), 
-          where('day', '==', currentDay),
+          where('day', '==', currentDayNum),
           where('subject', '==', user.subject),
           limit(1)
         );
@@ -86,7 +102,7 @@ export default function Dashboard() {
           const subQ = query(
             collection(db, 'drill_submissions'),
             where('userId', '==', user.uid),
-            where('day', '==', currentDay),
+            where('day', '==', currentDayNum),
             limit(1)
           );
           const subSnapshot = await getDocs(subQ);
@@ -324,6 +340,70 @@ export default function Dashboard() {
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/20 rounded-full -ml-32 -mb-32 blur-3xl"></div>
+          </Card>
+        </section>
+
+        {/* 10-Day Challenge Calendar */}
+        <section className="mb-12">
+          <Card className="p-8 bg-white border border-slate-200 rounded-3xl overflow-hidden">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
+                  <Calendar className="w-6 h-6 text-indigo-600" />
+                  Challenge Roadmap
+                </h2>
+                <p className="text-sm text-slate-500 font-medium">Your progress over the next 10 days of the challenge.</p>
+              </div>
+              <Badge variant="secondary" className="border-indigo-100 text-indigo-600 font-bold">
+                Day {currentDay} / 60
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-4">
+              {Array.from({ length: 10 }).map((_, i) => {
+                const startDay = Math.max(1, Math.min(51, currentDay - 4));
+                const dayNum = startDay + i;
+                const isToday = dayNum === currentDay;
+                const isCompleted = recentSubmissions.includes(dayNum);
+                const isLocked = dayNum > currentDay;
+                const isPast = dayNum < currentDay;
+
+                return (
+                  <motion.div
+                    key={dayNum}
+                    whileHover={!isLocked ? { y: -5 } : {}}
+                    className={cn(
+                      "relative p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2",
+                      isToday ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100" :
+                      isCompleted ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
+                      isLocked ? "bg-slate-50 border-slate-100 text-slate-300 opacity-60" :
+                      "bg-white border-slate-100 text-slate-400 hover:border-indigo-200"
+                    )}
+                  >
+                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Day</span>
+                    <span className="text-xl font-black tracking-tight">{dayNum}</span>
+                    
+                    <div className="mt-1">
+                      {isCompleted ? (
+                        <CheckCircle2 size={16} className="text-emerald-500" />
+                      ) : isLocked ? (
+                        <Lock size={16} className="text-slate-300" />
+                      ) : isToday ? (
+                        <Zap size={16} className="text-amber-300 animate-pulse" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border-2 border-slate-200" />
+                      )}
+                    </div>
+
+                    {isToday && (
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-amber-400 text-amber-950 text-[8px] font-black rounded-full whitespace-nowrap">
+                        TODAY
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
           </Card>
         </section>
 
