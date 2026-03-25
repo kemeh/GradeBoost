@@ -7,8 +7,8 @@ export async function fetchDailyDrill(subject: string, paper: string) {
     
     const q = query(
       collection(db, "exam_questions"),
-      where("subject", "==", subject),
-      where("paper", "==", paper),
+      where("subject", "==", subject.trim()),
+      where("paper", "==", paper.trim()),
       limit(10)
     );
 

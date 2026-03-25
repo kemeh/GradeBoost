@@ -36,6 +36,9 @@ export default function AdminSettings() {
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  const [isFixing, setIsFixing] = useState(false);
+  const [fixResult, setFixResult] = useState<string | null>(null);
+
   useEffect(() => {
     const fetchSettings = async () => {
       setIsLoading(true);
@@ -197,6 +200,89 @@ export default function AdminSettings() {
       toast.error('Gemini connection test failed');
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const handleFixData = async () => {
+    if (!window.confirm('This will trim all subject and topic fields in daily_drills, exam_questions, and subjects collections. This helps fix display issues. Continue?')) {
+      return;
+    }
+
+    setIsFixing(true);
+    setFixResult(null);
+    try {
+      let totalFixed = 0;
+
+      // 1. Fix Subjects
+      const subjectsSnap = await getDocs(collection(db, 'subjects'));
+      const subjectBatch = writeBatch(db);
+      subjectsSnap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.name && data.name !== data.name.trim()) {
+          subjectBatch.update(doc.ref, { name: data.name.trim() });
+          totalFixed++;
+        }
+      });
+      await subjectBatch.commit();
+
+      // 2. Fix Daily Drills
+      const drillsSnap = await getDocs(collection(db, 'daily_drills'));
+      const drillBatch = writeBatch(db);
+      drillsSnap.docs.forEach(doc => {
+        const data = doc.data();
+        const updates: any = {};
+        if (data.subject && data.subject !== data.subject.trim()) {
+          updates.subject = data.subject.trim();
+        }
+        if (data.topic && data.topic !== data.topic.trim()) {
+          updates.topic = data.topic.trim();
+        }
+        if (Object.keys(updates).length > 0) {
+          drillBatch.update(doc.ref, updates);
+          totalFixed++;
+        }
+      });
+      await drillBatch.commit();
+
+      // 3. Fix Exam Questions
+      const questionsSnap = await getDocs(collection(db, 'exam_questions'));
+      // Firestore batches are limited to 500 operations. For questions, we might need multiple batches.
+      let questionBatch = writeBatch(db);
+      let count = 0;
+      for (const doc of questionsSnap.docs) {
+        const data = doc.data();
+        const updates: any = {};
+        if (data.subject && data.subject !== data.subject.trim()) {
+          updates.subject = data.subject.trim();
+        }
+        if (data.topic && data.topic !== data.topic.trim()) {
+          updates.topic = data.topic.trim();
+        }
+        
+        if (Object.keys(updates).length > 0) {
+          questionBatch.update(doc.ref, updates);
+          totalFixed++;
+          count++;
+          
+          if (count >= 400) {
+            await questionBatch.commit();
+            questionBatch = writeBatch(db);
+            count = 0;
+          }
+        }
+      }
+      if (count > 0) {
+        await questionBatch.commit();
+      }
+
+      setFixResult(`Successfully fixed ${totalFixed} records.`);
+      toast.success(`Fixed ${totalFixed} records!`);
+    } catch (error: any) {
+      console.error('Error fixing data:', error);
+      toast.error('Failed to fix data');
+      setFixResult(`Error: ${error.message}`);
+    } finally {
+      setIsFixing(false);
     }
   };
 
@@ -560,16 +646,32 @@ export default function AdminSettings() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-rose-50 rounded-3xl p-8 border border-rose-200"
+              className="bg-rose-50 rounded-3xl p-8 border border-rose-200 space-y-6"
             >
-              <div className="flex items-center gap-3 mb-6 text-rose-700">
+              <div className="flex items-center gap-3 text-rose-700">
                 <div className="p-3 bg-rose-100 rounded-2xl">
                   <AlertCircle className="w-6 h-6" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">Danger Zone</h2>
-                  <p className="text-sm opacity-80">Highly destructive actions. Use with extreme caution.</p>
+                  <p className="text-sm opacity-80">Highly destructive or maintenance actions. Use with extreme caution.</p>
                 </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-rose-100 shadow-sm">
+                <div>
+                  <h3 className="font-bold text-slate-900">Data Integrity Fix</h3>
+                  <p className="text-sm text-slate-500">Trim all subject and topic fields in Firestore. This fixes issues where drills don't show due to trailing spaces.</p>
+                  {fixResult && <p className="text-xs font-bold text-emerald-600 mt-2">{fixResult}</p>}
+                </div>
+                <button
+                  onClick={handleFixData}
+                  disabled={isFixing}
+                  className="px-6 py-4 bg-amber-600 text-white rounded-2xl font-bold uppercase tracking-wider hover:bg-amber-700 transition-all flex items-center gap-2 whitespace-nowrap disabled:opacity-50"
+                >
+                  {isFixing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
+                  Fix Data Integrity
+                </button>
               </div>
 
               <div className="flex flex-col md:flex-row items-center justify-between gap-6 bg-white p-6 rounded-2xl border border-rose-100 shadow-sm">

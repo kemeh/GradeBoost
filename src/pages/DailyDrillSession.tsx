@@ -163,12 +163,16 @@ export default function DailyDrillSession() {
       const q = query(
         collection(db, 'daily_drills'), 
         where('day', '==', dayToFetch),
-        where('subject', '==', user.subject)
+        where('subject', '==', user.subject.trim())
       );
+      
+      console.log("Session: Querying drill for:", { day: dayToFetch, subject: user.subject.trim() });
+      
       const snapshot = await getDocs(q);
       
       if (!snapshot.empty) {
         const currentDrill = { id: snapshot.docs[0].id, ...snapshot.docs[0].data() } as DailyDrill;
+        console.log("Session: Found drill:", currentDrill);
         setDrill(currentDrill);
         
         // Check access

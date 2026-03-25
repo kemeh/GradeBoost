@@ -177,7 +177,9 @@ export default function AdminDailyDrill() {
     try {
       const q = query(collection(db, 'daily_drills'), orderBy('day', 'asc'));
       const snapshot = await getDocs(q);
-      setDrills(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyDrill)));
+      const drillsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyDrill));
+      console.log("Admin: Fetched daily drills:", drillsData);
+      setDrills(drillsData);
     } catch (err: any) {
       console.error("Error fetching daily drills:", err);
       setError(err.message || 'Failed to fetch daily drills.');
@@ -234,6 +236,8 @@ export default function AdminDailyDrill() {
     try {
       const data = {
         ...questionForm,
+        subject: questionForm.subject?.trim(),
+        topic: questionForm.topic?.trim(),
         createdAt: serverTimestamp()
       };
       if (isEditing && editingId) {
@@ -305,6 +309,7 @@ export default function AdminDailyDrill() {
         isFree: autoAssignForm.day === 1,
         createdAt: serverTimestamp()
       };
+      console.log("Admin: Saving auto drill:", data);
 
       await addDoc(collection(db, 'daily_drills'), data);
       setSuccess(`Day ${autoAssignForm.day} drill generated with ${questionIds.length} questions!`);
@@ -327,6 +332,7 @@ export default function AdminDailyDrill() {
         subject: drillForm.subject.trim(),
         createdAt: serverTimestamp()
       };
+      console.log("Admin: Saving manual drill:", data);
       if (isEditing && editingId) {
         try {
           await updateDoc(doc(db, 'daily_drills', editingId), data);

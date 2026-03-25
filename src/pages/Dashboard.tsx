@@ -44,6 +44,7 @@ export default function Dashboard() {
   const [userLeaderboard, setUserLeaderboard] = useState<WeeklyLeaderboard | null>(null);
   const [recentSubmissions, setRecentSubmissions] = useState<number[]>([]);
   const [currentDay, setCurrentDay] = useState(1);
+  const [challengeStartDate, setChallengeStartDate] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (user?.uid) {
@@ -61,6 +62,7 @@ export default function Dashboard() {
       try {
         const settings = await getSystemSettings();
         const startDate = settings?.challengeStartDate;
+        setChallengeStartDate(startDate);
         
         const currentDayNum = getCurrentDayNumber(startDate);
         setCurrentDay(currentDayNum);
@@ -89,13 +91,16 @@ export default function Dashboard() {
         const drillQ = query(
           collection(db, 'daily_drills'), 
           where('day', '==', currentDayNum),
-          where('subject', '==', user.subject),
+          where('subject', '==', user.subject.trim()),
           limit(1)
         );
+        
+        console.log("Querying drill for:", { day: currentDayNum, subject: user.subject.trim() });
         
         const drillSnapshot = await getDocs(drillQ);
         if (!drillSnapshot.empty) {
           const drillData = { id: drillSnapshot.docs[0].id, ...drillSnapshot.docs[0].data() } as DailyDrill;
+          console.log("Found drill:", drillData);
           setTodayDrill(drillData);
 
           // Check if already submitted today
@@ -261,7 +266,7 @@ export default function Dashboard() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest">
-                    Day {60 - daysRemaining} of 60
+                    Day {currentDay} of 60
                   </div>
                   <Badge variant="secondary" className="bg-amber-400 text-amber-950 border-none">Daily Drill</Badge>
                   {todayDrill?.paper && (
@@ -271,7 +276,7 @@ export default function Dashboard() {
                 <div className="text-3xl font-black mb-2 tracking-tight">
                   {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (
                     !user.subject ? "Subject Not Set" :
-                    todayDrill ? `Today's Topic: ${todayDrill.topic}` : `No ${user.subject} Drill for Day ${60 - daysRemaining}`
+                    todayDrill ? `Today's Topic: ${todayDrill.topic}` : `No ${user.subject} Drill for Day ${currentDay}`
                   )}
                 </div>
                 <div className="text-indigo-100 font-medium mb-6 max-w-xl">
@@ -279,7 +284,7 @@ export default function Dashboard() {
                     !user.subject ? "Please set your target subject in your profile to see daily drills." :
                     todayDrill 
                     ? `Master ${todayDrill.topic} with today's ${todayDrill.subject} drill. Keep your streak alive!`
-                    : `An admin hasn't assigned a ${user.subject} drill for Day ${60 - daysRemaining} yet. Check back later!`
+                    : `An admin hasn't assigned a ${user.subject} drill for Day ${currentDay} yet. Check back later!`
                   )}
                 </div>
                 <div className="flex flex-wrap gap-4">
