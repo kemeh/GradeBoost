@@ -292,7 +292,7 @@ export default function AdminDailyDrill() {
       const q = query(
         collection(db, 'daily_drills'), 
         where('day', '==', autoAssignForm.day),
-        where('subject', '==', autoAssignForm.subject)
+        where('subject', '==', autoAssignForm.subject.trim())
       );
       const snap = await getDocs(q);
       if (!snap.empty) {
@@ -345,7 +345,7 @@ export default function AdminDailyDrill() {
         const q = query(
           collection(db, 'daily_drills'), 
           where('day', '==', drillForm.day),
-          where('subject', '==', drillForm.subject)
+          where('subject', '==', drillForm.subject.trim())
         );
         const snap = await getDocs(q);
         if (!snap.empty) {
