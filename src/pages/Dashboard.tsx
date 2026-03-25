@@ -264,6 +264,9 @@ export default function Dashboard() {
                     Day {60 - daysRemaining} of 60
                   </div>
                   <Badge variant="secondary" className="bg-amber-400 text-amber-950 border-none">Daily Drill</Badge>
+                  {todayDrill?.paper && (
+                    <Badge variant="secondary" className="bg-white/20 text-white border-none uppercase tracking-widest text-[10px]">{todayDrill.paper}</Badge>
+                  )}
                 </div>
                 <div className="text-3xl font-black mb-2 tracking-tight">
                   {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (
@@ -361,7 +364,7 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-4">
               {Array.from({ length: 10 }).map((_, i) => {
-                const startDay = Math.max(1, Math.min(51, currentDay - 4));
+                const startDay = Math.max(1, Math.min(51, currentDay - 1));
                 const dayNum = startDay + i;
                 const isToday = dayNum === currentDay;
                 const isCompleted = recentSubmissions.includes(dayNum);
@@ -372,11 +375,12 @@ export default function Dashboard() {
                   <motion.div
                     key={dayNum}
                     whileHover={!isLocked ? { y: -5 } : {}}
+                    onClick={() => !isLocked && navigate(`/drill?day=${dayNum}`)}
                     className={cn(
-                      "relative p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2",
+                      "relative p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer",
                       isToday ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100" :
                       isCompleted ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
-                      isLocked ? "bg-slate-50 border-slate-100 text-slate-300 opacity-60" :
+                      isLocked ? "bg-slate-50 border-slate-100 text-slate-300 opacity-60 cursor-not-allowed" :
                       "bg-white border-slate-100 text-slate-400 hover:border-indigo-200"
                     )}
                   >

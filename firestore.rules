@@ -511,7 +511,7 @@ service cloud.firestore {
     }
 
     match /exam_questions/{questionId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create, update, delete: if isAdmin() && isValidExamQuestion(request.resource.data);
     }
 

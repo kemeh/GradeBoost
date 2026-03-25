@@ -111,7 +111,11 @@ export interface ExamResult {
 export interface ExamQuestion {
   id: string;
   questionText: string;
-  options: Record<string, string>; // { A: '...', B: '...', C: '...', D: '...' }
+  options?: Record<string, string>; // { A: '...', B: '...', C: '...', D: '...' }
+  optionA?: string;
+  optionB?: string;
+  optionC?: string;
+  optionD?: string;
   correctAnswer: string;
   explanation: string;
   subject: Subject;
@@ -132,6 +136,7 @@ export interface DailyDrill {
   day: number; // 1-60
   questionIds: string[]; // Array of question IDs
   subject: Subject;
+  paper?: PaperType;
   topic: string;
   isFree: boolean;
   createdAt: any;

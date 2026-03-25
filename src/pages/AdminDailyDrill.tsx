@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp, deleteDoc, writeBatch } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { fetchDailyDrill } from '../services/dailyDrillService';
 import { 
   Plus, Trash2, CheckCircle2, Clock, 
   FileText, HelpCircle, ChevronRight, 
@@ -92,6 +93,7 @@ export default function AdminDailyDrill() {
     day: currentDay,
     questionIds: [],
     subject: '',
+    paper: 'Paper 1',
     topic: '',
     isFree: false
   });
@@ -104,6 +106,7 @@ export default function AdminDailyDrill() {
   const [autoAssignForm, setAutoAssignForm] = useState({
     day: currentDay,
     subject: '' as Subject,
+    paper: 'Paper 1' as PaperType,
     topic: '',
     mcqCount: 10,
     p2Count: 1,
@@ -273,26 +276,12 @@ export default function AdminDailyDrill() {
     if (!user) return;
     setLoading(true);
     try {
-      // 1. Find questions
-      const mcqs = questionsBank
-        .filter(q => q.subject === autoAssignForm.subject && q.topic === autoAssignForm.topic && q.paper === 'Paper 1')
-        .sort(() => 0.5 - Math.random())
-        .slice(0, autoAssignForm.mcqCount);
-
-      const p2s = questionsBank
-        .filter(q => q.subject === autoAssignForm.subject && q.topic === autoAssignForm.topic && q.paper === 'Paper 2')
-        .sort(() => 0.5 - Math.random())
-        .slice(0, autoAssignForm.p2Count);
-
-      const p3s = questionsBank
-        .filter(q => q.subject === autoAssignForm.subject && q.topic === autoAssignForm.topic && q.paper === 'Paper 3')
-        .sort(() => 0.5 - Math.random())
-        .slice(0, autoAssignForm.p3Count);
-
-      const questionIds = [...mcqs, ...p2s, ...p3s].map(q => q.id);
+      // 1. Fetch questions using the service
+      const questions = await fetchDailyDrill(autoAssignForm.subject, autoAssignForm.paper);
+      const questionIds = questions.map(q => q.id);
 
       if (questionIds.length === 0) {
-        throw new Error('No questions found for the selected topic and subject.');
+        throw new Error('No questions found for the selected subject and paper.');
       }
 
       // 2. Check if day exists for this subject
@@ -310,7 +299,8 @@ export default function AdminDailyDrill() {
       const data = {
         day: autoAssignForm.day,
         subject: autoAssignForm.subject.trim(),
-        topic: autoAssignForm.topic,
+        paper: autoAssignForm.paper,
+        topic: autoAssignForm.topic || 'General',
         questionIds,
         isFree: autoAssignForm.day === 1,
         createdAt: serverTimestamp()
@@ -492,6 +482,7 @@ export default function AdminDailyDrill() {
                 setAutoAssignForm({
                   day: drills.length + 1,
                   subject: subjects[0]?.name || '',
+                  paper: 'Paper 1',
                   topic: '',
                   mcqCount: 10,
                   p2Count: 1,
@@ -508,6 +499,7 @@ export default function AdminDailyDrill() {
                   day: drills.length + 1,
                   questionIds: [],
                   subject: subjects[0]?.name || '',
+                  paper: 'Paper 1',
                   topic: '',
                   isFree: false
                 });
@@ -706,6 +698,7 @@ export default function AdminDailyDrill() {
                     <thead className="bg-gray-50 border-bottom">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subject</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Paper</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Topic</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
@@ -723,9 +716,12 @@ export default function AdminDailyDrill() {
                                 )}
                               </div>
                             </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge variant="secondary">{d.subject}</Badge>
-                          </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-xs font-bold text-slate-400">{d.subject}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Badge variant="secondary">{d.paper || 'Mixed'}</Badge>
+                            </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-500">{d.topic}</div>
                           </td>
@@ -1190,7 +1186,7 @@ export default function AdminDailyDrill() {
                 </div>
 
                 <form onSubmit={handleAutoAssign} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Day (1-60)</label>
                       <input
@@ -1214,6 +1210,18 @@ export default function AdminDailyDrill() {
                         {subjects.map(s => (
                           <option key={s.id} value={s.name}>{s.name}</option>
                         ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Paper</label>
+                      <select
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={autoAssignForm.paper}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, paper: e.target.value as PaperType })}
+                      >
+                        <option value="Paper 1">Paper 1</option>
+                        <option value="Paper 2">Paper 2</option>
+                        <option value="Paper 3">Paper 3</option>
                       </select>
                     </div>
                   </div>
@@ -1318,7 +1326,7 @@ export default function AdminDailyDrill() {
                 </div>
 
                 <form onSubmit={handleSaveDrill} className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Select Day (1-60)</label>
                       <input
@@ -1343,6 +1351,22 @@ export default function AdminDailyDrill() {
                         {subjects.map(s => (
                           <option key={s.id} value={s.name}>{s.name}</option>
                         ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Paper</label>
+                      <select
+                        required
+                        className="w-full px-4 py-2 border rounded-lg"
+                        value={drillForm.paper}
+                        onChange={(e) => setDrillForm({ ...drillForm, paper: e.target.value as PaperType })}
+                      >
+                        <option value="Paper 1">Paper 1</option>
+                        <option value="Paper 2">Paper 2</option>
+                        <option value="Paper 3">Paper 3</option>
                       </select>
                     </div>
                     <div>
@@ -1384,7 +1408,11 @@ export default function AdminDailyDrill() {
                       }}
                     >
                       {questionsBank
-                        .filter(q => !drillForm.subject || q.subject === drillForm.subject)
+                        .filter(q => 
+                          (!drillForm.subject || q.subject === drillForm.subject) &&
+                          (!drillForm.paper || q.paper === drillForm.paper) &&
+                          (!drillForm.topic || q.topic === drillForm.topic)
+                        )
                         .map(q => (
                           <option key={q.id} value={q.id}>
                             [{q.subject}] [{q.paper}] {q.questionText.substring(0, 50)}...
