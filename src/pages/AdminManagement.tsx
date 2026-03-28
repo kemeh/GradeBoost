@@ -4,7 +4,8 @@ import {
   Plus, Search, Edit2, Trash2, ExternalLink, 
   BookOpen, Save, X, AlertCircle, CheckCircle2,
   FileText, Calendar, Link as LinkIcon, Eye, EyeOff,
-  Upload, Loader2, FileUp, RefreshCw, ArrowRight
+  Upload, Loader2, FileUp, RefreshCw, ArrowRight,
+  LayoutDashboard
 } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { 
@@ -377,9 +378,14 @@ export default function AdminManagement() {
 
       <main className="flex-1 lg:ml-72 p-6 md:p-12 pt-24 lg:pt-12">
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Admin Management</h1>
-            <p className="text-slate-500 font-medium">Manage student resources, assignments, and learning links.</p>
+          <div className="flex items-center gap-6">
+            <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors" title="Go to Dashboard">
+              <LayoutDashboard size={20} />
+            </button>
+            <div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Admin Management</h1>
+              <p className="text-slate-500 font-medium">Manage student resources, assignments, and learning links.</p>
+            </div>
           </div>
           <div className="flex flex-col md:flex-row items-center gap-3">
             <Button 

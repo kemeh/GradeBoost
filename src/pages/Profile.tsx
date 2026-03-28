@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen } from 'lucide-react';
+import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen, LayoutDashboard } from 'lucide-react';
 import { ACHIEVEMENTS } from '../services/gamificationService';
 import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -98,9 +98,20 @@ export default function Profile() {
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
             <div className="space-y-4">
-              <div className="flex items-center gap-2 text-indigo-600">
-                <TrendingUp size={20} />
-                <span className="text-sm font-black uppercase tracking-widest">Profile Settings</span>
+              <div className="flex items-center gap-4 mb-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => navigate('/dashboard')}
+                  className="rounded-xl border-slate-200 hover:bg-slate-50"
+                  title="Go to Dashboard"
+                >
+                  <LayoutDashboard size={18} className="text-slate-600" />
+                </Button>
+                <div className="flex items-center gap-2 text-indigo-600">
+                  <TrendingUp size={20} />
+                  <span className="text-sm font-black uppercase tracking-widest">Profile Settings</span>
+                </div>
               </div>
               <h1 className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tight leading-none">
                 Your <span className="text-indigo-600 italic">Account</span>

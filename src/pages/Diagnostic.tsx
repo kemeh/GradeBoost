@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Target, ArrowRight, CheckCircle2, 
   AlertCircle, Sparkles, BookOpen, 
-  Zap, Trophy, ChevronRight
+  Zap, Trophy, ChevronRight, LayoutDashboard
 } from 'lucide-react';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -249,6 +249,9 @@ export default function Diagnostic() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="h-20 bg-white border-b border-slate-100 px-8 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors" title="Go to Dashboard">
+            <LayoutDashboard size={24} />
+          </button>
           <img 
             src={logoUrl} 
             alt={`${appName} Logo`} 

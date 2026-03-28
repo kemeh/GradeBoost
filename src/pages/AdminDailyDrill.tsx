@@ -9,7 +9,7 @@ import {
   Search, AlertCircle, Save, X, Edit3,
   Check, MessageSquare, User, Calendar,
   Image as ImageIcon, Upload, FileUp, Loader2, Download,
-  Zap, Trophy, RefreshCw
+  Zap, Trophy, RefreshCw, LayoutDashboard
 } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -457,10 +457,15 @@ export default function AdminDailyDrill() {
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Daily Drill Management</h1>
-              <p className="text-gray-500">Manage question bank and assign daily drills</p>
+          <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+            <div className="flex items-center gap-6">
+              <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors" title="Go to Dashboard">
+                <LayoutDashboard size={20} />
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Daily Drill Management</h1>
+                <p className="text-gray-500">Manage question bank and assign daily drills</p>
+              </div>
             </div>
             <div className="flex gap-4">
               <Button onClick={() => {
@@ -519,7 +524,7 @@ export default function AdminDailyDrill() {
                 Bulk Import
               </Button>
             </div>
-          </div>
+          </header>
 
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center">

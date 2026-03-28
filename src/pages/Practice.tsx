@@ -58,10 +58,21 @@ export default function Practice() {
 
       {/* Main Content */}
       <main className="flex-1 lg:ml-72 p-6 md:p-12 pt-24 lg:pt-12">
-        <header className="flex flex-col md:row items-start md:items-center justify-between gap-6 mb-12">
-          <div>
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Practice Papers</h1>
-            <p className="text-slate-500 font-medium">Browse and practice real GCE A-Level papers for {user.subject}.</p>
+        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => navigate('/dashboard')}
+              className="rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+              title="Go to Dashboard"
+            >
+              <LayoutDashboard size={20} />
+            </Button>
+            <div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Practice Papers</h1>
+              <p className="text-slate-500 font-medium">Browse and practice real GCE A-Level papers for {user.subject}.</p>
+            </div>
           </div>
           <div className="flex items-center gap-4 w-full md:w-auto">
             <div className="relative flex-1 md:w-64">

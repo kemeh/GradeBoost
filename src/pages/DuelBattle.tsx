@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../firebase';
 import { doc, getDoc, collection, query, where, orderBy, limit, onSnapshot, setDoc, updateDoc, serverTimestamp, getDocs, runTransaction } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
-import { Zap, Trophy, Users, Timer, Target, CheckCircle2, XCircle, Loader2, Sword, Shield, Crown, Lock } from 'lucide-react';
+import { Zap, Trophy, Users, Timer, Target, CheckCircle2, XCircle, Loader2, Sword, Shield, Crown, Lock, LayoutDashboard } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { LeaderboardEntry } from '../types';
@@ -338,9 +338,20 @@ export default function DuelBattle() {
         <div className="max-w-5xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Duel Battle</h1>
-              <p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-xs">Real-time academic combat</p>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => navigate('/dashboard')}
+                className="rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                title="Go to Dashboard"
+              >
+                <LayoutDashboard size={20} />
+              </Button>
+              <div>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tight">Duel Battle</h1>
+                <p className="text-slate-500 font-bold mt-2 uppercase tracking-widest text-xs">Real-time academic combat</p>
+              </div>
             </div>
             <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-indigo-100 px-4 py-2">
               <Zap size={14} className="mr-2 fill-indigo-600" />

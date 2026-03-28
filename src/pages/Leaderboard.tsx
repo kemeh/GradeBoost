@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { motion } from 'motion/react';
-import { Trophy, Medal, Crown, TrendingUp, Zap, Star } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Trophy, Medal, Crown, TrendingUp, Zap, Star, LayoutDashboard } from 'lucide-react';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { WeeklyLeaderboard } from '../types';
-import { Card, Badge, cn } from '../components/ui';
+import { Card, Badge, cn, Button } from '../components/ui';
 import Sidebar from '../components/Sidebar';
 import { getWeekNumber } from '../utils/dateUtils';
 
 export default function Leaderboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [leaderboard, setLeaderboard] = useState<WeeklyLeaderboard[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'weekly' | 'all-time'>('weekly');
@@ -85,17 +87,28 @@ export default function Leaderboard() {
         <div className="max-w-4xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-indigo-600">
-                <Trophy size={20} />
-                <span className="text-sm font-black uppercase tracking-widest">Hall of Fame</span>
+            <div className="flex items-start gap-4">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => navigate('/dashboard')}
+                className="rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
+                title="Go to Dashboard"
+              >
+                <LayoutDashboard size={20} />
+              </Button>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-indigo-600">
+                  <Trophy size={20} />
+                  <span className="text-sm font-black uppercase tracking-widest">Hall of Fame</span>
+                </div>
+                <h1 className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tight leading-none">
+                  Arena <span className="text-indigo-600 italic">Legends</span>
+                </h1>
+                <p className="text-slate-500 font-medium max-w-md">
+                  Compete with students across the country and climb the ranks to become a legend.
+                </p>
               </div>
-              <h1 className="text-4xl lg:text-6xl font-black text-slate-900 tracking-tight leading-none">
-                Arena <span className="text-indigo-600 italic">Legends</span>
-              </h1>
-              <p className="text-slate-500 font-medium max-w-md">
-                Compete with students across the country and climb the ranks to become a legend.
-              </p>
             </div>
 
             <div className="flex p-1 bg-slate-100 rounded-2xl border border-slate-200">

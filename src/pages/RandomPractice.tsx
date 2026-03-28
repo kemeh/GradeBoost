@@ -219,27 +219,36 @@ export default function RandomPractice() {
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                    {Object.entries(q.options || {}).map(([key, value]) => (
-                      <div 
-                        key={key}
-                        className={cn(
-                          "p-5 rounded-2xl border-2 font-bold transition-all flex items-center gap-4",
-                          key === q.correctAnswer ? "border-emerald-500 bg-emerald-50 text-emerald-900" :
-                          key === userAnswer ? "border-rose-500 bg-rose-50 text-rose-900" :
-                          "border-slate-50 bg-slate-50 text-slate-400"
-                        )}
-                      >
-                        <span className={cn(
-                          "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black",
-                          key === q.correctAnswer ? "bg-emerald-500 text-white" :
-                          key === userAnswer ? "bg-rose-500 text-white" :
-                          "bg-slate-200 text-slate-500"
-                        )}>
-                          {key}
-                        </span>
-                        {value}
-                      </div>
-                    ))}
+                    {(() => {
+                      const options = q.options || {
+                        A: q.optionA,
+                        B: q.optionB,
+                        C: q.optionC,
+                        D: q.optionD
+                      };
+                      
+                      return Object.entries(options).filter(([_, value]) => value).map(([key, value]) => (
+                        <div 
+                          key={key}
+                          className={cn(
+                            "p-5 rounded-2xl border-2 font-bold transition-all flex items-center gap-4",
+                            key === q.correctAnswer ? "border-emerald-500 bg-emerald-50 text-emerald-900" :
+                            key === userAnswer ? "border-rose-500 bg-rose-50 text-rose-900" :
+                            "border-slate-50 bg-slate-50 text-slate-400"
+                          )}
+                        >
+                          <span className={cn(
+                            "w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black",
+                            key === q.correctAnswer ? "bg-emerald-500 text-white" :
+                            key === userAnswer ? "bg-rose-500 text-white" :
+                            "bg-slate-200 text-slate-500"
+                          )}>
+                            {key}
+                          </span>
+                          {value as string}
+                        </div>
+                      ));
+                    })()}
                   </div>
 
                   <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
@@ -332,39 +341,48 @@ export default function RandomPractice() {
                     onValueChange={(val) => handleAnswerChange(currentQuestion.id, val)}
                     className="grid grid-cols-1 gap-4"
                   >
-                    {Object.entries(currentQuestion.options || {}).map(([key, value]) => (
-                      <div key={key}>
-                        <RadioGroupItem
-                          value={key}
-                          id={`option-${key}`}
-                          className="peer sr-only"
-                        />
-                        <Label
-                          htmlFor={`option-${key}`}
-                          className={cn(
-                            "flex items-center justify-between p-6 rounded-3xl border-2 cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]",
-                            answers[currentQuestion.id] === key 
-                              ? "border-indigo-600 bg-indigo-50/50 shadow-lg shadow-indigo-100/50" 
-                              : "border-slate-100 bg-white"
-                          )}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className={cn(
-                              "w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm transition-colors",
-                              answers[currentQuestion.id] === key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"
-                            )}>
-                              {key}
+                    {(() => {
+                      const options = currentQuestion.options || {
+                        A: currentQuestion.optionA,
+                        B: currentQuestion.optionB,
+                        C: currentQuestion.optionC,
+                        D: currentQuestion.optionD
+                      };
+                      
+                      return Object.entries(options).filter(([_, value]) => value).map(([key, value]) => (
+                        <div key={key}>
+                          <RadioGroupItem
+                            value={key}
+                            id={`option-${key}`}
+                            className="peer sr-only"
+                          />
+                          <Label
+                            htmlFor={`option-${key}`}
+                            className={cn(
+                              "flex items-center justify-between p-6 rounded-3xl border-2 cursor-pointer transition-all hover:bg-slate-50 active:scale-[0.98]",
+                              answers[currentQuestion.id] === key 
+                                ? "border-indigo-600 bg-indigo-50/50 shadow-lg shadow-indigo-100/50" 
+                                : "border-slate-100 bg-white"
+                            )}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className={cn(
+                                "w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm transition-colors",
+                                answers[currentQuestion.id] === key ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-500"
+                              )}>
+                                {key}
+                              </div>
+                              <span className="text-lg font-bold text-slate-700">{value as string}</span>
                             </div>
-                            <span className="text-lg font-bold text-slate-700">{value}</span>
-                          </div>
-                          {answers[currentQuestion.id] === key && (
-                            <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center">
-                              <CheckCircle2 className="text-white" size={14} />
-                            </div>
-                          )}
-                        </Label>
-                      </div>
-                    ))}
+                            {answers[currentQuestion.id] === key && (
+                              <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center">
+                                <CheckCircle2 className="text-white" size={14} />
+                              </div>
+                            )}
+                          </Label>
+                        </div>
+                      ));
+                    })()}
                   </RadioGroup>
                 </div>
               </motion.div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { Settings, Key, Save, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, Calendar, RotateCcw, CreditCard, Trash2 } from 'lucide-react';
+import { Settings, Key, Save, CheckCircle, AlertCircle, RefreshCw, ShieldCheck, Calendar, RotateCcw, CreditCard, Trash2, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { getSystemSettings, updateSystemSettings } from '../services/settingsService';
@@ -17,6 +18,7 @@ import { Badge, Button } from '../components/ui';
 import FileUpload from '../components/FileUpload';
 
 export default function AdminSettings() {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { refreshSettings } = useSettings();
   const [apiKey, setApiKey] = useState('');
@@ -319,12 +321,17 @@ export default function AdminSettings() {
       <main className="flex-1 lg:ml-72 p-4 md:p-8 pt-24 lg:pt-12">
         <div className="max-w-4xl mx-auto">
           <header className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
-                <Settings className="w-8 h-8 text-indigo-600" />
-                System Settings
-              </h1>
-              <p className="text-slate-500 font-medium">Manage global application configuration and API keys.</p>
+            <div className="flex items-center gap-6">
+              <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors" title="Go to Dashboard">
+                <LayoutDashboard size={20} />
+              </button>
+              <div>
+                <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
+                  <Settings className="w-8 h-8 text-indigo-600" />
+                  System Settings
+                </h1>
+                <p className="text-slate-500 font-medium">Manage global application configuration and API keys.</p>
+              </div>
             </div>
           </header>
 

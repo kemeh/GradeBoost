@@ -6,7 +6,7 @@ import {
   TrendingUp, CheckCircle2, AlertCircle,
   ArrowRight, Lock, Zap, FileText, Target,
   Play, HelpCircle, ChevronRight, LockKeyhole,
-  LogOut
+  LogOut, LayoutDashboard
 } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp, collection, query, where, limit, getDocs, orderBy, addDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -230,6 +230,15 @@ export default function PaymentPage() {
           />
         </div>
         <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => navigate('/dashboard')}
+            className="rounded-xl border-slate-200 hover:bg-slate-50"
+            title="Go to Dashboard"
+          >
+            <LayoutDashboard size={18} className="text-slate-600" />
+          </Button>
           <Button variant="outline" size="sm" onClick={() => auth.signOut()}>
             Log Out
           </Button>
