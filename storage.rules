@@ -11,8 +11,7 @@ service firebase.storage {
       return isAuthenticated() && 
         (
           request.auth.token.email == "kemehhilary@gmail.com" ||
-          (firestore.exists(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)) && 
-           firestore.get(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)).data.role == 'admin')
+          firestore.get(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)).data.role == 'admin'
         );
     }
     

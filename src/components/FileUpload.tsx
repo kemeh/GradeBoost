@@ -54,8 +54,29 @@ export default function FileUpload({
   }, [uploadTask]);
 
   const handleFile = (selectedFile: File) => {
+    console.log('Selected file:', selectedFile.name, selectedFile.type, selectedFile.size);
+    
     if (maxSizeMB && selectedFile.size > maxSizeMB * 1024 * 1024) {
       toast.error(`File size must be less than ${maxSizeMB}MB`);
+      return;
+    }
+
+    // Check if file type is accepted
+    const isAccepted = accept === '*' || 
+      accept.split(',').some(type => {
+        const trimmedType = type.trim();
+        if (trimmedType.startsWith('.')) {
+          return selectedFile.name.toLowerCase().endsWith(trimmedType.toLowerCase());
+        }
+        // Be more lenient with PDF mime types
+        if (trimmedType === 'application/pdf' && selectedFile.name.toLowerCase().endsWith('.pdf')) {
+          return true;
+        }
+        return selectedFile.type.match(new RegExp(trimmedType.replace('*', '.*')));
+      });
+
+    if (!isAccepted) {
+      toast.error(`Invalid file type. Please upload ${accept}`);
       return;
     }
 
@@ -113,8 +134,9 @@ export default function FileUpload({
     setError(null);
     if (onUploadStart) onUploadStart();
 
-    console.log('Starting upload to bucket:', storage.app.options.storageBucket);
+    console.log('Starting upload to bucket:', storage.app.options.storageBucket, 'Folder:', folder);
     const storageRef = ref(storage, `${folder}/${Date.now()}_${fileToUpload.name}`);
+    console.log('Storage ref path:', storageRef.fullPath);
     const task = uploadBytesResumable(storageRef, fileToUpload);
     setUploadTask(task);
 
@@ -131,7 +153,7 @@ export default function FileUpload({
         let errorMessage = 'Upload failed. Check your connection.';
         
         if (err.code === 'storage/unauthorized') {
-          errorMessage = 'Permission denied. You might not have the right access.';
+          errorMessage = `Permission denied (${err.code}). You might not have the right access or the file type/size is invalid.`;
         } else if (err.code === 'storage/canceled') {
           // If it was canceled, we don't necessarily want to show a scary error toast
           // unless it wasn't expected.
@@ -139,9 +161,9 @@ export default function FileUpload({
           setProgress(0);
           return; // Skip the toast for cancellation
         } else if (err.code === 'storage/unknown') {
-          errorMessage = 'An unknown error occurred. Please try again.';
-        } else if (err.message) {
-          errorMessage = `Upload failed: ${err.message}`;
+          errorMessage = `An unknown error occurred (${err.code}). Please try again.`;
+        } else {
+          errorMessage = `Upload failed: ${err.message || 'Unknown error'} (${err.code || 'no-code'})`;
         }
         
         setError(errorMessage);

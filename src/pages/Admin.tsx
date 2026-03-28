@@ -1120,6 +1120,7 @@ export default function Admin() {
                       initialUrl={formData.pdfUrl}
                       folder="papers"
                       label="Upload Question Paper"
+                      maxSizeMB={50}
                     />
                   </div>
 
