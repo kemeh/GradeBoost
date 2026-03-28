@@ -41,6 +41,17 @@ export default function FileUpload({
   const [downloadUrl, setDownloadUrl] = useState(initialUrl);
   const [uploadTask, setUploadTask] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const isMounted = React.useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      if (uploadTask && uploadTask.snapshot.state === 'running') {
+        uploadTask.cancel();
+      }
+    };
+  }, [uploadTask]);
 
   const handleFile = (selectedFile: File) => {
     if (maxSizeMB && selectedFile.size > maxSizeMB * 1024 * 1024) {
@@ -114,13 +125,19 @@ export default function FileUpload({
         setProgress(p);
       },
       (err: any) => {
+        if (!isMounted.current) return;
+        
         console.error('Upload error:', err);
         let errorMessage = 'Upload failed. Check your connection.';
         
         if (err.code === 'storage/unauthorized') {
           errorMessage = 'Permission denied. You might not have the right access.';
         } else if (err.code === 'storage/canceled') {
-          errorMessage = 'Upload was canceled.';
+          // If it was canceled, we don't necessarily want to show a scary error toast
+          // unless it wasn't expected.
+          setUploading(false);
+          setProgress(0);
+          return; // Skip the toast for cancellation
         } else if (err.code === 'storage/unknown') {
           errorMessage = 'An unknown error occurred. Please try again.';
         } else if (err.message) {
@@ -133,6 +150,7 @@ export default function FileUpload({
         toast.error(errorMessage);
       },
       async () => {
+        if (!isMounted.current) return;
         try {
           const url = await getDownloadURL(task.snapshot.ref);
           const size = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
@@ -141,6 +159,7 @@ export default function FileUpload({
           onUploadComplete(url, fileToUpload.name, size);
           toast.success('Upload complete!');
         } catch (err) {
+          if (!isMounted.current) return;
           console.error('Error getting download URL:', err);
           const errorMessage = 'Failed to finalize upload.';
           setError(errorMessage);
@@ -241,6 +260,7 @@ export default function FileUpload({
               </div>
             </div>
             <button 
+              type="button"
               onClick={cancelUpload}
               className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
             >
@@ -310,6 +330,7 @@ export default function FileUpload({
               <Upload className="rotate-180" size={18} />
             </a>
             <button 
+              type="button"
               onClick={handleDelete}
               className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
             >

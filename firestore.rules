@@ -1,8 +1,254 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (Firebase Auth UID)
+    // Fields:
+    //   - name: string (required)
+    //   - email: string (required, email format)
+    //   - subject: string (required, enum: Computer Science, ICT)
+    //   - role: string (required, enum: student, admin)
+    //   - paymentStatus: string (optional, enum: unpaid, paid, pending, rejected)
+    //   - createdAt: timestamp (required)
+    //   - updatedAt: timestamp (optional)
+    //
+    // Collection: exam_questions
+    // Document ID: auto-generated
+    // Fields:
+    //   - questionText: string (required)
+    //   - options: map (required, keys: A, B, C, D)
+    //   - correctAnswer: string (required)
+    //   - paper: string (required, enum: Paper 1, Paper 2, Paper 3)
+    //   - topic: string (required)
+    //   - difficulty: string (optional, enum: Easy, Medium, Hard)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: daily_drills
+    // Document ID: auto-generated
+    // Fields:
+    //   - day: number (required, 1-365)
+    //   - questionIds: list (required, list of questionId strings)
+    //   - subject: string (required, enum: Computer Science, ICT)
+    //   - topic: string (required)
+    //   - isFree: bool (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: drill_submissions
+    // Document ID: auto-generated
+    // Fields:
+    //   - userId: string (required, matches auth.uid)
+    //   - questionId: string (required)
+    //   - day: number (required)
+    //   - selectedAnswer: string (required)
+    //   - correctAnswer: string (required)
+    //   - score: number (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: system_settings
+    // Document ID: 'settings' or auto-generated
+    // Fields:
+    //   - geminiApiKey: string (required)
+    //   - challengeStartDate: string (required, YYYY-MM-DD)
+    //   - paymentPrice: number (required)
+    //   - updatedAt: timestamp (required)
+    //   - updatedBy: string (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "kemehhilary@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidUrl(url) {
+      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
+    }
+
+    function isRecent(timestamp) {
+      return timestamp is timestamp && 
+        timestamp > request.time - duration.value(5, 'm') &&
+        timestamp < request.time + duration.value(5, 'm');
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasRequiredFields(['name', 'email', 'subject', 'role', 'createdAt']) &&
+        data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+        isValidEmail(data.email) &&
+        data.subject in ['Computer Science', 'ICT'] &&
+        data.role in ['student', 'admin'] &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidQuestion(data) {
+      return hasRequiredFields(['questionText', 'options', 'correctAnswer', 'paper', 'topic', 'createdAt']) &&
+        data.questionText is string && data.questionText.size() > 0 && data.questionText.size() < 5000 &&
+        data.options is map && data.options.keys().hasAll(['A', 'B', 'C', 'D']) &&
+        data.correctAnswer is string && data.correctAnswer in ['A', 'B', 'C', 'D'] &&
+        data.paper in ['Paper 1', 'Paper 2', 'Paper 3'] &&
+        data.topic is string && data.topic.size() > 0 &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidDrill(data) {
+      return hasRequiredFields(['day', 'questionIds', 'subject', 'topic', 'createdAt']) &&
+        data.day is int && data.day >= 1 && data.day <= 365 &&
+        data.questionIds is list && data.questionIds.size() > 0 && data.questionIds.size() <= 50 &&
+        data.subject in ['Computer Science', 'ICT'] &&
+        data.topic is string &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidSubmission(data) {
+      return hasRequiredFields(['userId', 'questionId', 'day', 'selectedAnswer', 'correctAnswer', 'score', 'createdAt']) &&
+        data.userId == request.auth.uid &&
+        data.questionId is string &&
+        data.day is int &&
+        data.selectedAnswer is string &&
+        data.correctAnswer is string &&
+        data.score is number &&
+        data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Default deny
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Students can read their own profile, admins can read all
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Allow creation during signup
+      allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
+        (request.resource.data.role == 'student' || isAdmin());
+      
+      // Allow updates to own profile, but students cannot change their role
+      allow update: if (isOwner(userId) && isValidUser(request.resource.data) && 
+        request.resource.data.role == resource.data.role) || isAdmin();
+    }
+
+    // Exam Questions
+    match /exam_questions/{questionId} {
+      // Authenticated users can read questions
+      allow read: if isAuthenticated();
+      // Only admins can write
+      allow write: if isAdmin() && isValidQuestion(request.resource.data);
+    }
+
+    // Daily Drills
+    match /daily_drills/{drillId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() && isValidDrill(request.resource.data);
+    }
+
+    // Drill Submissions
+    match /drill_submissions/{submissionId} {
+      // Students can read their own submissions, admins can read all
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      
+      // Students can create their own submissions
+      allow create: if isAuthenticated() && isValidSubmission(request.resource.data);
+      
+      // Submissions are immutable for students
+      allow update, delete: if isAdmin();
+    }
+
+    // System Settings
+    match /system_settings/{settingId} {
+      // Only admins can read/write settings
+      allow read, write: if isAdmin();
+    }
+
+    // Payments
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // Resources
+    match /resources/{resourceId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Assignments
+    match /assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Weekly Leaderboard
+    match /weekly_leaderboard/{leaderboardId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Leaderboard (Stats)
+    match /leaderboard/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin() || isOwner(userId);
+    }
+
+    // Points History
+    match /pointsHistory/{recordId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Feedback
+    match /feedback/{feedbackId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+    
+    // Security Audit
+    match /securityAudit/{auditId} {
+      allow read: if isAdmin();
+      allow create: if true; // Allow logging security errors even if not auth
+      allow update, delete: if false;
     }
   }
 }

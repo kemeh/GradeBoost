@@ -807,6 +807,20 @@ function BulkResourceImportModal({ onClose, onImported, subjects }: BulkResource
   const [isUploading, setIsUploading] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState<Subject>(subjects[0]?.name || '');
   const [error, setError] = useState('');
+  const isMounted = React.useRef(true);
+  const uploadTasks = React.useRef<any[]>([]);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      uploadTasks.current.forEach(task => {
+        if (task && task.snapshot.state === 'running') {
+          task.cancel();
+        }
+      });
+    };
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -834,9 +848,11 @@ function BulkResourceImportModal({ onClose, onImported, subjects }: BulkResource
     return new Promise<void>((resolve, reject) => {
       const storageRef = ref(storage, `resources/${Date.now()}_${fileData.file.name}`);
       const uploadTask = uploadBytesResumable(storageRef, fileData.file);
+      uploadTasks.current.push(uploadTask);
 
       uploadTask.on('state_changed',
         (snapshot) => {
+          if (!isMounted.current) return;
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setFiles(prev => {
             const next = [...prev];
@@ -845,7 +861,18 @@ function BulkResourceImportModal({ onClose, onImported, subjects }: BulkResource
           });
         },
         (error) => {
+          if (!isMounted.current) return;
           console.error(`Upload error for ${fileData.file.name}:`, error);
+          
+          if (error.code === 'storage/canceled') {
+            setFiles(prev => {
+              const next = [...prev];
+              next[index] = { ...next[index], status: 'idle', progress: 0 };
+              return next;
+            });
+            return;
+          }
+
           let errorMessage = 'Upload failed';
           if (error.message?.includes('fetch')) {
             errorMessage = 'Failed to connect to storage service. Check your internet connection.';
@@ -862,6 +889,7 @@ function BulkResourceImportModal({ onClose, onImported, subjects }: BulkResource
           reject(error);
         },
         async () => {
+          if (!isMounted.current) return;
           try {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
             const size = (fileData.file.size / (1024 * 1024)).toFixed(2) + ' MB';
@@ -876,6 +904,7 @@ function BulkResourceImportModal({ onClose, onImported, subjects }: BulkResource
               createdAt: serverTimestamp()
             });
 
+            if (!isMounted.current) return;
             setFiles(prev => {
               const next = [...prev];
               next[index] = { ...next[index], status: 'success', url, size, progress: 100 };
@@ -883,6 +912,7 @@ function BulkResourceImportModal({ onClose, onImported, subjects }: BulkResource
             });
             resolve();
           } catch (err) {
+            if (!isMounted.current) return;
             handleFirestoreError(err, OperationType.CREATE, 'resources');
             reject(err);
           }
