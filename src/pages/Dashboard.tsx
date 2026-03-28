@@ -5,7 +5,7 @@ import {
   TrendingUp, Target, BookOpen, 
   ArrowRight, LogOut, 
   FileText, Settings, Trophy, AlertCircle,
-  Zap, ChevronRight, CheckCircle2, Lock, Calendar
+  Zap, ChevronRight, CheckCircle2, Lock, Calendar, Sparkles
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
@@ -659,9 +659,10 @@ export default function Dashboard() {
         )}
 
         {/* Quick Access Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
           {[
             { label: 'Assignments', path: '/dashboard', icon: Target, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            { label: 'Random Practice', path: '/random-practice', icon: Sparkles, color: 'text-purple-600', bg: 'bg-purple-50' },
             { label: 'Practice Papers', path: '/practice', icon: FileText, color: 'text-emerald-600', bg: 'bg-emerald-50' },
             { label: 'Diagnostic', path: '/diagnostic', icon: TrendingUp, color: 'text-amber-600', bg: 'bg-amber-50' },
             { label: 'Profile Settings', path: '/profile', icon: Settings, color: 'text-rose-600', bg: 'bg-rose-50' },

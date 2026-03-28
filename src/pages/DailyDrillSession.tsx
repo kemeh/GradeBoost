@@ -6,7 +6,7 @@ import {
   Timer, ChevronRight, ChevronLeft, 
   CheckCircle2, AlertCircle, Send, 
   FileText, Upload, Target, Zap, 
-  ArrowLeft, Lock, Sparkles, Trophy, MessageSquare, X, Download
+  ArrowLeft, Lock, Sparkles, Trophy, MessageSquare, X, Download, LayoutDashboard
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -409,8 +409,8 @@ export default function DailyDrillSession() {
       {/* Header */}
       <header className="h-20 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-6">
-          <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
-            <ArrowLeft size={20} />
+          <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors" title="Go to Dashboard">
+            <LayoutDashboard size={20} />
           </button>
           <div>
             <div className="flex items-center gap-2 mb-0.5">

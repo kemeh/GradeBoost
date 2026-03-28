@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, Target, Trophy, 
-  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap
+  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +36,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: Zap, label: 'Duel Battle', path: '/duel' },
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard' },
     { icon: Target, label: 'Daily Drills', path: '/daily-drill' },
+    { icon: Sparkles, label: 'Random Practice', path: '/random-practice' },
     { icon: FileText, label: 'Practice Papers', path: '/practice' },
     { icon: Target, label: 'Diagnostic', path: '/diagnostic' },
     { icon: Settings, label: 'Profile Settings', path: '/profile' },

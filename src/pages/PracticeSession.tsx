@@ -6,7 +6,7 @@ import {
   ArrowLeft, FileText, Send, Clock, 
   ChevronLeft, ChevronRight, CheckCircle2, 
   AlertCircle, Info, Save, Maximize2, Minimize2,
-  TrendingUp, Sparkles, ArrowRight, Trophy, Zap
+  TrendingUp, Sparkles, ArrowRight, Trophy, Zap, LayoutDashboard
 } from 'lucide-react';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -213,8 +213,11 @@ export default function PracticeSession() {
       {/* Header */}
       <header className="h-20 bg-slate-900 border-b border-slate-800 px-8 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-6">
-          <button onClick={() => navigate('/practice')} className="text-slate-400 hover:text-white transition-colors">
+          <button onClick={() => navigate('/practice')} className="text-slate-400 hover:text-white transition-colors" title="Back to Papers">
             <ArrowLeft size={24} />
+          </button>
+          <button onClick={() => navigate('/dashboard')} className="text-slate-400 hover:text-white transition-colors" title="Go to Dashboard">
+            <LayoutDashboard size={24} />
           </button>
           <img 
             src={logoUrl.replace('.svg', '-white.svg')} 
