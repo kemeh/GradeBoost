@@ -1,25 +1,27 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where, limit } from "firebase/firestore";
 import { db } from "../firebase";
 
 export async function fetchDailyDrill(subject: string, paper: string) {
   try {
     console.log("Fetching questions for subject:", subject, "and paper:", paper);
-    const snapshot = await getDocs(collection(db, "exam_questions"));
+    
+    // Use Firestore query to filter on the server side
+    const q = query(
+      collection(db, "exam_questions"),
+      where("subject", "==", subject),
+      where("paper", "==", paper),
+      limit(100) // Fetch a reasonable amount to shuffle from
+    );
+    
+    const snapshot = await getDocs(q);
 
     let questions: any[] = [];
 
     snapshot.forEach((doc) => {
-      const data = doc.data();
-      // Debug: Log all fetched questions (as requested)
-      // console.log("Fetched question:", data);
-
-      if (data.subject === subject && data.paper === paper) {
-        questions.push({ id: doc.id, ...data });
-      }
+      questions.push({ id: doc.id, ...doc.data() });
     });
 
     console.log("Filtered questions count:", questions.length);
-    console.log("Filtered questions:", questions);
 
     // Shuffle questions
     questions.sort(() => 0.5 - Math.random());

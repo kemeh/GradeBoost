@@ -10,7 +10,7 @@ import { db, storage } from '../firebase';
 import { 
   collection, addDoc, updateDoc, deleteDoc, 
   doc, onSnapshot, query, orderBy, serverTimestamp,
-  Timestamp, getDocs
+  Timestamp, getDocs, limit
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext';
@@ -92,7 +92,7 @@ export default function AdminManagement() {
     fetchSubjects();
 
     const unsubResources = onSnapshot(
-      query(collection(db, 'resources'), orderBy('createdAt', 'desc')),
+      query(collection(db, 'resources'), orderBy('createdAt', 'desc'), limit(50)),
       (snapshot) => {
         setResources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource)));
       },
@@ -106,7 +106,7 @@ export default function AdminManagement() {
     );
 
     const unsubAssignments = onSnapshot(
-      query(collection(db, 'assignments'), orderBy('createdAt', 'desc')),
+      query(collection(db, 'assignments'), orderBy('createdAt', 'desc'), limit(50)),
       (snapshot) => {
         setAssignments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assignment)));
       },
@@ -120,7 +120,7 @@ export default function AdminManagement() {
     );
 
     const unsubLearningResources = onSnapshot(
-      query(collection(db, 'learning_resources'), orderBy('createdAt', 'desc')),
+      query(collection(db, 'learning_resources'), orderBy('createdAt', 'desc'), limit(50)),
       (snapshot) => {
         setLearningResources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as LearningResource)));
       },

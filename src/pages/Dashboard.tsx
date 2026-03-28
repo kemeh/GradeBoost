@@ -84,7 +84,7 @@ export default function Dashboard() {
           return;
         }
 
-        // Fetch recent submissions for calendar
+        // Fetch recent submissions, today's drill, and check today's submission in parallel
         const startDay = Math.max(1, Math.min(51, currentDayNum - 4));
         const endDay = Math.min(60, startDay + 9);
         
@@ -94,16 +94,31 @@ export default function Dashboard() {
           where('day', '>=', startDay),
           where('day', '<=', endDay)
         );
-        const subsSnapshot = await getDocs(subsQ);
-        setRecentSubmissions(subsSnapshot.docs.map(doc => doc.data().day));
 
-        // Fetch today's drill with more resilience
         const drillQ = query(
           collection(db, 'daily_drills'), 
           where('day', '==', currentDayNum)
         );
+
+        const subQ = query(
+          collection(db, 'drill_submissions'),
+          where('userId', '==', user.uid),
+          where('day', '==', currentDayNum),
+          limit(1)
+        );
+
+        const [subsSnapshot, drillSnapshot, subSnapshot] = await Promise.all([
+          getDocs(subsQ),
+          getDocs(drillQ),
+          getDocs(subQ)
+        ]);
+
+        setRecentSubmissions(subsSnapshot.docs.map(doc => doc.data().day));
         
-        const drillSnapshot = await getDocs(drillQ);
+        if (!subSnapshot.empty) {
+          setHasSubmittedToday(true);
+        }
+
         const userSub = user.subject?.trim().toLowerCase();
         
         // Filter in memory for case-insensitive match
@@ -116,18 +131,6 @@ export default function Dashboard() {
           const drillData = { id: matchingDrill.id, ...matchingDrill.data() } as DailyDrill;
           console.log("Found matching drill:", drillData);
           setTodayDrill(drillData);
-          
-          // Check if already submitted today
-          const subQ = query(
-            collection(db, 'drill_submissions'),
-            where('userId', '==', user.uid),
-            where('day', '==', currentDayNum),
-            limit(1)
-          );
-          const subSnapshot = await getDocs(subQ);
-          if (!subSnapshot.empty) {
-            setHasSubmittedToday(true);
-          }
         } else {
           console.log(`No drill found for Day ${currentDayNum} and Subject "${user.subject}"`);
           

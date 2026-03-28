@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp, deleteDoc, writeBatch, limit } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { fetchDailyDrill } from '../services/dailyDrillService';
@@ -156,11 +156,11 @@ export default function AdminDailyDrill() {
   }, [isAdmin, filters.subject, filters.paper, filters.topic]);
 
   const fetchQuestionsBank = async () => {
-    let q = query(collection(db, 'exam_questions'), orderBy('createdAt', 'desc'));
+    let q = query(collection(db, 'exam_questions'), orderBy('createdAt', 'desc'), limit(100));
     
     // Apply filters if they exist
     if (filters.subject) {
-      q = query(q, where('subject', '==', filters.subject));
+      q = query(collection(db, 'exam_questions'), where('subject', '==', filters.subject), orderBy('createdAt', 'desc'), limit(100));
     }
     if (filters.paper) {
       q = query(q, where('paper', '==', filters.paper));
@@ -175,7 +175,7 @@ export default function AdminDailyDrill() {
 
   const fetchDailyDrills = async () => {
     try {
-      const q = query(collection(db, 'daily_drills'), orderBy('day', 'asc'));
+      const q = query(collection(db, 'daily_drills'), orderBy('day', 'asc'), limit(100));
       const snapshot = await getDocs(q);
       const drillsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DailyDrill));
       console.log("Admin: Fetched daily drills:", drillsData);
@@ -187,7 +187,7 @@ export default function AdminDailyDrill() {
   };
 
   const fetchSubmissions = async () => {
-    const q = query(collection(db, 'drill_submissions'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'drill_submissions'), orderBy('createdAt', 'desc'), limit(50));
     const snapshot = await getDocs(q);
     const subs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DrillSubmission));
     setSubmissions(subs);
@@ -208,7 +208,7 @@ export default function AdminDailyDrill() {
       q = query(q, where('subject', '==', drillSubjectFilter));
     }
     
-    q = query(q, orderBy('position', 'asc'));
+    q = query(q, orderBy('position', 'asc'), limit(50));
     
     const snapshot = await getDocs(q);
     setLeaderboard(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WeeklyLeaderboard)));
