@@ -109,11 +109,14 @@ service cloud.firestore {
     }
 
     function isValidQuestion(data) {
-      return hasRequiredFields(['questionText', 'correctAnswer', 'paper', 'topic', 'createdAt']) &&
+      return hasRequiredFields(['questionText', 'correctAnswer', 'subject', 'paper', 'topic', 'marks', 'difficulty', 'createdAt']) &&
         data.questionText is string && data.questionText.size() > 0 && data.questionText.size() < 10000 &&
         data.correctAnswer is string && data.correctAnswer.size() > 0 &&
+        data.subject is string &&
         data.paper in ['Paper 1', 'Paper 2', 'Paper 3'] &&
         data.topic is string && data.topic.size() > 0 &&
+        data.marks is number &&
+        data.difficulty in ['Easy', 'Medium', 'Hard'] &&
         data.createdAt is timestamp &&
         // Paper 1 specific validation
         (data.paper != 'Paper 1' || (
@@ -130,22 +133,29 @@ service cloud.firestore {
     }
 
     function isValidDrill(data) {
-      return hasRequiredFields(['day', 'questionIds', 'subject', 'topic', 'createdAt']) &&
+      return hasRequiredFields(['day', 'questionIds', 'subject', 'topic', 'createdAt', 'paper', 'isFree']) &&
         data.day is int && data.day >= 1 && data.day <= 365 &&
-        data.questionIds is list && data.questionIds.size() > 0 && data.questionIds.size() <= 50 &&
-        data.subject in ['Computer Science', 'ICT'] &&
+        data.questionIds is list && data.questionIds.size() > 0 && data.questionIds.size() <= 100 &&
+        data.subject is string &&
         data.topic is string &&
+        data.paper in ['Paper 1', 'Paper 2', 'Paper 3'] &&
+        data.isFree is bool &&
         data.createdAt is timestamp;
     }
 
     function isValidSubmission(data) {
-      return hasRequiredFields(['userId', 'questionId', 'day', 'selectedAnswer', 'correctAnswer', 'score', 'createdAt']) &&
-        data.userId == request.auth.uid &&
+      return hasRequiredFields(['userId', 'userEmail', 'questionId', 'drillId', 'day', 'selectedAnswer', 'correctAnswer', 'score', 'createdAt', 'paper', 'topic', 'status']) &&
+        data.userId is string &&
+        data.userEmail is string &&
         data.questionId is string &&
+        data.drillId is string &&
         data.day is int &&
         data.selectedAnswer is string &&
         data.correctAnswer is string &&
         data.score is number &&
+        data.paper in ['Paper 1', 'Paper 2', 'Paper 3'] &&
+        data.topic is string &&
+        data.status in ['pending', 'graded'] &&
         data.createdAt is timestamp;
     }
 
@@ -177,13 +187,15 @@ service cloud.firestore {
       // Authenticated users can read questions
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAdmin() && isValidQuestion(request.resource.data);
+      allow create, update: if isAdmin() && isValidQuestion(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // Daily Drills
     match /daily_drills/{drillId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() && isValidDrill(request.resource.data);
+      allow create, update: if isAdmin() && isValidDrill(request.resource.data);
+      allow delete: if isAdmin();
     }
 
     // Drill Submissions
@@ -192,7 +204,8 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       
       // Students can create their own submissions
-      allow create: if isAuthenticated() && isValidSubmission(request.resource.data);
+      allow create: if isAuthenticated() && isValidSubmission(request.resource.data) && 
+        (request.resource.data.userId == request.auth.uid || isAdmin());
       
       // Submissions are immutable for students
       allow update, delete: if isAdmin();
