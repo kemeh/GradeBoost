@@ -47,6 +47,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: Zap, label: 'Duel Battle', path: '/duel' },
     { icon: CreditCard, label: 'Payments', path: '/admin?tab=payments' },
     { icon: FileText, label: 'Manage Papers', path: '/admin?tab=papers' },
+    { icon: FileText, label: 'Paper 2 Generator', path: '/admin/paper-generator' },
     { icon: Target, label: 'Daily Drills', path: '/admin/daily-drill' },
     { icon: BookOpen, label: 'Resources & Assignments', path: '/admin/resources' },
     { icon: Settings, label: 'System Settings', path: '/admin/settings' },

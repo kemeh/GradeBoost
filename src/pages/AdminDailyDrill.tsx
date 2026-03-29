@@ -85,7 +85,8 @@ export default function AdminDailyDrill() {
     difficulty: 'Medium',
     year: new Date().getFullYear(),
     session: 'June',
-    isDailyDrill: true
+    isDailyDrill: true,
+    subParts: []
   });
 
   // Drill Form State
@@ -649,7 +650,16 @@ export default function AdminDailyDrill() {
                                   <img src={q.imageUrl} alt="Diagram" className="w-full h-full object-cover" />
                                 </div>
                               )}
-                              <div className="text-sm text-gray-900 line-clamp-1">{q.questionText}</div>
+                              <div className="flex flex-col">
+                                <div className="text-sm text-gray-900 line-clamp-1">{q.questionText}</div>
+                                {q.subParts && q.subParts.length > 0 && (
+                                  <div className="flex items-center gap-1 mt-1">
+                                    <Badge variant="secondary" className="text-[8px] px-1 py-0 h-3 bg-indigo-50 text-indigo-600 border-indigo-100">
+                                      {q.subParts.length} Sub-parts
+                                    </Badge>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -1116,15 +1126,93 @@ export default function AdminDailyDrill() {
                   )}
 
                   {questionForm.paper !== 'Paper 1' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Correct Answer / Marking Scheme</label>
-                      <textarea
-                        required
-                        className="w-full px-4 py-2 border rounded-lg"
-                        rows={2}
-                        value={questionForm.correctAnswer}
-                        onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
-                      />
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Correct Answer / Marking Scheme</label>
+                        <textarea
+                          required
+                          className="w-full px-4 py-2 border rounded-lg"
+                          rows={2}
+                          value={questionForm.correctAnswer}
+                          onChange={(e) => setQuestionForm({ ...questionForm, correctAnswer: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="space-y-3 p-4 bg-gray-50 rounded-lg">
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-sm font-medium text-gray-700">Sub-Parts (Optional)</p>
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              const currentSubParts = questionForm.subParts || [];
+                              setQuestionForm({
+                                ...questionForm,
+                                subParts: [...currentSubParts, { label: `(${String.fromCharCode(97 + currentSubParts.length)})`, text: '', marks: 0 }]
+                              });
+                            }}
+                          >
+                            <Plus className="w-4 h-4 mr-1" /> Add Sub-Part
+                          </Button>
+                        </div>
+                        {questionForm.subParts && questionForm.subParts.length > 0 ? (
+                          <div className="space-y-3">
+                            {questionForm.subParts.map((sub, idx) => (
+                              <div key={idx} className="p-3 bg-white border rounded-lg space-y-2 relative group">
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    const next = [...(questionForm.subParts || [])];
+                                    next.splice(idx, 1);
+                                    setQuestionForm({ ...questionForm, subParts: next });
+                                  }}
+                                  className="absolute top-2 right-2 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Label (e.g. (a))"
+                                    className="w-20 px-2 py-1 border rounded text-sm"
+                                    value={sub.label}
+                                    onChange={(e) => {
+                                      const next = [...(questionForm.subParts || [])];
+                                      next[idx] = { ...next[idx], label: e.target.value };
+                                      setQuestionForm({ ...questionForm, subParts: next });
+                                    }}
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="Marks"
+                                    className="w-20 px-2 py-1 border rounded text-sm"
+                                    value={sub.marks}
+                                    onChange={(e) => {
+                                      const next = [...(questionForm.subParts || [])];
+                                      next[idx] = { ...next[idx], marks: parseInt(e.target.value) || 0 };
+                                      setQuestionForm({ ...questionForm, subParts: next });
+                                    }}
+                                  />
+                                </div>
+                                <textarea
+                                  placeholder="Sub-part text..."
+                                  className="w-full px-2 py-1 border rounded text-sm"
+                                  rows={2}
+                                  value={sub.text}
+                                  onChange={(e) => {
+                                    const next = [...(questionForm.subParts || [])];
+                                    next[idx] = { ...next[idx], text: e.target.value };
+                                    setQuestionForm({ ...questionForm, subParts: next });
+                                  }}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-400 text-center py-2 italic">No sub-parts added.</p>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -1634,34 +1722,20 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
           if (sec.questions && Array.isArray(sec.questions)) {
             sec.questions.forEach((q: any) => {
               const mainText = q.questionText || '';
-              if (q.subparts && Array.isArray(q.subparts)) {
-                q.subparts.forEach((sub: any) => {
-                  flattenedQuestions.push({
-                    questionText: `${mainText}\n\n${sub.text}`,
-                    marks: sub.marks || q.marks || 0,
-                    section: sectionLabel,
-                    subject: data.subject || selectedSubject,
-                    paper: q.paper || data.paper || selectedPaper,
-                    year: data.year || selectedYear,
-                    session: data.session || selectedSession,
-                    difficulty: q.difficulty || 'Medium',
-                    topic: q.topic || (mainText.toLowerCase().includes('sql') || mainText.toLowerCase().includes('table') ? 'Database' : 'General'),
-                    correctAnswer: '',
-                    isDailyDrill: true
-                  });
-                });
-              } else {
-                flattenedQuestions.push({
-                  ...q,
-                  section: sectionLabel,
-                  subject: data.subject || selectedSubject,
-                  paper: q.paper || data.paper || selectedPaper,
-                  year: data.year || selectedYear,
-                  session: data.session || selectedSession,
-                  correctAnswer: q.correctAnswer || '',
-                  isDailyDrill: true
-                });
-              }
+              const subParts = q.subParts || q.subparts || null;
+              
+              flattenedQuestions.push({
+                ...q,
+                questionText: mainText,
+                subParts: subParts,
+                section: sectionLabel,
+                subject: data.subject || selectedSubject,
+                paper: q.paper || data.paper || selectedPaper,
+                year: data.year || selectedYear,
+                session: data.session || selectedSession,
+                correctAnswer: q.correctAnswer || '',
+                isDailyDrill: true
+              });
             });
           }
         });
@@ -1873,28 +1947,34 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
 
       const prompt = `Extract ALL exam questions for the subject "${selectedSubject}" from the provided data.
       
-      CRITICAL INSTRUCTIONS FOR NESTED QUESTIONS:
-      If the document contains sections (e.g., Section A, Section B) or questions with multiple sub-parts (e.g., 1a, 1b, 1c):
-      - Extract EACH sub-part as a SEPARATE self-contained question entry in the array.
-      - IMPORTANT: PREPEND the main question context or heading to the 'questionText' of each sub-part. 
-      - Example: If Question 1 says "Consider the table 'Students'..." and part (a) says "Write a query...", the 'questionText' for part (a) must be "Consider the table 'Students'...\n\n(a) Write a query...".
-      - Ensure 'marks' are correctly assigned to each sub-part.
+      FORMATTING RULES FOR PAPER 2 & 3 (Structured/Practical Questions):
+      - These papers usually have main questions (e.g., Question 1, Question 2) with multiple sub-parts (e.g., (a), (b), (i), (ii)).
+      - Extract each MAIN question as a SINGLE entry in the array.
+      - Put all sub-parts into the 'subParts' array field.
+      - Each sub-part must have a 'label' (e.g., "(a)"), 'text' (the question text), and 'marks'.
+      - The 'questionText' of the main entry should contain the main stem/context of the question. If there is no main stem, use the text of the first sub-part as the main text and also include it in subParts.
+      - Ensure the total 'marks' for the question is the sum of marks of all sub-parts.
+      
+      FORMATTING RULES FOR PAPER 1 (MCQ):
+      - Extract EACH MCQ as a separate entry.
+      - Use the 'options' field (A, B, C, D).
+      - 'subParts' should be null for Paper 1.
       
       OBJECTIVES:
       1. Detect the Paper Type (Paper 1: MCQ, Paper 2: Structured, Paper 3: Practical/Case Study).
-      2. Extract every single question, including sub-parts as individual entries.
-      3. For Paper 1 (MCQ), extract options A, B, C, D and the correct letter.
-      4. For Paper 2/3, extract the full question text and the expected marking scheme/answer.
-      5. Map each question to the most relevant topic from this list: ${validTopics}.
+      2. For Paper 1, extract options A, B, C, D and the correct letter.
+      3. For Paper 2/3, extract the full question structure including sub-parts.
+      4. Map each question to the most relevant topic from this list: ${validTopics}.
       
       Return an array of objects with these fields:
-      - questionText: The full text of the question (including sub-part labels like "1a)").
+      - questionText: The main text or stem of the question.
       - options: For Paper 1, an object with A, B, C, D keys. For others, null.
-      - correctAnswer: For Paper 1, 'A', 'B', 'C', or 'D'. For others, the marking scheme text.
+      - subParts: For Paper 2/3, an array of { label: string, text: string, marks: number }. For Paper 1, null.
+      - correctAnswer: For Paper 1, 'A', 'B', 'C', or 'D'. For others, the marking scheme text for the entire question.
       - explanation: A brief explanation of the answer.
       - paper: Detect and return 'Paper 1', 'Paper 2', or 'Paper 3'.
       - topic: Closest match from the provided topic list.
-      - marks: Number of marks (integer).
+      - marks: Total marks for the question.
       - difficulty: 'Easy', 'Medium', or 'Hard'.
       - section: 'A', 'B', 'C', 'Section A: Database', 'Section B: Programming', 'Task A: Database', 'Task B: Spreadsheet', or 'Task C: Presentation' (if applicable).
       
@@ -1928,6 +2008,19 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                     B: { type: Type.STRING },
                     C: { type: Type.STRING },
                     D: { type: Type.STRING }
+                  }
+                },
+                subParts: {
+                  type: Type.ARRAY,
+                  nullable: true,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      label: { type: Type.STRING },
+                      text: { type: Type.STRING },
+                      marks: { type: Type.NUMBER }
+                    },
+                    required: ['label', 'text', 'marks']
                   }
                 },
                 correctAnswer: { type: Type.STRING },
@@ -2048,6 +2141,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
             topic: String(q.topic || 'General'),
             marks: Number(q.marks || 1),
             difficulty: String(q.difficulty || 'Medium'),
+            subParts: q.subParts || null,
             isDailyDrill: true,
             createdAt: serverTimestamp(),
             year: q.year ? Number(q.year) : null,
@@ -2299,6 +2393,66 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                         />
                       </div>
 
+                      {q.paper !== 'Paper 1' && q.subParts && (
+                        <div className="space-y-3 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100">
+                          <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Sub-parts</label>
+                          {q.subParts.map((sp, spi) => (
+                            <div key={spi} className="grid grid-cols-12 gap-2 items-start">
+                              <input 
+                                className="col-span-2 px-2 py-1 bg-white border rounded text-xs font-bold"
+                                value={sp.label}
+                                onChange={e => {
+                                  const next = [...previewQuestions];
+                                  const subParts = [...(next[i].subParts || [])];
+                                  subParts[spi] = { ...subParts[spi], label: e.target.value };
+                                  next[i] = { ...next[i], subParts };
+                                  setPreviewQuestions(next);
+                                }}
+                              />
+                              <textarea 
+                                className="col-span-8 px-2 py-1 bg-white border rounded text-xs"
+                                value={sp.text}
+                                onChange={e => {
+                                  const next = [...previewQuestions];
+                                  const subParts = [...(next[i].subParts || [])];
+                                  subParts[spi] = { ...subParts[spi], text: e.target.value };
+                                  next[i] = { ...next[i], subParts };
+                                  setPreviewQuestions(next);
+                                }}
+                              />
+                              <input 
+                                type="number"
+                                className="col-span-2 px-2 py-1 bg-white border rounded text-xs"
+                                value={sp.marks}
+                                onChange={e => {
+                                  const next = [...previewQuestions];
+                                  const subParts = [...(next[i].subParts || [])];
+                                  subParts[spi] = { ...subParts[spi], marks: parseInt(e.target.value) || 0 };
+                                  next[i] = { ...next[i], subParts };
+                                  // Update total marks
+                                  const totalMarks = subParts.reduce((acc, curr) => acc + curr.marks, 0);
+                                  next[i] = { ...next[i], marks: totalMarks };
+                                  setPreviewQuestions(next);
+                                }}
+                              />
+                            </div>
+                          ))}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-[10px] text-indigo-600 h-6"
+                            onClick={() => {
+                              const next = [...previewQuestions];
+                              const subParts = [...(next[i].subParts || []), { label: '', text: '', marks: 1 }];
+                              next[i] = { ...next[i], subParts };
+                              setPreviewQuestions(next);
+                            }}
+                          >
+                            + Add Sub-part
+                          </Button>
+                        </div>
+                      )}
+
                       <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Paper</label>
@@ -2474,6 +2628,18 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                         )}
                         <div className="flex-1">
                           <p className="text-sm font-medium text-gray-900 mb-2">{q.questionText}</p>
+                          
+                          {q.paper !== 'Paper 1' && q.subParts && q.subParts.length > 0 && (
+                            <div className="space-y-2 mb-3 ml-2 border-l-2 border-indigo-100 pl-3">
+                              {q.subParts.map((sp, spi) => (
+                                <div key={spi} className="text-xs text-slate-600">
+                                  <span className="font-bold text-indigo-600 mr-1">{sp.label}</span>
+                                  {sp.text}
+                                  <span className="ml-2 text-[10px] font-bold text-slate-400">({sp.marks} marks)</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           
                           {q.paper === 'Paper 1' && q.options && (
                             <div className="grid grid-cols-2 gap-2 mb-2">

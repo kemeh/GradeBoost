@@ -128,6 +128,7 @@ export interface ExamQuestion {
   session?: string;
   isDailyDrill: boolean;
   imageUrl?: string;
+  subParts?: { label: string; text: string; marks: number }[];
   createdAt: any;
 }
 

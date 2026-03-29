@@ -492,9 +492,29 @@ export default function DailyDrillSession() {
                       />
                     </div>
                   )}
-                  <p className="text-xl font-bold text-slate-800 leading-relaxed mb-12">
-                    {currentQuestion.questionText}
-                  </p>
+                  <div className="space-y-6 mb-12">
+                    <p className="text-xl font-bold text-slate-800 leading-relaxed">
+                      {currentQuestion.questionText}
+                    </p>
+
+                    {currentQuestion.subParts && currentQuestion.subParts.length > 0 && (
+                      <div className="space-y-4 pl-4 border-l-2 border-slate-100">
+                        {currentQuestion.subParts.map((sub, idx) => (
+                          <div key={idx} className="space-y-1">
+                            <div className="flex items-start gap-2">
+                              <span className="font-black text-slate-900 min-w-[30px]">{sub.label}</span>
+                              <p className="text-slate-700 font-medium">{sub.text}</p>
+                              {sub.marks > 0 && (
+                                <span className="text-[10px] font-black text-slate-400 uppercase bg-slate-50 px-1.5 py-0.5 rounded ml-auto">
+                                  {sub.marks} {sub.marks === 1 ? 'mark' : 'marks'}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   {currentQuestion.paper === 'Paper 1' ? (
                     <div className="grid grid-cols-1 gap-4">

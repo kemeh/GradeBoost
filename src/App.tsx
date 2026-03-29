@@ -19,6 +19,7 @@ const PaymentPage = lazy(() => import('./pages/PaymentPage'));
 const AdminDailyDrill = lazy(() => import('./pages/AdminDailyDrill'));
 const AdminManagement = lazy(() => import('./pages/AdminManagement'));
 const AdminSettings = lazy(() => import('./pages/AdminSettings'));
+const AdminPaperGenerator = lazy(() => import('./pages/AdminPaperGenerator'));
 const DailyDrillSession = lazy(() => import('./pages/DailyDrillSession'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const DuelBattle = lazy(() => import('./pages/DuelBattle'));
@@ -95,6 +96,7 @@ export default function App() {
               <Route path="/admin/daily-drill" element={<AdminRoute><AdminDailyDrill /></AdminRoute>} />
               <Route path="/admin/resources" element={<AdminRoute><AdminManagement /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+              <Route path="/admin/paper-generator" element={<AdminRoute><AdminPaperGenerator /></AdminRoute>} />
               
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>

@@ -190,3 +190,123 @@ export const downloadQuestionAsPDF = async (question: ExamQuestion, dayNumber?: 
 
   doc.save(`GradeBoost60_DailyDrill_Day${dayNumber || 'X'}_${question.id?.substring(0, 5) || 'export'}.pdf`);
 };
+
+export interface GCEPaper2Data {
+  title: string;
+  timeAllowed: string;
+  subject: string;
+  year: number;
+  questions: {
+    id: number;
+    text: string;
+    subparts: {
+      label: string;
+      text: string;
+      marks: number;
+    }[];
+  }[];
+}
+
+export const generateGCEPaper2PDF = async (data: GCEPaper2Data) => {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  const contentWidth = pageWidth - (margin * 2);
+  let currentY = 20;
+
+  // Header
+  doc.setFont('times', 'bold');
+  doc.setFontSize(14);
+  doc.text('CAMEROON GENERAL CERTIFICATE OF EDUCATION BOARD', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 7;
+  doc.text('General Certificate of Education Examination', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 12;
+
+  doc.setFontSize(12);
+  doc.text(data.subject.toUpperCase(), margin, currentY);
+  doc.text(String(data.year), pageWidth - margin - 15, currentY);
+  currentY += 7;
+  
+  doc.text('ADVANCED LEVEL', margin, currentY);
+  currentY += 10;
+
+  doc.setFontSize(11);
+  doc.text(`Subject Title: ${data.subject}`, margin, currentY);
+  currentY += 6;
+  doc.text(`Paper Number: 2`, margin, currentY);
+  currentY += 10;
+
+  doc.setFont('times', 'bold');
+  doc.text(`Time Allowed: ${data.timeAllowed}`, margin, currentY);
+  currentY += 15;
+
+  // Instructions
+  doc.setFont('times', 'bold');
+  doc.text('INSTRUCTIONS TO CANDIDATES', margin, currentY);
+  currentY += 7;
+  
+  doc.setFont('times', 'normal');
+  const instructions = [
+    'Answer SIX questions.',
+    'All questions carry equal marks.',
+    'Credit will be given for clear working, algorithms, and explanations where appropriate.',
+    'You are reminded of the need for good English and orderly presentation in your answers.'
+  ];
+
+  instructions.forEach((inst, i) => {
+    doc.text(`${i + 1}. ${inst}`, margin + 5, currentY);
+    currentY += 6;
+  });
+  currentY += 10;
+
+  // Questions
+  data.questions.forEach((q, qIdx) => {
+    // Check for new page
+    if (currentY > pageHeight - 40) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(12);
+    doc.text(`${q.id}.`, margin, currentY);
+    
+    const mainTextLines = doc.splitTextToSize(q.text, contentWidth - 10);
+    doc.text(mainTextLines, margin + 10, currentY);
+    currentY += (mainTextLines.length * 6) + 5;
+
+    q.subparts.forEach((sub) => {
+      if (currentY > pageHeight - 30) {
+        doc.addPage();
+        currentY = 20;
+      }
+
+      doc.setFont('times', 'normal');
+      const subLabel = sub.label;
+      const subTextLines = doc.splitTextToSize(sub.text, contentWidth - 25);
+      
+      doc.text(subLabel, margin + 15, currentY);
+      doc.text(subTextLines, margin + 25, currentY);
+      
+      // Marks
+      doc.setFont('times', 'bold');
+      doc.text(`(${sub.marks} marks)`, pageWidth - margin - 20, currentY + (subTextLines.length * 6) - 6);
+      
+      currentY += (subTextLines.length * 6) + 4;
+    });
+
+    currentY += 10;
+  });
+
+  // Footer
+  const totalPages = doc.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    doc.setFontSize(9);
+    doc.setFont('times', 'italic');
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+  }
+
+  doc.save(`GCE_AL_${data.subject.replace(/\s+/g, '_')}_Paper2_${data.year}.pdf`);
+};
