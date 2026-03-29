@@ -3,8 +3,9 @@ import {
   Upload, X, CheckCircle2, AlertCircle, 
   Loader2, FileText, RefreshCw, Trash2 
 } from 'lucide-react';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage, auth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
 import { Button, Progress, cn } from './ui';
 import { toast } from 'react-hot-toast';
 
@@ -33,12 +34,14 @@ export default function FileUpload({
   label = 'Upload File',
   className
 }: FileUploadProps) {
+  const { isAdmin, user: profile } = useAuth();
   const inputId = useId();
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState(initialUrl);
+  const [uploadTask, setUploadTask] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isMounted = React.useRef(true);
 
@@ -46,14 +49,22 @@ export default function FileUpload({
     isMounted.current = true;
     return () => {
       isMounted.current = false;
+      if (uploadTask && uploadTask.snapshot.state === 'running') {
+        uploadTask.cancel();
+      }
     };
-  }, []);
+  }, [uploadTask]);
 
   const handleFile = (selectedFile: File) => {
     console.log('Selected file:', selectedFile.name, selectedFile.type, selectedFile.size);
     
     if (!auth.currentUser) {
       toast.error('You must be logged in to upload files.');
+      return;
+    }
+
+    if (!isAdmin) {
+      toast.error('Only admins can upload files.');
       return;
     }
 
@@ -124,7 +135,7 @@ export default function FileUpload({
     }
   };
 
-  const startUpload = useCallback(async (fileToUpload: File) => {
+  const startUpload = useCallback((fileToUpload: File) => {
     console.log('startUpload called for:', fileToUpload.name);
     
     if (!auth.currentUser) {
@@ -136,48 +147,82 @@ export default function FileUpload({
     }
 
     setUploading(true);
-    setProgress(10); // Initial progress
+    setProgress(0);
     setError(null);
     if (onUploadStart) onUploadStart();
 
     try {
       const bucket = storage.app.options.storageBucket;
-      console.log('Starting upload to bucket:', bucket, 'Folder:', folder);
-      console.log('Current User UID:', auth.currentUser.uid);
+      console.log('--- STORAGE DEBUG ---');
+      console.log('Bucket:', bucket);
+      console.log('Folder:', folder);
+      console.log('User UID:', auth.currentUser.uid);
+      console.log('User Email:', auth.currentUser.email);
+      console.log('Auth State:', auth.currentUser ? 'Logged In' : 'Logged Out');
+      console.log('---------------------');
       
       const storageRef = ref(storage, `${folder}/${Date.now()}_${fileToUpload.name}`);
       console.log('Storage ref path:', storageRef.fullPath);
       
-      // Using uploadBytes instead of uploadBytesResumable for better reliability in some environments
-      const snapshot = await uploadBytes(storageRef, fileToUpload);
-      console.log('Upload successful, snapshot:', snapshot);
-      
-      if (!isMounted.current) return;
-      
-      setProgress(100);
-      const url = await getDownloadURL(snapshot.ref);
-      const size = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
-      
-      setDownloadUrl(url);
-      setUploading(false);
-      onUploadComplete(url, fileToUpload.name, size);
-      toast.success('Upload complete!');
+      const task = uploadBytesResumable(storageRef, fileToUpload);
+      setUploadTask(task);
+
+      task.on(
+        'state_changed',
+        (snapshot) => {
+          const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log(`Upload progress: ${p.toFixed(2)}% (${snapshot.bytesTransferred}/${snapshot.totalBytes})`);
+          setProgress(p);
+        },
+        (err: any) => {
+          if (!isMounted.current) return;
+          
+          console.error('Upload error details:', err);
+          let errorMessage = 'Upload failed. Check your connection.';
+          
+          if (err.code === 'storage/unauthorized') {
+            errorMessage = `Permission denied (${err.code}). Ensure you are an admin and the file size is within limits.`;
+          } else if (err.code === 'storage/retry-limit-exceeded') {
+            errorMessage = `Upload timed out (${err.code}). This might be a network issue or an incorrect storage bucket configuration.`;
+          } else if (err.code === 'storage/canceled') {
+            setUploading(false);
+            setProgress(0);
+            return;
+          } else if (err.code === 'storage/unknown') {
+            errorMessage = `An unknown error occurred (${err.code}). Please try again.`;
+          } else {
+            errorMessage = `Upload failed: ${err.message || 'Unknown error'} (${err.code || 'no-code'})`;
+          }
+          
+          setError(errorMessage);
+          setUploading(false);
+          if (onUploadError) onUploadError(errorMessage);
+          toast.error(errorMessage);
+        },
+        async () => {
+          if (!isMounted.current) return;
+          try {
+            console.log('Upload task completed successfully');
+            const url = await getDownloadURL(task.snapshot.ref);
+            const size = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
+            
+            setDownloadUrl(url);
+            setUploading(false);
+            onUploadComplete(url, fileToUpload.name, size);
+            toast.success('Upload complete!');
+          } catch (err) {
+            if (!isMounted.current) return;
+            console.error('Error getting download URL:', err);
+            const errorMessage = 'Failed to finalize upload.';
+            setError(errorMessage);
+            setUploading(false);
+            if (onUploadError) onUploadError(errorMessage);
+          }
+        }
+      );
     } catch (err: any) {
-      if (!isMounted.current) return;
-      
-      console.error('Upload error details:', err);
-      let errorMessage = 'Upload failed. Check your connection.';
-      
-      if (err.code === 'storage/unauthorized') {
-        errorMessage = `Permission denied (${err.code}). Ensure you are an admin and the file size is within limits.`;
-      } else if (err.code === 'storage/retry-limit-exceeded') {
-        errorMessage = `Upload timed out (${err.code}). This might be a network issue or an incorrect storage bucket configuration.`;
-      } else if (err.code === 'storage/unknown') {
-        errorMessage = `An unknown error occurred (${err.code}). Please try again.`;
-      } else {
-        errorMessage = `Upload failed: ${err.message || 'Unknown error'} (${err.code || 'no-code'})`;
-      }
-      
+      console.error('Error initiating upload:', err);
+      const errorMessage = `Failed to initiate upload: ${err.message}`;
       setError(errorMessage);
       setUploading(false);
       if (onUploadError) onUploadError(errorMessage);
