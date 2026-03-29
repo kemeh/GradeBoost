@@ -74,7 +74,8 @@ service cloud.firestore {
 
     function isAdmin() {
       return isAuthenticated() && 
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
          (request.auth.token.email == "kemehhilary@gmail.com" && request.auth.token.email_verified == true));
     }
 
@@ -92,12 +93,6 @@ service cloud.firestore {
 
     function isValidUrl(url) {
       return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
-    }
-
-    function isRecent(timestamp) {
-      return timestamp is timestamp && 
-        timestamp > request.time - duration.value(5, 'm') &&
-        timestamp < request.time + duration.value(5, 'm');
     }
 
     // ===============================================================

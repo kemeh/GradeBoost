@@ -4,7 +4,7 @@
   "apiKey": "AIzaSyBs8kp-qj7X-3ESbirTiZNEPjbd1CKuk30",
   "authDomain": "gradeboost-df887.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d",
-  "storageBucket": "gradeboost-df887.firebasestorage.app",
+  "storageBucket": "gradeboost-df887.appspot.com",
   "messagingSenderId": "230517027925",
   "measurementId": ""
 }

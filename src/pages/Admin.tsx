@@ -267,6 +267,14 @@ export default function Admin() {
     }
   };
 
+  useEffect(() => {
+    console.log('Admin Page - isAdmin:', isAdmin, 'authLoading:', authLoading);
+  }, [isAdmin, authLoading]);
+
+  useEffect(() => {
+    console.log('Admin Page - formData changed:', formData);
+  }, [formData]);
+
   const handleSavePaper = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.pdfUrl || !user) {

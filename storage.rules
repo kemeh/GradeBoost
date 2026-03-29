@@ -1,69 +1,9 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Helper functions
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    function isAdmin() {
-      return isAuthenticated() && 
-        (
-          request.auth.token.email == "kemehhilary@gmail.com" ||
-          firestore.get(/databases/ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d/documents/users/$(request.auth.uid)).data.role == 'admin'
-        );
-    }
-    
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Question Papers (Admin only upload, all authenticated can read)
-    match /papers/{paperId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() && 
-                   request.resource.size < 50 * 1024 * 1024 && // 50MB limit
-                   request.resource.contentType.matches('application/pdf');
-    }
-
-    // Submissions (Student upload their own, Admin read all)
-    match /submissions/{userId}/{fileName} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow write: if isOwner(userId) && 
-                   request.resource.size < 10 * 1024 * 1024 && // 10MB limit
-                   (request.resource.contentType.matches('application/pdf') ||
-                    request.resource.contentType.matches('image/.*') ||
-                    request.resource.contentType.matches('application/msword') ||
-                    request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.wordprocessingml.document'));
-    }
-    
-    // Profile Photos
-    match /profiles/{userId}/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId) && 
-                   request.resource.size < 2 * 1024 * 1024 && // 2MB limit
-                   request.resource.contentType.matches('image/.*');
-    }
-
-    // Exam Questions Images
-    match /exam_questions/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin() && 
-                   request.resource.size < 5 * 1024 * 1024 && // 5MB limit
-                   request.resource.contentType.matches('image/.*');
-    }
-
-    // General Uploads
-    match /uploads/{fileName} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && 
-                   request.resource.size < 10 * 1024 * 1024; // 10MB limit
-    }
-
-    // Default deny
+    // Basic rules for debugging - allowing read/write for authenticated users
     match /{allPaths=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }

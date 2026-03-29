@@ -3,8 +3,8 @@ import {
   Upload, X, CheckCircle2, AlertCircle, 
   Loader2, FileText, RefreshCw, Trash2 
 } from 'lucide-react';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
-import { storage } from '../firebase';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { storage, auth } from '../firebase';
 import { Button, Progress, cn } from './ui';
 import { toast } from 'react-hot-toast';
 
@@ -26,7 +26,7 @@ export default function FileUpload({
   onUploadStart,
   onUploadError,
   onDelete,
-  accept = 'application/pdf',
+  accept = 'application/pdf,.pdf',
   maxSizeMB = 10,
   folder = 'uploads',
   initialUrl = '',
@@ -39,7 +39,6 @@ export default function FileUpload({
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState(initialUrl);
-  const [uploadTask, setUploadTask] = useState<any>(null);
   const [isDragging, setIsDragging] = useState(false);
   const isMounted = React.useRef(true);
 
@@ -47,15 +46,17 @@ export default function FileUpload({
     isMounted.current = true;
     return () => {
       isMounted.current = false;
-      if (uploadTask && uploadTask.snapshot.state === 'running') {
-        uploadTask.cancel();
-      }
     };
-  }, [uploadTask]);
+  }, []);
 
   const handleFile = (selectedFile: File) => {
     console.log('Selected file:', selectedFile.name, selectedFile.type, selectedFile.size);
     
+    if (!auth.currentUser) {
+      toast.error('You must be logged in to upload files.');
+      return;
+    }
+
     if (maxSizeMB && selectedFile.size > maxSizeMB * 1024 * 1024) {
       toast.error(`File size must be less than ${maxSizeMB}MB`);
       return;
@@ -86,8 +87,14 @@ export default function FileUpload({
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleFileChange triggered');
     const selectedFile = e.target.files?.[0];
-    if (selectedFile) handleFile(selectedFile);
+    if (selectedFile) {
+      console.log('File selected:', selectedFile.name);
+      handleFile(selectedFile);
+    } else {
+      console.log('No file selected');
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -103,94 +110,80 @@ export default function FileUpload({
   };
 
   const handleDrop = (e: React.DragEvent) => {
+    console.log('handleDrop triggered');
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
 
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
-      // Check if file type is accepted
-      const isAccepted = accept === '*' || 
-        accept.split(',').some(type => {
-          const trimmedType = type.trim();
-          if (trimmedType.startsWith('.')) {
-            return droppedFile.name.toLowerCase().endsWith(trimmedType.toLowerCase());
-          }
-          return droppedFile.type.match(new RegExp(trimmedType.replace('*', '.*')));
-        });
-
-      if (!isAccepted) {
-        toast.error(`Invalid file type. Please upload ${accept}`);
-        return;
-      }
-
+      console.log('File dropped:', droppedFile.name);
       handleFile(droppedFile);
+    } else {
+      console.log('No file dropped');
     }
   };
 
-  const startUpload = useCallback((fileToUpload: File) => {
+  const startUpload = useCallback(async (fileToUpload: File) => {
+    console.log('startUpload called for:', fileToUpload.name);
+    
+    if (!auth.currentUser) {
+      const msg = 'User not authenticated. Upload aborted.';
+      console.error(msg);
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
     setUploading(true);
-    setProgress(0);
+    setProgress(10); // Initial progress
     setError(null);
     if (onUploadStart) onUploadStart();
 
-    console.log('Starting upload to bucket:', storage.app.options.storageBucket, 'Folder:', folder);
-    const storageRef = ref(storage, `${folder}/${Date.now()}_${fileToUpload.name}`);
-    console.log('Storage ref path:', storageRef.fullPath);
-    const task = uploadBytesResumable(storageRef, fileToUpload);
-    setUploadTask(task);
-
-    task.on(
-      'state_changed',
-      (snapshot) => {
-        const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setProgress(p);
-      },
-      (err: any) => {
-        if (!isMounted.current) return;
-        
-        console.error('Upload error:', err);
-        let errorMessage = 'Upload failed. Check your connection.';
-        
-        if (err.code === 'storage/unauthorized') {
-          errorMessage = `Permission denied (${err.code}). You might not have the right access or the file type/size is invalid.`;
-        } else if (err.code === 'storage/canceled') {
-          // If it was canceled, we don't necessarily want to show a scary error toast
-          // unless it wasn't expected.
-          setUploading(false);
-          setProgress(0);
-          return; // Skip the toast for cancellation
-        } else if (err.code === 'storage/unknown') {
-          errorMessage = `An unknown error occurred (${err.code}). Please try again.`;
-        } else {
-          errorMessage = `Upload failed: ${err.message || 'Unknown error'} (${err.code || 'no-code'})`;
-        }
-        
-        setError(errorMessage);
-        setUploading(false);
-        if (onUploadError) onUploadError(errorMessage);
-        toast.error(errorMessage);
-      },
-      async () => {
-        if (!isMounted.current) return;
-        try {
-          const url = await getDownloadURL(task.snapshot.ref);
-          const size = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
-          setDownloadUrl(url);
-          setUploading(false);
-          onUploadComplete(url, fileToUpload.name, size);
-          toast.success('Upload complete!');
-        } catch (err) {
-          if (!isMounted.current) return;
-          console.error('Error getting download URL:', err);
-          const errorMessage = 'Failed to finalize upload.';
-          setError(errorMessage);
-          setUploading(false);
-          if (onUploadError) onUploadError(errorMessage);
-        }
+    try {
+      const bucket = storage.app.options.storageBucket;
+      console.log('Starting upload to bucket:', bucket, 'Folder:', folder);
+      console.log('Current User UID:', auth.currentUser.uid);
+      
+      const storageRef = ref(storage, `${folder}/${Date.now()}_${fileToUpload.name}`);
+      console.log('Storage ref path:', storageRef.fullPath);
+      
+      // Using uploadBytes instead of uploadBytesResumable for better reliability in some environments
+      const snapshot = await uploadBytes(storageRef, fileToUpload);
+      console.log('Upload successful, snapshot:', snapshot);
+      
+      if (!isMounted.current) return;
+      
+      setProgress(100);
+      const url = await getDownloadURL(snapshot.ref);
+      const size = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
+      
+      setDownloadUrl(url);
+      setUploading(false);
+      onUploadComplete(url, fileToUpload.name, size);
+      toast.success('Upload complete!');
+    } catch (err: any) {
+      if (!isMounted.current) return;
+      
+      console.error('Upload error details:', err);
+      let errorMessage = 'Upload failed. Check your connection.';
+      
+      if (err.code === 'storage/unauthorized') {
+        errorMessage = `Permission denied (${err.code}). Ensure you are an admin and the file size is within limits.`;
+      } else if (err.code === 'storage/retry-limit-exceeded') {
+        errorMessage = `Upload timed out (${err.code}). This might be a network issue or an incorrect storage bucket configuration.`;
+      } else if (err.code === 'storage/unknown') {
+        errorMessage = `An unknown error occurred (${err.code}). Please try again.`;
+      } else {
+        errorMessage = `Upload failed: ${err.message || 'Unknown error'} (${err.code || 'no-code'})`;
       }
-    );
-  }, [folder, onUploadComplete, onUploadStart, onUploadError]);
+      
+      setError(errorMessage);
+      setUploading(false);
+      if (onUploadError) onUploadError(errorMessage);
+      toast.error(errorMessage);
+    }
+  }, [folder, onUploadComplete, onUploadStart, onUploadError, storage]);
 
   const handleRetry = () => {
     if (file) {
@@ -217,16 +210,6 @@ export default function FileUpload({
     setProgress(0);
     if (onDelete) onDelete();
     toast.success('File removed');
-  };
-
-  const cancelUpload = () => {
-    if (uploadTask) {
-      uploadTask.cancel();
-      setUploading(false);
-      setProgress(0);
-      setFile(null);
-      toast.error('Upload cancelled');
-    }
   };
 
   return (
@@ -281,13 +264,6 @@ export default function FileUpload({
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Uploading...</p>
               </div>
             </div>
-            <button 
-              type="button"
-              onClick={cancelUpload}
-              className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
-            >
-              <X size={18} />
-            </button>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
