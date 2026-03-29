@@ -3,7 +3,7 @@ import {
   Upload, X, CheckCircle2, AlertCircle, 
   Loader2, FileText, RefreshCw, Trash2 
 } from 'lucide-react';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, Progress, cn } from './ui';
@@ -165,21 +165,60 @@ export default function FileUpload({
       const storageRef = ref(storage, `${folder}/${Date.now()}_${fileToUpload.name}`);
       console.log('Storage path:', storageRef.fullPath);
       
-      // Using uploadBytes for potentially better reliability in some environments
-      console.log('Initiating uploadBytes...');
-      const snapshot = await uploadBytes(storageRef, fileToUpload);
-      console.log('Upload successful, snapshot:', snapshot);
-      
-      if (!isMounted.current) return;
-      
-      setProgress(100);
-      const url = await getDownloadURL(snapshot.ref);
-      const size = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
-      
-      setDownloadUrl(url);
-      setUploading(false);
-      onUploadComplete(url, fileToUpload.name, size);
-      toast.success('Upload complete!');
+      // Using uploadBytesResumable for better progress feedback and consistency with bulk import
+      console.log('Initiating uploadBytesResumable...');
+      const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+
+      uploadTask.on('state_changed',
+        (snapshot) => {
+          if (!isMounted.current) return;
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          console.log('Upload progress:', progress.toFixed(2) + '%');
+          setProgress(progress);
+        },
+        (err: any) => {
+          if (!isMounted.current) return;
+          
+          console.error('--- UPLOAD ERROR (Task) ---');
+          console.error('Code:', err.code);
+          console.error('Message:', err.message);
+          console.error('--------------------');
+          
+          let errorMessage = 'Upload failed. Check your connection.';
+          
+          if (err.code === 'storage/unauthorized') {
+            errorMessage = `Permission denied (${err.code}). Ensure you are an admin and the file size is within limits.`;
+          } else if (err.code === 'storage/retry-limit-exceeded') {
+            errorMessage = `Upload timed out (${err.code}). This might be a network issue or an incorrect storage bucket configuration.`;
+          } else if (err.code === 'storage/canceled') {
+            errorMessage = 'Upload canceled.';
+          }
+          
+          setError(errorMessage);
+          setUploading(false);
+          if (onUploadError) onUploadError(errorMessage);
+          toast.error(errorMessage);
+        },
+        async () => {
+          if (!isMounted.current) return;
+          try {
+            console.log('Upload successful, getting download URL...');
+            const url = await getDownloadURL(uploadTask.snapshot.ref);
+            const size = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
+            
+            setDownloadUrl(url);
+            setUploading(false);
+            setProgress(100);
+            onUploadComplete(url, fileToUpload.name, size);
+            toast.success('Upload complete!');
+          } catch (err: any) {
+            if (!isMounted.current) return;
+            console.error('Error getting download URL:', err);
+            setError('Failed to finalize upload.');
+            setUploading(false);
+          }
+        }
+      );
     } catch (err: any) {
       if (!isMounted.current) return;
       
