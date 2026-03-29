@@ -11,6 +11,7 @@ import {
   Image as ImageIcon, Upload, FileUp, Loader2, Download,
   Zap, Trophy, RefreshCw, LayoutDashboard
 } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
@@ -1852,6 +1853,14 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = result.value;
         text = tempDiv.innerText;
+
+        // Also send fileData for better AI analysis of diagrams/tables
+        const base64 = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+        fileData = { data: base64, mimeType: file.type };
       } else if (file.type === 'application/json') {
         setProcessingStatus('Parsing JSON data...');
         const content = await file.text();
@@ -1955,6 +1964,12 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
       - The 'questionText' of the main entry should contain the main stem/context of the question. If there is no main stem, use the text of the first sub-part as the main text and also include it in subParts.
       - Ensure the total 'marks' for the question is the sum of marks of all sub-parts.
       
+      DIAGRAMS, TABLES AND EQUATIONS:
+      - TABLES: Convert ALL tables into clean, valid Markdown tables. Include them directly in the 'questionText' or the relevant sub-part 'text'.
+      - DIAGRAMS/IMAGES: For every diagram, chart, circuit, or image, provide a HIGHLY DETAILED text description or ASCII representation within the 'questionText' or relevant sub-part 'text'. Use square brackets to denote these, e.g., "[Diagram Description: ...]".
+      - EQUATIONS: Use LaTeX format for complex mathematical or scientific equations (e.g., $E=mc^2$).
+      - CRITICAL: Never omit visual or tabular data. If a question refers to "the table below" or "the diagram shown", that content MUST be present in your extracted text.
+      
       FORMATTING RULES FOR PAPER 1 (MCQ):
       - Extract EACH MCQ as a separate entry.
       - Use the 'options' field (A, B, C, D).
@@ -1965,6 +1980,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
       2. For Paper 1, extract options A, B, C, D and the correct letter.
       3. For Paper 2/3, extract the full question structure including sub-parts.
       4. Map each question to the most relevant topic from this list: ${validTopics}.
+      5. CRITICAL: Convert all tables into Markdown format and provide detailed text descriptions for all diagrams, charts, and images. Use LaTeX for equations. Do not omit any visual or tabular content.
       
       Return an array of objects with these fields:
       - questionText: The main text or stem of the question.
@@ -2631,14 +2647,26 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                           </div>
                         )}
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900 mb-2">{q.questionText}</p>
+                          <div className="prose prose-slate prose-sm max-w-none mb-2">
+                            <div className="text-sm font-medium text-gray-900">
+                              <ReactMarkdown>
+                                {q.questionText}
+                              </ReactMarkdown>
+                            </div>
+                          </div>
                           
                           {q.paper !== 'Paper 1' && q.subParts && q.subParts.length > 0 && (
                             <div className="space-y-2 mb-3 ml-2 border-l-2 border-indigo-100 pl-3">
                               {q.subParts.map((sp, spi) => (
-                                <div key={spi} className="text-xs text-slate-600">
-                                  <span className="font-bold text-indigo-600 mr-1">{sp.label}</span>
-                                  {sp.text}
+                                <div key={spi} className="text-xs text-slate-600 flex items-start gap-2">
+                                  <span className="font-bold text-indigo-600 min-w-[20px]">{sp.label}</span>
+                                  <div className="prose prose-slate prose-sm max-w-none flex-1">
+                                    <div className="text-xs text-slate-600">
+                                      <ReactMarkdown>
+                                        {sp.text}
+                                      </ReactMarkdown>
+                                    </div>
+                                  </div>
                                   <span className="ml-2 text-[10px] font-bold text-slate-400">({sp.marks} marks)</span>
                                 </div>
                               ))}

@@ -6,6 +6,7 @@ import {
   LayoutDashboard, AlertCircle, Loader2, Search
 } from 'lucide-react';
 import { db } from '../firebase';
+import ReactMarkdown from 'react-markdown';
 import { 
   collection, query, where, getDocs, 
   orderBy, limit 
@@ -420,7 +421,13 @@ export default function AdminPaperGenerator() {
                         <Badge variant="secondary">{q.topic}</Badge>
                         <ChevronRight className="text-slate-300 group-hover:text-indigo-600 transition-colors" size={20} />
                       </div>
-                      <p className="text-slate-700 font-medium line-clamp-2">{q.questionText}</p>
+                      <div className="prose prose-slate prose-sm max-w-none line-clamp-2">
+                        <div className="text-slate-700 font-medium">
+                          <ReactMarkdown>
+                            {q.questionText}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
                     </button>
                   ))}
               </div>

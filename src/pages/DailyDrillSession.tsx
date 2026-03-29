@@ -9,6 +9,7 @@ import {
   ArrowLeft, Lock, Sparkles, Trophy, MessageSquare, X, Download, LayoutDashboard
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
+import ReactMarkdown from 'react-markdown';
 import { useAuth } from '../contexts/AuthContext';
 import { DailyDrill, DrillSubmission, ExamQuestion, Grade } from '../types';
 import { Button, Card, Badge, cn } from '../components/ui';
@@ -493,9 +494,13 @@ export default function DailyDrillSession() {
                     </div>
                   )}
                   <div className="space-y-6 mb-12">
-                    <p className="text-xl font-bold text-slate-800 leading-relaxed">
-                      {currentQuestion.questionText}
-                    </p>
+                    <div className="prose prose-slate max-w-none">
+                      <div className="text-xl font-bold text-slate-800 leading-relaxed">
+                        <ReactMarkdown>
+                          {currentQuestion.questionText}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
 
                     {currentQuestion.subParts && currentQuestion.subParts.length > 0 && (
                       <div className="space-y-4 pl-4 border-l-2 border-slate-100">
@@ -503,7 +508,13 @@ export default function DailyDrillSession() {
                           <div key={idx} className="space-y-1">
                             <div className="flex items-start gap-2">
                               <span className="font-black text-slate-900 min-w-[30px]">{sub.label}</span>
-                              <p className="text-slate-700 font-medium">{sub.text}</p>
+                              <div className="prose prose-slate max-w-none flex-1">
+                                <div className="text-slate-700 font-medium">
+                                  <ReactMarkdown>
+                                    {sub.text}
+                                  </ReactMarkdown>
+                                </div>
+                              </div>
                               {sub.marks > 0 && (
                                 <span className="text-[10px] font-black text-slate-400 uppercase bg-slate-50 px-1.5 py-0.5 rounded ml-auto">
                                   {sub.marks} {sub.marks === 1 ? 'mark' : 'marks'}
