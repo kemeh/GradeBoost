@@ -77,7 +77,7 @@ export default function AdminPaperGenerator() {
         ? q.subParts.map(sp => ({ label: sp.label, text: sp.text, marks: sp.marks }))
         : [
             { label: '(a)', text: 'Explain the concept...', marks: 5 },
-            { label: '(b)', text: 'Discuss the implications...', marks: 15 }
+            { label: '(b)', text: 'Discuss the implications...', marks: 12 }
           ]
     };
 
@@ -152,8 +152,8 @@ export default function AdminPaperGenerator() {
     // Validate marks
     for (const q of paperData.questions) {
       const totalMarks = q.subparts.reduce((sum, s) => sum + s.marks, 0);
-      if (totalMarks !== 20) {
-        toast.error(`Question ${q.id} total marks is ${totalMarks}. Each question must carry exactly 20 marks.`);
+      if (totalMarks !== 17) {
+        toast.error(`Question ${q.id} total marks is ${totalMarks}. Each question must carry exactly 17 marks.`);
         return;
       }
     }
@@ -325,11 +325,11 @@ export default function AdminPaperGenerator() {
                     <div className="flex justify-end">
                       <div className={cn(
                         "px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest",
-                        q.subparts.reduce((sum, s) => sum + s.marks, 0) === 20 
+                        q.subparts.reduce((sum, s) => sum + s.marks, 0) === 17 
                           ? "bg-emerald-50 text-emerald-600" 
                           : "bg-rose-50 text-rose-600"
                       )}>
-                        Total Marks: {q.subparts.reduce((sum, s) => sum + s.marks, 0)} / 20
+                        Total Marks: {q.subparts.reduce((sum, s) => sum + s.marks, 0)} / 17
                       </div>
                     </div>
                   </div>
@@ -366,11 +366,11 @@ export default function AdminPaperGenerator() {
                   <span className="text-sm font-medium text-slate-500">Marks Allocation</span>
                   <span className={cn(
                     "font-black",
-                    paperData.questions.every(q => q.subparts.reduce((sum, s) => sum + s.marks, 0) === 20)
+                    paperData.questions.every(q => q.subparts.reduce((sum, s) => sum + s.marks, 0) === 17)
                       ? "text-emerald-600"
                       : "text-rose-600"
                   )}>
-                    {paperData.questions.filter(q => q.subparts.reduce((sum, s) => sum + s.marks, 0) === 20).length} / 8 Valid
+                    {paperData.questions.filter(q => q.subparts.reduce((sum, s) => sum + s.marks, 0) === 17).length} / 8 Valid
                   </span>
                 </div>
               </div>
@@ -380,7 +380,7 @@ export default function AdminPaperGenerator() {
                 <div className="space-y-1">
                   <p className="text-xs font-black text-amber-900 uppercase tracking-widest">GCE Rules</p>
                   <p className="text-xs text-amber-700 leading-relaxed">
-                    Ensure exactly 8 questions are added. Each question must carry 20 marks total across its sub-parts.
+                    Ensure exactly 8 questions are added. Each question must carry 17 marks total across its sub-parts.
                   </p>
                 </div>
               </div>
