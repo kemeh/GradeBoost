@@ -2159,7 +2159,11 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
           batch.set(newDocRef, questionData);
         });
         
-        await batch.commit();
+        try {
+          await batch.commit();
+        } catch (commitErr) {
+          handleFirestoreError(commitErr, OperationType.WRITE, 'exam_questions (batch)');
+        }
         importedCount += chunk.length;
       }
       

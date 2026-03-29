@@ -109,13 +109,24 @@ service cloud.firestore {
     }
 
     function isValidQuestion(data) {
-      return hasRequiredFields(['questionText', 'options', 'correctAnswer', 'paper', 'topic', 'createdAt']) &&
-        data.questionText is string && data.questionText.size() > 0 && data.questionText.size() < 5000 &&
-        data.options is map && data.options.keys().hasAll(['A', 'B', 'C', 'D']) &&
-        data.correctAnswer is string && data.correctAnswer in ['A', 'B', 'C', 'D'] &&
+      return hasRequiredFields(['questionText', 'correctAnswer', 'paper', 'topic', 'createdAt']) &&
+        data.questionText is string && data.questionText.size() > 0 && data.questionText.size() < 10000 &&
+        data.correctAnswer is string && data.correctAnswer.size() > 0 &&
         data.paper in ['Paper 1', 'Paper 2', 'Paper 3'] &&
         data.topic is string && data.topic.size() > 0 &&
-        data.createdAt is timestamp;
+        data.createdAt is timestamp &&
+        // Paper 1 specific validation
+        (data.paper != 'Paper 1' || (
+          'options' in data &&
+          data.options is map && 
+          data.options.keys().hasAll(['A', 'B', 'C', 'D']) &&
+          data.correctAnswer in ['A', 'B', 'C', 'D']
+        )) &&
+        // Sub-parts validation if present
+        (!('subParts' in data) || (
+          data.subParts is list && 
+          data.subParts.size() <= 30
+        ));
     }
 
     function isValidDrill(data) {
