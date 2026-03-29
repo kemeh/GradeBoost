@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, query, where, orderBy, doc, updateDoc, serverTimestamp, deleteDoc, writeBatch, limit } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { fetchDailyDrill } from '../services/dailyDrillService';
+import { fetchDailyDrill, generateDailyDrillFromModel } from '../services/dailyDrillService';
 import { 
   Plus, Trash2, CheckCircle2, Clock, 
   FileText, HelpCircle, ChevronRight, 
@@ -65,11 +65,12 @@ export default function AdminDailyDrill() {
   // Filters
   const [filters, setFilters] = useState({
     day: '',
-    subject: '',
-    paper: '',
+    subject: '' as Subject,
+    paper: '' as PaperType | '',
     status: '',
     userId: '',
-    topic: ''
+    topic: '',
+    model: '' // Added model filter
   });
 
   // Question Form State
@@ -108,10 +109,9 @@ export default function AdminDailyDrill() {
   const [autoAssignForm, setAutoAssignForm] = useState({
     day: currentDay,
     subject: '' as Subject,
-    paper: 'Paper 1' as PaperType,
-    topic: '',
+    model: '', // Use 'model' instead of 'topic'
     mcqCount: 10,
-    p2Count: 1,
+    p2Count: 2,
     p3Count: 1
   });
   const [drillSubjectFilter, setDrillSubjectFilter] = useState<string>('');
@@ -155,7 +155,7 @@ export default function AdminDailyDrill() {
     if (isAdmin) {
       fetchQuestionsBank();
     }
-  }, [isAdmin, filters.subject, filters.paper, filters.topic]);
+  }, [isAdmin, filters.subject, filters.paper, filters.topic, filters.model]);
 
   const fetchQuestionsBank = async () => {
     let q = query(collection(db, 'exam_questions'), orderBy('createdAt', 'desc'), limit(100));
@@ -172,7 +172,16 @@ export default function AdminDailyDrill() {
     }
 
     const snapshot = await getDocs(q);
-    setQuestionsBank(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamQuestion)));
+    let questions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExamQuestion));
+    
+    // Client-side filtering for model
+    if (filters.model && filters.subject) {
+      const groupedTopics = getGroupedTopicsForSubject(filters.subject);
+      const modelTopics = groupedTopics[filters.model] || [];
+      questions = questions.filter(q => modelTopics.includes(q.topic));
+    }
+
+    setQuestionsBank(questions);
   };
 
   const fetchDailyDrills = async () => {
@@ -282,15 +291,31 @@ export default function AdminDailyDrill() {
     if (!user) return;
     setLoading(true);
     try {
-      // 1. Fetch questions using the service
-      const questions = await fetchDailyDrill(autoAssignForm.subject, autoAssignForm.paper);
+      // 1. Get all topics for the selected model
+      const groupedTopics = getGroupedTopicsForSubject(autoAssignForm.subject);
+      const modelTopics = groupedTopics[autoAssignForm.model] || [];
+      
+      if (modelTopics.length === 0) {
+        throw new Error('Please select a valid model with topics.');
+      }
+
+      // 2. Fetch questions using the new service
+      const questions = await generateDailyDrillFromModel(
+        autoAssignForm.subject, 
+        autoAssignForm.model, 
+        [...modelTopics], 
+        autoAssignForm.mcqCount, 
+        autoAssignForm.p2Count, 
+        autoAssignForm.p3Count
+      );
+      
       const questionIds = questions.map(q => q.id);
 
       if (questionIds.length === 0) {
-        throw new Error('No questions found for the selected subject and paper.');
+        throw new Error('No questions found for the selected model and counts.');
       }
 
-      // 2. Check if day exists for this subject
+      // 3. Check if day exists for this subject
       const q = query(
         collection(db, 'daily_drills'), 
         where('day', '==', autoAssignForm.day),
@@ -301,12 +326,11 @@ export default function AdminDailyDrill() {
         throw new Error(`Day ${autoAssignForm.day} already has an assigned drill for ${autoAssignForm.subject}.`);
       }
 
-      // 3. Create drill
+      // 4. Create drill
       const data = {
         day: autoAssignForm.day,
         subject: autoAssignForm.subject.trim(),
-        paper: autoAssignForm.paper,
-        topic: autoAssignForm.topic || 'General',
+        topic: autoAssignForm.model, // Store the model as the topic
         questionIds,
         isFree: autoAssignForm.day === 1,
         createdAt: serverTimestamp()
@@ -495,10 +519,9 @@ export default function AdminDailyDrill() {
                 setAutoAssignForm({
                   day: drills.length + 1,
                   subject: subjects[0]?.name || '',
-                  paper: 'Paper 1',
-                  topic: '',
+                  model: '',
                   mcqCount: 10,
-                  p2Count: 1,
+                  p2Count: 2,
                   p3Count: 1
                 });
                 setShowAutoAssignModal(true);
@@ -579,7 +602,7 @@ export default function AdminDailyDrill() {
                 <select
                   className="px-4 py-2 border rounded-lg"
                   value={filters.subject}
-                  onChange={(e) => setFilters({ ...filters, subject: e.target.value, topic: '' })}
+                  onChange={(e) => setFilters({ ...filters, subject: e.target.value as Subject, model: '', topic: '' })}
                 >
                   <option value="">All Subjects</option>
                   {subjects.map(s => (
@@ -588,8 +611,18 @@ export default function AdminDailyDrill() {
                 </select>
                 <select
                   className="px-4 py-2 border rounded-lg"
+                  value={filters.model}
+                  onChange={(e) => setFilters({ ...filters, model: e.target.value, topic: '' })}
+                >
+                  <option value="">All Models</option>
+                  {filters.subject && Object.keys(getGroupedTopicsForSubject(filters.subject)).map(module => (
+                    <option key={module} value={module}>{module}</option>
+                  ))}
+                </select>
+                <select
+                  className="px-4 py-2 border rounded-lg"
                   value={filters.paper}
-                  onChange={(e) => setFilters({ ...filters, paper: e.target.value })}
+                  onChange={(e) => setFilters({ ...filters, paper: e.target.value as PaperType | '' })}
                 >
                   <option value="">All Papers</option>
                   <option value="Paper 1">Paper 1</option>
@@ -795,7 +828,7 @@ export default function AdminDailyDrill() {
                 <select
                   className="px-4 py-2 border rounded-lg"
                   value={filters.paper}
-                  onChange={(e) => setFilters({ ...filters, paper: e.target.value })}
+                  onChange={(e) => setFilters({ ...filters, paper: e.target.value as PaperType | '' })}
                 >
                   <option value="">All Papers</option>
                   <option value="Paper 1">Paper 1</option>
@@ -1286,7 +1319,7 @@ export default function AdminDailyDrill() {
                 </div>
 
                 <form onSubmit={handleAutoAssign} className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Day (1-60)</label>
                       <input
@@ -1302,9 +1335,10 @@ export default function AdminDailyDrill() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                       <select
+                        required
                         className="w-full px-4 py-2 border rounded-lg"
                         value={autoAssignForm.subject}
-                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, subject: e.target.value as Subject, topic: '' })}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, subject: e.target.value as Subject, model: '' })}
                       >
                         <option value="">Select Subject</option>
                         {subjects.map(s => (
@@ -1312,67 +1346,31 @@ export default function AdminDailyDrill() {
                         ))}
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Paper</label>
-                      <select
-                        className="w-full px-4 py-2 border rounded-lg"
-                        value={autoAssignForm.paper}
-                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, paper: e.target.value as PaperType })}
-                      >
-                        <option value="Paper 1">Paper 1</option>
-                        <option value="Paper 2">Paper 2</option>
-                        <option value="Paper 3">Paper 3</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-2 border rounded-lg"
-                        value={questionForm.year}
-                        onChange={(e) => setQuestionForm({ ...questionForm, year: parseInt(e.target.value) })}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Session</label>
-                      <select
-                        className="w-full px-4 py-2 border rounded-lg"
-                        value={questionForm.session}
-                        onChange={(e) => setQuestionForm({ ...questionForm, session: e.target.value })}
-                      >
-                        <option value="June">June (May/June)</option>
-                        <option value="November">November (Oct/Nov)</option>
-                        <option value="Specimen">Specimen Paper</option>
-                        <option value="Other">Other</option>
-                      </select>
-                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Topic</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Model (Main Topic)</label>
                     <select
                       required
                       className="w-full px-4 py-2 border rounded-lg"
-                      value={autoAssignForm.topic}
-                      onChange={(e) => setAutoAssignForm({ ...autoAssignForm, topic: e.target.value })}
+                      value={autoAssignForm.model}
+                      onChange={(e) => setAutoAssignForm({ ...autoAssignForm, model: e.target.value })}
                     >
-                      <option value="">Select Topic</option>
-                      {Object.entries(getGroupedTopicsForSubject(autoAssignForm.subject)).map(([module, topics]) => (
-                        <optgroup key={module} label={module}>
-                          {topics.map(topic => (
-                            <option key={topic} value={topic}>{topic}</option>
-                          ))}
-                        </optgroup>
+                      <option value="">Select Model</option>
+                      {Object.keys(getGroupedTopicsForSubject(autoAssignForm.subject)).map(module => (
+                        <option key={module} value={module}>{module}</option>
                       ))}
                     </select>
+                    {autoAssignForm.model && (
+                      <p className="mt-1 text-[10px] text-slate-500 italic">
+                        Includes: {getGroupedTopicsForSubject(autoAssignForm.subject)[autoAssignForm.model]?.join(', ')}
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase">MCQs</label>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">MCQs (P1)</label>
                       <input
                         type="number"
                         className="w-full px-2 py-1 border rounded"
@@ -1381,7 +1379,7 @@ export default function AdminDailyDrill() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Paper 2</label>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">P2 Questions</label>
                       <input
                         type="number"
                         className="w-full px-2 py-1 border rounded"
@@ -1390,7 +1388,7 @@ export default function AdminDailyDrill() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-gray-500 uppercase">Paper 3</label>
+                      <label className="block text-[10px] font-bold text-gray-500 uppercase">P3 Questions</label>
                       <input
                         type="number"
                         className="w-full px-2 py-1 border rounded"
