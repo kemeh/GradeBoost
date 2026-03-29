@@ -15,6 +15,7 @@ import { DailyDrill, DrillSubmission, ExamQuestion, Grade } from '../types';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
 import FileUpload from '../components/FileUpload';
+import { GoogleGenAI } from "@google/genai";
 
 import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
 import { getSystemSettings } from '../services/settingsService';
@@ -47,6 +48,23 @@ interface FirestoreErrorInfo {
       photoUrl: string | null;
     }[];
   }
+}
+
+interface PerformanceReport {
+  paper1: {
+    score: number;
+    total: number;
+    percentage: number;
+  };
+  paper2: {
+    answered: number;
+    total: number;
+  };
+  paper3: {
+    answered: number;
+    total: number;
+  };
+  advice: string;
 }
 
 export default function DailyDrillSession() {
@@ -86,6 +104,8 @@ export default function DailyDrillSession() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [performanceReport, setPerformanceReport] = useState<PerformanceReport | null>(null);
+  const [generatingAdvice, setGeneratingAdvice] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [unansweredCount, setUnansweredCount] = useState(0);
   
@@ -226,6 +246,14 @@ export default function DailyDrillSession() {
           });
           setAnswers(reconstructedAnswers);
           setShowResults(true);
+          
+          // Calculate performance for existing submission
+          const report = calculatePerformance(fetchedQuestions, allSubs);
+          setPerformanceReport(report);
+          
+          // Generate advice if not already there
+          const advice = await generateAdvice(report);
+          setPerformanceReport(prev => prev ? { ...prev, advice } : null);
         } else if (currentDrill.day < currentDay) {
           setError('This drill was missed and is no longer available.');
           setLoading(false);
@@ -239,6 +267,72 @@ export default function DailyDrillSession() {
       setError('Failed to load today\'s drill.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const calculatePerformance = (questionsList: ExamQuestion[], submissionsList: DrillSubmission[]) => {
+    const p1 = questionsList.filter(q => q.paper === 'Paper 1');
+    const p2 = questionsList.filter(q => q.paper === 'Paper 2');
+    const p3 = questionsList.filter(q => q.paper === 'Paper 3');
+
+    const p1Score = p1.reduce((acc, q) => {
+      const sub = submissionsList.find(s => s.questionId === q.id);
+      const isCorrect = sub?.selectedAnswer === q.correctAnswer;
+      return acc + (isCorrect ? (q.marks || 1) : 0);
+    }, 0);
+    const p1Total = p1.reduce((acc, q) => acc + (q.marks || 1), 0);
+
+    const p2Answered = p2.filter(q => {
+      const sub = submissionsList.find(s => s.questionId === q.id);
+      return sub?.selectedAnswer || sub?.fileUrl;
+    }).length;
+    
+    const p3Answered = p3.filter(q => {
+      const sub = submissionsList.find(s => s.questionId === q.id);
+      return sub?.selectedAnswer || sub?.fileUrl;
+    }).length;
+
+    return {
+      paper1: {
+        score: p1Score,
+        total: p1Total,
+        percentage: p1Total > 0 ? Math.round((p1Score / p1Total) * 100) : 0
+      },
+      paper2: {
+        answered: p2Answered,
+        total: p2.length
+      },
+      paper3: {
+        answered: p3Answered,
+        total: p3.length
+      },
+      advice: ''
+    };
+  };
+
+  const generateAdvice = async (report: PerformanceReport) => {
+    if (!user) return "Great job completing the drill!";
+    setGeneratingAdvice(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const prompt = `As an expert tutor, provide a brief (2-3 sentences) encouraging advice to a student who just finished a daily drill for ${user.subject}. 
+      Performance:
+      - Paper 1 (MCQs): ${report.paper1.score}/${report.paper1.total} (${report.paper1.percentage}%)
+      - Paper 2 (Structured): ${report.paper2.answered}/${report.paper2.total} answered
+      - Paper 3 (Practical): ${report.paper3.answered}/${report.paper3.total} answered
+      
+      Focus on where they can improve based on these numbers. If they did well in P1 but missed P2, suggest focusing on structured answers. If P1 is low, suggest reviewing core concepts. Be specific to the subject ${user.subject} if possible.`;
+      
+      const result = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [{ parts: [{ text: prompt }] }]
+      });
+      return result.text || "Great job completing the drill! Keep practicing to improve your speed and accuracy across all paper types.";
+    } catch (err) {
+      console.error("Advice generation error:", err);
+      return "Great job completing the drill! Keep practicing to improve your speed and accuracy across all paper types.";
+    } finally {
+      setGeneratingAdvice(false);
     }
   };
 
@@ -296,11 +390,7 @@ export default function DailyDrillSession() {
       // Check for achievements
       await checkAchievements(user.uid);
 
-      setHasSubmitted(true);
-      setShowResults(true);
-      setSuccess(true);
-
-      // Refresh submissions
+      // Refresh submissions to calculate performance
       const subQ = query(
         collection(db, 'drill_submissions'),
         where('userId', '==', user.uid),
@@ -310,10 +400,15 @@ export default function DailyDrillSession() {
       const allSubs = subSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DrillSubmission));
       setSubmissions(allSubs);
 
-      // Redirect after a short delay
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 3000);
+      const report = calculatePerformance(questions, allSubs);
+      setPerformanceReport(report);
+      
+      setHasSubmitted(true);
+      setSuccess(true);
+
+      // Generate advice
+      const advice = await generateAdvice(report);
+      setPerformanceReport(prev => prev ? { ...prev, advice } : null);
 
     } catch (err) {
       console.error("Error submitting drill:", err);
@@ -361,23 +456,68 @@ export default function DailyDrillSession() {
     );
   }
 
-  if (success) {
+  if (success && performanceReport) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-          <Card className="max-w-md w-full p-12 text-center">
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-2xl w-full">
+          <Card className="p-8 md:p-12 text-center">
             <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-3xl flex items-center justify-center mx-auto mb-8">
               <CheckCircle2 size={40} />
             </div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
-              Submission Successful!
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
+              Drill Completed!
             </h2>
             <p className="text-slate-500 font-medium mb-8">
-              Great job completing today's drill! Your answers have been submitted and will be graded by our team shortly.
+              Your answers have been submitted successfully. Here is your performance report:
             </p>
-            <Button onClick={() => navigate('/dashboard')} className="w-full">
-              Back to Dashboard
-            </Button>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div className="p-4 bg-white border rounded-2xl shadow-sm">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Paper 1 (MCQ)</p>
+                <p className="text-2xl font-black text-indigo-600">{performanceReport.paper1.score}/{performanceReport.paper1.total}</p>
+                <p className="text-[10px] font-bold text-slate-500">{performanceReport.paper1.percentage}% Accuracy</p>
+              </div>
+              <div className="p-4 bg-white border rounded-2xl shadow-sm">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Paper 2 (Structured)</p>
+                <p className="text-2xl font-black text-indigo-600">{performanceReport.paper2.answered}/{performanceReport.paper2.total}</p>
+                <p className="text-[10px] font-bold text-slate-500">Questions Answered</p>
+              </div>
+              <div className="p-4 bg-white border rounded-2xl shadow-sm">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Paper 3 (Practical)</p>
+                <p className="text-2xl font-black text-indigo-600">{performanceReport.paper3.answered}/{performanceReport.paper3.total}</p>
+                <p className="text-[10px] font-bold text-slate-500">Questions Answered</p>
+              </div>
+            </div>
+
+            <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 mb-8 text-left relative overflow-hidden">
+              {generatingAdvice && (
+                <div className="absolute inset-0 bg-indigo-50/50 backdrop-blur-[1px] flex items-center justify-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-widest">Generating Advice...</span>
+                  </div>
+                </div>
+              )}
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="text-indigo-600" size={20} />
+                <h3 className="font-black text-slate-900 uppercase tracking-tight text-sm">Tutor's Advice</h3>
+              </div>
+              <p className="text-slate-700 text-sm leading-relaxed italic">
+                {performanceReport.advice ? `"${performanceReport.advice}"` : "Great job completing the drill! Keep practicing to improve your speed and accuracy across all paper types."}
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button onClick={() => navigate('/dashboard')} className="flex-1">
+                Back to Dashboard
+              </Button>
+              <Button onClick={() => {
+                setSuccess(false);
+                setShowResults(true);
+              }} variant="outline" className="flex-1">
+                Review Answers
+              </Button>
+            </div>
           </Card>
         </motion.div>
       </div>
@@ -437,9 +577,20 @@ export default function DailyDrillSession() {
             Download Daily Drill
           </Button>
           {hasSubmitted ? (
-            <Button size="sm" onClick={handleRetake} disabled={submitting} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
-              {submitting ? 'Resetting...' : 'Retake Drill'}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                onClick={() => setSuccess(true)} 
+                variant="outline" 
+                className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200"
+              >
+                <Trophy size={16} className="mr-2" />
+                View Report
+              </Button>
+              <Button size="sm" onClick={handleRetake} disabled={submitting} variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200">
+                {submitting ? 'Resetting...' : 'Retake Drill'}
+              </Button>
+            </div>
           ) : (
             <Button size="sm" onClick={handleSubmit} disabled={submitting}>
               {submitting ? 'Submitting...' : 'Submit Drill'}
