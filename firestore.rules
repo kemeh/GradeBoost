@@ -76,7 +76,7 @@ service cloud.firestore {
       return isAuthenticated() && 
         ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-         (request.auth.token.email == "kemehhilary@gmail.com" && request.auth.token.email_verified == true));
+         (request.auth.token.email == "kemehhilary@gmail.com"));
     }
 
     function hasRequiredFields(fields) {
@@ -117,28 +117,15 @@ service cloud.firestore {
         data.topic is string && data.topic.size() > 0 &&
         data.marks is number &&
         data.difficulty in ['Easy', 'Medium', 'Hard'] &&
-        data.createdAt is timestamp &&
-        // Paper 1 specific validation
-        (data.paper != 'Paper 1' || (
-          'options' in data &&
-          data.options is map && 
-          data.options.keys().hasAll(['A', 'B', 'C', 'D']) &&
-          data.correctAnswer in ['A', 'B', 'C', 'D']
-        )) &&
-        // Sub-parts validation if present
-        (!('subParts' in data) || (
-          data.subParts is list && 
-          data.subParts.size() <= 30
-        ));
+        data.createdAt is timestamp;
     }
 
     function isValidDrill(data) {
-      return hasRequiredFields(['day', 'questionIds', 'subject', 'topic', 'createdAt', 'paper', 'isFree']) &&
+      return hasRequiredFields(['day', 'questionIds', 'subject', 'topic', 'createdAt', 'isFree']) &&
         data.day is int && data.day >= 1 && data.day <= 365 &&
         data.questionIds is list && data.questionIds.size() > 0 && data.questionIds.size() <= 100 &&
         data.subject is string &&
         data.topic is string &&
-        data.paper in ['Paper 1', 'Paper 2', 'Paper 3'] &&
         data.isFree is bool &&
         data.createdAt is timestamp;
     }
@@ -212,9 +199,19 @@ service cloud.firestore {
     }
 
     // System Settings
-    match /system_settings/{settingId} {
-      // Only admins can read/write settings
+    match /system_settings/global {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /system_settings/secrets {
       allow read, write: if isAdmin();
+    }
+    
+    match /system_settings/{settingId} {
+      // Fallback for any other documents in this collection
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
     }
 
     // Payments

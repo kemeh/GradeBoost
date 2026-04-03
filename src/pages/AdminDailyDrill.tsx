@@ -342,6 +342,8 @@ export default function AdminDailyDrill() {
       setShowAutoAssignModal(false);
       fetchDailyDrills();
     } catch (err: any) {
+      console.error('Auto-assign error:', err);
+      handleFirestoreError(err, OperationType.CREATE, 'daily_drills');
       setError(err.message || 'Failed to auto-assign drill.');
     } finally {
       setLoading(false);
@@ -1286,7 +1288,7 @@ export default function AdminDailyDrill() {
                         required
                         className="w-full px-4 py-2 border rounded-lg"
                         value={questionForm.marks}
-                        onChange={(e) => setQuestionForm({ ...questionForm, marks: parseInt(e.target.value) })}
+                        onChange={(e) => setQuestionForm({ ...questionForm, marks: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                   </div>
@@ -1329,7 +1331,7 @@ export default function AdminDailyDrill() {
                         required
                         className="w-full px-4 py-2 border rounded-lg"
                         value={autoAssignForm.day}
-                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, day: parseInt(e.target.value) })}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, day: parseInt(e.target.value) || 1 })}
                       />
                     </div>
                     <div>
@@ -1375,7 +1377,7 @@ export default function AdminDailyDrill() {
                         type="number"
                         className="w-full px-2 py-1 border rounded"
                         value={autoAssignForm.mcqCount}
-                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, mcqCount: parseInt(e.target.value) })}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, mcqCount: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -1384,7 +1386,7 @@ export default function AdminDailyDrill() {
                         type="number"
                         className="w-full px-2 py-1 border rounded"
                         value={autoAssignForm.p2Count}
-                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, p2Count: parseInt(e.target.value) })}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, p2Count: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                     <div>
@@ -1393,7 +1395,7 @@ export default function AdminDailyDrill() {
                         type="number"
                         className="w-full px-2 py-1 border rounded"
                         value={autoAssignForm.p3Count}
-                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, p3Count: parseInt(e.target.value) })}
+                        onChange={(e) => setAutoAssignForm({ ...autoAssignForm, p3Count: parseInt(e.target.value) || 0 })}
                       />
                     </div>
                   </div>
@@ -1434,7 +1436,7 @@ export default function AdminDailyDrill() {
                         required
                         className="w-full px-4 py-2 border rounded-lg"
                         value={drillForm.day}
-                        onChange={(e) => setDrillForm({ ...drillForm, day: parseInt(e.target.value) })}
+                        onChange={(e) => setDrillForm({ ...drillForm, day: parseInt(e.target.value) || 1 })}
                       />
                     </div>
                     <div>
@@ -1594,7 +1596,7 @@ export default function AdminDailyDrill() {
                           required
                           className="w-full px-4 py-2 border rounded-lg"
                           value={gradingSubmission.tempScore || 0}
-                          onChange={(e) => setGradingSubmission({ ...gradingSubmission, tempScore: parseInt(e.target.value) })}
+                          onChange={(e) => setGradingSubmission({ ...gradingSubmission, tempScore: parseInt(e.target.value) || 0 })}
                         />
                       </div>
                     </div>
@@ -1805,7 +1807,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
 
       if (file.type === 'application/pdf') {
         setProcessingStatus('Parsing PDF...');
-        const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist');
+        const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/build/pdf.mjs');
         GlobalWorkerOptions.workerSrc = pdfWorker;
         
         const arrayBuffer = await file.arrayBuffer();
@@ -2277,7 +2279,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                   type="number"
                   className="w-full px-4 py-2 border rounded-lg"
                   value={selectedYear}
-                  onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                  onChange={(e) => setSelectedYear(parseInt(e.target.value) || new Date().getFullYear())}
                   min={2000}
                   max={2100}
                 />
@@ -2601,7 +2603,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                             value={q.marks}
                             onChange={e => {
                               const next = [...previewQuestions];
-                              next[i] = { ...next[i], marks: parseInt(e.target.value) };
+                              next[i] = { ...next[i], marks: parseInt(e.target.value) || 0 };
                               setPreviewQuestions(next);
                             }}
                           />
