@@ -45,12 +45,10 @@ export const SUBJECT_TOPICS = {
       'Information System Design',
       'Web Applications and Database Implementation'
     ],
-    'Upper Sixth Topics': [
-      'Data Structures and Algorithms',
-      'Programming',
-      'Software Development',
-      'Computer Science Project'
-    ]
+    'Module 2.7: Data Structures and Algorithms': ['Data Structures and Algorithms'],
+    'Module 2.8: Programming': ['Programming'],
+    'Module 2.9: Software Development': ['Software Development'],
+    'Module 2.10: Computer Science Project': ['Computer Science Project']
   },
   'ICT': {
     'Module 1: Computing Environment and Components': [
@@ -91,10 +89,8 @@ export const SUBJECT_TOPICS = {
       'Implementing Programming Language Components',
       'Working with Written Programs'
     ],
-    'Upper Sixth Topics': [
-      'Communication and Resource Sharing in IT',
-      'Practical Problem Solving in the Digital World'
-    ]
+    'Module 4: Communication and Resource Sharing in IT': ['Communication and Resource Sharing in IT'],
+    'Module 5: Practical Problem Solving in the Digital World': ['Practical Problem Solving in the Digital World']
   }
 } as const;
 
