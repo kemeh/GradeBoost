@@ -48,7 +48,8 @@ export const SUBJECT_TOPICS = {
     'Module 2.7: Data Structures and Algorithms': ['Data Structures and Algorithms'],
     'Module 2.8: Programming': ['Programming'],
     'Module 2.9: Software Development': ['Software Development'],
-    'Module 2.10: Computer Science Project': ['Computer Science Project']
+    'Module 2.10: Computer Science Project': ['Computer Science Project'],
+    'Module 2.11: Database': ['Database Concepts', 'Database Design', 'SQL']
   },
   'ICT': {
     'Module 1: Computing Environment and Components': [
@@ -90,7 +91,8 @@ export const SUBJECT_TOPICS = {
       'Working with Written Programs'
     ],
     'Module 4: Communication and Resource Sharing in IT': ['Communication and Resource Sharing in IT'],
-    'Module 5: Practical Problem Solving in the Digital World': ['Practical Problem Solving in the Digital World']
+    'Module 5: Practical Problem Solving in the Digital World': ['Practical Problem Solving in the Digital World'],
+    'Module 6: Database': ['Database Concepts', 'Database Design', 'SQL']
   }
 } as const;
 
