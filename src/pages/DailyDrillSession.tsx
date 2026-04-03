@@ -15,6 +15,7 @@ import { DailyDrill, DrillSubmission, ExamQuestion, Grade } from '../types';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
 import FileUpload from '../components/FileUpload';
+import { generateContentWithRetry } from '../utils/apiUtils';
 import { GoogleGenAI } from "@google/genai";
 
 import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
@@ -323,7 +324,7 @@ export default function DailyDrillSession() {
       
       Focus on where they can improve based on these numbers. If they did well in P1 but missed P2, suggest focusing on structured answers. If P1 is low, suggest reviewing core concepts. Be specific to the subject ${user.subject} if possible.`;
       
-      const result = await ai.models.generateContent({
+      const result = await generateContentWithRetry(ai, {
         model: "gemini-3-flash-preview",
         contents: [{ parts: [{ text: prompt }] }]
       });

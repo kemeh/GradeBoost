@@ -28,6 +28,7 @@ import { calculateWeeklyLeaderboard } from '../utils/leaderboard';
 import { toast } from 'react-hot-toast';
 import { SUBJECT_TOPICS, getGroupedTopicsForSubject, getAllTopicsForSubject, SubjectName } from '../constants/topics';
 import { getGeminiApiKey, getSystemSettings } from '../services/settingsService';
+import { generateContentWithRetry } from '../utils/apiUtils';
 import { GoogleGenAI, Type } from '@google/genai';
 // @ts-ignore
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.mjs?url';
@@ -2002,10 +2003,9 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
         contents.push({ inlineData: fileData });
       }
       if (text) {
-        contents.push({ text: `Data Content:\n${text.substring(0, 100000)}` });
+        contents.push({ text: `Data Content:\n${text.substring(0, 50000)}` });
       }
-
-      const response = await ai.models.generateContent({
+      const response = await generateContentWithRetry(ai, {
         model: 'gemini-3-flash-preview',
         contents: { parts: contents.map(c => (typeof c === 'string' ? { text: c } : c)) },
         config: {
@@ -2051,12 +2051,6 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
             }
           }
         }
-      }).catch(err => {
-        console.error('Gemini API Fetch Error:', err);
-        if (err.message?.includes('fetch')) {
-          throw new Error('Failed to connect to AI service. Please check your internet connection or try a different API key.');
-        }
-        throw err;
       });
 
       const aiResponseText = response.text;
