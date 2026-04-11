@@ -1,25 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { sendEmailVerification } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebase';
+import { auth, db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui';
-import { Mail, RefreshCw, LogOut, CheckCircle } from 'lucide-react';
+import { Button, cn } from '../components/ui';
+import { Mail, RefreshCw, LogOut, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'motion/react';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const VerifyEmail: React.FC = () => {
-  const { firebaseUser, logout, isEmailVerified } = useAuth();
+  const { firebaseUser, user, logout, isEmailVerified } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [checking, setChecking] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     if (isEmailVerified) {
       navigate('/dashboard');
     }
   }, [isEmailVerified, navigate]);
+
+  useEffect(() => {
+    if (user?.verificationSentAt) {
+      const sentAt = user.verificationSentAt.toDate ? user.verificationSentAt.toDate() : new Date(user.verificationSentAt);
+      const now = new Date();
+      const diff = now.getTime() - sentAt.getTime();
+      const thirtyMinutes = 30 * 60 * 1000;
+
+      if (diff > thirtyMinutes) {
+        setIsExpired(true);
+        setError("Your verification link has expired (valid for 30 minutes). Please resend a new link.");
+      } else {
+        setIsExpired(false);
+      }
+    }
+  }, [user]);
 
   const handleCheckVerification = async () => {
     if (!firebaseUser) return;
@@ -45,7 +63,12 @@ const VerifyEmail: React.FC = () => {
     setError(null);
     try {
       await sendEmailVerification(firebaseUser);
+      // Update verificationSentAt in Firestore
+      await updateDoc(doc(db, 'users', firebaseUser.uid), {
+        verificationSentAt: serverTimestamp()
+      });
       setSent(true);
+      setIsExpired(false);
     } catch (err: any) {
       setError(err.message || "Failed to send verification email.");
     } finally {
@@ -82,8 +105,12 @@ const VerifyEmail: React.FC = () => {
         )}
 
         {error && (
-          <div className="bg-red-50 text-red-700 p-4 rounded-xl mb-6 text-sm">
-            {error}
+          <div className={cn(
+            "p-4 rounded-xl mb-6 text-sm flex items-start gap-3",
+            isExpired ? "bg-amber-50 text-amber-700 border border-amber-100" : "bg-red-50 text-red-700 border border-red-100"
+          )}>
+            {isExpired ? <AlertCircle className="w-5 h-5 shrink-0" /> : <AlertCircle className="w-5 h-5 shrink-0" />}
+            <p>{error}</p>
           </div>
         )}
 

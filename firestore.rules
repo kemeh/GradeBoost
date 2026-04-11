@@ -103,7 +103,7 @@ service cloud.firestore {
       return hasRequiredFields(['name', 'email', 'subject', 'role', 'createdAt']) &&
         data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
         isValidEmail(data.email) &&
-        data.subject in ['Computer Science', 'ICT'] &&
+        data.subject is string && data.subject.size() > 0 &&
         data.role in ['student', 'admin'] &&
         data.createdAt is timestamp;
     }

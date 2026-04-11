@@ -93,16 +93,8 @@ export default function AuthPage() {
   };
 
   const validatePassword = (password: string) => {
-    const minLength = 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasNonalphas = /\W/.test(password);
-    
-    if (password.length < minLength) return "Password must be at least 8 characters long.";
-    if (!hasUpperCase || !hasLowerCase || !hasNumbers || !hasNonalphas) {
-      return "Password must contain uppercase, lowercase, numbers, and special characters.";
-    }
+    const minLength = 6;
+    if (password.length < minLength) return `Password must be at least ${minLength} characters long.`;
     return null;
   };
 
@@ -119,7 +111,13 @@ export default function AuthPage() {
       } else if (isLogin) {
         await signInWithEmailAndPassword(auth, formData.email, formData.password);
       } else {
-        // Strong password validation
+        if (!formData.subject) {
+          setError('Please select a subject.');
+          setLoading(false);
+          return;
+        }
+
+        // Password validation
         const passwordError = validatePassword(formData.password);
         if (passwordError) {
           setError(passwordError);
@@ -153,6 +151,7 @@ export default function AuthPage() {
             isPaid: isAdminEmail ? true : false,
             paymentStatus: isAdminEmail ? 'paid' : 'unpaid',
             paymentExpiryDate: isAdminEmail ? new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
+            verificationSentAt: serverTimestamp(),
             createdAt: serverTimestamp(),
           });
           console.log("User profile created for UID:", user.uid);
@@ -314,34 +313,40 @@ export default function AuthPage() {
               </div>
             )}
 
-            {!isLogin && !isForgot && subjects.length > 0 && (
+            {!isLogin && !isForgot && (
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Selection</label>
-                <div className="grid grid-cols-2 gap-4">
-                  {subjects.map(sub => (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, subject: sub.name })}
-                      className={cn(
-                        "p-4 rounded-2xl border-2 transition-all text-sm font-bold text-center flex flex-col items-center justify-center gap-1",
-                        formData.subject === sub.name 
-                          ? "border-indigo-600 bg-indigo-50 text-indigo-600" 
-                          : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
-                      )}
-                    >
-                      <span>{sub.name}</span>
-                      {sub.level && (
-                        <span className={cn(
-                          "text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full",
-                          formData.subject === sub.name ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-500"
-                        )}>
-                          {sub.level}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
+                {subjects.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {subjects.map(sub => (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, subject: sub.name })}
+                        className={cn(
+                          "p-4 rounded-2xl border-2 transition-all text-sm font-bold text-center flex flex-col items-center justify-center gap-1",
+                          formData.subject === sub.name 
+                            ? "border-indigo-600 bg-indigo-50 text-indigo-600" 
+                            : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                        )}
+                      >
+                        <span>{sub.name}</span>
+                        {sub.level && (
+                          <span className={cn(
+                            "text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full",
+                            formData.subject === sub.name ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-500"
+                          )}>
+                            {sub.level}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-700 text-xs font-bold">
+                    No active subjects available. Please contact support.
+                  </div>
+                )}
               </div>
             )}
 

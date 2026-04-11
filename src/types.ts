@@ -49,6 +49,7 @@ export interface UserProfile {
   paymentStatus?: 'unpaid' | 'paid' | 'pending' | 'rejected';
   paymentDate?: string;
   paymentExpiryDate?: string;
+  verificationSentAt?: any; // Timestamp
   paid?: boolean;
   paidAt?: string;
   paymentReference?: string;
