@@ -183,7 +183,7 @@ export default function AdminSettings() {
     try {
       const genAI = new GoogleGenAI({ apiKey: apiKey.trim() });
       const model = genAI.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-flash-latest',
         contents: 'Hello, are you working?',
       });
       const response = await model;
@@ -740,7 +740,7 @@ export default function AdminSettings() {
                 </li>
                 <li className="flex gap-2">
                   <span className="font-bold text-indigo-600">•</span>
-                  Ensure your API key has access to the <strong>gemini-3-flash-preview</strong> model.
+                  Ensure your API key has access to the <strong>gemini-flash-latest</strong> model.
                 </li>
                 <li className="flex gap-2">
                   <span className="font-bold text-indigo-600">•</span>

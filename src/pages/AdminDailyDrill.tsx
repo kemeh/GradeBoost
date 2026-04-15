@@ -2011,7 +2011,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
         contents.push({ text: `Data Content:\n${text.substring(0, 50000)}` });
       }
       const response = await generateContentWithRetry(ai, {
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-flash-latest',
         contents: { parts: contents.map(c => (typeof c === 'string' ? { text: c } : c)) },
         config: {
           responseMimeType: 'application/json',
@@ -2119,8 +2119,12 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
       setPreviewQuestions(questions);
     } catch (err: any) {
       console.error('Import error:', err);
-      setError(err.message || 'Failed to process file.');
-      toast.error(err.message || 'Failed to process file.');
+      let msg = err.message || 'Failed to process file.';
+      if (msg.includes('403') || msg.includes('PERMISSION_DENIED') || msg.includes('denied access')) {
+        msg = 'Gemini API Access Denied (403). Your project might be blocked or the API key is restricted. Please check your System Settings or try selecting a different key in the Settings menu.';
+      }
+      setError(msg);
+      toast.error(msg);
     } finally {
       setIsProcessing(false);
       setProcessingStatus('');

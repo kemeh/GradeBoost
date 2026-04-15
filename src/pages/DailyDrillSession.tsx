@@ -325,7 +325,7 @@ export default function DailyDrillSession() {
       Focus on where they can improve based on these numbers. If they did well in P1 but missed P2, suggest focusing on structured answers. If P1 is low, suggest reviewing core concepts. Be specific to the subject ${user.subject} if possible.`;
       
       const result = await generateContentWithRetry(ai, {
-        model: "gemini-3-flash-preview",
+        model: "gemini-flash-latest",
         contents: [{ parts: [{ text: prompt }] }]
       });
       return result.text || "Great job completing the drill! Keep practicing to improve your speed and accuracy across all paper types.";
