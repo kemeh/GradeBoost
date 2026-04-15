@@ -10,6 +10,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { Subject, SubjectModel } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { SUBJECT_TOPICS } from '../constants/topics';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,7 +22,19 @@ export default function AuthPage() {
       try {
         const q = query(collection(db, 'subjects'), where('isActive', '==', true));
         const snapshot = await getDocs(q);
-        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
+        let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
+        
+        if (data.length === 0) {
+          // Fallback to hardcoded subjects if DB is empty
+          data = Object.keys(SUBJECT_TOPICS).map(name => ({
+            id: name.toLowerCase().replace(/\s+/g, '-'),
+            name,
+            isActive: true,
+            level: 'Advance level',
+            createdAt: new Date()
+          })) as SubjectModel[];
+        }
+
         setSubjects(data);
         if (data.length > 0 && !formData.subject) {
           setFormData(prev => ({ ...prev, subject: data[0].name }));
@@ -243,6 +256,41 @@ export default function AuthPage() {
                 </div>
 
                 <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Selection</label>
+                  {subjects.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {subjects.map(sub => (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, subject: sub.name })}
+                          className={cn(
+                            "p-3 rounded-2xl border-2 transition-all text-xs font-bold text-center flex flex-col items-center justify-center gap-1",
+                            formData.subject === sub.name 
+                              ? "border-indigo-600 bg-indigo-50 text-indigo-600 shadow-sm" 
+                              : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                          )}
+                        >
+                          <span className="truncate w-full">{sub.name}</span>
+                          {sub.level && (
+                            <span className={cn(
+                              "text-[8px] uppercase tracking-widest px-1.5 py-0.5 rounded-full",
+                              formData.subject === sub.name ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-500"
+                            )}>
+                              {sub.level === 'Advance level' ? 'A-Level' : 'O-Level'}
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-700 text-[10px] font-bold">
+                      No active subjects available. Please contact support.
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">School</label>
                   <div className="relative">
                     <School className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
@@ -310,43 +358,6 @@ export default function AuthPage() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-              </div>
-            )}
-
-            {!isLogin && !isForgot && (
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Selection</label>
-                {subjects.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    {subjects.map(sub => (
-                      <button
-                        key={sub.id}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, subject: sub.name })}
-                        className={cn(
-                          "p-4 rounded-2xl border-2 transition-all text-sm font-bold text-center flex flex-col items-center justify-center gap-1",
-                          formData.subject === sub.name 
-                            ? "border-indigo-600 bg-indigo-50 text-indigo-600" 
-                            : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
-                        )}
-                      >
-                        <span>{sub.name}</span>
-                        {sub.level && (
-                          <span className={cn(
-                            "text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-full",
-                            formData.subject === sub.name ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-500"
-                          )}>
-                            {sub.level}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-700 text-xs font-bold">
-                    No active subjects available. Please contact support.
-                  </div>
-                )}
               </div>
             )}
 

@@ -261,7 +261,7 @@ service cloud.firestore {
 
     // Subjects
     match /subjects/{subjectId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
