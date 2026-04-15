@@ -1663,7 +1663,9 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
   const [error, setError] = useState('');
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
   const [showPasteArea, setShowPasteArea] = useState(false);
+  const [showPasteText, setShowPasteText] = useState(false);
   const [pastedJson, setPastedJson] = useState('');
+  const [pastedText, setPastedText] = useState('');
 
   useEffect(() => {
     const checkApiKey = async () => {
@@ -1750,7 +1752,8 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
         if (paper === '1' || paper === 1) paper = 'Paper 1';
         if (paper === '2' || paper === 2) paper = 'Paper 2';
         if (paper === '3' || paper === 3) paper = 'Paper 3';
-        if (!['Paper 1', 'Paper 2', 'Paper 3'].includes(paper)) paper = selectedPaper;
+        if (paper === 'Combined' || paper === '2&3' || paper === '2 & 3') paper = 'Combined';
+        if (!['Paper 1', 'Paper 2', 'Paper 3', 'Combined'].includes(paper)) paper = selectedPaper;
 
         let rawAnswer = String(q.correctAnswer || '').trim().toUpperCase();
         if (paper === 'Paper 1') {
@@ -1792,21 +1795,22 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
     }
   };
 
-  const processFile = async () => {
-    if (!file) return;
+  const processFile = async (rawText?: string) => {
+    if (!file && !rawText) return;
     if (!selectedSubject) {
       setError('Please select a target subject.');
       toast.error('Please select a target subject.');
       return;
     }
     setIsProcessing(true);
-    setProcessingStatus('Reading file...');
+    setProcessingStatus(rawText ? 'Processing pasted text...' : 'Reading file...');
     setError('');
     try {
-      let text = '';
+      let text = rawText || '';
       let fileData: { data: string; mimeType: string } | null = null;
 
-      if (file.type === 'application/pdf') {
+      if (!rawText && file) {
+        if (file.type === 'application/pdf') {
         setProcessingStatus('Parsing PDF...');
         const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/build/pdf.mjs');
         GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -1921,12 +1925,13 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
         setIsProcessing(false);
         setProcessingStatus('');
         return;
-      } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+      } else if (file && (file.type === 'text/csv' || file.name.endsWith('.csv'))) {
         setProcessingStatus('Reading CSV data...');
         text = await file.text();
-      } else {
+      } else if (file) {
         throw new Error('Unsupported file type. Please upload a PDF, Word, Image (JPG/PNG), CSV, or JSON document.');
       }
+    }
 
       setProcessingStatus('Analyzing with AI (this may take a moment)...');
       
@@ -2063,7 +2068,8 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
         if (paper === '1' || paper === 1) paper = 'Paper 1';
         if (paper === '2' || paper === 2) paper = 'Paper 2';
         if (paper === '3' || paper === 3) paper = 'Paper 3';
-        if (!['Paper 1', 'Paper 2', 'Paper 3'].includes(paper)) paper = selectedPaper;
+        if (paper === 'Combined' || paper === '2&3' || paper === '2 & 3') paper = 'Combined';
+        if (!['Paper 1', 'Paper 2', 'Paper 3', 'Combined'].includes(paper)) paper = selectedPaper;
 
         let rawAnswer = String(q.correctAnswer || '').trim().toUpperCase();
         if (paper === 'Paper 1') {
@@ -2265,6 +2271,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                   <option value="Paper 1">Paper 1 (MCQ)</option>
                   <option value="Paper 2">Paper 2 (Structured)</option>
                   <option value="Paper 3">Paper 3 (Practical/Case Study)</option>
+                  <option value="Combined">Paper 2 & 3 Combined</option>
                 </select>
               </div>
               <div>
@@ -2320,27 +2327,40 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
                   <span className="text-gray-400 font-medium">OR</span>
                   
                   <button
-                    onClick={() => setShowPasteArea(!showPasteArea)}
+                    onClick={() => {
+                      setShowPasteText(!showPasteText);
+                      setShowPasteArea(false);
+                    }}
                     className="inline-flex items-center px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 rounded-xl font-bold cursor-pointer hover:bg-indigo-50 transition-colors"
                   >
-                    {showPasteArea ? 'Hide Paste Area' : 'Paste JSON Data'}
+                    {showPasteText ? 'Hide Text Area' : 'Paste Exam Text'}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowPasteArea(!showPasteArea);
+                      setShowPasteText(false);
+                    }}
+                    className="inline-flex items-center px-6 py-3 bg-white border-2 border-slate-600 text-slate-600 rounded-xl font-bold cursor-pointer hover:bg-slate-50 transition-colors"
+                  >
+                    {showPasteArea ? 'Hide JSON Area' : 'Paste JSON Data'}
                   </button>
                 </div>
 
-                {showPasteArea && (
+                {showPasteText && (
                   <div className="w-full mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
                     <textarea
-                      className="w-full h-40 p-4 border rounded-xl font-mono text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                      placeholder='Paste your JSON here... Example: { "sections": [...] } or [ { "questionText": "..." }, ... ]'
-                      value={pastedJson}
-                      onChange={(e) => setPastedJson(e.target.value)}
+                      className="w-full h-64 p-4 border rounded-xl font-sans text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      placeholder="Paste your exam paper text here... AI will automatically extract questions, sections, and sub-parts."
+                      value={pastedText}
+                      onChange={(e) => setPastedText(e.target.value)}
                     />
                     <button
-                      onClick={handlePasteJson}
-                      disabled={!pastedJson.trim() || isProcessing}
+                      onClick={() => processFile(pastedText)}
+                      disabled={!pastedText.trim() || isProcessing}
                       className="mt-2 w-full py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
                     >
-                      {isProcessing ? 'Processing JSON...' : 'Process JSON Data'}
+                      {isProcessing ? 'AI is Extracting Questions...' : 'Extract Questions from Text'}
                     </button>
                   </div>
                 )}
@@ -2357,7 +2377,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
               <Button 
-                onClick={processFile} 
+                onClick={() => processFile()} 
                 disabled={!file || isProcessing}
                 className="bg-indigo-600 text-white"
               >

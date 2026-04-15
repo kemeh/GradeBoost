@@ -29,12 +29,12 @@ export const downloadQuestionAsPDF = async (question: ExamQuestion, dayNumber?: 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(28);
   doc.setTextColor(255, 255, 255);
-  doc.text('GradeBoost60', margin, 25);
+  doc.text('GRADEBOOST60', margin, 25);
   
   doc.setFontSize(12);
   doc.setTextColor(16, 185, 129); // emerald-500
   doc.setFont('helvetica', 'bold');
-  doc.text('Daily Drill by GradeBoost60', margin, 35);
+  doc.text('Smart Exam Practice System', margin, 35);
   
   doc.setFontSize(10);
   doc.setTextColor(148, 163, 184); // slate-400
@@ -216,40 +216,45 @@ export const generateGCEPaper2PDF = async (data: GCEPaper2Data) => {
   let currentY = 20;
 
   // Header
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(22);
+  doc.setTextColor(30, 41, 59); // slate-800
+  doc.text('GRADEBOOST60', pageWidth / 2, currentY, { align: 'center' });
+  currentY += 8;
+  
   doc.setFontSize(14);
-  doc.text('CAMEROON GENERAL CERTIFICATE OF EDUCATION BOARD', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 7;
-  doc.text('General Certificate of Education Examination', pageWidth / 2, currentY, { align: 'center' });
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(71, 85, 105); // slate-600
+  doc.text('Smart Exam Practice System', pageWidth / 2, currentY, { align: 'center' });
   currentY += 12;
 
+  doc.setDrawColor(226, 232, 240); // slate-200
+  doc.line(margin, currentY, pageWidth - margin, currentY);
+  currentY += 10;
+
   doc.setFontSize(12);
-  doc.text(data.subject.toUpperCase(), margin, currentY);
-  doc.text(String(data.year), pageWidth - margin - 15, currentY);
+  doc.setTextColor(30, 41, 59);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`SUBJECT: ${data.subject.toUpperCase()}`, margin, currentY);
+  doc.text(`YEAR: ${data.year}`, pageWidth - margin - 30, currentY);
   currentY += 7;
   
-  doc.text('ADVANCED LEVEL', margin, currentY);
-  currentY += 10;
+  doc.text(`PAPER: ${data.title.toUpperCase()}`, margin, currentY);
+  currentY += 7;
 
-  doc.setFontSize(11);
-  doc.text(`Subject Title: ${data.subject}`, margin, currentY);
-  currentY += 6;
-  doc.text(`Paper Number: 2`, margin, currentY);
-  currentY += 10;
-
-  doc.setFont('times', 'bold');
-  doc.text(`Time Allowed: ${data.timeAllowed}`, margin, currentY);
-  currentY += 15;
+  doc.text(`DURATION: ${data.timeAllowed.toUpperCase()}`, margin, currentY);
+  currentY += 12;
 
   // Instructions
-  doc.setFont('times', 'bold');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(11);
   doc.text('INSTRUCTIONS TO CANDIDATES', margin, currentY);
   currentY += 7;
   
-  doc.setFont('times', 'normal');
+  doc.setFont('helvetica', 'normal');
   const instructions = [
-    'Answer SIX questions.',
-    'All questions carry equal marks.',
+    'Answer ALL questions or as specified in the section instructions.',
+    'All questions carry equal marks unless otherwise stated.',
     'Credit will be given for clear working, algorithms, and explanations where appropriate.',
     'You are reminded of the need for good English and orderly presentation in your answers.'
   ];
@@ -268,7 +273,7 @@ export const generateGCEPaper2PDF = async (data: GCEPaper2Data) => {
       currentY = 20;
     }
 
-    doc.setFont('times', 'bold');
+    doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.text(`${q.id}.`, margin, currentY);
     
@@ -282,7 +287,7 @@ export const generateGCEPaper2PDF = async (data: GCEPaper2Data) => {
         currentY = 20;
       }
 
-      doc.setFont('times', 'normal');
+      doc.setFont('helvetica', 'normal');
       const subLabel = sub.label;
       const subTextLines = doc.splitTextToSize(sub.text, contentWidth - 25);
       
@@ -290,7 +295,7 @@ export const generateGCEPaper2PDF = async (data: GCEPaper2Data) => {
       doc.text(subTextLines, margin + 25, currentY);
       
       // Marks
-      doc.setFont('times', 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.text(`(${sub.marks} marks)`, pageWidth - margin - 20, currentY + (subTextLines.length * 6) - 6);
       
       currentY += (subTextLines.length * 6) + 4;
@@ -304,7 +309,7 @@ export const generateGCEPaper2PDF = async (data: GCEPaper2Data) => {
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     doc.setFontSize(9);
-    doc.setFont('times', 'italic');
+    doc.setFont('helvetica', 'italic');
     doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
   }
 

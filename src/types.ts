@@ -26,7 +26,7 @@ export interface SubjectModel {
   createdAt: any;
 }
 
-export type PaperType = 'Paper 1' | 'Paper 2' | 'Paper 3';
+export type PaperType = 'Paper 1' | 'Paper 2' | 'Paper 3' | 'Combined';
 export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
 
 export interface UserProfile {

@@ -32,7 +32,7 @@ export default function AdminPaperGenerator() {
   const [selectedSubject, setSelectedSubject] = useState('Computer Science');
 
   const [paperData, setPaperData] = useState<GCEPaper2Data>({
-    title: 'Computer Science Paper 2',
+    title: 'Paper 2',
     timeAllowed: '3 Hours',
     subject: 'Computer Science',
     year: new Date().getFullYear(),
@@ -210,21 +210,23 @@ export default function AdminPaperGenerator() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Paper Title</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Paper Type</label>
                   <input 
                     type="text" 
                     className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-indigo-600 outline-none"
                     value={paperData.title}
                     onChange={e => setPaperData({ ...paperData, title: e.target.value })}
+                    placeholder="e.g. Paper 2"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Time Allowed</label>
+                  <label className="text-xs font-black uppercase tracking-widest text-slate-400">Duration</label>
                   <input 
                     type="text" 
                     className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-medium focus:ring-2 focus:ring-indigo-600 outline-none"
                     value={paperData.timeAllowed}
                     onChange={e => setPaperData({ ...paperData, timeAllowed: e.target.value })}
+                    placeholder="e.g. 3 Hours"
                   />
                 </div>
                 <div className="space-y-2">
