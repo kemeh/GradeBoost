@@ -33,6 +33,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const studentLinks = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: Trophy, label: 'Learning Challenges', path: '/challenges' },
     { icon: Zap, label: 'Duel Battle', path: '/duel' },
     { icon: Trophy, label: 'Leaderboard', path: '/leaderboard' },
     { icon: Target, label: 'Daily Drills', path: '/daily-drill' },
@@ -44,6 +45,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const adminLinks = [
     { icon: ShieldCheck, label: 'Admin Panel', path: '/admin' },
+    { icon: Trophy, label: 'Study Challenges', path: '/admin/challenges' },
     { icon: Zap, label: 'Duel Battle', path: '/duel' },
     { icon: CreditCard, label: 'Payments', path: '/admin?tab=payments' },
     { icon: FileText, label: 'Manage Papers', path: '/admin?tab=papers' },

@@ -26,6 +26,8 @@ const DuelBattle = lazy(() => import('./pages/DuelBattle'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const DailyDrill = lazy(() => import('./pages/DailyDrill'));
 const RandomPractice = lazy(() => import('./pages/RandomPractice'));
+const LearningChallenges = lazy(() => import('./pages/LearningChallenges'));
+const AdminChallenges = lazy(() => import('./pages/AdminChallenges'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
@@ -88,11 +90,13 @@ export default function App() {
               <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
               <Route path="/daily-drill-new" element={<PrivateRoute><DailyDrill /></PrivateRoute>} />
               <Route path="/random-practice" element={<PrivateRoute><RandomPractice /></PrivateRoute>} />
+              <Route path="/challenges" element={<PrivateRoute><LearningChallenges /></PrivateRoute>} />
               <Route path="/duel" element={<PrivateRoute><DuelBattle /></PrivateRoute>} />
               <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
               <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
               
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+              <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
               <Route path="/admin/daily-drill" element={<AdminRoute><AdminDailyDrill /></AdminRoute>} />
               <Route path="/admin/resources" element={<AdminRoute><AdminManagement /></AdminRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />

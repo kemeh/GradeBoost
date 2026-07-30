@@ -290,9 +290,90 @@
         "updatedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "amount", "paymentCode", "transactionId", "network", "status", "createdAt", "updatedAt"]
+    },
+    "Challenge": {
+      "title": "Study Challenge",
+      "description": "Admin-created learning challenges with dynamic durations.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "image": { "type": "string" },
+        "level": { "type": "string", "enum": ["Ordinary Level", "Advanced Level", "All Levels"] },
+        "subjects": { "type": "array", "items": { "type": "string" } },
+        "duration": { "type": "integer" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["draft", "published", "archived"] },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "level", "subjects", "duration", "status", "createdAt"]
+    },
+    "ChallengeDay": {
+      "title": "Challenge Day Content",
+      "description": "Daily content for a specific day in a study challenge.",
+      "type": "object",
+      "properties": {
+        "challengeId": { "type": "string" },
+        "dayNumber": { "type": "integer" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "lessonContent": { "type": "string" },
+        "revisionMaterial": { "type": "string" },
+        "questionIds": { "type": "array", "items": { "type": "string" } },
+        "assignmentId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["challengeId", "dayNumber", "title", "createdAt"]
+    },
+    "ChallengeEnrollment": {
+      "title": "Challenge Enrollment",
+      "description": "Tracks a student's enrollment in a study challenge.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "challengeId": { "type": "string" },
+        "progress": { "type": "number" },
+        "completedDays": { "type": "array", "items": { "type": "integer" } },
+        "joinedDate": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "challengeId", "progress", "completedDays", "joinedDate"]
+    },
+    "ChallengeProgress": {
+      "title": "Challenge Progress Item",
+      "description": "Logs student completion of individual challenge days.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "challengeId": { "type": "string" },
+        "challengeDayId": { "type": "string" },
+        "dayNumber": { "type": "integer" },
+        "completed": { "type": "boolean" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentId", "challengeId", "dayNumber", "completed", "completedAt"]
     }
   },
   "firestore": {
+    "/challenges/{challengeId}": {
+      "schema": "Challenge",
+      "description": "Admin study challenges."
+    },
+    "/challengeDays/{dayId}": {
+      "schema": "ChallengeDay",
+      "description": "Daily content for study challenges."
+    },
+    "/challengeEnrollments/{enrollmentId}": {
+      "schema": "ChallengeEnrollment",
+      "description": "Student challenge enrollments."
+    },
+    "/challengeProgress/{progressId}": {
+      "schema": "ChallengeProgress",
+      "description": "Student day-by-day challenge progress."
+    },
     "/users/{userId}": {
       "schema": "UserProfile",
       "description": "User profile documents."

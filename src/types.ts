@@ -17,12 +17,24 @@ declare global {
 
 export type Subject = string;
 
+export interface PaperConfig {
+  id: string;
+  name: string;
+  type: 'MCQ' | 'Theory' | 'Practical' | 'Structured' | 'Essay';
+  totalMarks?: number;
+  durationMinutes?: number;
+  description?: string;
+}
+
 export interface SubjectModel {
   id: string;
   name: string;
+  code?: string;
   description?: string;
   level?: 'Ordinary level' | 'Advance level';
+  category?: string;
   isActive: boolean;
+  papers?: PaperConfig[];
   createdAt: any;
 }
 
@@ -37,6 +49,7 @@ export interface UserProfile {
   email: string;
   phone?: string;
   subject: Subject;
+  level?: 'Ordinary level' | 'Advance level';
   school: string;
   region: string;
   assignedPapers: string[]; // e.g., ["paper1", "paper2", "paper3"]
@@ -248,3 +261,53 @@ export interface PointsHistory {
   reason: 'duel_win' | 'duel_loss' | 'duel_draw' | 'daily_drill';
   date: any;
 }
+
+export interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  image?: string;
+  level: 'Ordinary Level' | 'Advanced Level' | 'All Levels';
+  subjects: string[];
+  duration: number; // Duration in days (e.g., 7, 14, 30, 60, 90, custom)
+  startDate?: string;
+  endDate?: string;
+  status: 'draft' | 'published' | 'archived';
+  createdBy?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface ChallengeDay {
+  id: string;
+  challengeId: string;
+  dayNumber: number;
+  title: string;
+  description?: string;
+  lessonContent?: string;
+  revisionMaterial?: string;
+  questionIds?: string[];
+  assignmentId?: string;
+  createdAt?: any;
+}
+
+export interface ChallengeEnrollment {
+  id: string;
+  studentId: string;
+  challengeId: string;
+  progress: number; // percentage (0 - 100)
+  completedDays: number[]; // array of day numbers, e.g. [1, 2, 3]
+  joinedDate: any;
+  updatedAt?: any;
+}
+
+export interface ChallengeProgress {
+  id: string;
+  studentId: string;
+  challengeId: string;
+  challengeDayId: string;
+  dayNumber: number;
+  completed: boolean;
+  completedAt: any;
+}
+

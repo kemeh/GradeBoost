@@ -11,11 +11,13 @@ import { Button, Card, Badge, cn } from '../components/ui';
 import { Subject, SubjectModel } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { SUBJECT_TOPICS } from '../constants/topics';
+import { DEFAULT_GCE_SUBJECTS, getPapersForSubjectName, seedDefaultGceSubjects } from '../data/defaultSubjects';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgot, setIsForgot] = useState(false);
   const [subjects, setSubjects] = useState<SubjectModel[]>([]);
+  const [selectedLevel, setSelectedLevel] = useState<'Ordinary level' | 'Advance level'>('Ordinary level');
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -25,19 +27,24 @@ export default function AuthPage() {
         let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
         
         if (data.length === 0) {
-          // Fallback to hardcoded subjects if DB is empty
-          data = Object.keys(SUBJECT_TOPICS).map(name => ({
-            id: name.toLowerCase().replace(/\s+/g, '-'),
-            name,
-            isActive: true,
-            level: 'Advance level',
+          // Seed defaults automatically if database has no subjects
+          await seedDefaultGceSubjects(db);
+          const retrySnap = await getDocs(q);
+          data = retrySnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
+        }
+
+        if (data.length === 0) {
+          data = DEFAULT_GCE_SUBJECTS.map((sub, idx) => ({
+            id: `sub-${idx}`,
+            ...sub,
             createdAt: new Date()
           })) as SubjectModel[];
         }
 
         setSubjects(data);
-        if (data.length > 0 && !formData.subject) {
-          setFormData(prev => ({ ...prev, subject: data[0].name }));
+        const filtered = data.filter(s => s.level === selectedLevel);
+        if (filtered.length > 0 && !formData.subject) {
+          setFormData(prev => ({ ...prev, subject: filtered[0].name }));
         }
       } catch (error) {
         console.error('Error fetching subjects:', error);
@@ -150,14 +157,18 @@ export default function AuthPage() {
         // Create user profile
         const isAdminEmail = formData.email.toLowerCase() === 'kemehhilary@gmail.com';
         const path = `users/${user.uid}`;
+        const targetSubjectPapers = getPapersForSubjectName(formData.subject, selectedLevel, subjects);
+        const assignedPaperIds = targetSubjectPapers.map(p => p.id);
+
         try {
           await setDoc(doc(db, 'users', user.uid), {
             name: formData.name,
             email: formData.email,
             subject: formData.subject.trim(),
+            level: selectedLevel,
             school: formData.school,
             region: formData.region,
-            assignedPapers: ['paper1', 'paper2', 'paper3'],
+            assignedPapers: assignedPaperIds.length > 0 ? assignedPaperIds : ['paper1', 'paper2'],
             targetGrade: 'A',
             role: isAdminEmail ? 'admin' : 'student',
             hasTakenDiagnostic: false,
@@ -255,37 +266,72 @@ export default function AuthPage() {
                   </div>
                 </div>
 
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Examination Level</label>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedLevel('Ordinary level');
+                        const oSubs = subjects.filter(s => s.level === 'Ordinary level');
+                        if (oSubs.length > 0) setFormData(prev => ({ ...prev, subject: oSubs[0].name }));
+                      }}
+                      className={cn(
+                        "py-2.5 rounded-xl font-bold text-xs transition-all",
+                        selectedLevel === 'Ordinary level'
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-slate-500 hover:text-slate-900"
+                      )}
+                    >
+                      O-Level (Ordinary)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedLevel('Advance level');
+                        const aSubs = subjects.filter(s => s.level === 'Advance level');
+                        if (aSubs.length > 0) setFormData(prev => ({ ...prev, subject: aSubs[0].name }));
+                      }}
+                      className={cn(
+                        "py-2.5 rounded-xl font-bold text-xs transition-all",
+                        selectedLevel === 'Advance level'
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-slate-500 hover:text-slate-900"
+                      )}
+                    >
+                      A-Level (Advanced)
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject Selection</label>
-                  {subjects.length > 0 ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {subjects.map(sub => (
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Subject</label>
+                  {subjects.filter(s => s.level === selectedLevel).length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                      {subjects.filter(s => s.level === selectedLevel).map(sub => (
                         <button
                           key={sub.id}
                           type="button"
                           onClick={() => setFormData({ ...formData, subject: sub.name })}
                           className={cn(
-                            "p-3 rounded-2xl border-2 transition-all text-xs font-bold text-center flex flex-col items-center justify-center gap-1",
+                            "p-3 rounded-2xl border-2 transition-all text-xs font-bold text-left flex flex-col justify-between gap-1",
                             formData.subject === sub.name 
                               ? "border-indigo-600 bg-indigo-50 text-indigo-600 shadow-sm" 
-                              : "border-slate-100 bg-slate-50 text-slate-400 hover:border-slate-200"
+                              : "border-slate-100 bg-slate-50 text-slate-600 hover:border-slate-200"
                           )}
                         >
-                          <span className="truncate w-full">{sub.name}</span>
-                          {sub.level && (
-                            <span className={cn(
-                              "text-[8px] uppercase tracking-widest px-1.5 py-0.5 rounded-full",
-                              formData.subject === sub.name ? "bg-indigo-100 text-indigo-700" : "bg-slate-200 text-slate-500"
-                            )}>
-                              {sub.level === 'Advance level' ? 'A-Level' : 'O-Level'}
-                            </span>
-                          )}
+                          <span className="truncate w-full font-extrabold">{sub.name}</span>
+                          <span className="text-[9px] font-medium text-slate-400">
+                            {sub.papers?.length || 2} Papers ({sub.category || 'General'})
+                          </span>
                         </button>
                       ))}
                     </div>
                   ) : (
                     <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-700 text-[10px] font-bold">
-                      No active subjects available. Please contact support.
+                      No active {selectedLevel === 'Advance level' ? 'A-Level' : 'O-Level'} subjects available.
                     </div>
                   )}
                 </div>

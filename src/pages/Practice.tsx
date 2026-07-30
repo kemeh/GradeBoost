@@ -10,21 +10,30 @@ import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
-import { QuestionPaper, PaperType } from '../types';
+import { QuestionPaper, PaperType, SubjectModel } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { getPapersForSubjectName } from '../data/defaultSubjects';
 
 export default function Practice() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<PaperType | 'All'>('All');
+  const [filter, setFilter] = useState<string>('All');
+  const [subjectPapers, setSubjectPapers] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
-    const fetchPapers = async () => {
+    const fetchSubjectConfigAndPapers = async () => {
       if (!user) return;
       const path = 'questionPapers';
       try {
+        // Fetch all active subjects to resolve dynamic paper tabs
+        const subSnap = await getDocs(query(collection(db, 'subjects'), where('isActive', '==', true)));
+        const allSubs = subSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
+        
+        const matched = getPapersForSubjectName(user.subject, user.level, allSubs);
+        setSubjectPapers(matched.map(p => ({ id: p.id, name: p.name })));
+
         const q = query(
           collection(db, path),
           where('subject', '==', user.subject),
@@ -40,10 +49,17 @@ export default function Practice() {
       }
     };
 
-    fetchPapers();
+    fetchSubjectConfigAndPapers();
   }, [user]);
 
-  const filteredPapers = filter === 'All' ? papers : papers.filter(p => p.paperType === filter);
+  const filterTabs = ['All', ...subjectPapers.map(sp => sp.name)];
+
+  const filteredPapers = filter === 'All' 
+    ? papers 
+    : papers.filter(p => {
+        // Match either paperType directly or paper name (e.g. Paper 1, Paper 2, Paper 3)
+        return p.paperType === filter || p.title.toLowerCase().includes(filter.toLowerCase());
+      });
 
   const handleLogout = () => {
     auth.signOut();
@@ -88,10 +104,10 @@ export default function Practice() {
 
         {/* Filters */}
         <div className="flex items-center gap-3 mb-12 overflow-x-auto pb-2 custom-scrollbar">
-          {['All', 'Paper 1', 'Paper 2', 'Paper 3'].map((f) => (
+          {filterTabs.map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f as any)}
+              onClick={() => setFilter(f)}
               className={cn(
                 "px-6 py-3 rounded-2xl font-bold text-sm transition-all whitespace-nowrap",
                 filter === f 

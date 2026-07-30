@@ -14,6 +14,8 @@ import Sidebar from '../components/Sidebar';
 import FileUpload from '../components/FileUpload';
 import { toast } from 'react-hot-toast';
 
+import { DEFAULT_GCE_SUBJECTS, getPapersForSubjectName } from '../data/defaultSubjects';
+
 export default function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ export default function Profile() {
     school: user?.school || '',
     region: user?.region || '',
     subject: user?.subject || '',
+    level: user?.level || 'Ordinary level'
   });
 
   useEffect(() => {
@@ -73,9 +76,13 @@ export default function Profile() {
     const path = `users/${user.uid}`;
 
     try {
+      const matchedPapers = getPapersForSubjectName(formData.subject, formData.level, subjects);
+      const assignedPaperIds = matchedPapers.map(p => p.id);
+
       await updateDoc(doc(db, 'users', user.uid), {
         ...formData,
         subject: formData.subject.trim(),
+        assignedPapers: assignedPaperIds.length > 0 ? assignedPaperIds : ['paper1', 'paper2'],
         updatedAt: serverTimestamp(),
       });
       setSuccess(true);

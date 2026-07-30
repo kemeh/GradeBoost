@@ -305,182 +305,50 @@ export default function Dashboard() {
         
         <WelcomeDashboard />
 
-        {/* Daily Drill Highlight */}
+        {/* Study Challenges & Learning Roadmap Banner */}
         <section className="mb-12">
           <Card className="p-8 bg-indigo-600 text-white overflow-hidden relative">
             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-black uppercase tracking-widest">
-                    Day {currentDay} of 60
-                  </div>
-                  <Badge variant="secondary" className="bg-amber-400 text-amber-950 border-none">Daily Drill</Badge>
-                  {todayDrill?.paper && (
-                    <Badge variant="secondary" className="bg-white/20 text-white border-none uppercase tracking-widest text-[10px]">{todayDrill.paper}</Badge>
-                  )}
+                  <Badge variant="secondary" className="bg-amber-400 text-amber-950 border-none">Study Program</Badge>
+                  <Badge variant="secondary" className="bg-white/20 text-white border-none uppercase tracking-widest text-[10px]">
+                    {user?.subject || 'All Subjects'}
+                  </Badge>
                 </div>
                 <div className="text-3xl font-black mb-2 tracking-tight">
-                  {drillLoading ? <Skeleton className="h-9 w-48 bg-white/20" /> : (
-                    !user.subject ? "Subject Not Set" :
-                    todayDrill ? `Today's Topic: ${todayDrill.topic}` : 
-                    fallbackQuestions.length > 0 ? (
-                      <div className="space-y-1">
-                        <div>Random {user.subject} Drill</div>
-                        <div className="text-xs text-white/60 font-medium">No specific drill assigned for Day {currentDay} yet.</div>
-                      </div>
-                    ) : (
-                      <div className="space-y-1">
-                        <div>No {user.subject} Drill for Day {currentDay}</div>
-                        <div className="text-xs text-white/60 font-medium italic">Check Admin settings to assign a drill to this day.</div>
-                      </div>
-                    )
-                  )}
+                  Learning Challenges & Guided Study Programs
                 </div>
-                <div className="text-indigo-100 font-medium mb-6 max-w-xl">
-                  {drillLoading ? <Skeleton className="h-4 w-full bg-white/20" /> : (
-                    !user.subject ? "Please set your target subject in your profile to see daily drills." :
-                    todayDrill 
-                    ? `Master ${todayDrill.topic} with today's ${todayDrill.subject} drill. Keep your streak alive!`
-                    : fallbackQuestions.length > 0
-                    ? `We don't have a specific drill for Day ${currentDay} yet, but you can practice with 10 random questions!`
-                    : `An admin hasn't assigned a ${user.subject} drill for Day ${currentDay} yet. Check back later!`
-                  )}
+                <div className="text-indigo-100 font-medium mb-6 max-w-xl leading-relaxed">
+                  Join structured learning challenges (7, 14, 30, 60, or 90 days) curated by academic experts for your O-Level and A-Level subjects.
                 </div>
                 <div className="flex flex-wrap gap-4">
-                  {drillLoading ? <Skeleton className="h-14 w-40 bg-white/20" /> : (
-                    !user.subject ? (
-                      <Button 
-                        variant="secondary" 
-                        className="font-black px-8 py-6 rounded-2xl bg-white text-indigo-600 hover:bg-indigo-50"
-                        onClick={() => navigate('/profile')}
-                      >
-                        Set Subject in Profile
-                        <ArrowRight className="ml-2" size={20} />
-                      </Button>
-                    ) :
-                    (user.paymentStatus === 'paid' || (todayDrill && (todayDrill.day === 1 || todayDrill.isFree))) ? (
-                    <Button 
-                      variant="secondary" 
-                      className={cn(
-                        "font-black px-8 py-6 rounded-2xl transition-all",
-                        hasSubmittedToday 
-                          ? "bg-emerald-400 text-emerald-950 cursor-default" 
-                          : "bg-white text-indigo-600 hover:bg-indigo-50"
-                      )}
-                      onClick={() => !hasSubmittedToday && navigate(todayDrill ? '/daily-drill' : '/daily-drill-new')}
-                    >
-                      {hasSubmittedToday ? (
-                        <>
-                          <CheckCircle2 className="mr-2" size={20} />
-                          Completed Today
-                        </>
-                      ) : (
-                        <>
-                          {todayDrill ? 'Start Drill Now' : 'Start Random Drill'}
-                          <ArrowRight className="ml-2" size={20} />
-                        </>
-                      )}
-                    </Button>
-                  ) : fallbackQuestions.length > 0 ? (
-                    <Button 
-                      variant="secondary" 
-                      className="font-black px-8 py-6 rounded-2xl bg-white text-indigo-600 hover:bg-indigo-50"
-                      onClick={() => navigate('/daily-drill-new')}
-                    >
-                      Start Random Drill
-                      <ArrowRight className="ml-2" size={20} />
-                    </Button>
-                  ) : (
-                    <Button 
-                      variant="secondary" 
-                      className="font-black px-8 py-6 rounded-2xl bg-indigo-500/50 text-indigo-200 cursor-not-allowed"
-                      onClick={() => navigate('/payment')}
-                    >
-                      <Lock className="mr-2" size={20} />
-                      Unlock to Start
-                    </Button>
-                  )
-                )}
-                  <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
-                    <Trophy className="text-amber-400" size={20} />
-                    <span className="text-sm font-bold">{daysRemaining} Days Left in Challenge</span>
-                  </div>
+                  <Button 
+                    variant="secondary" 
+                    className="font-black px-8 py-6 rounded-2xl bg-white text-indigo-600 hover:bg-indigo-50"
+                    onClick={() => navigate('/challenges')}
+                  >
+                    View Learning Challenges
+                    <ArrowRight className="ml-2" size={20} />
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    className="font-black px-8 py-6 rounded-2xl bg-indigo-500/50 text-white hover:bg-indigo-500"
+                    onClick={() => navigate('/daily-drill')}
+                  >
+                    Take Today's Drill
+                  </Button>
                 </div>
               </div>
               <div className="hidden lg:block relative">
                 <div className="w-48 h-48 bg-white/10 rounded-full flex items-center justify-center animate-pulse">
-                  <Zap size={80} className="text-white/20" />
+                  <Trophy size={80} className="text-white/20" />
                 </div>
               </div>
             </div>
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/20 rounded-full -ml-32 -mb-32 blur-3xl"></div>
-          </Card>
-        </section>
-
-        {/* 10-Day Challenge Calendar */}
-        <section className="mb-12">
-          <Card className="p-8 bg-white border border-slate-200 rounded-3xl overflow-hidden">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-3">
-                  <Calendar className="w-6 h-6 text-indigo-600" />
-                  Challenge Roadmap
-                </h2>
-                <p className="text-sm text-slate-500 font-medium">Your progress over the next 10 days of the challenge.</p>
-              </div>
-              <Badge variant="secondary" className="border-indigo-100 text-indigo-600 font-bold">
-                Day {currentDay} / 60
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-5 lg:grid-cols-10 gap-4">
-              {Array.from({ length: 10 }).map((_, i) => {
-                const startDay = Math.max(1, Math.min(51, currentDay - 1));
-                const dayNum = startDay + i;
-                const isToday = dayNum === currentDay;
-                const isCompleted = recentSubmissions.includes(dayNum);
-                const isLocked = dayNum > currentDay;
-                const isPast = dayNum < currentDay;
-
-                return (
-                  <motion.div
-                    key={dayNum}
-                    whileHover={!isLocked ? { y: -5 } : {}}
-                    onClick={() => !isLocked && navigate(`/drill?day=${dayNum}`)}
-                    className={cn(
-                      "relative p-4 rounded-2xl border-2 transition-all flex flex-col items-center justify-center gap-2 cursor-pointer",
-                      isToday ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100" :
-                      isCompleted ? "bg-emerald-50 border-emerald-100 text-emerald-700" :
-                      isLocked ? "bg-slate-50 border-slate-100 text-slate-300 opacity-60 cursor-not-allowed" :
-                      "bg-white border-slate-100 text-slate-400 hover:border-indigo-200"
-                    )}
-                  >
-                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">Day</span>
-                    <span className="text-xl font-black tracking-tight">{dayNum}</span>
-                    
-                    <div className="mt-1">
-                      {isCompleted ? (
-                        <CheckCircle2 size={16} className="text-emerald-500" />
-                      ) : isLocked ? (
-                        <Lock size={16} className="text-slate-300" />
-                      ) : isToday ? (
-                        <Zap size={16} className="text-amber-300 animate-pulse" />
-                      ) : (
-                        <div className="w-4 h-4 rounded-full border-2 border-slate-200" />
-                      )}
-                    </div>
-
-                    {isToday && (
-                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-amber-400 text-amber-950 text-[8px] font-black rounded-full whitespace-nowrap">
-                        TODAY
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              })}
-            </div>
           </Card>
         </section>
 
