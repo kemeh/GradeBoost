@@ -29,7 +29,7 @@ export const downloadQuestionAsPDF = async (question: ExamQuestion, dayNumber?: 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(28);
   doc.setTextColor(255, 255, 255);
-  doc.text('GRADEBOOST60', margin, 25);
+  doc.text('EDULPHA', margin, 25);
   
   doc.setFontSize(12);
   doc.setTextColor(16, 185, 129); // emerald-500

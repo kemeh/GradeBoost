@@ -199,14 +199,14 @@ export const AdminTranslationManager: React.FC = () => {
                 <Layers size={18} /> Multilingual Learning Content Fallback Engine
               </h4>
               <p className="leading-relaxed">
-                GradeBoost60 supports dual-language lesson packages. If a student chooses French interface mode, the LMS attempts to deliver the French lesson bundle. If no French translation exists, it seamlessly displays the default primary version without breaking user progress.
+                Edulpha supports dual-language lesson packages. If a student chooses French interface mode, the LMS attempts to deliver the French lesson bundle. If no French translation exists, it seamlessly displays the default primary version without breaking user progress.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-4 bg-white border border-slate-200 rounded-2xl space-y-2">
                 <h5 className="font-bold text-slate-900 text-xs">🇬🇧 English Syllabus Auto-Translation</h5>
-                <p className="text-slate-500">Automatically generate French subtitles and lesson notes for English GCE courses using GradeBoost AI.</p>
+                <p className="text-slate-500">Automatically generate French subtitles and lesson notes for English GCE courses using Edulpha AI.</p>
                 <button className="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl text-xs">
                   Run Auto-Translation Batch
                 </button>

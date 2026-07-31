@@ -78,7 +78,7 @@ export const AIWeaknessAnalyzer: React.FC<AIWeaknessAnalyzerProps> = ({
         {isLoading ? (
           <div className="py-12 flex flex-col items-center justify-center text-slate-500 space-y-3">
             <Loader2 size={32} className="animate-spin text-indigo-600" />
-            <p className="text-xs font-semibold">GradeBoost AI is analyzing performance metrics & weak points...</p>
+            <p className="text-xs font-semibold">Edulpha AI is analyzing performance metrics & weak points...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -89,7 +89,7 @@ export const AIWeaknessAnalyzer: React.FC<AIWeaknessAnalyzerProps> = ({
                 <span>Detected Weak Topics & Papers</span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Based on past quiz scores and drill history, GradeBoost AI identified these priority revision focus areas:
+                Based on past quiz scores and drill history, Edulpha AI identified these priority revision focus areas:
               </p>
 
               <div className="space-y-2">

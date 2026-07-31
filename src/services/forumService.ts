@@ -104,7 +104,7 @@ export const INITIAL_FORUM_DISCUSSIONS: ForumDiscussion[] = [
     id: 'disc-1',
     title: 'Explain Binary Search vs Linear Search Complexity with Code Examples',
     description: 'Need help understanding why Binary Search is O(log n) while Linear Search is O(n). How to write it in Python?',
-    content: `Hello fellow GradeBoost students! 👋
+    content: `Hello fellow Edulpha students! 👋
 
 Can someone explain why Binary Search achieves **O(log n)** time complexity compared to **O(n)** for Linear Search? 
 

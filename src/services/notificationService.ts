@@ -24,7 +24,7 @@ const INITIAL_ANNOUNCEMENTS: Announcement[] = [
 - **O-Level Exams Start:** Monday, May 11, 2026
 - **A-Level Science Practical:** Wednesday, May 13, 2026
 - **General Rules:** All candidates must arrive 30 minutes before time with their registered candidate cards.
-- **GradeBoost Prep:** Use our GCE Exam Engine to access past questions with instant marking schemes!`,
+- **Edulpha Prep:** Use our GCE Exam Engine to access past questions with instant marking schemes!`,
     contentMarkdownFr: `### Points Clés:
 - **Début du O-Level:** Lundi 11 Mai 2026
 - **Travaux Pratiques A-Level:** Mercredi 13 Mai 2026
@@ -47,8 +47,8 @@ const INITIAL_ANNOUNCEMENTS: Announcement[] = [
   },
   {
     id: 'ann-2',
-    title: 'GradeBoost AI 2.0 Engine Upgrade Live',
-    titleFr: 'Mise à niveau de l\'Intelligence Artificielle GradeBoost 2.0',
+    title: 'Edulpha AI 2.0 Engine Upgrade Live',
+    titleFr: 'Mise à niveau de l\'Intelligence Artificielle Edulpha 2.0',
     subtitle: 'Enhanced weak-topic detection and custom study plans in English & French',
     subtitleFr: 'Détection améliorée des sujets faibles et plans d\'études personnalisés en Anglais et Français',
     description: 'We have updated our AI diagnostic algorithms to generate personalized 7-day study sprints tailored specifically for Cameroon GCE and Baccalauréat syllabi.',
@@ -63,7 +63,7 @@ const INITIAL_ANNOUNCEMENTS: Announcement[] = [
     status: 'published',
     isPinned: true,
     publicationDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    authorName: 'GradeBoost Tech Team',
+    authorName: 'Edulpha Tech Team',
     authorRole: 'admin',
     viewsCount: 980,
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
@@ -113,8 +113,8 @@ const INITIAL_USER_NOTIFICATIONS: UserNotification[] = [
     userId: 'current-user',
     type: 'ai_recommendation',
     category: 'academic',
-    title: 'GradeBoost AI: Revision Recommended',
-    titleFr: 'IA GradeBoost : Révision Recommandée',
+    title: 'Edulpha AI: Revision Recommended',
+    titleFr: 'IA Edulpha : Révision Recommandée',
     message: 'We noticed a 45% score on Quadratic Equations in your last quiz. Take a quick 10-minute micro-lesson.',
     messageFr: 'Nous avons décelé des lacunes sur les Équations du Second Degré. Suivez une micro-leçon de 10 min.',
     link: '/lms',
@@ -224,8 +224,8 @@ const INITIAL_TEMPLATES: NotificationTemplate[] = [
     name: 'AI Weak Topic Study Plan',
     code: 'AI_STUDY_PLAN',
     category: 'academic',
-    subjectEn: 'GradeBoost AI: Specialized Study Sprint for {{topic}}',
-    subjectFr: 'IA GradeBoost : Sprint d\'Étude Personnalisé pour {{topic}}',
+    subjectEn: 'Edulpha AI: Specialized Study Sprint for {{topic}}',
+    subjectFr: 'IA Edulpha : Sprint d\'Étude Personnalisé pour {{topic}}',
     bodyEn: 'Hi {{studentName}}, our AI analyzed your recent scores and created a 15-minute practice session on {{topic}}.',
     bodyFr: 'Salut {{studentName}}, notre IA a analysé vos résultats récents et a conçu une session de 15 min sur {{topic}}.',
     variables: ['studentName', 'topic']
@@ -249,7 +249,7 @@ const INITIAL_DELIVERY_REPORTS: DeliveryReport[] = [
   {
     id: 'rep-2',
     announcementId: 'ann-2',
-    title: 'GradeBoost AI 2.0 Engine Upgrade Live',
+    title: 'Edulpha AI 2.0 Engine Upgrade Live',
     totalRecipients: 3400,
     inAppDelivered: 3400,
     pushDelivered: 3250,
@@ -499,7 +499,7 @@ class NotificationService {
       ],
       topAnnouncements: [
         { id: 'ann-1', title: '2026 GCE National Mock Exam Timetable', views: 1420 },
-        { id: 'ann-2', title: 'GradeBoost AI 2.0 Engine Upgrade Live', views: 980 },
+        { id: 'ann-2', title: 'Edulpha AI 2.0 Engine Upgrade Live', views: 980 },
         { id: 'ann-3', title: 'Live Mathematics Revision Webinar', views: 560 }
       ]
     };

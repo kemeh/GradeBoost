@@ -111,8 +111,8 @@ service cloud.firestore {
       return hasRequiredFields(['name', 'email', 'subject', 'role', 'createdAt']) &&
         data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
         isValidEmail(data.email) &&
-        data.subject is string && data.subject.size() > 0 &&
-        data.role in ['student', 'admin'] &&
+        data.subject is string &&
+        data.role in ['student', 'teacher', 'admin'] &&
         data.createdAt is timestamp;
     }
 
@@ -170,7 +170,7 @@ service cloud.firestore {
       
       // Allow creation during signup
       allow create: if isAuthenticated() && isOwner(userId) && isValidUser(request.resource.data) && 
-        (request.resource.data.role == 'student' || isAdmin());
+        (request.resource.data.role in ['student', 'teacher'] || isAdmin());
       
       // Allow updates to own profile, but students cannot change their role
       allow update: if (isOwner(userId) && isValidUser(request.resource.data) && 
@@ -190,6 +190,12 @@ service cloud.firestore {
     match /daily_drills/{drillId} {
       allow read: if isAuthenticated();
       allow create, update: if isAdmin() && isValidDrill(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    match /dailyDrills/{drillId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAdmin();
       allow delete: if isAdmin();
     }
 

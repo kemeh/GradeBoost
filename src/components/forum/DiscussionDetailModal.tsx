@@ -222,13 +222,13 @@ export default function DiscussionDetailModal({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* GradeBoost AI Companion Quick Trigger */}
+            {/* Edulpha AI Companion Quick Trigger */}
             <button
               onClick={() => setIsAIDrawerOpen(true)}
               className="px-3.5 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1.5 transition-all"
             >
               <Sparkles size={14} className="animate-pulse" />
-              <span>{isFr ? 'IA Aide Pédagogique' : 'GradeBoost AI Support'}</span>
+              <span>{isFr ? 'IA Aide Pédagogique' : 'Edulpha AI Support'}</span>
             </button>
             <button
               onClick={onClose}
@@ -577,7 +577,7 @@ export default function DiscussionDetailModal({
         </div>
       </div>
 
-      {/* GradeBoost AI Companion Drawer */}
+      {/* Edulpha AI Companion Drawer */}
       <ForumAIDrawer
         isOpen={isAIDrawerOpen}
         onClose={() => setIsAIDrawerOpen(false)}

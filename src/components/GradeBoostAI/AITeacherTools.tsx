@@ -69,7 +69,7 @@ Structure with clear sections, GCE marking scheme standards, learning objectives
             <Sparkles size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold">GradeBoost AI Teacher Studio</h2>
+            <h2 className="text-xl font-bold">Edulpha AI Teacher Studio</h2>
             <p className="text-xs text-indigo-200">
               Instantly generate GCE lesson plans, assignments, marking guides, quizzes & practical lab exercises
             </p>

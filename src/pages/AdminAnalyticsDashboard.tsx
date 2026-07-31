@@ -476,7 +476,7 @@ export const AdminAnalyticsDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* AI Usage by Curriculum */}
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-lg font-bold text-slate-900">GradeBoost AI Queries by Curriculum</h3>
+            <h3 className="text-lg font-bold text-slate-900">Edulpha AI Queries by Curriculum</h3>
             <p className="text-xs text-slate-500 font-medium">Top requested subjects: Mathematics, Physics & Chemistry</p>
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -631,7 +631,7 @@ export const AdminAnalyticsDashboard: React.FC = () => {
                   <option value="growth">Platform Growth & Active Users</option>
                   <option value="revenue">Revenue & Subscriptions</option>
                   <option value="content">Content & Video Analytics</option>
-                  <option value="ai">GradeBoost AI Tutor Usage</option>
+                  <option value="ai">Edulpha AI Tutor Usage</option>
                   <option value="exam">Examination & Quiz Performance</option>
                 </select>
               </div>

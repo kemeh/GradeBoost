@@ -212,7 +212,7 @@ export default function ExamResultScreen() {
                   Statement of Examination Results
                 </h2>
                 <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
-                  Cameroon General Certificate of Education (GCE) GradeBoost Assessment Engine
+                  Cameroon General Certificate of Education (GCE) Edulpha Assessment Engine
                 </p>
               </div>
 

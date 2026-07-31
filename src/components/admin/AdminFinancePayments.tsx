@@ -193,15 +193,15 @@ export default function AdminFinancePayments() {
       receiptNumber: req.receiptNumber || `REC-${Math.floor(100000 + Math.random() * 900000)}`,
       transactionId: req.transactionId || 'TX-VERIFIED',
       studentName: req.userName || req.userEmail?.split('@')[0] || 'Student',
-      studentEmail: req.userEmail || 'student@gradeboost.com',
+      studentEmail: req.userEmail || 'student@edulpha.com',
       planName: req.planName || 'Premium Monthly Plan',
       amountPaid: req.amount || 1000,
       currency: 'XAF',
       paymentMethod: req.method || req.paymentMethod || 'MTN MoMo',
       date: req.createdAt ? new Date(req.createdAt).toLocaleDateString() : new Date().toLocaleDateString(),
       expiryDate: new Date(Date.now() + 30 * 86400000).toLocaleDateString(),
-      companyName: 'GradeBoost 60',
-      companyContact: 'support@gradeboost.com'
+      companyName: 'Edulpha',
+      companyContact: 'support@edulpha.com'
     };
     setSelectedReceipt(receipt);
   };

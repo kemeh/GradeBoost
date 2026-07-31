@@ -40,9 +40,9 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const value = {
     settings,
     loading,
-    appName: settings?.appName || 'GradeBoost 60',
+    appName: settings?.appName || 'Edulpha',
     logoUrl: settings?.logoUrl || '/logo.svg',
-    contactEmail: settings?.contactEmail || 'support@gradeboost60.com',
+    contactEmail: settings?.contactEmail || 'support@edulpha.com',
     whatsappNumber: settings?.whatsappNumber || '',
     whatsappGroupLink: settings?.whatsappGroupLink || '',
     momoNumber: settings?.momoNumber || '677 123 456',

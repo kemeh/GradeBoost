@@ -19,7 +19,7 @@ const LanguageContext = createContext<LanguageContextType>({
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const [language, setLanguageState] = useState<LanguageCode>(() => {
-    const saved = localStorage.getItem('gradeboost_lang');
+    const saved = localStorage.getItem('edulpha_lang');
     if (saved === 'en' || saved === 'fr') return saved;
     // Check user preferred language if available
     if (user?.language === 'fr') return 'fr';
@@ -35,14 +35,14 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (user?.language && (user.language === 'en' || user.language === 'fr')) {
       if (user.language !== language) {
         setLanguageState(user.language as LanguageCode);
-        localStorage.setItem('gradeboost_lang', user.language);
+        localStorage.setItem('edulpha_lang', user.language);
       }
     }
   }, [user?.language]);
 
   const setLanguage = async (newLang: LanguageCode) => {
     setLanguageState(newLang);
-    localStorage.setItem('gradeboost_lang', newLang);
+    localStorage.setItem('edulpha_lang', newLang);
 
     // If user is logged in, update Firestore
     if (user?.uid) {

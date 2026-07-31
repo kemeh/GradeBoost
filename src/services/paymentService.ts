@@ -27,14 +27,14 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
       'Access selected free lessons',
       'Attempt 3 daily practice quizzes',
       'Access student discussion forums',
-      'Limited GradeBoost AI requests (3 per day)'
+      'Limited Edulpha AI requests (3 per day)'
     ],
     featuresFr: [
       'Parcourir toutes les matières',
       'Accéder aux leçons gratuites',
       'Effectuer 3 épreuves d\'entraînement par jour',
       'Accéder au forum de discussion des élèves',
-      'Requêtes GradeBoost IA limitées (3 par jour)'
+      'Requêtes Edulpha IA limitées (3 par jour)'
     ],
     maxDailyQuizzes: 3,
     maxDailyAIRequests: 3,
@@ -56,7 +56,7 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
     features: [
       'Unlimited lessons and past paper solutions',
       'Unlimited mock examinations & daily drills',
-      'Unlimited GradeBoost 24/7 AI Smart Tutor',
+      'Unlimited Edulpha 24/7 AI Smart Tutor',
       'Downloadable PDF revision packs',
       'Official performance certificates',
       'Customized revision plans & analytics'
@@ -64,7 +64,7 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
     featuresFr: [
       'Leçons illimitées et épreuves corrigées',
       'Examens blancs et exercices quotidiens illimités',
-      'Tuteur Intelligent GradeBoost IA 24/7 illimité',
+      'Tuteur Intelligent Edulpha IA 24/7 illimité',
       'Fiches de révision PDF téléchargeables',
       'Certificats officiels de performance',
       'Programmes de révision et analyses personnalisés'
@@ -118,7 +118,7 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethodConfig[] = [
     provider: 'mtn',
     isEnabled: true,
     accountNumber: '677 123 456',
-    accountName: 'GradeBoost Vertexon',
+    accountName: 'Edulpha Official',
     instructions: 'Dial *126# and pay to the number above. Use your email or payment code as reference.',
     instructionsFr: 'Composez le *126# et effectuez le paiement vers le numéro ci-dessus. Utilisez votre email comme référence.'
   },
@@ -130,7 +130,7 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethodConfig[] = [
     provider: 'orange',
     isEnabled: true,
     accountNumber: '699 123 456',
-    accountName: 'GradeBoost Vertexon',
+    accountName: 'Edulpha Official',
     instructions: 'Dial #150# and pay to the number above. Use your email or payment code as reference.',
     instructionsFr: 'Composez le #150# et effectuez le paiement vers le numéro ci-dessus. Utilisez votre email comme référence.'
   },
@@ -369,7 +369,7 @@ export const verifyAndActivateSubscription = async (
 };
 
 /** Generate Receipt Object */
-export const generateReceiptData = (payment: PaymentRecord, appName = 'GradeBoost 60', contactEmail = 'support@gradeboost.com'): PaymentReceipt => {
+export const generateReceiptData = (payment: PaymentRecord, appName = 'Edulpha', contactEmail = 'support@edulpha.com'): PaymentReceipt => {
   const expiry = new Date(payment.createdAt || Date.now());
   expiry.setDate(expiry.getDate() + (payment.planId.includes('annual') ? 365 : 30));
 

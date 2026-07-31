@@ -33,7 +33,7 @@ export default function ForumAIDrawer({
 
     try {
       // Prompt selection
-      let systemPrompt = "You are GradeBoost AI, an expert academic tutor for Cameroon GCE (O/A Level) and French Baccalauréat curricula.";
+      let systemPrompt = "You are Edulpha AI, an expert academic tutor for Cameroon GCE (O/A Level) and French Baccalauréat curricula.";
       let userPrompt = "";
 
       if (actionType === 'explain') {
@@ -87,8 +87,8 @@ Language: Respond in ${isFr ? 'French' : 'English'}.`;
         setTimeout(() => {
           if (actionType === 'explain') {
             setAiOutput(isFr 
-              ? `💡 **Explication Académique GradeBoost AI**:\n\n1. **Concept Clé**: Pour ${discussion.subject}, le problème soulevé par "${discussion.title}" nécessite d'identifier la méthode exacte exigée par le barème.\n2. **Démarche Étape par Étape**: \n   - Étape 1: Poser la condition initiale ou les données d'entrée.\n   - Étape 2: Appliquer la propriété fondamentale ou la formule standard.\n   - Étape 3: Vérifier les cas limites ou la complexité temporelle.\n3. **Conseil d'Examen**: Les correcteurs attribuent des points de méthode même si la réponse finale contient une erreur de calcul. Écrivez toujours vos étapes clairement!`
-              : `💡 **GradeBoost AI Academic Explanation**:\n\n1. **Core Concept**: For ${discussion.subject}, mastering "${discussion.title}" requires understanding the exact marking scheme expectations.\n2. **Step-by-Step Method**:\n   - Step 1: Define initial preconditions and parameters.\n   - Step 2: Apply the governing theorem or standard algorithmic logic.\n   - Step 3: Analyze boundary limits and time/space complexity.\n3. **Exam Tip**: Examiners award method marks for clean structure even if a computational slip occurs. Always show intermediate steps!`);
+              ? `💡 **Explication Académique Edulpha AI**:\n\n1. **Concept Clé**: Pour ${discussion.subject}, le problème soulevé par "${discussion.title}" nécessite d'identifier la méthode exacte exigée par le barème.\n2. **Démarche Étape par Étape**: \n   - Étape 1: Poser la condition initiale ou les données d'entrée.\n   - Étape 2: Appliquer la propriété fondamentale ou la formule standard.\n   - Étape 3: Vérifier les cas limites ou la complexité temporelle.\n3. **Conseil d'Examen**: Les correcteurs attribuent des points de méthode même si la réponse finale contient une erreur de calcul. Écrivez toujours vos étapes clairement!`
+              : `💡 **Edulpha AI Academic Explanation**:\n\n1. **Core Concept**: For ${discussion.subject}, mastering "${discussion.title}" requires understanding the exact marking scheme expectations.\n2. **Step-by-Step Method**:\n   - Step 1: Define initial preconditions and parameters.\n   - Step 2: Apply the governing theorem or standard algorithmic logic.\n   - Step 3: Analyze boundary limits and time/space complexity.\n3. **Exam Tip**: Examiners award method marks for clean structure even if a computational slip occurs. Always show intermediate steps!`);
           } else if (actionType === 'summarize') {
             setAiOutput(isFr
               ? `📝 **Résumé Synthétique**:\n• **Point 1**: ${discussion.title} est un sujet central pour le programme ${discussion.educationLevel}.\n• **Point 2**: L'accent est mis sur l'application pratique et la rigueur de démonstration.\n• **Point 3**: Maîtriser cette question permet d'assurer des points précieux sur l'épreuve.`
@@ -132,7 +132,7 @@ Language: Respond in ${isFr ? 'French' : 'English'}.`;
           </div>
           <div>
             <h3 className="text-base font-black tracking-tight flex items-center gap-2">
-              GradeBoost AI Companion
+              Edulpha AI Companion
               <span className="px-2 py-0.5 text-[10px] bg-indigo-500/30 text-indigo-200 rounded-full border border-indigo-400/30 uppercase font-bold">
                 Private
               </span>
@@ -208,7 +208,7 @@ Language: Respond in ${isFr ? 'French' : 'English'}.`;
           <div className="p-8 text-center space-y-3 bg-indigo-50/50 rounded-2xl border border-indigo-100">
             <div className="w-8 h-8 border-3 border-indigo-600/30 border-t-indigo-600 rounded-full animate-spin mx-auto" />
             <p className="text-xs font-bold text-indigo-900">
-              {isFr ? 'Analyse pédagogique par GradeBoost AI...' : 'GradeBoost AI is generating explanation...'}
+              {isFr ? 'Analyse pédagogique par Edulpha AI...' : 'Edulpha AI is generating explanation...'}
             </p>
           </div>
         ) : aiOutput ? (

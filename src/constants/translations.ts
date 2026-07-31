@@ -9,7 +9,7 @@ export interface TranslationDictionary {
 
 export const TRANSLATIONS: TranslationDictionary = {
   // --- Common UI & Buttons ---
-  'app.title': { en: 'GradeBoost 60', fr: 'GradeBoost 60' },
+  'app.title': { en: 'Edulpha', fr: 'Edulpha' },
   'common.welcome': { en: 'Welcome back', fr: 'Bienvenue' },
   'common.save': { en: 'Save Changes', fr: 'Enregistrer les modifications' },
   'common.cancel': { en: 'Cancel', fr: 'Annuler' },
@@ -36,7 +36,7 @@ export const TRANSLATIONS: TranslationDictionary = {
   'nav.dashboard': { en: 'Dashboard', fr: 'Tableau de bord' },
   'nav.practice': { en: 'Practice Mode', fr: 'Mode Entraînement' },
   'nav.pastQuestions': { en: 'Past Questions', fr: 'Anciennes Épreuves' },
-  'nav.aiTutor': { en: 'GradeBoost AI', fr: 'GradeBoost IA' },
+  'nav.aiTutor': { en: 'Edulpha AI', fr: 'Edulpha IA' },
   'nav.lms': { en: 'Learning Portal (LMS)', fr: 'Portail de Cours (LMS)' },
   'nav.dailyDrill': { en: 'Daily Drill', fr: 'Exercice Quotidien' },
   'nav.challenges': { en: 'Challenges & Duels', fr: 'Défis & Duels' },
@@ -79,10 +79,10 @@ export const TRANSLATIONS: TranslationDictionary = {
   'dashboard.daysLeft': { en: 'Days until Examination', fr: 'Jours avant les examens' },
   'dashboard.recommendedLessons': { en: 'Recommended Lessons & Notes', fr: 'Leçons et Notes Recommandées' },
   'dashboard.recentActivity': { en: 'Recent Practice History', fr: 'Historique des Entraînements' },
-  'dashboard.aiTipOfDay': { en: 'GradeBoost AI Tip of the Day', fr: 'Conseil IA du Jour' },
+  'dashboard.aiTipOfDay': { en: 'Edulpha AI Tip of the Day', fr: 'Conseil IA du Jour' },
 
-  // --- GradeBoost AI ---
-  'ai.title': { en: 'GradeBoost AI 24/7 Smart Tutor', fr: 'Tuteur Intelligent GradeBoost IA' },
+  // --- Edulpha AI ---
+  'ai.title': { en: 'Edulpha AI 24/7 Smart Tutor', fr: 'Tuteur Intelligent Edulpha IA' },
   'ai.subtitle': { en: 'Ask questions, solve step-by-step problems, and practice exam methodology', fr: 'Posez des questions, résolvez des problèmes étape par étape et révisez les méthodologies d\'examen' },
   'ai.inputPlaceholder': { en: 'Type your study question or paste a past paper problem...', fr: 'Posez votre question de cours ou collez une épreuve d\'examen...' },
   'ai.askAi': { en: 'Ask AI', fr: 'Demander à l\'IA' },

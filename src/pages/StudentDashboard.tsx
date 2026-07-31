@@ -54,7 +54,7 @@ export default function StudentDashboard() {
     | 'ai_tutor'
   >('overview');
 
-  // GradeBoost AI Studio Sub-Tab
+  // Edulpha AI Studio Sub-Tab
   const [aiSubTab, setAiSubTab] = useState<'chat' | 'quiz' | 'planner' | 'code' | 'summarizer' | 'weakness'>('chat');
 
   // Loading & Search
@@ -459,12 +459,12 @@ export default function StudentDashboard() {
     const doc = new jsPDF();
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
-    doc.text(`GradeBoost Student Note: ${note.title}`, 14, 20);
+    doc.text(`Edulpha Student Note: ${note.title}`, 14, 20);
     
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
     doc.text(`Created: ${new Date(note.createdAt).toLocaleDateString()}`, 14, 28);
-    doc.text(`Student: ${user?.name || user?.email || 'GradeBoost Scholar'}`, 14, 34);
+    doc.text(`Student: ${user?.name || user?.email || 'Edulpha Scholar'}`, 14, 34);
     
     doc.setLineWidth(0.5);
     doc.line(14, 38, 196, 38);
@@ -592,7 +592,7 @@ export default function StudentDashboard() {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(79, 70, 229);
     doc.setFontSize(28);
-    doc.text('GRADEBOOST60 ACADEMIC CERTIFICATE', 148, 45, { align: 'center' });
+    doc.text('EDULPHA ACADEMIC CERTIFICATE', 148, 45, { align: 'center' });
 
     doc.setFontSize(14);
     doc.setTextColor(100, 116, 139);
@@ -604,7 +604,7 @@ export default function StudentDashboard() {
     // Student Name
     doc.setFontSize(24);
     doc.setTextColor(15, 23, 42);
-    doc.text((user?.name || user?.email || 'GradeBoost Scholar').toUpperCase(), 148, 96, { align: 'center' });
+    doc.text((user?.name || user?.email || 'Edulpha Scholar').toUpperCase(), 148, 96, { align: 'center' });
 
     doc.setFontSize(12);
     doc.setTextColor(100, 116, 139);
@@ -620,12 +620,12 @@ export default function StudentDashboard() {
     doc.setFontSize(10);
     doc.setTextColor(148, 163, 184);
     doc.text(`Issued Date: ${today}`, 40, 165);
-    doc.text(`Verification ID: GB60-${Math.floor(100000 + Math.random() * 900000)}`, 40, 172);
+    doc.text(`Verification ID: EDU-${Math.floor(100000 + Math.random() * 900000)}`, 40, 172);
 
-    doc.text(`GradeBoost Academic Board`, 220, 165, { align: 'center' });
+    doc.text(`Edulpha Academic Board`, 220, 165, { align: 'center' });
     doc.line(180, 160, 260, 160);
 
-    doc.save(`GradeBoost_Certificate_${subjectName.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Edulpha_Certificate_${subjectName.replace(/\s+/g, '_')}.pdf`);
     toast.success(`Downloaded ${subjectName} Certificate!`);
   };
 
@@ -1282,7 +1282,7 @@ export default function StudentDashboard() {
               <Card className="p-6 space-y-2 border-indigo-100 bg-indigo-50/20">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Overall Accuracy</span>
                 <p className="text-3xl font-black text-indigo-900">78%</p>
-                <p className="text-xs text-emerald-600 font-bold">Top 10% in GradeBoost</p>
+                <p className="text-xs text-emerald-600 font-bold">Top 10% in Edulpha</p>
               </Card>
 
               <Card className="p-6 space-y-2 border-slate-200">
@@ -1406,7 +1406,7 @@ export default function StudentDashboard() {
           </div>
         )}
 
-        {/* TAB 16: GRADEBOOST AI STUDIO */}
+        {/* TAB 16: EDULPHA AI STUDIO */}
         {activeTab === 'ai_tutor' && (
           <div className="space-y-6 max-w-6xl mx-auto">
             {/* AI Studio Navigation Sub-Bar */}
@@ -1416,7 +1416,7 @@ export default function StudentDashboard() {
                   <Sparkles size={20} />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 text-sm">GradeBoost AI Studio</h3>
+                  <h3 className="font-bold text-slate-900 text-sm">Edulpha AI Studio</h3>
                   <p className="text-[11px] text-slate-500">Cameroon GCE Personalized Intelligent Learning Assistant</p>
                 </div>
               </div>

@@ -323,7 +323,7 @@ export const AIQuizGenerator: React.FC<AIQuizGeneratorProps> = ({
                     {explanations[q.id] && (
                       <div className="ml-10 p-4 bg-indigo-50/60 border border-indigo-200 rounded-xl text-xs text-slate-800 space-y-2">
                         <h5 className="font-bold text-indigo-900 flex items-center gap-1">
-                          <Sparkles size={14} className="text-amber-500" /> GradeBoost AI Answer Breakdown:
+                          <Sparkles size={14} className="text-amber-500" /> Edulpha AI Answer Breakdown:
                         </h5>
                         <div className="whitespace-pre-line leading-relaxed">
                           {explanations[q.id]}

@@ -27,9 +27,9 @@ export default function AdminSettings() {
   const [apiKey, setApiKey] = useState('');
   const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
   const [paymentPrice, setPaymentPrice] = useState(1000);
-  const [appName, setAppName] = useState('GradeBoost 60');
+  const [appName, setAppName] = useState('Edulpha');
   const [logoUrl, setLogoUrl] = useState('/logo.svg');
-  const [contactEmail, setContactEmail] = useState('support@gradeboost60.com');
+  const [contactEmail, setContactEmail] = useState('support@edulpha.com');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
   const [momoNumber, setMomoNumber] = useState('677 123 456');
@@ -423,7 +423,7 @@ export default function AdminSettings() {
               <AdminTranslationManager />
             </motion.section>
 
-            {/* GradeBoost AI System Configuration & Moderation */}
+            {/* Edulpha AI System Configuration & Moderation */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -458,7 +458,7 @@ export default function AdminSettings() {
                     type="text"
                     value={appName}
                     onChange={(e) => setAppName(e.target.value)}
-                    placeholder="e.g. GradeBoost 60"
+                    placeholder="e.g. Edulpha"
                     className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-medium"
                   />
                 </div>

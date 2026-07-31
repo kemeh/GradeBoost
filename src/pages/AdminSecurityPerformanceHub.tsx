@@ -208,7 +208,7 @@ export const AdminSecurityPerformanceHub: React.FC = () => {
             </div>
             <h3 className="text-lg font-bold text-white">AI Prompt Injection Defense</h3>
             <p className="text-sm text-slate-300">
-              Input sanitization and system prompt hardening preventing prompt extraction or malicious payload injection into GradeBoost AI.
+              Input sanitization and system prompt hardening preventing prompt extraction or malicious payload injection into Edulpha AI.
             </p>
           </div>
         </div>

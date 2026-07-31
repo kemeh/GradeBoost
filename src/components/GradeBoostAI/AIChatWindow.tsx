@@ -143,7 +143,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-lg text-white">GradeBoost AI Tutor</h2>
+              <h2 className="font-bold text-lg text-white">Edulpha AI Tutor</h2>
               <span className="bg-indigo-500/30 text-indigo-200 text-xs px-2.5 py-0.5 rounded-full font-medium border border-indigo-400/20">
                 24/7 GCE Assistant
               </span>
@@ -230,7 +230,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
               <div>
                 <h3 className="text-xl font-bold text-slate-900">What would you like to master today?</h3>
                 <p className="text-sm text-slate-500 mt-1">
-                  Ask GradeBoost AI to explain any concept, generate exam tips, or break down difficult past questions for <strong>{selectedSubject}</strong>.
+                  Ask Edulpha AI to explain any concept, generate exam tips, or break down difficult past questions for <strong>{selectedSubject}</strong>.
                 </p>
               </div>
 
@@ -309,7 +309,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
                     {msg.source === 'fallback' && (
                       <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200/80 rounded-lg p-2 flex items-center gap-1.5">
                         <AlertTriangle size={14} className="shrink-0" />
-                        <span>Generated using GradeBoost offline study guidelines.</span>
+                        <span>Generated using Edulpha offline study guidelines.</span>
                       </div>
                     )}
                   </div>
@@ -331,7 +331,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
               </div>
               <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none p-4 text-sm text-slate-500 flex items-center gap-2 shadow-xs">
                 <RefreshCw size={16} className="animate-spin text-indigo-600" />
-                <span>GradeBoost AI is analyzing syllabus concept & generating explanation...</span>
+                <span>Edulpha AI is analyzing syllabus concept & generating explanation...</span>
               </div>
             </div>
           )}
@@ -352,7 +352,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder={`Ask GradeBoost AI anything about ${selectedSubject}... (e.g. Explain Binary Search)`}
+              placeholder={`Ask Edulpha AI anything about ${selectedSubject}... (e.g. Explain Binary Search)`}
               disabled={isLoading}
               className="flex-1 bg-slate-50 border border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-200 rounded-xl px-4 py-3 text-sm text-slate-800 placeholder-slate-400 outline-none transition-all"
             />
@@ -368,7 +368,7 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
 
           <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2 px-1">
             <span>Subject: <strong className="text-slate-600">{selectedSubject}</strong></span>
-            <span>GradeBoost AI • GCE Study Assistant</span>
+            <span>Edulpha AI • GCE Study Assistant</span>
           </div>
         </div>
       </div>

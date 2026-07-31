@@ -26,7 +26,7 @@ import {
 } from '../types';
 
 // ===============================================================
-// GradeBoost AI Service API
+// Edulpha AI Service API
 // ===============================================================
 
 // 1. Conversation & Chat History
@@ -111,7 +111,7 @@ export const sendAIMessage = async (
   let aiReplyText = '';
   let source: 'gemini' | 'fallback' | 'error' = 'fallback';
 
-  const userLang = language || localStorage.getItem('gradeboost_lang') || 'en';
+  const userLang = language || localStorage.getItem('edulpha_lang') || 'en';
 
   try {
     const res = await fetch('/api/ai/chat', {
@@ -130,7 +130,7 @@ export const sendAIMessage = async (
     aiReplyText = data.reply || 'No response returned.';
     source = data.source || 'gemini';
   } catch (err) {
-    aiReplyText = `[GradeBoost AI]\nHere is guidance regarding your question:\n- Key Concept: Focus on foundational definitions required by the Cameroon GCE marking scheme.\n- Advice: Break your answer into bullet points and underline technical terms!`;
+    aiReplyText = `[Edulpha AI]\nHere is guidance regarding your question:\n- Key Concept: Focus on foundational definitions required by the Cameroon GCE marking scheme.\n- Advice: Break your answer into bullet points and underline technical terms!`;
     source = 'fallback';
   }
 
@@ -437,7 +437,7 @@ export const fetchAISettings = async (): Promise<AISettings> => {
     enabled: true,
     provider: 'gemini-2.5-flash',
     dailyLimitPerUser: 50,
-    systemPromptTutor: 'You are GradeBoost AI, an encouraging and expert GCE Tutor.',
+    systemPromptTutor: 'You are Edulpha AI, an encouraging and expert GCE Tutor.',
     systemPromptQuiz: 'Generate clear, standard GCE questions with answer keys.',
     systemPromptCode: 'Provide clear code explanations and GCE practical tips.',
     moderateConversations: true,

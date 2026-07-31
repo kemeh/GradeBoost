@@ -112,9 +112,9 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({ receip
           {/* Footer note */}
           <div className="text-center pt-4 border-t border-slate-100 text-[10px] text-slate-400 space-y-1">
             <p className="flex items-center justify-center gap-1 font-bold text-slate-500">
-              <ShieldCheck size={14} className="text-indigo-600" /> Official GradeBoost 60 Electronic Receipt
+              <ShieldCheck size={14} className="text-indigo-600" /> Official Edulpha Electronic Receipt
             </p>
-            <p>Thank you for studying with GradeBoost 60. For billing inquiries, contact support.</p>
+            <p>Thank you for studying with Edulpha. For billing inquiries, contact support.</p>
           </div>
         </div>
 

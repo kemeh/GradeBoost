@@ -11,9 +11,9 @@ export default function AdminPlatformSettingsView() {
   const [apiKey, setApiKey] = useState('');
   const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
   const [paymentPrice, setPaymentPrice] = useState(1000);
-  const [appName, setAppName] = useState('GradeBoost 60');
+  const [appName, setAppName] = useState('Edulpha');
   const [logoUrl, setLogoUrl] = useState('/logo.svg');
-  const [contactEmail, setContactEmail] = useState('support@gradeboost60.com');
+  const [contactEmail, setContactEmail] = useState('support@edulpha.com');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
   const [momoNumber, setMomoNumber] = useState('677 123 456');
@@ -36,9 +36,9 @@ export default function AdminPlatformSettingsView() {
       setApiKey(settings.geminiApiKey || '');
       setChallengeStartDate(settings.challengeStartDate || DEFAULT_CHALLENGE_START_DATE);
       setPaymentPrice(settings.paymentPrice || 1000);
-      setAppName(settings.appName || 'GradeBoost 60');
+      setAppName(settings.appName || 'Edulpha');
       setLogoUrl(settings.logoUrl || '/logo.svg');
-      setContactEmail(settings.contactEmail || 'support@gradeboost60.com');
+      setContactEmail(settings.contactEmail || 'support@edulpha.com');
       setWhatsappNumber(settings.whatsappNumber || '');
       setWhatsappGroupLink(settings.whatsappGroupLink || '');
       setMomoNumber(settings.momoNumber || '677 123 456');
@@ -86,7 +86,7 @@ export default function AdminPlatformSettingsView() {
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
-        contents: 'Say Hello in one sentence to verify GradeBoost60 API connection.',
+        contents: 'Say Hello in one sentence to verify Edulpha API connection.',
       });
       if (response.text) {
         setTestResult({ success: true, message: `Success! Response: ${response.text}` });

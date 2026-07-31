@@ -64,7 +64,7 @@ export const AIAdminDashboard: React.FC = () => {
             <Sliders size={24} />
           </div>
           <div>
-            <h2 className="text-xl font-bold">GradeBoost AI Administration & Moderation</h2>
+            <h2 className="text-xl font-bold">Edulpha AI Administration & Moderation</h2>
             <p className="text-xs text-indigo-200">
               Configure system prompts, provider selection, student rate-limits, and monitor token usage logs
             </p>

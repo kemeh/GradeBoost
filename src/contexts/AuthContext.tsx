@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { 
   onAuthStateChanged, User, setPersistence, 
   browserLocalPersistence, browserSessionPersistence, 
@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<UserProfile | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [lastActivity, setLastActivity] = useState(Date.now());
+  const lastActivityRef = useRef(Date.now());
 
   const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
@@ -159,13 +159,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Inactivity timer
   useEffect(() => {
-    const activityHandler = () => setLastActivity(Date.now());
+    const activityHandler = () => {
+      lastActivityRef.current = Date.now();
+    };
     window.addEventListener('mousemove', activityHandler);
     window.addEventListener('keydown', activityHandler);
     window.addEventListener('click', activityHandler);
 
     const interval = setInterval(() => {
-      if (auth.currentUser && Date.now() - lastActivity > INACTIVITY_TIMEOUT) {
+      if (auth.currentUser && Date.now() - lastActivityRef.current > INACTIVITY_TIMEOUT) {
         console.log("Auto-logging out due to inactivity");
         logAuditEvent({
           userId: auth.currentUser.uid,
@@ -183,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       window.removeEventListener('click', activityHandler);
       clearInterval(interval);
     };
-  }, [lastActivity]);
+  }, []);
 
   const isAdmin = user?.role === 'admin' || firebaseUser?.email?.toLowerCase() === 'kemehhilary@gmail.com';
   const isTeacher = user?.role === 'teacher';

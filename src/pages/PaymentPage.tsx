@@ -252,15 +252,15 @@ export default function PaymentPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-gradient-to-r from-indigo-900 via-indigo-850 to-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden">
           <div className="space-y-2 z-10 max-w-2xl">
             <Badge className="bg-amber-400 text-amber-950 font-black px-3 py-1">
-              <Sparkles size={14} className="mr-1 inline" /> GradeBoost Premium Access
+              <Sparkles size={14} className="mr-1 inline" /> Edulpha Premium Access
             </Badge>
             <h1 className="text-3xl md:text-4xl font-black tracking-tight">
               {language === 'fr' ? 'Abonnez-vous & Réussissez vos Examens' : 'Choose Your Plan & Pass Your Exams'}
             </h1>
             <p className="text-sm md:text-base text-indigo-200 font-medium">
               {language === 'fr' 
-                ? 'Accédez aux leçons illimitées, corrigés d\'examens blancs et le tuteur IA GradeBoost 24/7.' 
-                : 'Unlock unlimited lessons, mock exam solutions, and 24/7 GradeBoost AI tutor.'}
+                ? 'Accédez aux leçons illimitées, corrigés d\'examens blancs et le tuteur IA Edulpha 24/7.' 
+                : 'Unlock unlimited lessons, mock exam solutions, and 24/7 Edulpha AI tutor.'}
             </p>
           </div>
 

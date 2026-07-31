@@ -884,7 +884,7 @@ export interface TeacherPDF {
 }
 
 // ===============================================================
-// GradeBoost AI Interfaces
+// Edulpha AI Interfaces
 // ===============================================================
 
 export interface AIConversation {

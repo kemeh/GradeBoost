@@ -230,7 +230,7 @@ export const AIProgrammingAssistant: React.FC = () => {
         <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col h-[520px] overflow-hidden">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-200">
             <Sparkles size={18} className="text-indigo-600" />
-            <h3 className="font-bold text-slate-800 text-sm">GradeBoost AI Code Insights</h3>
+            <h3 className="font-bold text-slate-800 text-sm">Edulpha AI Code Insights</h3>
           </div>
 
           <div className="flex-1 overflow-y-auto mt-4 space-y-4 text-xs leading-relaxed text-slate-800 pr-1">
