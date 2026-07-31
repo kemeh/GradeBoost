@@ -159,7 +159,7 @@ export default function SubjectManager() {
       name: subject.name,
       code: subject.code || '',
       description: subject.description || '',
-      level: subject.level || 'Ordinary level',
+      level: (subject.level as 'Ordinary level' | 'Advance level') || 'Ordinary level',
       category: (subject.category as any) || (subject.level === 'Advance level' ? 'Science' : 'Science & Technology'),
       isActive: subject.isActive !== false,
       papers: subject.papers && subject.papers.length > 0 ? subject.papers : [

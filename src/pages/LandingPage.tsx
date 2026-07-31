@@ -4,6 +4,8 @@ import { motion } from 'motion/react';
 import { BookOpen, Target, TrendingUp, ArrowRight, CheckCircle2, Sparkles, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { Button, Card, Badge, cn } from '../components/ui';
 
 export default function LandingPage() {
@@ -35,10 +37,11 @@ export default function LandingPage() {
               className="h-10 w-auto"
             />
           </div>
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors">Features</a>
-            <a href="#how-it-works" className="text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors">How it Works</a>
-            <Link to="/auth" className="text-sm font-bold text-slate-900">Login</Link>
+          <div className="flex items-center gap-4">
+            <a href="#features" className="hidden md:inline text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors">Features</a>
+            <a href="#how-it-works" className="hidden md:inline text-sm font-bold text-slate-600 hover:text-slate-900 transition-colors">How it Works</a>
+            <LanguageSwitcher variant="compact" />
+            <Link to="/auth" className="text-sm font-bold text-slate-900 ml-2">Login</Link>
             <Link to="/auth">
               <Button size="sm">Get Started</Button>
             </Link>

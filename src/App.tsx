@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 // Eagerly loaded components (critical path)
 import LandingPage from './pages/LandingPage';
@@ -28,6 +29,18 @@ const DailyDrill = lazy(() => import('./pages/DailyDrill'));
 const RandomPractice = lazy(() => import('./pages/RandomPractice'));
 const LearningChallenges = lazy(() => import('./pages/LearningChallenges'));
 const AdminChallenges = lazy(() => import('./pages/AdminChallenges'));
+const StudentLMSPortal = lazy(() => import('./pages/StudentLMSPortal'));
+const AdminLMSStudio = lazy(() => import('./pages/AdminLMSStudio'));
+const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard'));
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
+
+const AdminQuestionBank = lazy(() => import('./pages/AdminQuestionBank'));
+const AdminBulkImport = lazy(() => import('./pages/AdminBulkImport'));
+const AdminExamBuilder = lazy(() => import('./pages/AdminExamBuilder'));
+const StudentExamPortal = lazy(() => import('./pages/StudentExamPortal'));
+const ExamSession = lazy(() => import('./pages/ExamSession'));
+const ExamResultScreen = lazy(() => import('./pages/ExamResultScreen'));
+const ExamAnalyticsDashboard = lazy(() => import('./pages/ExamAnalyticsDashboard'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
@@ -46,14 +59,14 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 const PaymentGatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading, isAdmin, isEmailVerified } = useAuth();
+  const { user, loading, isAdmin, isTeacher, isEmailVerified } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Loading...</div>;
   
   if (!user) return <Navigate to="/auth" />;
   if (!isEmailVerified) return <Navigate to="/verify-email" />;
   
-  // Admins always have access
-  if (isAdmin) return <>{children}</>;
+  // Admins & Teachers always have full access
+  if (isAdmin || isTeacher) return <>{children}</>;
   
   // Check payment status and expiry
   const isPaid = user.paymentStatus === 'paid';
@@ -70,20 +83,29 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return isAdmin ? <>{children}</> : <Navigate to="/dashboard" />;
 };
 
+const TeacherRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, loading, isAdmin, isTeacher } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Loading...</div>;
+  if (!user) return <Navigate to="/auth" />;
+  return (isAdmin || isTeacher) ? <>{children}</> : <Navigate to="/dashboard" />;
+};
+
 export default function App() {
   return (
     <SettingsProvider>
       <AuthProvider>
-        <Router>
-          <Toaster position="top-right" />
-          <Suspense fallback={<LoadingFallback />}>
-            <Routes>
+        <LanguageProvider>
+          <Router>
+            <Toaster position="top-right" />
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
               
-              <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+              <Route path="/dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/student-dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
               <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
               <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
@@ -91,22 +113,33 @@ export default function App() {
               <Route path="/daily-drill-new" element={<PrivateRoute><DailyDrill /></PrivateRoute>} />
               <Route path="/random-practice" element={<PrivateRoute><RandomPractice /></PrivateRoute>} />
               <Route path="/challenges" element={<PrivateRoute><LearningChallenges /></PrivateRoute>} />
+              <Route path="/lms" element={<PrivateRoute><StudentLMSPortal /></PrivateRoute>} />
+              <Route path="/exams" element={<PrivateRoute><StudentExamPortal /></PrivateRoute>} />
+              <Route path="/exams/:examId/take" element={<PrivateRoute><ExamSession /></PrivateRoute>} />
+              <Route path="/exams/result/:attemptId" element={<PrivateRoute><ExamResultScreen /></PrivateRoute>} />
+              <Route path="/exam-analytics" element={<PrivateRoute><ExamAnalyticsDashboard /></PrivateRoute>} />
               <Route path="/duel" element={<PrivateRoute><DuelBattle /></PrivateRoute>} />
               <Route path="/leaderboard" element={<PrivateRoute><Leaderboard /></PrivateRoute>} />
               <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
               
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-              <Route path="/admin/challenges" element={<AdminRoute><AdminChallenges /></AdminRoute>} />
-              <Route path="/admin/daily-drill" element={<AdminRoute><AdminDailyDrill /></AdminRoute>} />
-              <Route path="/admin/resources" element={<AdminRoute><AdminManagement /></AdminRoute>} />
+              <Route path="/teacher" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>} />
+              <Route path="/admin/lms" element={<TeacherRoute><AdminLMSStudio /></TeacherRoute>} />
+              <Route path="/admin/questions" element={<TeacherRoute><AdminQuestionBank /></TeacherRoute>} />
+              <Route path="/admin/bulk-import" element={<TeacherRoute><AdminBulkImport /></TeacherRoute>} />
+              <Route path="/admin/exam-builder" element={<TeacherRoute><AdminExamBuilder /></TeacherRoute>} />
+              <Route path="/admin/challenges" element={<TeacherRoute><AdminChallenges /></TeacherRoute>} />
+              <Route path="/admin/daily-drill" element={<TeacherRoute><AdminDailyDrill /></TeacherRoute>} />
+              <Route path="/admin/resources" element={<TeacherRoute><AdminManagement /></TeacherRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
-              <Route path="/admin/paper-generator" element={<AdminRoute><AdminPaperGenerator /></AdminRoute>} />
+              <Route path="/admin/paper-generator" element={<TeacherRoute><AdminPaperGenerator /></TeacherRoute>} />
               
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </Suspense>
         </Router>
-      </AuthProvider>
-    </SettingsProvider>
+      </LanguageProvider>
+    </AuthProvider>
+  </SettingsProvider>
   );
 }

@@ -47,54 +47,68 @@ export const getSystemSettings = async (): Promise<SystemSettings | null> => {
 };
 
 export const updateSystemSettings = async (
-  apiKey: string, 
-  challengeStartDate: string, 
-  paymentPrice: number, 
-  appName: string,
-  logoUrl: string,
-  contactEmail: string,
-  whatsappNumber: string,
-  whatsappGroupLink: string,
-  momoNumber: string,
-  momoName: string,
-  omNumber: string,
-  omName: string,
-  userId: string
+  apiKeyOrSettings: string | Partial<SystemSettings>, 
+  challengeStartDate?: string, 
+  paymentPrice?: number, 
+  appName?: string,
+  logoUrl?: string,
+  contactEmail?: string,
+  whatsappNumber?: string,
+  whatsappGroupLink?: string,
+  momoNumber?: string,
+  momoName?: string,
+  omNumber?: string,
+  omName?: string,
+  userId?: string
 ): Promise<void> => {
   try {
     const globalRef = doc(db, 'system_settings', SETTINGS_DOC_ID);
     const secretsRef = doc(db, 'system_settings', SECRETS_DOC_ID);
+
+    let settingsObj: Partial<SystemSettings> = {};
+    let keyToSave = '';
+
+    if (typeof apiKeyOrSettings === 'object' && apiKeyOrSettings !== null) {
+      settingsObj = apiKeyOrSettings;
+      keyToSave = apiKeyOrSettings.geminiApiKey || '';
+    } else {
+      keyToSave = apiKeyOrSettings as string;
+      settingsObj = {
+        challengeStartDate,
+        paymentPrice,
+        appName,
+        logoUrl,
+        contactEmail,
+        whatsappNumber,
+        whatsappGroupLink,
+        momoNumber,
+        momoName,
+        omNumber,
+        omName,
+      };
+    }
     
     // Update global settings (public)
     await setDoc(globalRef, {
-      challengeStartDate,
-      paymentPrice,
-      appName,
-      logoUrl,
-      contactEmail,
-      whatsappNumber,
-      whatsappGroupLink,
-      momoNumber,
-      momoName,
-      omNumber,
-      omName,
+      ...settingsObj,
       updatedAt: serverTimestamp(),
-      updatedBy: userId,
-    });
+      updatedBy: userId || settingsObj.updatedBy || 'admin',
+    }, { merge: true });
 
     // Update secrets (admin only)
-    if (apiKey) {
+    if (keyToSave) {
       await setDoc(secretsRef, {
-        geminiApiKey: apiKey,
+        geminiApiKey: keyToSave,
         updatedAt: serverTimestamp(),
-        updatedBy: userId,
-      });
+        updatedBy: userId || 'admin',
+      }, { merge: true });
     }
   } catch (error) {
     console.error('Error updating system settings:', error);
     throw error;
   }
 };
+
 
 export const getGeminiApiKey = async (): Promise<string | null> => {
   try {

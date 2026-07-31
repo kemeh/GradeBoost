@@ -16,6 +16,9 @@ import SubjectManager from '../components/SubjectManager';
 import { Badge, Button } from '../components/ui';
 
 import FileUpload from '../components/FileUpload';
+import { AIAdminDashboard } from '../components/GradeBoostAI/AIAdminDashboard';
+import { AdminCurriculumManager } from '../components/AdminCurriculumManager';
+import { AdminTranslationManager } from '../components/AdminTranslationManager';
 
 export default function AdminSettings() {
   const navigate = useNavigate();
@@ -400,6 +403,33 @@ export default function AdminSettings() {
                   </motion.div>
                 )}
               </div>
+            </motion.section>
+
+            {/* Multi-Curriculum Management System */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.02 }}
+            >
+              <AdminCurriculumManager />
+            </motion.section>
+
+            {/* Multi-Language & Translation Studio */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.025 }}
+            >
+              <AdminTranslationManager />
+            </motion.section>
+
+            {/* GradeBoost AI System Configuration & Moderation */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.03 }}
+            >
+              <AIAdminDashboard />
             </motion.section>
 
             {/* App Branding & Details Section */}

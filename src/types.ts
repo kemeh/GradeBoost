@@ -17,12 +17,49 @@ declare global {
 
 export type Subject = string;
 
+export interface Curriculum {
+  id: string; // e.g., 'cameroon_gce', 'cameroon_francophone', 'waec'
+  name: string; // e.g., 'English Curriculum (Cameroon GCE)', 'French Curriculum (Cameroon Francophone)'
+  code: string; // e.g., 'GCE', 'FRANCOPHONE'
+  description?: string;
+  language: 'en' | 'fr' | 'bilingual';
+  isActive: boolean;
+  order?: number;
+  createdAt?: any;
+}
+
+export interface EducationLevel {
+  id: string; // e.g., 'ordinary_level', 'advanced_level', 'troisieme', 'seconde', 'premiere', 'terminale'
+  curriculumId: string;
+  name: string; // e.g., 'Ordinary Level', 'Advanced Level', 'Troisième (BEPC)', 'Seconde', 'Première', 'Terminale'
+  code: string;
+  description?: string;
+  isActive: boolean;
+  order?: number;
+  createdAt?: any;
+}
+
+export interface Department {
+  id: string;
+  curriculumId: string;
+  levelId?: string;
+  name: string; // e.g., 'Science & Tech', 'Sciences Exactes', 'Lettres & Arts'
+  code?: string;
+  description?: string;
+  isActive: boolean;
+  createdAt?: any;
+}
+
 export interface PaperConfig {
   id: string;
   name: string;
-  type: 'MCQ' | 'Theory' | 'Practical' | 'Structured' | 'Essay';
+  type: 'MCQ' | 'Theory' | 'Practical' | 'Structured' | 'Essay' | 'Oral' | 'Synthese';
   totalMarks?: number;
   durationMinutes?: number;
+  instructions?: string;
+  questionTypes?: string[];
+  examYear?: number;
+  examSession?: string;
   description?: string;
 }
 
@@ -31,33 +68,52 @@ export interface SubjectModel {
   name: string;
   code?: string;
   description?: string;
-  level?: 'Ordinary level' | 'Advance level';
+  curriculumId?: string;
+  curriculumName?: string;
+  levelId?: string;
+  level?: 'Ordinary level' | 'Advance level' | string;
+  educationLevel?: string;
+  departmentId?: string;
   category?: string;
-  isActive: boolean;
+  isActive?: boolean;
   papers?: PaperConfig[];
-  createdAt: any;
+  createdAt?: any;
 }
 
-export type PaperType = 'Paper 1' | 'Paper 2' | 'Paper 3' | 'Combined';
-export type Grade = 'A' | 'B' | 'C' | 'D' | 'F';
+export type PaperType = 'Paper 1' | 'Paper 2' | 'Paper 3' | 'Combined' | string;
+export type Grade = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | '20/20' | '18/20' | string;
 
 export interface UserProfile {
   uid: string;
   name: string;
+  displayName?: string;
   firstName?: string;
   lastName?: string;
   email: string;
   phone?: string;
   subject: Subject;
-  level?: 'Ordinary level' | 'Advance level';
+  curriculumId?: string; // e.g. 'cameroon_gce' | 'cameroon_francophone'
+  curriculumName?: string;
+  educationLevelId?: string; // e.g. 'ordinary_level', 'advanced_level', 'troisieme', 'seconde', 'premiere', 'terminale'
+  educationLevelName?: string;
+  departmentId?: string;
+  departmentName?: string;
+  level?: 'Ordinary level' | 'Advance level' | string;
   school: string;
   region: string;
   assignedPapers: string[]; // e.g., ["paper1", "paper2", "paper3"]
   targetGrade: Grade;
   createdAt: string;
-  role: 'student' | 'admin';
+  role: 'student' | 'teacher' | 'admin';
+  status?: 'active' | 'suspended' | 'locked';
+  isLocked?: boolean;
+  lockoutUntil?: string | null;
+  failedLoginAttempts?: number;
+  lastLoginAt?: any;
+  lastPasswordChangeAt?: string;
   hasTakenDiagnostic: boolean;
   diagnosticResults?: DiagnosticResult;
+  language?: 'en' | 'fr' | string;
   isPaid?: boolean;
   paymentStatus?: 'unpaid' | 'paid' | 'pending' | 'rejected';
   paymentDate?: string;
@@ -310,4 +366,673 @@ export interface ChallengeProgress {
   completed: boolean;
   completedAt: any;
 }
+
+// LMS Interfaces
+export type LMSLessonFormat = 
+  | 'text' 
+  | 'rich_text' 
+  | 'pdf' 
+  | 'video' 
+  | 'image' 
+  | 'practical' 
+  | 'programming' 
+  | 'interactive' 
+  | 'live_class' 
+  | 'recorded_class';
+
+export type LMSLessonStatus = 'draft' | 'published' | 'scheduled' | 'archived';
+export type LMSDifficulty = 'Beginner' | 'Intermediate' | 'Advanced';
+
+export interface LMSAttachment {
+  id: string;
+  name: string;
+  type: 'pdf' | 'word' | 'ppt' | 'image' | 'video' | 'zip' | 'code' | 'audio' | 'link';
+  url: string;
+  size?: string;
+}
+
+export interface LMSQuizQuestion {
+  id: string;
+  type: 'mcq' | 'essay' | 'programming' | 'true_false' | 'matching' | 'fill_in_blanks';
+  question: string;
+  options?: string[];
+  correctAnswer?: string | boolean;
+  explanation?: string;
+  codeSnippet?: string;
+  matchingPairs?: Array<{ left: string; right: string }>;
+}
+
+export interface LMSQuiz {
+  id: string;
+  title: string;
+  isTimed: boolean;
+  durationMinutes?: number;
+  instantFeedback: boolean;
+  questions: LMSQuizQuestion[];
+}
+
+export interface LMSLesson {
+  id: string;
+  title: string;
+  subtitle?: string;
+  description?: string;
+  summary?: string;
+  content?: string;
+  educationLevel: string; // e.g. Ordinary Level, Advanced Level
+  level?: string;
+  department?: string; // e.g. Science, Commercial, Arts
+  subject: string; // e.g. Computer Science
+  paper?: string; // e.g. Paper 1
+  topic: string; // e.g. Computer Hardware
+  subtopic?: string; // e.g. Input Devices
+  format: LMSLessonFormat;
+  objectives?: string[];
+  estimatedMinutes?: number;
+  difficulty: LMSDifficulty;
+  teacher?: string;
+  thumbnail?: string;
+  coverImage?: string;
+  lessonContent?: string;
+  videoUrl?: string;
+  contentUrl?: string;
+  pdfUrl?: string;
+  audioUrl?: string;
+  externalUrl?: string;
+  references?: string[];
+  attachments?: LMSAttachment[];
+  quizzes?: LMSQuiz[];
+  status: LMSLessonStatus;
+  scheduledAt?: string;
+  orderIndex?: number;
+  createdBy?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface LMSHierarchyItem {
+  id: string;
+  type: 'level' | 'department' | 'subject' | 'paper' | 'topic' | 'subtopic';
+  name: string;
+  code?: string;
+  parentId?: string;
+  description?: string;
+  order?: number;
+}
+
+export interface LMSUserProgress {
+  id: string;
+  userId: string;
+  lessonId: string;
+  subject?: string;
+  topic?: string;
+  completed: boolean;
+  progressPercent?: number;
+  studyTimeSeconds?: number;
+  timeSpentSeconds?: number;
+  lastAccessedAt?: string;
+  quizScores?: Record<string, number>;
+  completedAt?: any;
+  updatedAt?: any;
+  createdAt?: any;
+}
+
+export interface LMSBookmark {
+  id: string;
+  userId: string;
+  lessonId: string;
+  createdAt: any;
+}
+
+export interface LMSNote {
+  id: string;
+  userId: string;
+  lessonId: string;
+  title?: string;
+  content?: string;
+  noteText?: string;
+  highlightText?: string;
+  createdAt: any;
+  updatedAt?: any;
+}
+
+// ==================================================
+// QUESTION BANK & EXAMINATION ENGINE INTERFACES
+// ==================================================
+
+export type QuestionType =
+  | 'mcq'
+  | 'structured'
+  | 'essay'
+  | 'programming'
+  | 'practical'
+  | 'fill_in_blanks'
+  | 'true_false'
+  | 'matching'
+  | 'short_answer';
+
+export type QuestionDifficulty = 'Easy' | 'Medium' | 'Hard' | 'Expert';
+export type QuestionStatus = 'draft' | 'published' | 'archived';
+export type AcademicLevel = 'Ordinary Level' | 'Advanced Level';
+export type ExamSessionType = 'June' | 'November' | 'Mock' | 'Special';
+
+export interface QuestionMedia {
+  id: string;
+  type: 'image' | 'diagram' | 'table' | 'audio' | 'video' | 'code' | 'formula' | 'chemical' | 'flowchart';
+  url?: string;
+  caption?: string;
+  content?: string; // Raw LaTeX, CSV/JSON table, code snippet, SVG string
+}
+
+export interface QuestionOption {
+  id: string;
+  label: string; // A, B, C, D...
+  text: string;
+  isCorrect?: boolean;
+  explanation?: string;
+  media?: QuestionMedia;
+}
+
+export interface MarkingSchemeSubPart {
+  label: string; // e.g., (a)(i)
+  description: string;
+  points: number;
+  expectedKeywords?: string[];
+}
+
+export interface MarkingScheme {
+  totalMarks: number;
+  modelAnswer: string;
+  marksAllocation: MarkingSchemeSubPart[];
+  examinerNotes?: string;
+}
+
+export interface QuestionProgramming {
+  language: 'python' | 'java' | 'cpp' | 'javascript' | 'pseudocode' | string;
+  starterCode: string;
+  solutionCode: string;
+  inputSample?: string;
+  outputSample?: string;
+  expectedResult?: string;
+  sampleTests: { input: string; output: string; description?: string }[];
+  markingGuide?: string;
+}
+
+export interface QuestionMatchingPair {
+  id: string;
+  left: string;
+  right: string;
+}
+
+export interface QuestionFillBlank {
+  index: number;
+  acceptedAnswers: string[];
+  caseSensitive?: boolean;
+}
+
+export interface QuestionEngineItem {
+  id: string;
+  title: string;
+  questionNumber: number | string;
+  questionText: string; // supports Markdown & LaTeX
+  questionType: QuestionType;
+  difficulty: QuestionDifficulty;
+  marks: number;
+  estimatedTimeMinutes: number;
+  
+  // Hierarchy
+  level: AcademicLevel;
+  department: string; // Science, Arts, Commercial, Technical, General
+  subject: string;
+  paper: string; // Paper 1, Paper 2, Paper 3
+  topic: string;
+  subtopic: string;
+  
+  examYear: number;
+  session: ExamSessionType;
+  
+  instructions?: string;
+  hints?: string[];
+  explanation?: string;
+  reference?: string;
+  status: QuestionStatus;
+  
+  // Media & Attachments
+  mediaList?: QuestionMedia[];
+  
+  // Type Specific Data
+  options?: QuestionOption[]; // MCQs
+  markingScheme?: MarkingScheme; // Structured/Essay/Practical/Short Answer
+  programmingData?: QuestionProgramming; // Programming Questions
+  matchingPairs?: QuestionMatchingPair[]; // Matching Questions
+  blanks?: QuestionFillBlank[]; // Fill in blanks
+  trueFalseAnswer?: boolean; // True/False
+  trueFalseJustificationRequired?: boolean;
+  
+  createdBy?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface ExamAutoRule {
+  totalQuestions: number;
+  easyCount: number;
+  mediumCount: number;
+  hardCount: number;
+  expertCount?: number;
+  subject: string;
+  paper?: string;
+  topicIds?: string[];
+}
+
+export interface ExamQuestionRef {
+  questionId: string;
+  order: number;
+  marks: number;
+  overrideTitle?: string;
+}
+
+export type ExamQuestionOrder = 'fixed' | 'random';
+export type ExamShowAnswersMode = 'immediately' | 'after_submission' | 'never';
+
+export interface EngineExam {
+  id: string;
+  title: string;
+  description: string;
+  academicLevel: AcademicLevel;
+  department?: string;
+  subject: string;
+  paper: string;
+  examType: 'mock' | 'past_paper' | 'quiz' | 'holiday_test' | 'custom';
+  
+  durationMinutes: number;
+  passingScorePercent: number;
+  questionOrder: ExamQuestionOrder;
+  shuffleOptions: boolean;
+  negativeMarking: boolean;
+  negativeMarksPerWrong?: number; // e.g. 0.25
+  retakesAllowed: boolean;
+  maxRetakes?: number; // -1 for unlimited
+  
+  showAnswers: ExamShowAnswersMode;
+  showExplanations: boolean;
+  showResultsImmediately: boolean;
+  allowCalculator?: boolean;
+  
+  questions: ExamQuestionRef[];
+  autoRules?: ExamAutoRule;
+  
+  status: 'draft' | 'published' | 'archived';
+  createdBy?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface ExamAttemptAnswer {
+  questionId: string;
+  selectedOptionId?: string; // For MCQ
+  selectedOptionIds?: string[]; // For Multi-select
+  textAnswer?: string; // Structured / Essay / Short Answer
+  codeSubmission?: string; // Programming
+  trueFalseValue?: boolean; // True / False
+  matchingSelections?: Record<string, string>; // Matching leftId -> rightText
+  blankAnswers?: Record<number, string>; // Fill in blanks index -> answer
+  
+  isFlagged?: boolean;
+  timeSpentSeconds?: number;
+  isCorrect?: boolean;
+  marksEarned?: number;
+}
+
+export interface ExamAttempt {
+  id: string;
+  examId: string;
+  examTitle: string;
+  userId: string;
+  userName?: string;
+  userDisplayName?: string;
+  userEmail?: string;
+  academicLevel?: string;
+  subject?: string;
+  
+  startedAt?: any;
+  submittedAt?: any;
+  completedAt?: any;
+  durationSeconds?: number;
+  timeTakenSeconds?: number;
+  status: 'in_progress' | 'completed' | 'abandoned';
+  
+  answers: Record<string, ExamAttemptAnswer>;
+  flaggedQuestionIds?: string[];
+  
+  // Scored Result
+  totalScore: number;
+  maxScore?: number;
+  maxPossibleScore?: number;
+  percentage: number;
+  letterGrade?: string;
+  passed: boolean;
+  topicBreakdown?: Record<string, { earned: number; total: number }>;
+  topicPerformance?: Record<string, { correct: number; total: number; percentage: number }>;
+  feedback?: string;
+  aiInsights?: string;
+}
+
+export interface QuestionBookmark {
+  id: string;
+  userId: string;
+  questionId: string;
+  questionTitle?: string;
+  subject?: string;
+  topic?: string;
+  note?: string;
+  createdAt: any;
+}
+
+export interface QuestionReport {
+  id: string;
+  userId: string;
+  questionId: string;
+  reason: 'typo' | 'incorrect_answer' | 'missing_media' | 'formatting_issue' | 'other';
+  comment: string;
+  status: 'pending' | 'reviewed' | 'resolved';
+  createdAt: any;
+}
+
+export interface AcademicLevelModel {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  passPercentage: number;
+  defaultPapersCount: number;
+  isActive: boolean;
+}
+
+export interface AcademicDepartment {
+  id: string;
+  name: string;
+  code: string;
+  description?: string;
+  subjectIds?: string[];
+  createdAt?: any;
+}
+
+export interface SyllabusTopic {
+  id: string;
+  title: string;
+  subject: string;
+  level: string;
+  weightage?: number;
+  estimatedHours?: number;
+  description?: string;
+  paperType?: string;
+  createdAt?: any;
+}
+
+export interface StudyPlanModel {
+  id: string;
+  title: string;
+  level: string;
+  subject: string;
+  durationWeeks: number;
+  description: string;
+  topicSequence?: string[];
+  recommendedDailyDrills?: number;
+  isActive: boolean;
+  createdAt?: any;
+}
+
+export interface SystemNotification {
+  id: string;
+  title: string;
+  message: string;
+  targetAudience: 'all' | 'students' | 'teachers';
+  targetSubject?: string;
+  sentBy: string;
+  createdAt: any;
+}
+
+export interface QuizQuestion {
+  id: string;
+  questionText: string;
+  options: string[];
+  correctAnswer: string;
+  explanation?: string;
+}
+
+export interface TeacherQuiz {
+  id: string;
+  title: string;
+  subject: string;
+  topic?: string;
+  timeLimitMinutes: number;
+  passingScorePercent: number;
+  questions: QuizQuestion[];
+  createdBy?: string;
+  createdAt?: any;
+}
+
+export interface TeacherMockExam {
+  id: string;
+  title: string;
+  subject: string;
+  paperType: string;
+  durationMinutes: number;
+  totalMarks: number;
+  passPercentage: number;
+  instructions?: string;
+  examUrl?: string;
+  isPublished: boolean;
+  createdBy?: string;
+  createdAt?: any;
+}
+
+export interface MarkingSchemeItem {
+  id: string;
+  title: string;
+  subject: string;
+  year: number;
+  paperType: string;
+  guideText?: string;
+  fileUrl?: string;
+  createdBy?: string;
+  createdAt?: any;
+}
+
+export interface DiscussionThread {
+  id: string;
+  title: string;
+  authorName: string;
+  authorRole: string;
+  authorId: string;
+  subject: string;
+  content: string;
+  status: 'pending' | 'approved' | 'answered' | 'flagged';
+  replies?: {
+    id: string;
+    authorName: string;
+    authorRole: string;
+    content: string;
+    createdAt: any;
+  }[];
+  createdAt?: any;
+}
+
+export interface TeacherVideo {
+  id: string;
+  title: string;
+  subject: string;
+  topic?: string;
+  videoUrl: string;
+  duration?: string;
+  description?: string;
+  createdBy?: string;
+  createdAt?: any;
+}
+
+export interface TeacherPDF {
+  id: string;
+  title: string;
+  subject: string;
+  topic?: string;
+  fileUrl: string;
+  fileSize?: string;
+  isDownloadable: boolean;
+  description?: string;
+  createdBy?: string;
+  createdAt?: any;
+}
+
+// ===============================================================
+// GradeBoost AI Interfaces
+// ===============================================================
+
+export interface AIConversation {
+  id: string;
+  userId: string;
+  title: string;
+  subject?: string;
+  educationLevel?: string;
+  lastMessage?: string;
+  messageCount: number;
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface AIMessage {
+  id: string;
+  conversationId: string;
+  userId: string;
+  sender: 'user' | 'ai';
+  text: string;
+  source?: 'gemini' | 'fallback' | 'error';
+  subjectContext?: string;
+  topicContext?: string;
+  examTips?: string[];
+  commonMistakes?: string[];
+  tokensUsed?: number;
+  createdAt: any;
+}
+
+export interface AIUsage {
+  id: string;
+  userId: string;
+  date: string; // YYYY-MM-DD
+  requestsCount: number;
+  tokensUsed: number;
+  updatedAt: any;
+}
+
+export interface AIRecommendation {
+  id: string;
+  userId: string;
+  type: 'lesson' | 'video' | 'question' | 'revision_plan' | 'mock_exam';
+  title: string;
+  description: string;
+  subject: string;
+  reason: string;
+  targetId?: string;
+  priority: 'high' | 'medium' | 'low';
+  createdAt: any;
+}
+
+export interface AIStudyPlan {
+  id: string;
+  userId: string;
+  subject: string;
+  paper?: string;
+  durationDays: number;
+  startDate: string;
+  targetExamDate?: string;
+  dailyTasks: {
+    day: number;
+    dayName: string;
+    topic: string;
+    description: string;
+    taskType: 'lesson' | 'practice' | 'revision' | 'mock' | 'break';
+    estMinutes: number;
+    completed: boolean;
+  }[];
+  createdAt: any;
+}
+
+export interface AIQuizQuestion {
+  id: string;
+  type: 'MCQ' | 'Essay' | 'Programming' | 'Practical' | 'TrueFalse' | 'Matching';
+  questionText: string;
+  options?: string[];
+  correctAnswer: string;
+  explanation: string;
+  examTip?: string;
+}
+
+export interface AIQuiz {
+  id: string;
+  userId: string;
+  subject: string;
+  topic: string;
+  subtopic?: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  questionType: 'MCQ' | 'Essay' | 'Programming' | 'Practical' | 'TrueFalse' | 'Matching';
+  questions: AIQuizQuestion[];
+  score?: number;
+  totalQuestions: number;
+  completedAt?: any;
+  createdAt: any;
+}
+
+export interface AIFlashcard {
+  id: string;
+  userId: string;
+  subject: string;
+  topic: string;
+  frontText: string;
+  backText: string;
+  mastered?: boolean;
+  createdAt: any;
+}
+
+export interface AISummary {
+  id: string;
+  userId: string;
+  title: string;
+  sourceType: 'pdf' | 'text' | 'lesson' | 'video';
+  subject: string;
+  shortSummary: string;
+  detailedSummary: string;
+  revisionPoints: string[];
+  flashcards?: AIFlashcard[];
+  createdAt: any;
+}
+
+export interface AISettings {
+  id?: string;
+  enabled: boolean;
+  provider: 'gemini-2.5-flash' | 'gemini-1.5-pro' | 'custom';
+  dailyLimitPerUser: number;
+  systemPromptTutor: string;
+  systemPromptQuiz: string;
+  systemPromptCode: string;
+  moderateConversations: boolean;
+  allowPublicAI: boolean;
+  updatedAt?: any;
+}
+
+export interface AIUsageLog {
+  id: string;
+  userId: string;
+  userEmail?: string;
+  userRole?: string;
+  endpoint: string;
+  tokensEstimate: number;
+  promptLength: number;
+  status: 'success' | 'rate_limited' | 'error';
+  errorMessage?: string;
+  createdAt: any;
+}
+
+
+
+
+
 

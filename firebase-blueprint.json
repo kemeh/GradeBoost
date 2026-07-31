@@ -355,9 +355,66 @@
         "completedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["studentId", "challengeId", "dayNumber", "completed", "completedAt"]
+    },
+    "LMSHierarchy": {
+      "title": "LMS Hierarchy Item",
+      "description": "Hierarchy node (Education Level, Department, Subject, Paper, Topic, Subtopic).",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["level", "department", "subject", "paper", "topic", "subtopic"] },
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "parentId": { "type": "string" },
+        "description": { "type": "string" },
+        "order": { "type": "integer" }
+      },
+      "required": ["type", "name"]
+    },
+    "LMSLesson": {
+      "title": "LMS Lesson",
+      "description": "Comprehensive lesson item in GradeBoost60 LMS.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "description": { "type": "string" },
+        "educationLevel": { "type": "string" },
+        "department": { "type": "string" },
+        "subject": { "type": "string" },
+        "paper": { "type": "string" },
+        "topic": { "type": "string" },
+        "subtopic": { "type": "string" },
+        "format": { "type": "string", "enum": ["text", "rich_text", "pdf", "video", "image", "practical", "programming", "interactive", "live_class", "recorded_class"] },
+        "objectives": { "type": "array", "items": { "type": "string" } },
+        "estimatedMinutes": { "type": "integer" },
+        "difficulty": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced"] },
+        "teacher": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "coverImage": { "type": "string" },
+        "lessonContent": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "pdfUrl": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "externalUrl": { "type": "string" },
+        "references": { "type": "array", "items": { "type": "string" } },
+        "attachments": { "type": "array", "items": { "type": "object" } },
+        "quizzes": { "type": "array", "items": { "type": "object" } },
+        "status": { "type": "string", "enum": ["draft", "published", "scheduled", "archived"] },
+        "scheduledAt": { "type": "string" },
+        "orderIndex": { "type": "integer" }
+      },
+      "required": ["title", "educationLevel", "subject", "topic", "format", "status"]
     }
   },
   "firestore": {
+    "/lms_hierarchy/{hierarchyId}": {
+      "schema": "LMSHierarchy",
+      "description": "LMS education levels, departments, subjects, papers, topics, subtopics."
+    },
+    "/lms_lessons/{lessonId}": {
+      "schema": "LMSLesson",
+      "description": "LMS lessons document."
+    },
     "/challenges/{challengeId}": {
       "schema": "Challenge",
       "description": "Admin study challenges."

@@ -3,21 +3,28 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, deleteUser } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, Lock, User, BookOpen, ArrowRight, AlertCircle, CheckCircle2, TrendingUp, School, MapPin, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, BookOpen, ArrowRight, AlertCircle, CheckCircle2, TrendingUp, School, MapPin, Eye, EyeOff, ShieldCheck, Clock } from 'lucide-react';
 import { auth, db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { Subject, SubjectModel } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
-import { SUBJECT_TOPICS } from '../constants/topics';
 import { DEFAULT_GCE_SUBJECTS, getPapersForSubjectName, seedDefaultGceSubjects } from '../data/defaultSubjects';
+import { checkAccountLockout, recordFailedAttempt, clearFailedAttempts } from '../services/authSecurityService';
+import { logAuditEvent } from '../services/auditService';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
   const [isForgot, setIsForgot] = useState(false);
+  const [rememberMe, setRememberMeState] = useState(true);
+  const [selectedRole, setSelectedRole] = useState<'student' | 'teacher'>('student');
   const [subjects, setSubjects] = useState<SubjectModel[]>([]);
-  const [selectedLevel, setSelectedLevel] = useState<'Ordinary level' | 'Advance level'>('Ordinary level');
+  const [selectedCurriculum, setSelectedCurriculum] = useState<'cameroon_gce' | 'cameroon_francophone'>('cameroon_gce');
+  const [selectedLevel, setSelectedLevel] = useState<string>('Ordinary level');
+  const [lockoutCountdown, setLockoutCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -27,7 +34,6 @@ export default function AuthPage() {
         let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
         
         if (data.length === 0) {
-          // Seed defaults automatically if database has no subjects
           await seedDefaultGceSubjects(db);
           const retrySnap = await getDocs(q);
           data = retrySnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
@@ -59,19 +65,21 @@ export default function AuthPage() {
   const [success, setSuccess] = useState('');
   const navigate = useNavigate();
   const { appName, logoUrl, contactEmail } = useSettings();
-  const { user, loading: authLoading, isAdmin } = useAuth();
+  const { user, loading: authLoading, isAdmin, isTeacher, setRememberMe: setAuthRememberMe } = useAuth();
 
   useEffect(() => {
     if (!authLoading && (user || isAdmin)) {
       if (isAdmin) {
         navigate('/admin');
+      } else if (isTeacher) {
+        navigate('/admin/lms');
       } else if (user?.paymentStatus === 'paid') {
         navigate('/dashboard');
       } else if (user) {
         navigate('/payment');
       }
     }
-  }, [user, authLoading, isAdmin, navigate]);
+  }, [user, authLoading, isAdmin, isTeacher, navigate]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -104,7 +112,7 @@ export default function AuthPage() {
       case 'auth/network-request-failed':
         return 'Network error. Please check your connection.';
       case 'auth/too-many-requests':
-        return 'Too many failed attempts. Please try again later.';
+        return 'Too many failed attempts. Account temporarily locked for security.';
       case 'auth/invalid-credential':
         return 'Invalid email or password. Please try again.';
       default:
@@ -127,9 +135,44 @@ export default function AuthPage() {
     try {
       if (isForgot) {
         await sendPasswordResetEmail(auth, formData.email);
+        await logAuditEvent({
+          userEmail: formData.email,
+          action: 'PASSWORD_RESET_REQUEST',
+          details: 'User requested password reset link',
+        });
         setSuccess('Password reset link sent to your email.');
       } else if (isLogin) {
-        await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        // Account lockout check before attempting login
+        const lockout = await checkAccountLockout(formData.email);
+        if (lockout.isLocked) {
+          setError(`Account locked due to 5 failed attempts. Please try again in ${Math.ceil(lockout.remainingSeconds / 60)} minutes.`);
+          setLockoutCountdown(lockout.remainingSeconds);
+          setLoading(false);
+          return;
+        }
+
+        await setAuthRememberMe(rememberMe);
+
+        try {
+          const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+          await clearFailedAttempts(formData.email);
+          await logAuditEvent({
+            userId: userCredential.user.uid,
+            userEmail: formData.email,
+            action: 'LOGIN_SUCCESS',
+            details: 'Successful user authentication',
+          });
+        } catch (loginErr: any) {
+          const lockoutResult = await recordFailedAttempt(formData.email);
+          if (lockoutResult.isLocked) {
+            setError(`Account locked due to 5 consecutive failed attempts. Please try again in 15 minutes.`);
+          } else {
+            const remaining = 5 - lockoutResult.failedAttempts;
+            setError(`${getFriendlyErrorMessage(loginErr)} (${remaining} attempt${remaining === 1 ? '' : 's'} remaining)`);
+          }
+          setLoading(false);
+          return;
+        }
       } else {
         if (!formData.subject) {
           setError('Please select a subject.');
@@ -137,7 +180,6 @@ export default function AuthPage() {
           return;
         }
 
-        // Password validation
         const passwordError = validatePassword(formData.password);
         if (passwordError) {
           setError(passwordError);
@@ -145,42 +187,56 @@ export default function AuthPage() {
           return;
         }
 
+        await setAuthRememberMe(rememberMe);
         const { user } = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
         
-        // Send verification email
         try {
           await sendEmailVerification(user);
         } catch (err) {
           console.error("Failed to send verification email:", err);
         }
 
-        // Create user profile
         const isAdminEmail = formData.email.toLowerCase() === 'kemehhilary@gmail.com';
+        const assignedRole = isAdminEmail ? 'admin' : selectedRole;
         const path = `users/${user.uid}`;
         const targetSubjectPapers = getPapersForSubjectName(formData.subject, selectedLevel, subjects);
         const assignedPaperIds = targetSubjectPapers.map(p => p.id);
 
         try {
+          const currName = selectedCurriculum === 'cameroon_gce' 
+            ? 'English Curriculum (Cameroon GCE)' 
+            : 'French Curriculum (Cameroon Francophone)';
+
           await setDoc(doc(db, 'users', user.uid), {
             name: formData.name,
             email: formData.email,
             subject: formData.subject.trim(),
+            curriculumId: selectedCurriculum,
+            curriculumName: currName,
+            educationLevelId: selectedLevel.toLowerCase().replace(/[^a-z0-9]/g, '_'),
+            educationLevelName: selectedLevel,
             level: selectedLevel,
             school: formData.school,
             region: formData.region,
             assignedPapers: assignedPaperIds.length > 0 ? assignedPaperIds : ['paper1', 'paper2'],
             targetGrade: 'A',
-            role: isAdminEmail ? 'admin' : 'student',
+            role: assignedRole,
+            status: 'active',
             hasTakenDiagnostic: false,
-            isPaid: isAdminEmail ? true : false,
-            paymentStatus: isAdminEmail ? 'paid' : 'unpaid',
-            paymentExpiryDate: isAdminEmail ? new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
+            isPaid: (isAdminEmail || assignedRole === 'teacher') ? true : false,
+            paymentStatus: (isAdminEmail || assignedRole === 'teacher') ? 'paid' : 'unpaid',
+            paymentExpiryDate: (isAdminEmail || assignedRole === 'teacher') ? new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() : null,
             verificationSentAt: serverTimestamp(),
             createdAt: serverTimestamp(),
           });
-          console.log("User profile created for UID:", user.uid);
+          
+          await logAuditEvent({
+            userId: user.uid,
+            userEmail: formData.email,
+            action: 'REGISTER_SUCCESS',
+            details: `Registered new account with role: ${assignedRole}`,
+          });
         } catch (error) {
-          // If Firestore document creation fails, delete the Auth user
           console.error("Firestore profile creation failed, deleting Auth user:", error);
           try {
             await deleteUser(user);
@@ -199,7 +255,10 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative">
+      <div className="absolute top-6 right-6">
+        <LanguageSwitcher variant="compact" />
+      </div>
       <div className="max-w-md w-full space-y-8">
         <div className="text-center space-y-2">
           <Link to="/" className="inline-flex items-center gap-2 mb-4">
@@ -252,6 +311,36 @@ export default function AuthPage() {
             {!isLogin && !isForgot && (
               <>
                 <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Role</label>
+                  <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole('student')}
+                      className={cn(
+                        "py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2",
+                        selectedRole === 'student'
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-slate-500 hover:text-slate-900"
+                      )}
+                    >
+                      <User size={14} /> Student
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedRole('teacher')}
+                      className={cn(
+                        "py-2.5 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2",
+                        selectedRole === 'teacher'
+                          ? "bg-white text-indigo-600 shadow-sm"
+                          : "text-slate-500 hover:text-slate-900"
+                      )}
+                    >
+                      <ShieldCheck size={14} /> Teacher / Instructor
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
@@ -266,44 +355,95 @@ export default function AuthPage() {
                   </div>
                 </div>
 
+                {/* Curriculum Selection */}
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Examination Level</label>
-                  </div>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Select Educational Curriculum</label>
                   <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl">
                     <button
                       type="button"
                       onClick={() => {
+                        setSelectedCurriculum('cameroon_gce');
                         setSelectedLevel('Ordinary level');
-                        const oSubs = subjects.filter(s => s.level === 'Ordinary level');
+                        const oSubs = subjects.filter(s => !s.curriculumId || s.curriculumId === 'cameroon_gce');
                         if (oSubs.length > 0) setFormData(prev => ({ ...prev, subject: oSubs[0].name }));
                       }}
                       className={cn(
-                        "py-2.5 rounded-xl font-bold text-xs transition-all",
-                        selectedLevel === 'Ordinary level'
+                        "py-2.5 px-2 rounded-xl font-bold text-xs transition-all text-center",
+                        selectedCurriculum === 'cameroon_gce'
                           ? "bg-white text-indigo-600 shadow-sm"
                           : "text-slate-500 hover:text-slate-900"
                       )}
                     >
-                      O-Level (Ordinary)
+                      English GCE
                     </button>
                     <button
                       type="button"
                       onClick={() => {
-                        setSelectedLevel('Advance level');
-                        const aSubs = subjects.filter(s => s.level === 'Advance level');
-                        if (aSubs.length > 0) setFormData(prev => ({ ...prev, subject: aSubs[0].name }));
+                        setSelectedCurriculum('cameroon_francophone');
+                        setSelectedLevel('Terminale');
+                        setFormData(prev => ({ ...prev, subject: 'Mathématiques' }));
                       }}
                       className={cn(
-                        "py-2.5 rounded-xl font-bold text-xs transition-all",
-                        selectedLevel === 'Advance level'
+                        "py-2.5 px-2 rounded-xl font-bold text-xs transition-all text-center",
+                        selectedCurriculum === 'cameroon_francophone'
                           ? "bg-white text-indigo-600 shadow-sm"
                           : "text-slate-500 hover:text-slate-900"
                       )}
                     >
-                      A-Level (Advanced)
+                      Système Francophone
                     </button>
                   </div>
+                </div>
+
+                {/* Level Selection */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Education Level</label>
+                  {selectedCurriculum === 'cameroon_gce' ? (
+                    <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-2xl">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLevel('Ordinary level')}
+                        className={cn(
+                          "py-2.5 rounded-xl font-bold text-xs transition-all",
+                          selectedLevel === 'Ordinary level'
+                            ? "bg-white text-indigo-600 shadow-sm"
+                            : "text-slate-500 hover:text-slate-900"
+                        )}
+                      >
+                        O-Level (Ordinary)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedLevel('Advance level')}
+                        className={cn(
+                          "py-2.5 rounded-xl font-bold text-xs transition-all",
+                          selectedLevel === 'Advance level'
+                            ? "bg-white text-indigo-600 shadow-sm"
+                            : "text-slate-500 hover:text-slate-900"
+                        )}
+                      >
+                        A-Level (Advanced)
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-2xl">
+                      {['Troisième (BEPC)', 'Seconde', 'Première', 'Terminale'].map(lvl => (
+                        <button
+                          key={lvl}
+                          type="button"
+                          onClick={() => setSelectedLevel(lvl)}
+                          className={cn(
+                            "py-2 rounded-lg font-bold text-[11px] transition-all text-center truncate px-1",
+                            selectedLevel === lvl
+                              ? "bg-white text-indigo-600 shadow-sm"
+                              : "text-slate-500 hover:text-slate-900"
+                          )}
+                        >
+                          {lvl.split(' ')[0]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -404,6 +544,20 @@ export default function AuthPage() {
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+
+                {isLogin && (
+                  <div className="flex items-center justify-between pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input 
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMeState(e.target.checked)}
+                        className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                      />
+                      <span className="text-xs font-bold text-slate-600">Remember Me</span>
+                    </label>
+                  </div>
+                )}
               </div>
             )}
 

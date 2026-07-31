@@ -79,6 +79,14 @@ service cloud.firestore {
          (request.auth.token.email == "kemehhilary@gmail.com"));
     }
 
+    function isTeacher() {
+      return isAuthenticated() && 
+        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' ||
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')) ||
+         (request.auth.token.email == "kemehhilary@gmail.com"));
+    }
+
     function hasRequiredFields(fields) {
       return request.resource.data.keys().hasAll(fields);
     }
@@ -225,13 +233,40 @@ service cloud.firestore {
     // Resources
     match /resources/{resourceId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isTeacher();
     }
 
     // Assignments
     match /assignments/{assignmentId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isTeacher();
+    }
+
+    // Quizzes & Mock Exams & Marking Schemes & LMS Videos & PDFs & Discussions
+    match /quizzes/{quizId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /marking_schemes/{schemeId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /lms_videos/{videoId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /lms_pdfs/{pdfId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /discussions/{threadId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isTeacher();
     }
 
     // Weekly Leaderboard
@@ -246,17 +281,127 @@ service cloud.firestore {
       allow write: if isAdmin() || isOwner(userId);
     }
 
-    // Points History
+    // Academic Hierarchy
+    match /academic_levels/{levelId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /academic_departments/{deptId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /syllabus_topics/{topicId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /study_plans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Question Papers (both naming conventions)
+    match /question_papers/{paperId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /questionPapers/{paperId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Question Bank
+    match /question_bank/{questionId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Exam Attempts & Engine Attempts
+    match /exam_attempts/{attemptId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /engine_exams/{examId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /engine_attempts/{attemptId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /mock_exams/{examId} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    // Audit Logs & Auth Security
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if true;
+      allow update, delete: if false;
+    }
+
+    match /auth_security/{securityId} {
+      allow read, write: if true;
+    }
+
+    // Manual Approvals & System Notifications
+    match /manual_approvals/{approvalId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /system_notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Question Bookmarks & Reports
+    match /question_bookmarks/{bookmarkId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /question_reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Points History (both naming conventions)
     match /points_history/{recordId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
 
-    // Question Papers
-    match /questionPapers/{paperId} {
-      allow read: if isAuthenticated();
-      allow write: if isAdmin();
+    match /pointsHistory/{recordId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // Practice Results
+    match /practice_results/{resultId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /results/{resultId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
     }
 
     // Subjects
@@ -334,6 +479,73 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.studentId == request.auth.uid;
       allow update: if isAuthenticated() && (resource.data.studentId == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
+    }
+
+    // LMS Collections
+    match /lms_hierarchy/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /lms_lessons/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+
+    match /lms_progress/{id} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /lms_bookmarks/{id} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /lms_notes/{id} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ===============================================================
+    // GradeBoost AI Collections
+    // ===============================================================
+    match /ai_conversations/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_messages/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_usage/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_recommendations/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_study_plans/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_quizzes/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_flashcards/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_summaries/{id} {
+      allow read, write: if isAuthenticated();
+    }
+    match /ai_settings/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+    match /ai_usage_logs/{id} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
     }
   }
 }

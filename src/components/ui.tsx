@@ -83,20 +83,23 @@ Button.displayName = "Button";
  * Badge Component
  */
 export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'secondary';
+  variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' | 'primary' | 'secondary' | 'neutral' | 'indigo';
 }
 
 export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
   ({ className, variant = 'default', ...props }, ref) => {
     const variants = {
       default: "bg-slate-100 text-slate-600",
+      neutral: "bg-slate-100 text-slate-600 border border-slate-200",
       success: "bg-emerald-50 text-emerald-600 border border-emerald-100",
       warning: "bg-amber-50 text-amber-600 border border-amber-100",
       danger: "bg-red-50 text-red-600 border border-red-100",
       info: "bg-blue-50 text-blue-600 border border-blue-100",
       primary: "bg-indigo-50 text-indigo-600 border border-indigo-100",
+      indigo: "bg-indigo-50 text-indigo-600 border border-indigo-100",
       secondary: "bg-slate-100 text-slate-600 border border-slate-200",
     };
+
 
     return (
       <div

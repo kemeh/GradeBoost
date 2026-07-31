@@ -1,37 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen, LayoutDashboard } from 'lucide-react';
+import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen, LayoutDashboard, ShieldCheck, KeyRound, RefreshCw, History } from 'lucide-react';
 import { ACHIEVEMENTS } from '../services/gamificationService';
 import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '../contexts/AuthContext';
-import { db, storage } from '../firebase';
+import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
+import { db, storage, auth } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate } from '../utils/dateUtils';
 import Sidebar from '../components/Sidebar';
 import FileUpload from '../components/FileUpload';
 import { toast } from 'react-hot-toast';
+import { fetchAuditLogs, AuditLogEntry } from '../services/auditService';
 
 import { DEFAULT_GCE_SUBJECTS, getPapersForSubjectName } from '../data/defaultSubjects';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, isEmailVerified, resendVerificationEmail } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [paymentHistory, setPaymentHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [userLogs, setUserLogs] = useState<AuditLogEntry[]>([]);
+  const [resendingEmail, setResendingEmail] = useState(false);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: user?.name || '',
     school: user?.school || '',
     region: user?.region || '',
     subject: user?.subject || '',
+    curriculumId: user?.curriculumId || 'cameroon_gce',
+    curriculumName: user?.curriculumName || 'English Curriculum (Cameroon GCE)',
+    educationLevelName: user?.educationLevelName || user?.level || 'Ordinary level',
     level: user?.level || 'Ordinary level'
   });
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchAuditLogs(10, user.email).then(setUserLogs).catch(console.error);
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchSubjects = async () => {
@@ -76,11 +91,16 @@ export default function Profile() {
     const path = `users/${user.uid}`;
 
     try {
+      const currName = formData.curriculumId === 'cameroon_gce'
+        ? 'English Curriculum (Cameroon GCE)'
+        : 'French Curriculum (Cameroon Francophone)';
+
       const matchedPapers = getPapersForSubjectName(formData.subject, formData.level, subjects);
       const assignedPaperIds = matchedPapers.map(p => p.id);
 
       await updateDoc(doc(db, 'users', user.uid), {
         ...formData,
+        curriculumName: currName,
         subject: formData.subject.trim(),
         assignedPapers: assignedPaperIds.length > 0 ? assignedPaperIds : ['paper1', 'paper2'],
         updatedAt: serverTimestamp(),
@@ -255,6 +275,60 @@ export default function Profile() {
 
                     <div className="space-y-3">
                       <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        Platform Interface Language
+                      </label>
+                      <LanguageSwitcher variant="compact" className="w-fit" />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <BookOpen size={12} /> Curriculum System
+                      </label>
+                      <select 
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none"
+                        value={formData.curriculumId}
+                        onChange={e => {
+                          const currId = e.target.value;
+                          setFormData({ 
+                            ...formData, 
+                            curriculumId: currId,
+                            level: currId === 'cameroon_francophone' ? 'Terminale' : 'Ordinary level',
+                            subject: currId === 'cameroon_francophone' ? 'Mathématiques' : 'Computer Science'
+                          });
+                        }}
+                      >
+                        <option value="cameroon_gce">English Curriculum (Cameroon GCE)</option>
+                        <option value="cameroon_francophone">French Curriculum (Système Francophone)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <BookOpen size={12} /> Education Level
+                      </label>
+                      <select 
+                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none"
+                        value={formData.level}
+                        onChange={e => setFormData({ ...formData, level: e.target.value })}
+                      >
+                        {formData.curriculumId === 'cameroon_gce' ? (
+                          <>
+                            <option value="Ordinary level">Ordinary Level (O-Level)</option>
+                            <option value="Advance level">Advanced Level (A-Level)</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="Troisième (BEPC)">Troisième (BEPC)</option>
+                            <option value="Seconde">Seconde</option>
+                            <option value="Première">Première</option>
+                            <option value="Terminale">Terminale</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <BookOpen size={12} /> Target Subject
                       </label>
                       <select 
@@ -264,9 +338,26 @@ export default function Profile() {
                         required
                       >
                         <option value="">Select a Subject</option>
-                        {subjects.map(s => (
-                          <option key={s.id} value={s.name}>{s.name}</option>
-                        ))}
+                        {formData.curriculumId === 'cameroon_francophone' ? (
+                          <>
+                            <option value="Mathématiques">Mathématiques</option>
+                            <option value="Langue Française">Langue Française</option>
+                            <option value="English Language">English Language</option>
+                            <option value="Histoire">Histoire</option>
+                            <option value="Géographie">Géographie</option>
+                            <option value="Économie">Économie</option>
+                            <option value="Philosophie">Philosophie</option>
+                            <option value="Physique">Physique</option>
+                            <option value="Chimie">Chimie</option>
+                            <option value="Sciences de la Vie et de la Terre (SVT)">Sciences de la Vie et de la Terre (SVT)</option>
+                            <option value="Informatique">Informatique</option>
+                            <option value="Éducation à la Citoyenneté">Éducation à la Citoyenneté</option>
+                          </>
+                        ) : (
+                          subjects.map(s => (
+                            <option key={s.id} value={s.name}>{s.name}</option>
+                          ))
+                        )}
                       </select>
                     </div>
                   </div>
@@ -389,21 +480,81 @@ export default function Profile() {
               </Card>
 
               {/* Security Section */}
-              <Card className="p-8 lg:p-12 border-red-100">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 text-red-600">
-                    <AlertCircle size={20} />
-                    <span className="text-sm font-black uppercase tracking-widest">Security & Privacy</span>
+              <Card className="p-8 lg:p-12 border-slate-200">
+                <div className="space-y-8">
+                  <div className="flex items-center gap-2 text-indigo-600">
+                    <ShieldCheck size={20} />
+                    <span className="text-sm font-black uppercase tracking-widest">Security & Authentication</span>
                   </div>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-black text-slate-900">Account Security</h3>
-                      <p className="text-sm text-slate-500 font-medium">Manage your password and authentication methods.</p>
+
+                  {/* Email Verification Status */}
+                  <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-black text-slate-900">Email Verification</span>
+                        <Badge variant={isEmailVerified ? "success" : "warning"}>
+                          {isEmailVerified ? "Verified" : "Unverified"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-slate-500 font-medium mt-1">
+                        {isEmailVerified 
+                          ? "Your primary email is verified and secure." 
+                          : "Please verify your email address to ensure full account access."}
+                      </p>
                     </div>
-                    <Button variant="outline" className="border-red-200 text-red-600 hover:bg-red-50">
-                      Change Password
+                    {!isEmailVerified && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        loading={resendingEmail}
+                        onClick={async () => {
+                          setResendingEmail(true);
+                          await resendVerificationEmail();
+                          setResendingEmail(false);
+                        }}
+                        className="rounded-xl border-indigo-200 text-indigo-600 hover:bg-indigo-50 shrink-0"
+                      >
+                        Resend Email
+                      </Button>
+                    )}
+                  </div>
+
+                  {/* Password Reset */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-2">
+                    <div className="space-y-1">
+                      <h3 className="text-base font-black text-slate-900">Password Management</h3>
+                      <p className="text-xs text-slate-500 font-medium">Receive a secure link to update your password.</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={async () => {
+                        try {
+                          await sendPasswordResetEmail(auth, user.email);
+                          toast.success(`Password reset email sent to ${user.email}`);
+                        } catch (err: any) {
+                          toast.error(err.message || 'Failed to send password reset link');
+                        }
+                      }}
+                      className="border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl"
+                    >
+                      <KeyRound size={16} className="mr-2" /> Change Password
                     </Button>
                   </div>
+
+                  {/* Recent Activity Logs */}
+                  {userLogs.length > 0 && (
+                    <div className="pt-4 border-t border-slate-100 space-y-3">
+                      <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Recent Security Activity</h4>
+                      <div className="space-y-2">
+                        {userLogs.slice(0, 4).map(log => (
+                          <div key={log.id} className="p-3 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                            <span className="font-bold text-slate-700">{log.action}</span>
+                            <span className="text-slate-400 font-medium">{log.details}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>

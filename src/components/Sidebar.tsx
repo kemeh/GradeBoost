@@ -7,6 +7,8 @@ import {
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { cn } from './ui';
 import { FeedbackModal } from './FeedbackModal';
 
@@ -15,8 +17,9 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ className }: SidebarProps) {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isTeacher } = useAuth();
   const { appName, logoUrl, contactEmail, whatsappNumber, whatsappGroupLink } = useSettings();
+  const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
@@ -32,19 +35,37 @@ export default function Sidebar({ className }: SidebarProps) {
   };
 
   const studentLinks = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Trophy, label: 'Learning Challenges', path: '/challenges' },
+    { icon: LayoutDashboard, label: t('nav.dashboard', 'Dashboard'), path: '/dashboard' },
+    { icon: BookOpen, label: t('nav.lms', 'Digital School LMS'), path: '/lms' },
+    { icon: FileText, label: t('nav.pastQuestions', 'GCE Exam Engine'), path: '/exams' },
+    { icon: Trophy, label: t('nav.challenges', 'Learning Challenges'), path: '/challenges' },
     { icon: Zap, label: 'Duel Battle', path: '/duel' },
-    { icon: Trophy, label: 'Leaderboard', path: '/leaderboard' },
-    { icon: Target, label: 'Daily Drills', path: '/daily-drill' },
+    { icon: Trophy, label: t('nav.leaderboard', 'Leaderboard'), path: '/leaderboard' },
+    { icon: Target, label: t('nav.dailyDrill', 'Daily Drills'), path: '/daily-drill' },
     { icon: Sparkles, label: 'Random Practice', path: '/random-practice' },
-    { icon: FileText, label: 'Practice Papers', path: '/practice' },
+    { icon: FileText, label: t('nav.practice', 'Practice Papers'), path: '/practice' },
     { icon: Target, label: 'Diagnostic', path: '/diagnostic' },
-    { icon: Settings, label: 'Profile Settings', path: '/profile' },
+    { icon: Settings, label: t('nav.profile', 'Profile Settings'), path: '/profile' },
+  ];
+
+  const teacherLinks = [
+    { icon: LayoutDashboard, label: 'Teacher Dashboard', path: '/teacher' },
+    { icon: BookOpen, label: 'LMS Content Studio', path: '/admin/lms' },
+    { icon: FileText, label: 'Master Question Bank', path: '/admin/questions' },
+    { icon: Sparkles, label: 'Mock Exam Builder', path: '/admin/exam-builder' },
+    { icon: FileText, label: 'Paper 2 Generator', path: '/admin/paper-generator' },
+    { icon: Trophy, label: 'Study Challenges', path: '/admin/challenges' },
+    { icon: Target, label: 'Daily Drills', path: '/admin/daily-drill' },
+    { icon: BookOpen, label: 'Resources & Assignments', path: '/admin/resources' },
+    { icon: LayoutDashboard, label: 'Student View', path: '/dashboard' },
   ];
 
   const adminLinks = [
-    { icon: ShieldCheck, label: 'Admin Panel', path: '/admin' },
+    { icon: ShieldCheck, label: 'Users & System Admin', path: '/admin' },
+    { icon: LayoutDashboard, label: 'Teacher Dashboard', path: '/teacher' },
+    { icon: BookOpen, label: 'LMS Content Studio', path: '/admin/lms' },
+    { icon: FileText, label: 'Master Question Bank', path: '/admin/questions' },
+    { icon: Sparkles, label: 'Mock Exam Builder', path: '/admin/exam-builder' },
     { icon: Trophy, label: 'Study Challenges', path: '/admin/challenges' },
     { icon: Zap, label: 'Duel Battle', path: '/duel' },
     { icon: CreditCard, label: 'Payments', path: '/admin?tab=payments' },
@@ -56,7 +77,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: LayoutDashboard, label: 'Student View', path: '/dashboard' },
   ];
 
-  const links = isAdmin ? adminLinks : studentLinks;
+  const links = isAdmin ? adminLinks : isTeacher ? teacherLinks : studentLinks;
 
   const isActive = (path: string) => {
     if (path === '#') return false;
@@ -126,7 +147,15 @@ export default function Sidebar({ className }: SidebarProps) {
         </nav>
 
         {/* Footer */}
-        <div className="mt-8 space-y-6 pt-6 border-t border-slate-50">
+        <div className="mt-8 space-y-4 pt-6 border-t border-slate-100">
+          {/* Platform Language Switcher */}
+          <div className="space-y-1">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+              {t('common.language', 'Language')}
+            </label>
+            <LanguageSwitcher variant="compact" />
+          </div>
+
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
             <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
               Developed by Vertexon Technologies to empower students with academic excellence.
@@ -143,7 +172,7 @@ export default function Sidebar({ className }: SidebarProps) {
             className="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all w-full text-left"
           >
             <LogOut size={20} />
-            Logout
+            {t('nav.logout', 'Logout')}
           </button>
         </div>
       </aside>

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Plus, Upload, FileText, Trash2, 
   Users, BarChart3, ShieldCheck, 
-  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard, AlertCircle, CheckCircle2, Loader2, Eye, ExternalLink
+  LayoutDashboard, LogOut, TrendingUp, Search, CreditCard, AlertCircle, CheckCircle2, Loader2, Eye, ExternalLink, BookOpen
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,17 @@ import { formatDate } from '../utils/dateUtils';
 import { toast } from 'react-hot-toast';
 import { getSystemSettings } from '../services/settingsService';
 
+import AdminUserManagement from './AdminUserManagement';
+import AdminAnalyticsOverview from '../components/admin/AdminAnalyticsOverview';
+import AdminUserManagementView from '../components/admin/AdminUserManagementView';
+import AdminAcademicHierarchy from '../components/admin/AdminAcademicHierarchy';
+import AdminContentCurriculum from '../components/admin/AdminContentCurriculum';
+import AdminAssessmentEngine from '../components/admin/AdminAssessmentEngine';
+import AdminFinancePayments from '../components/admin/AdminFinancePayments';
+import AdminNotificationsManager from '../components/admin/AdminNotificationsManager';
+import AdminReportsAnalytics from '../components/admin/AdminReportsAnalytics';
+import AdminPlatformSettingsView from '../components/admin/AdminPlatformSettingsView';
+
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -28,7 +39,10 @@ export default function Admin() {
   const [error, setError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
-  const activeTab = (searchParams.get('tab') as 'papers' | 'payments' | 'manual' | 'samples' | 'duels') || 'papers';
+  
+  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'papers' | 'manual' | 'samples' | 'duels';
+  const activeTab = (searchParams.get('tab') as AdminTab) || 'analytics';
+
   const [users, setUsers] = useState<any[]>([]);
   const [manualRequests, setManualRequests] = useState<any[]>([]);
   const [sampleQuestions, setSampleQuestions] = useState<SampleQuestion[]>([]);
@@ -38,9 +52,10 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState('');
   const [paymentPrice, setPaymentPrice] = useState(1000);
 
-  const setActiveTab = (tab: 'papers' | 'payments' | 'manual' | 'samples' | 'duels') => {
+  const setActiveTab = (tab: AdminTab) => {
     setSearchParams({ tab });
   };
+
 
   const [formData, setFormData] = useState({
     title: '',
@@ -437,9 +452,14 @@ export default function Admin() {
               <p className="text-slate-500 font-medium">Manage the platform content and monitor student performance.</p>
             </div>
           </div>
-          <Button onClick={() => setShowUpload(true)} className="group">
-            <Plus className="mr-2" size={20} /> Upload New Paper
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button onClick={() => navigate('/admin/lms')} variant="outline" className="border-indigo-200 text-indigo-600 font-bold hover:bg-indigo-50">
+              <BookOpen className="mr-2" size={18} /> LMS Content Studio
+            </Button>
+            <Button onClick={() => setShowUpload(true)} className="group">
+              <Plus className="mr-2" size={20} /> Upload New Paper
+            </Button>
+          </div>
         </header>
 
         {/* Stats */}
@@ -511,13 +531,17 @@ export default function Admin() {
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="papers" value={activeTab} onValueChange={(val) => setActiveTab(val as any)}>
-          <TabsList className="mb-8 bg-white border border-slate-100 p-1 rounded-2xl h-auto flex-wrap justify-start">
-            <TabsTrigger value="papers" className="rounded-xl py-2.5">Papers</TabsTrigger>
-            <TabsTrigger value="payments" className="rounded-xl py-2.5">Payments</TabsTrigger>
-            <TabsTrigger value="manual" className="rounded-xl py-2.5">Manual Requests</TabsTrigger>
-            <TabsTrigger value="samples" className="rounded-xl py-2.5">Sample Questions</TabsTrigger>
-            <TabsTrigger value="duels" className="rounded-xl py-2.5">Duels</TabsTrigger>
+        <Tabs defaultValue="analytics" value={activeTab} onValueChange={(val) => setActiveTab(val as any)}>
+          <TabsList className="mb-8 bg-white border border-slate-100 p-1.5 rounded-2xl h-auto flex-wrap justify-start gap-1 shadow-sm">
+            <TabsTrigger value="analytics" className="rounded-xl py-2 px-4 text-xs font-bold">Overview & Analytics</TabsTrigger>
+            <TabsTrigger value="users" className="rounded-xl py-2 px-4 text-xs font-bold">Users, Teachers & Students</TabsTrigger>
+            <TabsTrigger value="hierarchy" className="rounded-xl py-2 px-4 text-xs font-bold">Academic Hierarchy</TabsTrigger>
+            <TabsTrigger value="curriculum" className="rounded-xl py-2 px-4 text-xs font-bold">Content & Curriculum</TabsTrigger>
+            <TabsTrigger value="assessments" className="rounded-xl py-2 px-4 text-xs font-bold">Assessment Engine</TabsTrigger>
+            <TabsTrigger value="payments" className="rounded-xl py-2 px-4 text-xs font-bold">Finance & Payments</TabsTrigger>
+            <TabsTrigger value="notifications" className="rounded-xl py-2 px-4 text-xs font-bold">Notifications</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-xl py-2 px-4 text-xs font-bold">Reports & Intelligence</TabsTrigger>
+            <TabsTrigger value="settings" className="rounded-xl py-2 px-4 text-xs font-bold">Platform Settings</TabsTrigger>
           </TabsList>
 
           {error && (
@@ -530,6 +554,52 @@ export default function Admin() {
               <p className="text-sm font-bold">{error}</p>
             </motion.div>
           )}
+
+          {/* Tab 1: Overview & Analytics */}
+          <TabsContent value="analytics">
+            <AdminAnalyticsOverview />
+          </TabsContent>
+
+          {/* Tab 2: User Management (Users, Teachers, Students) */}
+          <TabsContent value="users">
+            <AdminUserManagementView />
+          </TabsContent>
+
+          {/* Tab 3: Academic Hierarchy (Levels, Departments, Subjects, Topics) */}
+          <TabsContent value="hierarchy">
+            <AdminAcademicHierarchy />
+          </TabsContent>
+
+          {/* Tab 4: Content & Curriculum (Papers, Lessons, Study Plans) */}
+          <TabsContent value="curriculum">
+            <AdminContentCurriculum />
+          </TabsContent>
+
+          {/* Tab 5: Assessment Engine (Questions & Exams) */}
+          <TabsContent value="assessments">
+            <AdminAssessmentEngine />
+          </TabsContent>
+
+          {/* Tab 6: Finance & Payments */}
+          <TabsContent value="payments">
+            <AdminFinancePayments />
+          </TabsContent>
+
+          {/* Tab 7: Notifications */}
+          <TabsContent value="notifications">
+            <AdminNotificationsManager />
+          </TabsContent>
+
+          {/* Tab 8: Reports & Intelligence */}
+          <TabsContent value="reports">
+            <AdminReportsAnalytics />
+          </TabsContent>
+
+          {/* Tab 9: Platform Settings */}
+          <TabsContent value="settings">
+            <AdminPlatformSettingsView />
+          </TabsContent>
+
 
           {/* Papers Table */}
           <TabsContent value="papers">

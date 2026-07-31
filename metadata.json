@@ -1,5 +1,6 @@
 {
   "name": "GradeBoost 60",
   "description": "GradeBoost 60 - Cameroon GCE A-Level exam preparation platform, developed by Vertexon Technologies.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
