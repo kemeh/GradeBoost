@@ -1,6 +1,6 @@
 {
-  "name": "GradeBoost 60",
-  "description": "GradeBoost 60 - Cameroon GCE A-Level exam preparation platform, developed by Vertexon Technologies.",
+  "name": "Edulpha",
+  "description": "Edulpha - Bilingual AI-powered educational mobile & web ecosystem for Cameroon GCE (Ordinary & Advanced Level), BEPC, and Baccalauréat.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

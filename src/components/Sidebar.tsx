@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, Target, Trophy, 
-  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles
+  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +36,10 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const studentLinks = [
     { icon: LayoutDashboard, label: t('nav.dashboard', 'Dashboard'), path: '/dashboard' },
+    { icon: Smartphone, label: '📱 Edulpha Mobile App', path: '/mobile-app' },
+    { icon: TrendingUp, label: 'Learning Analytics', path: '/analytics' },
+    { icon: Bell, label: 'Notifications & Alerts', path: '/notifications' },
+    { icon: MessageSquare, label: 'Discussion Forum', path: '/forum' },
     { icon: BookOpen, label: t('nav.lms', 'Digital School LMS'), path: '/lms' },
     { icon: FileText, label: t('nav.pastQuestions', 'GCE Exam Engine'), path: '/exams' },
     { icon: Trophy, label: t('nav.challenges', 'Learning Challenges'), path: '/challenges' },
@@ -50,10 +54,13 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const teacherLinks = [
     { icon: LayoutDashboard, label: 'Teacher Dashboard', path: '/teacher' },
+    { icon: Smartphone, label: '📱 Edulpha Mobile App', path: '/mobile-app' },
+    { icon: TrendingUp, label: 'Class Analytics', path: '/teacher/analytics' },
+    { icon: Bell, label: 'Notifications & Alerts', path: '/notifications' },
+    { icon: MessageSquare, label: 'Discussion Forum', path: '/forum' },
     { icon: BookOpen, label: 'LMS Content Studio', path: '/admin/lms' },
     { icon: FileText, label: 'Master Question Bank', path: '/admin/questions' },
     { icon: Sparkles, label: 'Mock Exam Builder', path: '/admin/exam-builder' },
-    { icon: FileText, label: 'Paper 2 Generator', path: '/admin/paper-generator' },
     { icon: Trophy, label: 'Study Challenges', path: '/admin/challenges' },
     { icon: Target, label: 'Daily Drills', path: '/admin/daily-drill' },
     { icon: BookOpen, label: 'Resources & Assignments', path: '/admin/resources' },
@@ -62,6 +69,11 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const adminLinks = [
     { icon: ShieldCheck, label: 'Users & System Admin', path: '/admin' },
+    { icon: Smartphone, label: '📱 Edulpha Mobile App', path: '/mobile-app' },
+    { icon: Shield, label: '🔒 Security & Performance', path: '/admin/security' },
+    { icon: TrendingUp, label: 'Executive Analytics & Reports', path: '/admin/analytics' },
+    { icon: Bell, label: 'Notifications & Hub', path: '/admin/notifications' },
+    { icon: MessageSquare, label: 'Discussion Forum', path: '/forum' },
     { icon: LayoutDashboard, label: 'Teacher Dashboard', path: '/teacher' },
     { icon: BookOpen, label: 'LMS Content Studio', path: '/admin/lms' },
     { icon: FileText, label: 'Master Question Bank', path: '/admin/questions' },

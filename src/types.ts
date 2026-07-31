@@ -1031,6 +1031,560 @@ export interface AIUsageLog {
   createdAt: any;
 }
 
+// ===============================================================
+// Subscription & Payment Systems Interfaces
+// ===============================================================
+
+export interface SubscriptionPlan {
+  id: string;
+  name: string;
+  nameFr?: string;
+  description: string;
+  descriptionFr?: string;
+  price: number;
+  currency: 'XAF' | 'USD' | 'EUR';
+  billingCycle: 'free' | 'monthly' | 'annual' | 'lifetime';
+  trialDays?: number;
+  isActive: boolean;
+  features: string[];
+  featuresFr?: string[];
+  maxDailyQuizzes?: number;
+  maxDailyAIRequests?: number;
+  allowsOfflineDownloads: boolean;
+  allowsCertificates: boolean;
+  allowsPrioritySupport: boolean;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface UserSubscription {
+  id?: string;
+  userId: string;
+  planId: string;
+  planName: string;
+  status: 'active' | 'expired' | 'canceled' | 'trial';
+  startDate: string;
+  endDate: string;
+  autoRenew: boolean;
+  amountPaid: number;
+  currency: string;
+  paymentMethod: string;
+  transactionId?: string;
+  receiptNumber?: string;
+}
+
+export interface PaymentRecord {
+  id: string;
+  userId: string;
+  userEmail: string;
+  userName: string;
+  planId: string;
+  planName: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string; // 'mtn_momo' | 'orange_money' | 'card' | 'paypal' | 'flutterwave' | 'stripe' | 'manual'
+  transactionId: string;
+  referenceNumber: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  receiptNumber: string;
+  createdAt: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  phoneNumber?: string;
+  screenshotUrl?: string;
+  notes?: string;
+}
+
+export interface PaymentMethodConfig {
+  id: string;
+  code: string;
+  name: string;
+  nameFr?: string;
+  provider: 'mtn' | 'orange' | 'stripe' | 'flutterwave' | 'paypal' | 'card';
+  isEnabled: boolean;
+  accountNumber?: string;
+  accountName?: string;
+  instructions?: string;
+  instructionsFr?: string;
+}
+
+export interface PaymentReceipt {
+  receiptNumber: string;
+  transactionId: string;
+  studentName: string;
+  studentEmail: string;
+  planName: string;
+  amountPaid: number;
+  currency: string;
+  paymentMethod: string;
+  date: string;
+  expiryDate: string;
+  companyName: string;
+  companyContact: string;
+}
+
+export interface CouponCode {
+  id: string;
+  code: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  maxUses: number;
+  currentUses: number;
+  expiryDate: string;
+  isEnabled: boolean;
+  eligiblePlans?: string[];
+  createdAt?: any;
+}
+
+export interface RefundRequest {
+  id: string;
+  paymentId: string;
+  userId: string;
+  userName: string;
+  userEmail: string;
+  amount: number;
+  currency: string;
+  reason: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: string;
+  processedAt?: string;
+  processedBy?: string;
+  adminNotes?: string;
+}
+
+// ===============================================================
+// Discussion Forum & Community Learning System Interfaces
+// ===============================================================
+
+export type ForumCurriculum = 'English' | 'French' | 'Both';
+
+export type ForumDiscussionType =
+  | 'question'
+  | 'discussion'
+  | 'revision_tips'
+  | 'assignment_help'
+  | 'programming_help'
+  | 'exam_prep'
+  | 'study_group'
+  | 'announcement'
+  | 'teacher_post';
+
+export interface ForumAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: 'image' | 'pdf' | 'doc' | 'code' | 'zip';
+  size?: string;
+}
+
+export interface ForumCategory {
+  id: string;
+  name: string;
+  nameFr?: string;
+  slug: string;
+  description: string;
+  descriptionFr?: string;
+  curriculum: ForumCurriculum;
+  level?: string; // e.g., 'Advanced Level', 'Terminale', 'O-Level'
+  subject?: string; // e.g., 'Computer Science', 'Mathématiques'
+  department?: string;
+  paper?: string;
+  topic?: string;
+  icon?: string;
+  color?: string;
+  orderIndex: number;
+  discussionCount?: number;
+}
+
+export interface ForumCodeSnippet {
+  language: 'c' | 'cpp' | 'python' | 'java' | 'javascript' | 'html' | 'css' | 'sql' | string;
+  code: string;
+}
+
+export interface ForumDiscussion {
+  id: string;
+  title: string;
+  description?: string;
+  content: string; // Rich Text or Markdown
+  curriculum: ForumCurriculum;
+  educationLevel: string; // e.g. 'Advanced Level', 'Terminale'
+  department?: string;
+  subject: string;
+  paper?: string;
+  topic?: string;
+  type: ForumDiscussionType;
+  tags: string[];
+  language: 'en' | 'fr';
+  authorId: string;
+  authorName: string;
+  authorRole: 'student' | 'teacher' | 'admin';
+  authorAvatar?: string;
+  isTeacherVerified: boolean;
+  hasVerifiedAnswer: boolean;
+  acceptedReplyId?: string;
+  isPinned: boolean;
+  isLocked: boolean;
+  likeCount: number;
+  replyCount: number;
+  viewCount: number;
+  bookmarkCount: number;
+  attachments?: ForumAttachment[];
+  codeSnippet?: ForumCodeSnippet;
+  mathFormula?: string;
+  createdAt: string;
+  updatedAt: string;
+  lastActivityAt: string;
+}
+
+export interface ForumReply {
+  id: string;
+  discussionId: string;
+  parentId?: string | null; // For nested replies
+  content: string;
+  authorId: string;
+  authorName: string;
+  authorRole: 'student' | 'teacher' | 'admin';
+  authorAvatar?: string;
+  isTeacherVerified: boolean;
+  isAcceptedAnswer: boolean;
+  isPinned: boolean;
+  likeCount: number;
+  attachments?: ForumAttachment[];
+  codeSnippet?: ForumCodeSnippet;
+  mathFormula?: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ForumLike {
+  id: string;
+  userId: string;
+  targetType: 'discussion' | 'reply';
+  targetId: string;
+  createdAt: string;
+}
+
+export interface ForumBookmark {
+  id: string;
+  userId: string;
+  discussionId: string;
+  createdAt: string;
+}
+
+export interface ForumReport {
+  id: string;
+  reporterId: string;
+  reporterName: string;
+  targetType: 'discussion' | 'reply';
+  targetId: string;
+  targetTitle?: string;
+  reason: string;
+  status: 'pending' | 'reviewed' | 'dismissed';
+  createdAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+}
+
+export interface ForumNotification {
+  id: string;
+  userId: string;
+  title: string;
+  titleFr?: string;
+  message: string;
+  messageFr?: string;
+  type: 'reply' | 'mention' | 'verified_answer' | 'lock' | 'delete' | 'announcement';
+  discussionId: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface ForumAnalytics {
+  totalDiscussions: number;
+  totalReplies: number;
+  activeStudents: number;
+  activeTeachers: number;
+  mostDiscussedSubjects: { subject: string; count: number }[];
+  topSearchedTopics: string[];
+  dailyActivity: { date: string; discussions: number; replies: number }[];
+}
+
+export type NotificationType =
+  | 'general_announcement'
+  | 'assignment_reminder'
+  | 'study_plan_reminder'
+  | 'lesson_reminder'
+  | 'revision_reminder'
+  | 'quiz_reminder'
+  | 'mock_exam_reminder'
+  | 'payment_reminder'
+  | 'subscription_expiry'
+  | 'subscription_renewal'
+  | 'discussion_reply'
+  | 'teacher_announcement'
+  | 'system_maintenance'
+  | 'platform_update'
+  | 'ai_recommendation'
+  | 'certificate_available'
+  | 'achievement_earned'
+  | 'leaderboard_update'
+  | 'password_change'
+  | 'security_alert'
+  | 'account_login_alert'
+  | 'welcome_message';
+
+export type NotificationCategory =
+  | 'academic'
+  | 'examinations'
+  | 'assignments'
+  | 'platform_updates'
+  | 'maintenance'
+  | 'scholarships'
+  | 'events'
+  | 'competitions'
+  | 'general'
+  | 'premium';
+
+export type DeliveryChannel = 'in_app' | 'push' | 'email';
+
+export interface TargetAudience {
+  role: 'everyone' | 'students' | 'teachers' | 'administrators' | 'specific_users';
+  curriculum?: 'english' | 'french' | 'all';
+  educationLevel?: string;
+  subject?: string;
+  subscriptionPlan?: 'free' | 'premium' | 'all';
+  userIds?: string[];
+}
+
+export interface AnnouncementAttachment {
+  id: string;
+  name: string;
+  url: string;
+  type: 'image' | 'video' | 'pdf' | 'link';
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  titleFr?: string;
+  subtitle?: string;
+  subtitleFr?: string;
+  description: string;
+  descriptionFr?: string;
+  contentMarkdown?: string;
+  contentMarkdownFr?: string;
+  category: NotificationCategory;
+  targetAudience: TargetAudience;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  status: 'draft' | 'scheduled' | 'published' | 'archived';
+  isPinned: boolean;
+  publicationDate: string;
+  expiryDate?: string;
+  authorName: string;
+  authorRole: 'admin' | 'teacher';
+  attachments?: AnnouncementAttachment[];
+  viewsCount?: number;
+  createdAt: string;
+}
+
+export interface UserNotification {
+  id: string;
+  userId: string;
+  announcementId?: string;
+  type: NotificationType;
+  category: NotificationCategory;
+  title: string;
+  titleFr?: string;
+  message: string;
+  messageFr?: string;
+  link?: string;
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  isRead: boolean;
+  isBookmarked: boolean;
+  isArchived: boolean;
+  channel: DeliveryChannel;
+  createdAt: string;
+  readAt?: string;
+}
+
+export interface NotificationPreference {
+  userId: string;
+  inAppEnabled: boolean;
+  pushEnabled: boolean;
+  emailEnabled: boolean;
+  assignmentNotifications: boolean;
+  aiNotifications: boolean;
+  paymentNotifications: boolean;
+  discussionNotifications: boolean;
+  achievementNotifications: boolean;
+  reminderNotifications: boolean;
+  languagePreference: 'en' | 'fr';
+  soundEnabled: boolean;
+  vibrationEnabled: boolean;
+}
+
+export interface NotificationTemplate {
+  id: string;
+  name: string;
+  code: string;
+  category: NotificationCategory;
+  subjectEn: string;
+  subjectFr: string;
+  bodyEn: string;
+  bodyFr: string;
+  variables: string[];
+}
+
+export interface DeliveryReport {
+  id: string;
+  announcementId?: string;
+  title: string;
+  totalRecipients: number;
+  inAppDelivered: number;
+  pushDelivered: number;
+  pushOpened: number;
+  emailSent: number;
+  emailOpened: number;
+  failed: number;
+  timestamp: string;
+}
+
+export interface NotificationAnalyticsData {
+  totalSent: number;
+  totalDelivered: number;
+  totalOpened: number;
+  avgEmailOpenRate: number;
+  avgPushOpenRate: number;
+  deliveryByDay: { date: string; sent: number; opened: number }[];
+  topAnnouncements: { id: string; title: string; views: number }[];
+}
+
+export interface AnalyticsEvent {
+  id: string;
+  userId?: string;
+  userRole?: 'student' | 'teacher' | 'admin';
+  action: string;
+  category: 'user' | 'curriculum' | 'exam' | 'content' | 'ai' | 'payment' | 'system';
+  metadata?: Record<string, any>;
+  timestamp: string;
+  language?: 'en' | 'fr';
+  curriculum?: string;
+  level?: string;
+}
+
+export interface PlatformOverviewMetrics {
+  totalUsers: number;
+  activeUsers: number;
+  newRegistrations: number;
+  studentsCount: number;
+  teachersCount: number;
+  adminsCount: number;
+  premiumUsers: number;
+  freeUsers: number;
+  dau: number;
+  wau: number;
+  mau: number;
+  userRetentionRate: number;
+  englishUsersCount: number;
+  frenchUsersCount: number;
+}
+
+export interface CurriculumAnalyticsItem {
+  curriculum: string;
+  activeUsers: number;
+  completedLessons: number;
+  avgScore: number;
+  popularSubjects: string[];
+}
+
+export interface StudentAnalyticsData {
+  userId: string;
+  studyTimeMinutes: number;
+  lessonsCompleted: number;
+  quizAvgScore: number;
+  examAvgScore: number;
+  strongSubjects: string[];
+  weakSubjects: string[];
+  learningStreak: number;
+  progressPercentage: number;
+  achievementsUnlocked: number;
+  ranking: number;
+  totalStudentsInCohort: number;
+  recommendedTopics: string[];
+  suggestedPractice: string[];
+  performanceHistory: { date: string; score: number; studyMinutes: number }[];
+}
+
+export interface TeacherAnalyticsData {
+  teacherId: string;
+  totalStudentsReached: number;
+  totalLessonViews: number;
+  lessonCompletionRate: number;
+  avgQuizPerformance: number;
+  assignmentSubmissions: number;
+  topicDifficultyMap: { topic: string; subject: string; avgScore: number; failCount: number }[];
+  frequentlyAskedQuestions: { question: string; count: number }[];
+}
+
+export interface ContentAnalyticsData {
+  totalLessons: number;
+  lessonViews: number;
+  lessonCompletions: number;
+  lessonDownloads: number;
+  avgRating: number;
+  bookmarksCount: number;
+  videoViews: number;
+  avgWatchDurationMinutes: number;
+  documentDownloads: number;
+  topLessons: { id: string; title: string; views: number; rating: number }[];
+}
+
+export interface AIAnalyticsData {
+  totalConversations: number;
+  questionsAsked: number;
+  mostRequestedSubjects: { subject: string; count: number }[];
+  aiUsageByCurriculum: { curriculum: string; queries: number }[];
+  tokenConsumption: number;
+  avgResponseRating: number;
+  popularFeatures: { feature: string; usageCount: number }[];
+}
+
+export interface PaymentAnalyticsData {
+  totalRevenue: number;
+  monthlyRevenue: number;
+  annualRevenue: number;
+  activeSubscriptions: number;
+  expiredSubscriptions: number;
+  popularPlans: { planName: string; count: number; revenue: number }[];
+  successfulPaymentsCount: number;
+  failedPaymentsCount: number;
+  revenueByMonth: { month: string; revenue: number }[];
+}
+
+export interface GeneratedReport {
+  id: string;
+  title: string;
+  reportType: 'admin' | 'teacher' | 'student';
+  category: 'growth' | 'revenue' | 'subscription' | 'activity' | 'content' | 'ai' | 'exam' | 'performance';
+  format: 'pdf' | 'excel' | 'csv';
+  generatedAt: string;
+  generatedBy: string;
+  fileSize: string;
+  filters: AnalyticsFilter;
+  downloadUrl?: string;
+}
+
+export interface AnalyticsFilter {
+  dateRange: '7d' | '30d' | '90d' | '1y' | 'all';
+  curriculum?: string;
+  educationLevel?: string;
+  subject?: string;
+  language?: 'en' | 'fr' | 'all';
+  role?: string;
+}
+
+
+
+
 
 
 

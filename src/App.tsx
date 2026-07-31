@@ -33,6 +33,14 @@ const StudentLMSPortal = lazy(() => import('./pages/StudentLMSPortal'));
 const AdminLMSStudio = lazy(() => import('./pages/AdminLMSStudio'));
 const TeacherDashboard = lazy(() => import('./pages/TeacherDashboard'));
 const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
+const DiscussionForum = lazy(() => import('./pages/DiscussionForum'));
+const NotificationCenterPage = lazy(() => import('./pages/NotificationCenterPage'));
+const AdminNotificationManagement = lazy(() => import('./pages/AdminNotificationManagement'));
+const AdminAnalyticsDashboard = lazy(() => import('./pages/AdminAnalyticsDashboard'));
+const StudentAnalyticsPage = lazy(() => import('./pages/StudentAnalyticsPage'));
+const TeacherAnalyticsPage = lazy(() => import('./pages/TeacherAnalyticsPage'));
+const EdulphaMobileHub = lazy(() => import('./pages/EdulphaMobileHub'));
+const AdminSecurityPerformanceHub = lazy(() => import('./pages/AdminSecurityPerformanceHub'));
 
 const AdminQuestionBank = lazy(() => import('./pages/AdminQuestionBank'));
 const AdminBulkImport = lazy(() => import('./pages/AdminBulkImport'));
@@ -106,6 +114,14 @@ export default function App() {
               
               <Route path="/dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/student-dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/forum" element={<PrivateRoute><DiscussionForum /></PrivateRoute>} />
+              <Route path="/notifications" element={<PrivateRoute><NotificationCenterPage /></PrivateRoute>} />
+              <Route path="/admin/notifications" element={<AdminRoute><AdminNotificationManagement /></AdminRoute>} />
+              <Route path="/analytics" element={<PrivateRoute><StudentAnalyticsPage /></PrivateRoute>} />
+              <Route path="/teacher/analytics" element={<TeacherRoute><TeacherAnalyticsPage /></TeacherRoute>} />
+              <Route path="/admin/analytics" element={<AdminRoute><AdminAnalyticsDashboard /></AdminRoute>} />
+              <Route path="/admin/security" element={<AdminRoute><AdminSecurityPerformanceHub /></AdminRoute>} />
+              <Route path="/mobile-app" element={<PrivateRoute><EdulphaMobileHub /></PrivateRoute>} />
               <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
               <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
               <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
