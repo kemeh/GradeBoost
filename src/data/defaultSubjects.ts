@@ -448,6 +448,201 @@ export const DEFAULT_GCE_SUBJECTS: Omit<SubjectModel, 'id' | 'createdAt'>[] = [
       { id: 'paper2', name: 'Paper 2 (Logic & Epistemology)', type: 'Theory', totalMarks: 100, durationMinutes: 180, description: 'Formal logic, truth tables & theory of knowledge' },
       { id: 'paper3', name: 'Paper 3 (Ethics & Political Philosophy)', type: 'Essay', totalMarks: 100, durationMinutes: 180, description: 'Moral philosophy, justice & political theory' },
     ]
+  },
+  // ==========================================
+  // TECHNICAL EDUCATION SUBJECTS
+  // ==========================================
+  {
+    name: 'Building Construction',
+    code: '0810',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Foundation, masonry, concrete technology, structural framing, and construction safety.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Construction Theory & Details)', type: 'Theory', totalMarks: 100, durationMinutes: 150, description: 'Building services, materials & structural principles' },
+      { id: 'paper3', name: 'Paper 3 (Practical Building Drawing & Estimation)', type: 'Practical', totalMarks: 50, durationMinutes: 180, description: 'Architectural details & quantity surveying' },
+    ]
+  },
+  {
+    name: 'Electrical Technology',
+    code: '0820',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Circuit theory, electrical wiring, machines, transformers, and power distribution.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Electrical Principles & Machines)', type: 'Theory', totalMarks: 100, durationMinutes: 150, description: 'AC/DC circuits, motors & generators' },
+      { id: 'paper3', name: 'Paper 3 (Electrical Practical & Wiring)', type: 'Practical', totalMarks: 50, durationMinutes: 180, description: 'Domestic installation & diagnostic testing' },
+    ]
+  },
+  {
+    name: 'Electronics',
+    code: '0825',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Semiconductor devices, amplifiers, digital logic circuits, and microcontrollers.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Analog & Digital Electronics)', type: 'Theory', totalMarks: 100, durationMinutes: 150, description: 'Transistors, op-amps & logic gates' },
+      { id: 'paper3', name: 'Paper 3 (Electronic Practical & Troubleshooting)', type: 'Practical', totalMarks: 50, durationMinutes: 180, description: 'Breadboarding, circuit analysis & oscilloscope testing' },
+    ]
+  },
+  {
+    name: 'Mechanical Technology',
+    code: '0830',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Applied mechanics, thermodynamics, machine elements, and workshop safety.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Mechanics & Machine Theory)', type: 'Theory', totalMarks: 100, durationMinutes: 150, description: 'Kinematics, fluid mechanics & thermodynamics' },
+      { id: 'paper3', name: 'Paper 3 (Mechanical Workshop Practical)', type: 'Practical', totalMarks: 50, durationMinutes: 180, description: 'Lathe operations, fitting & machining' },
+    ]
+  },
+  {
+    name: 'Metal Work',
+    code: '0835',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Welding, casting, sheet metal work, forging, and metallurgy.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Metallurgy & Welding Theory)', type: 'Theory', totalMarks: 100, durationMinutes: 150, description: 'Metal properties, heat treatment & joining' },
+      { id: 'paper3', name: 'Paper 3 (Practical Fabrication & Welding)', type: 'Practical', totalMarks: 50, durationMinutes: 180, description: 'Arc/Gas welding & sheet metal fabrication' },
+    ]
+  },
+  {
+    name: 'Wood Work',
+    code: '0840',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Carpentry, joinery, timber technology, furniture design, and woodworking machinery.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Timber & Joinery Theory)', type: 'Theory', totalMarks: 100, durationMinutes: 150, description: 'Wood science, joints & construction' },
+      { id: 'paper3', name: 'Paper 3 (Carpentry & Woodwork Practical)', type: 'Practical', totalMarks: 50, durationMinutes: 180, description: 'Joint cutting & furniture assembly' },
+    ]
+  },
+  {
+    name: 'Auto Mechanics',
+    code: '0845',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Internal combustion engines, transmission systems, braking systems, and automotive electricity.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Automotive Theory & Systems)', type: 'Theory', totalMarks: 100, durationMinutes: 150, description: 'Engine cycles, fuel injection & suspension' },
+      { id: 'paper3', name: 'Paper 3 (Automotive Diagnostic Practical)', type: 'Practical', totalMarks: 50, durationMinutes: 180, description: 'Engine overhaul, tuning & fault diagnosis' },
+    ]
+  },
+  {
+    name: 'Applied Mathematics',
+    code: '0850',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Calculus, vectors, differential equations, and numerical methods applied to engineering.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Applied Mathematical Analysis)', type: 'Structured', totalMarks: 100, durationMinutes: 150, description: 'Engineering mathematics & statistics' },
+    ]
+  },
+  {
+    name: 'Technical Mathematics',
+    code: '0855',
+    level: 'Ordinary level',
+    category: 'Technical Education',
+    description: 'Practical algebra, trigonometry, and geometry for technical trades.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Technical Calculation & Problem Solving)', type: 'Structured', totalMarks: 100, durationMinutes: 150, description: 'Shop floor math & construction geometry' },
+    ]
+  },
+
+  // ==========================================
+  // COMMERCIAL EDUCATION SUBJECTS
+  // ==========================================
+  {
+    name: 'Accounting',
+    code: '0910',
+    level: 'Ordinary level',
+    category: 'Commercial Education',
+    description: 'Financial accounting, partnership accounts, company accounts, and cost accounting.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Financial & Cost Accounting)', type: 'Practical', totalMarks: 100, durationMinutes: 180, description: 'Ledgers, financial statements & cost sheets' },
+    ]
+  },
+  {
+    name: 'Office Practice',
+    code: '0920',
+    level: 'Ordinary level',
+    category: 'Commercial Education',
+    description: 'Secretarial duties, office equipment, communication, filing, and business administration.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Secretarial & Office Administration)', type: 'Theory', totalMarks: 100, durationMinutes: 150, description: 'Business correspondence & office management' },
+    ]
+  },
+  {
+    name: 'Business Mathematics',
+    code: '0930',
+    level: 'Ordinary level',
+    category: 'Commercial Education',
+    description: 'Percentages, interest, annuities, depreciation, payroll, and business statistics.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Commercial Arithmetic & Statistics)', type: 'Structured', totalMarks: 100, durationMinutes: 150, description: 'Financial calculations and data analysis' },
+    ]
+  },
+  {
+    name: 'Entrepreneurship',
+    code: '0940',
+    level: 'Ordinary level',
+    category: 'Commercial Education',
+    description: 'Business plan development, venture creation, risk management, and SME leadership.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Venture Planning & Case Studies)', type: 'Essay', totalMarks: 100, durationMinutes: 150, description: 'Business plan creation and entrepreneurial analysis' },
+    ]
+  },
+  {
+    name: 'Marketing',
+    code: '0950',
+    level: 'Ordinary level',
+    category: 'Commercial Education',
+    description: 'Market research, consumer behavior, advertising, distribution channels, and sales management.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Marketing Strategy & Cases)', type: 'Essay', totalMarks: 100, durationMinutes: 150, description: 'Marketing mix, promotions & consumer analytics' },
+    ]
+  },
+  {
+    name: 'Financial Accounting',
+    code: '0960',
+    level: 'Advance level',
+    category: 'Commercial Education',
+    description: 'Advanced corporate accounting, auditing, taxation, and financial statement analysis.',
+    isActive: true,
+    papers: [
+      { id: 'paper1', name: 'Paper 1 (MCQ)', type: 'MCQ', totalMarks: 50, durationMinutes: 90, description: '50 Multiple Choice Questions' },
+      { id: 'paper2', name: 'Paper 2 (Advanced Corporate Accounting)', type: 'Practical', totalMarks: 100, durationMinutes: 180, description: 'Company consolidation, ratio analysis & auditing' },
+      { id: 'paper3', name: 'Paper 3 (Case Studies & Financial Analysis)', type: 'Structured', totalMarks: 100, durationMinutes: 150, description: 'Complex financial reporting scenarios' },
+    ]
   }
 ];
 

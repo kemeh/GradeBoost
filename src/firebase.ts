@@ -1,18 +1,16 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getStorage, ref } from 'firebase/storage';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-// Enable persistent cache using IndexedDB
+// Use memoryLocalCache to prevent QuotaExceededError in browser iframe storage
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager()
-  })
-}, firebaseConfig.firestoreDatabaseId);
+  localCache: memoryLocalCache()
+});
 
 export const storage = getStorage(app, firebaseConfig.storageBucket);
 
@@ -25,3 +23,4 @@ async function testStorageConnection() {
   }
 }
 testStorageConnection();
+

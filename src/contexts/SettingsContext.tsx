@@ -41,7 +41,7 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     settings,
     loading,
     appName: settings?.appName || 'Edulpha',
-    logoUrl: settings?.logoUrl || '/logo.svg',
+    logoUrl: settings?.logoUrl || '/edulpha-logo.png',
     contactEmail: settings?.contactEmail || 'support@edulpha.com',
     whatsappNumber: settings?.whatsappNumber || '',
     whatsappGroupLink: settings?.whatsappGroupLink || '',

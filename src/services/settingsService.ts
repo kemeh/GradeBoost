@@ -39,10 +39,28 @@ export const getSystemSettings = async (): Promise<SystemSettings | null> => {
       }
       return data;
     }
-    return null;
+    return {
+      geminiApiKey: '',
+      challengeStartDate: new Date().toISOString(),
+      paymentPrice: 1000,
+      appName: 'Edulpha',
+      logoUrl: '/edulpha-logo.png',
+      contactEmail: 'support@edulpha.com',
+      updatedAt: null,
+      updatedBy: 'system'
+    };
   } catch (error) {
-    console.error('Error fetching system settings:', error);
-    return null;
+    console.warn('Using default system settings due to offline/network status:', error);
+    return {
+      geminiApiKey: '',
+      challengeStartDate: new Date().toISOString(),
+      paymentPrice: 1000,
+      appName: 'Edulpha',
+      logoUrl: '/edulpha-logo.png',
+      contactEmail: 'support@edulpha.com',
+      updatedAt: null,
+      updatedBy: 'system'
+    };
   }
 };
 

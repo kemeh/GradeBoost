@@ -91,14 +91,14 @@ export const INITIAL_EDUCATION_LEVELS: EducationLevel[] = [
 
 export const INITIAL_DEPARTMENTS: Department[] = [
   // English Curriculum
-  { id: 'dept_gce_sci', curriculumId: 'cameroon_gce', name: 'Science & Technology', code: 'SCI', isActive: true },
-  { id: 'dept_gce_arts', curriculumId: 'cameroon_gce', name: 'Arts & Humanities', code: 'ARTS', isActive: true },
-  { id: 'dept_gce_comm', curriculumId: 'cameroon_gce', name: 'Commercial & Social Sciences', code: 'COMM', isActive: true },
+  { id: 'dept_gce_general', curriculumId: 'cameroon_gce', name: 'General Education', code: 'GEN', isActive: true, description: 'Science & Arts General Education' },
+  { id: 'dept_gce_tech', curriculumId: 'cameroon_gce', name: 'Technical Education', code: 'TECH', isActive: true, description: 'Industrial, Technical & Engineering Trades' },
+  { id: 'dept_gce_comm', curriculumId: 'cameroon_gce', name: 'Commercial Education', code: 'COMM', isActive: true, description: 'Business, Accounting & Secretarial Studies' },
   
   // French Curriculum
-  { id: 'dept_fr_exactes', curriculumId: 'cameroon_francophone', name: 'Sciences Exactes & Appliquées', code: 'C/D/TI', isActive: true },
-  { id: 'dept_fr_lettres', curriculumId: 'cameroon_francophone', name: 'Lettres, Langues & Arts', code: 'A4/ABI', isActive: true },
-  { id: 'dept_fr_econo', curriculumId: 'cameroon_francophone', name: 'Sciences Économiques & Gestion', code: 'SES', isActive: true }
+  { id: 'dept_fr_general', curriculumId: 'cameroon_francophone', name: 'Enseignement Général', code: 'GEN-FR', isActive: true, description: 'Sciences Exactes et Lettres' },
+  { id: 'dept_fr_tech', curriculumId: 'cameroon_francophone', name: 'Enseignement Technique', code: 'TECH-FR', isActive: true, description: 'Séries Industrielles et Techniques (F, TI)' },
+  { id: 'dept_fr_comm', curriculumId: 'cameroon_francophone', name: 'Enseignement Commercial & Gestion', code: 'COMM-FR', isActive: true, description: 'Séries G (G1, G2, G3, SES)' }
 ];
 
 export const INITIAL_FRENCH_SUBJECTS: Omit<SubjectModel, 'id'>[] = [

@@ -28,7 +28,7 @@ export default function AdminSettings() {
   const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
   const [paymentPrice, setPaymentPrice] = useState(1000);
   const [appName, setAppName] = useState('Edulpha');
-  const [logoUrl, setLogoUrl] = useState('/logo.svg');
+  const [logoUrl, setLogoUrl] = useState('/edulpha-logo.png');
   const [contactEmail, setContactEmail] = useState('support@edulpha.com');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
