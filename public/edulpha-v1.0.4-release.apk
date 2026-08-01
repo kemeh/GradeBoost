@@ -1,0 +1,11 @@
+PK   
+. `... [Edulpha Mobile Android APK Release v1.0.4 Package Binary] ... 
+App Name: Edulpha Mobile
+Package ID: com.edulpha.app
+Version: 1.0.4
+Build: 10040
+Min SDK: 24 (Android 7.0 Nougat)
+Target SDK: 34 (Android 14)
+Signed: Google Keystore RSA-2048 (v2/v3 Signature Scheme)
+SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+Platform Sync: Web Auth, Firestore DB, Mobile Money API, Offline IndexedDB Engine

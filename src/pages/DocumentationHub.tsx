@@ -9,6 +9,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { DOC_CATEGORIES, PRE_LAUNCH_DOCUMENTS, DocItem, DocCategory } from '../data/preLaunchDocPackage';
 import { useLanguage } from '../contexts/LanguageContext';
+import { SEO } from '../components/SEO';
 import toast from 'react-hot-toast';
 
 export default function DocumentationHub() {
@@ -105,6 +106,11 @@ export default function DocumentationHub() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans">
+      <SEO 
+        title={`${activeDoc ? activeDoc.title : 'Pre-Launch Documentation Package'} | Technical & Legal Hub`}
+        description={activeDoc ? activeDoc.summary : "Comprehensive technical, legal, security, and operational pre-launch documentation for the Edulpha platform."}
+        keywords={`Edulpha Documentation, ${activeDoc?.category || ''}, Technical Specifications, Security Architecture`}
+      />
       {/* Navigation Header */}
       <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-4">

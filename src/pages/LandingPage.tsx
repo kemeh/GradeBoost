@@ -13,6 +13,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { LandingPartnersSection } from '../components/LandingPartnersSection';
+import { SEO } from '../components/SEO';
 
 export default function LandingPage() {
   const { user, loading, isAdmin } = useAuth();
@@ -59,6 +60,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
+      <SEO 
+        title="AI-Powered GCE & Baccalauréat Exam Prep Platform"
+        description="Master your Ordinary Level, Advanced Level, Probatoire, and Baccalauréat exams with 15,000+ past questions, step-by-step Gemini AI explanations, and verified partner learning hubs."
+        keywords="Edulpha, Cameroon GCE, GCE O Level, GCE A Level, Baccalauréat, MINESEC, AI Tutor, Past Papers, Exam Revision"
+      />
       
       {/* 1. Modern Navigation Bar */}
       <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
@@ -573,18 +579,28 @@ export default function LandingPage() {
             </div>
 
             <div className="flex flex-wrap gap-4 pt-4">
-              <a href="#download" className="inline-flex items-center gap-3 bg-slate-900 hover:bg-black text-white px-6 py-3.5 rounded-2xl shadow-lg transition-all">
-                <Smartphone size={22} />
+              <a 
+                href="/downloads/edulpha-v1.0.4-release.apk" 
+                download="edulpha-v1.0.4-release.apk"
+                className="inline-flex items-center gap-3 bg-slate-900 hover:bg-black text-white px-6 py-3.5 rounded-2xl shadow-lg hover:shadow-xl transition-all border border-slate-700 group"
+              >
+                <Smartphone size={22} className="text-emerald-400 group-hover:scale-110 transition-transform" />
                 <div className="text-left">
-                  <div className="text-[10px] uppercase font-bold text-slate-400">{t('mobile.androidLabel')}</div>
-                  <div className="text-sm font-black">{t('mobile.androidStore')}</div>
+                  <div className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1.5">
+                    <span>{t('mobile.androidLabel')}</span>
+                    <span className="px-1.5 py-0.2 bg-emerald-500/20 text-emerald-400 rounded text-[9px]">Direct APK</span>
+                  </div>
+                  <div className="text-sm font-black">Download Release APK v1.0.4</div>
                 </div>
               </a>
-              <a href="#download" className="inline-flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl shadow-lg transition-all">
+              <a 
+                href="/docs" 
+                className="inline-flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3.5 rounded-2xl shadow-lg transition-all"
+              >
                 <Laptop size={22} />
                 <div className="text-left">
-                  <div className="text-[10px] uppercase font-bold text-indigo-200">{t('mobile.iosLabel')}</div>
-                  <div className="text-sm font-black">{t('mobile.iosStore')}</div>
+                  <div className="text-[10px] uppercase font-bold text-indigo-200">Mobile Specs & Verification</div>
+                  <div className="text-sm font-black">View Release Package Docs</div>
                 </div>
               </a>
             </div>
