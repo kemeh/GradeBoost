@@ -50,6 +50,7 @@ const ExamSession = lazy(() => import('./pages/ExamSession'));
 const ExamResultScreen = lazy(() => import('./pages/ExamResultScreen'));
 const ExamAnalyticsDashboard = lazy(() => import('./pages/ExamAnalyticsDashboard'));
 const DocumentationHub = lazy(() => import('./pages/DocumentationHub'));
+const PublicDocumentView = lazy(() => import('./pages/PublicDocumentView'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
@@ -111,6 +112,22 @@ export default function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/docs" element={<DocumentationHub />} />
               <Route path="/documentation" element={<DocumentationHub />} />
+              
+              {/* Public Platform Documents & Legal Routes */}
+              <Route path="/privacy-policy" element={<PublicDocumentView fixedSlug="privacy-policy" />} />
+              <Route path="/terms-and-conditions" element={<PublicDocumentView fixedSlug="terms-and-conditions" />} />
+              <Route path="/cookie-policy" element={<PublicDocumentView fixedSlug="cookie-policy" />} />
+              <Route path="/data-protection" element={<PublicDocumentView fixedSlug="data-protection" />} />
+              <Route path="/user-agreement" element={<PublicDocumentView fixedSlug="user-agreement" />} />
+              <Route path="/community-guidelines" element={<PublicDocumentView fixedSlug="community-guidelines" />} />
+              <Route path="/refund-policy" element={<PublicDocumentView fixedSlug="refund-policy" />} />
+              <Route path="/disclaimer" element={<PublicDocumentView fixedSlug="disclaimer" />} />
+              <Route path="/intellectual-property" element={<PublicDocumentView fixedSlug="intellectual-property" />} />
+              <Route path="/user-guide" element={<PublicDocumentView fixedSlug="user-guide" />} />
+              <Route path="/partner-guide" element={<PublicDocumentView fixedSlug="partner-guide" />} />
+              <Route path="/security-policy" element={<PublicDocumentView fixedSlug="security-policy" />} />
+              <Route path="/doc/:slug" element={<PublicDocumentView />} />
+
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
