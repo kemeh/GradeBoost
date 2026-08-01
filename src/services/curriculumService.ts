@@ -383,6 +383,22 @@ export const deleteCurriculumSubject = async (id: string): Promise<void> => {
   await deleteDoc(doc(db, 'subjects', id));
 };
 
+export const batchSaveSubjects = async (subjectsToSave: Omit<SubjectModel, 'id'>[]): Promise<number> => {
+  let count = 0;
+  for (const sub of subjectsToSave) {
+    const id = `subj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const payload = {
+      id,
+      ...sub,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+    await setDoc(doc(db, 'subjects', id), payload);
+    count++;
+  }
+  return count;
+};
+
 // ===============================================================
 // USER PROFILE CURRICULUM UPDATER
 // ===============================================================
