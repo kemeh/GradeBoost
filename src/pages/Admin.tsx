@@ -29,6 +29,8 @@ import AdminFinancePayments from '../components/admin/AdminFinancePayments';
 import AdminNotificationsManager from '../components/admin/AdminNotificationsManager';
 import AdminReportsAnalytics from '../components/admin/AdminReportsAnalytics';
 import AdminPlatformSettingsView from '../components/admin/AdminPlatformSettingsView';
+import AdminTranslationManager from '../components/admin/AdminTranslationManager';
+import { AdminPartnerManagement } from '../components/admin/AdminPartnerManagement';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -40,7 +42,7 @@ export default function Admin() {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   
-  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'papers' | 'manual' | 'samples' | 'duels';
+  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'translations' | 'papers' | 'manual' | 'samples' | 'duels';
   const activeTab = (searchParams.get('tab') as AdminTab) || 'analytics';
 
   const [users, setUsers] = useState<any[]>([]);
@@ -541,6 +543,8 @@ export default function Admin() {
             <TabsTrigger value="payments" className="rounded-xl py-2 px-4 text-xs font-bold">Finance & Payments</TabsTrigger>
             <TabsTrigger value="notifications" className="rounded-xl py-2 px-4 text-xs font-bold">Notifications</TabsTrigger>
             <TabsTrigger value="reports" className="rounded-xl py-2 px-4 text-xs font-bold">Reports & Intelligence</TabsTrigger>
+            <TabsTrigger value="translations" className="rounded-xl py-2 px-4 text-xs font-bold">Multi-Language & i18n Studio</TabsTrigger>
+            <TabsTrigger value="partners" className="rounded-xl py-2 px-4 text-xs font-bold">Partners & Alliances</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl py-2 px-4 text-xs font-bold">Platform Settings</TabsTrigger>
           </TabsList>
 
@@ -595,7 +599,17 @@ export default function Admin() {
             <AdminReportsAnalytics />
           </TabsContent>
 
-          {/* Tab 9: Platform Settings */}
+          {/* Tab 9: Multi-Language & i18n Studio */}
+          <TabsContent value="translations">
+            <AdminTranslationManager />
+          </TabsContent>
+
+          {/* Tab 9.5: Partners & Alliances */}
+          <TabsContent value="partners">
+            <AdminPartnerManagement />
+          </TabsContent>
+
+          {/* Tab 10: Platform Settings */}
           <TabsContent value="settings">
             <AdminPlatformSettingsView />
           </TabsContent>

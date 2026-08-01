@@ -1,359 +1,213 @@
-export type LanguageCode = 'en' | 'fr';
+export type LanguageCode = 'en' | 'fr' | 'es' | 'ar' | 'de' | 'pt' | string;
+
+export interface LanguageMeta {
+  code: string;
+  name: string;
+  nativeName: string;
+  flag: string;
+  direction: 'ltr' | 'rtl';
+  enabled: boolean;
+}
+
+export const DEFAULT_LANGUAGES: LanguageMeta[] = [
+  { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', direction: 'ltr', enabled: true },
+  { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷', direction: 'ltr', enabled: true },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', direction: 'ltr', enabled: true },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇦🇪', direction: 'rtl', enabled: true },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', direction: 'ltr', enabled: true },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹', direction: 'ltr', enabled: true },
+];
 
 export interface TranslationDictionary {
   [key: string]: {
-    en: string;
-    fr: string;
+    [lang: string]: string;
   };
 }
 
 export const TRANSLATIONS: TranslationDictionary = {
   // --- Common UI & Buttons ---
-  'app.title': { en: 'Edulpha', fr: 'Edulpha' },
-  'common.welcome': { en: 'Welcome back', fr: 'Bienvenue' },
-  'common.save': { en: 'Save Changes', fr: 'Enregistrer les modifications' },
-  'common.cancel': { en: 'Cancel', fr: 'Annuler' },
-  'common.delete': { en: 'Delete', fr: 'Supprimer' },
-  'common.edit': { en: 'Edit', fr: 'Modifier' },
-  'common.loading': { en: 'Loading...', fr: 'Chargement...' },
-  'common.success': { en: 'Success', fr: 'Succès' },
-  'common.error': { en: 'Error', fr: 'Erreur' },
-  'common.back': { en: 'Back', fr: 'Retour' },
-  'common.search': { en: 'Search...', fr: 'Rechercher...' },
-  'common.filter': { en: 'Filter', fr: 'Filtrer' },
-  'common.next': { en: 'Next', fr: 'Suivant' },
-  'common.previous': { en: 'Previous', fr: 'Précédent' },
-  'common.submit': { en: 'Submit', fr: 'Soumettre' },
-  'common.close': { en: 'Close', fr: 'Fermer' },
-  'common.confirm': { en: 'Confirm', fr: 'Confirmer' },
-  'common.active': { en: 'Active', fr: 'Actif' },
-  'common.archived': { en: 'Archived', fr: 'Archivé' },
-  'common.language': { en: 'Language', fr: 'Langue' },
-  'common.english': { en: 'English', fr: 'Anglais' },
-  'common.french': { en: 'French', fr: 'Français' },
+  'app.title': { en: 'Edulpha', fr: 'Edulpha', es: 'Edulpha', ar: 'إيدولفا', de: 'Edulpha', pt: 'Edulpha' },
+  'common.welcome': { en: 'Welcome back', fr: 'Bienvenue', es: 'Bienvenido de nuevo', ar: 'مرحبا بعودتك', de: 'Willkommen zurück', pt: 'Bem-vindo de volta' },
+  'common.save': { en: 'Save Changes', fr: 'Enregistrer les modifications', es: 'Guardar cambios', ar: 'حفظ التغييرات', de: 'Änderungen speichern', pt: 'Salvar alterações' },
+  'common.cancel': { en: 'Cancel', fr: 'Annuler', es: 'Cancelar', ar: 'إلغاء', de: 'Abbrechen', pt: 'Cancelar' },
+  'common.delete': { en: 'Delete', fr: 'Supprimer', es: 'Eliminar', ar: 'حذف', de: 'Löschen', pt: 'Excluir' },
+  'common.edit': { en: 'Edit', fr: 'Modifier', es: 'Editar', ar: 'تعديل', de: 'Bearbeiten', pt: 'Editar' },
+  'common.loading': { en: 'Loading...', fr: 'Chargement...', es: 'Cargando...', ar: 'جاري التحميل...', de: 'Laden...', pt: 'Carregando...' },
+  'common.success': { en: 'Success', fr: 'Succès', es: 'Éxito', ar: 'نجاح', de: 'Erfolg', pt: 'Sucesso' },
+  'common.error': { en: 'Error', fr: 'Erreur', es: 'Error', ar: 'خطأ', de: 'Fehler', pt: 'Erro' },
+  'common.back': { en: 'Back', fr: 'Retour', es: 'Volver', ar: 'رجوع', de: 'Zurück', pt: 'Voltar' },
+  'common.search': { en: 'Search...', fr: 'Rechercher...', es: 'Buscar...', ar: 'بحث...', de: 'Suchen...', pt: 'Buscar...' },
+  'common.filter': { en: 'Filter', fr: 'Filtrer', es: 'Filtrar', ar: 'تصفية', de: 'Filtern', pt: 'Filtrar' },
+  'common.next': { en: 'Next', fr: 'Suivant', es: 'Siguiente', ar: 'التالي', de: 'Weiter', pt: 'Próximo' },
+  'common.previous': { en: 'Previous', fr: 'Précédent', es: 'Anterior', ar: 'السابق', de: 'Zurück', pt: 'Anterior' },
+  'common.submit': { en: 'Submit', fr: 'Soumettre', es: 'Enviar', ar: 'إرسال', de: 'Absenden', pt: 'Enviar' },
+  'common.close': { en: 'Close', fr: 'Fermer', es: 'Cerrar', ar: 'إغلاق', de: 'Schließen', pt: 'Fechar' },
+  'common.confirm': { en: 'Confirm', fr: 'Confirmer', es: 'Confirmar', ar: 'تأكيد', de: 'Bestätigen', pt: 'Confirmar' },
+  'common.active': { en: 'Active', fr: 'Actif', es: 'Activo', ar: 'نشط', de: 'Aktiv', pt: 'Ativo' },
+  'common.archived': { en: 'Archived', fr: 'Archivé', es: 'Archivado', ar: 'مؤرشف', de: 'Archiviert', pt: 'Arquivado' },
+  'common.language': { en: 'Language', fr: 'Langue', es: 'Idioma', ar: 'اللغة', de: 'Sprache', pt: 'Idioma' },
+  'common.english': { en: 'English', fr: 'Anglais', es: 'Inglés', ar: 'الإنجليزية', de: 'Englisch', pt: 'Inglês' },
+  'common.french': { en: 'French', fr: 'Français', es: 'Francés', ar: 'الفرنسية', de: 'Französisch', pt: 'Francês' },
+  'common.spanish': { en: 'Spanish', fr: 'Espagnol', es: 'Español', ar: 'الإسبانية', de: 'Spanisch', pt: 'Espanhol' },
+  'common.arabic': { en: 'Arabic', fr: 'Arabe', es: 'Árabe', ar: 'العربية', de: 'Arabisch', pt: 'Árabe' },
+  'common.german': { en: 'German', fr: 'Allemand', es: 'Alemán', ar: 'الألمانية', de: 'Deutsch', pt: 'Alemão' },
+  'common.portuguese': { en: 'Portuguese', fr: 'Portugais', es: 'Portugués', ar: 'البرتغالية', de: 'Portugiesisch', pt: 'Português' },
 
   // --- Navigation & Headers ---
-  'nav.dashboard': { en: 'Dashboard', fr: 'Tableau de bord' },
-  'nav.practice': { en: 'Practice Mode', fr: 'Mode Entraînement' },
-  'nav.pastQuestions': { en: 'Past Questions', fr: 'Anciennes Épreuves' },
-  'nav.aiTutor': { en: 'Edulpha AI', fr: 'Edulpha IA' },
-  'nav.lms': { en: 'Learning Portal (LMS)', fr: 'Portail de Cours (LMS)' },
-  'nav.dailyDrill': { en: 'Daily Drill', fr: 'Exercice Quotidien' },
-  'nav.challenges': { en: 'Challenges & Duels', fr: 'Défis & Duels' },
-  'nav.leaderboard': { en: 'Leaderboard', fr: 'Classement' },
-  'nav.analytics': { en: 'Exam Analytics', fr: 'Analyses des Examens' },
-  'nav.profile': { en: 'Profile & Settings', fr: 'Profil & Paramètres' },
-  'nav.admin': { en: 'Admin Portal', fr: 'Portail Administrateur' },
-  'nav.teacherStudio': { en: 'AI Teacher Studio', fr: 'Studio Enseignant IA' },
-  'nav.logout': { en: 'Log Out', fr: 'Déconnexion' },
+  'nav.dashboard': { en: 'Dashboard', fr: 'Tableau de bord', es: 'Panel', ar: 'لوحة التحكم', de: 'Dashboard', pt: 'Painel' },
+  'nav.practice': { en: 'Practice Mode', fr: 'Mode Entraînement', es: 'Modo Práctica', ar: 'وضع التمرين', de: 'Übungsmodus', pt: 'Modo Prática' },
+  'nav.pastQuestions': { en: 'Past Questions', fr: 'Anciennes Épreuves', es: 'Exámenes Anteriores', ar: 'الأسئلة السابقة', de: 'Frühere Prüfungen', pt: 'Provas Anteriores' },
+  'nav.aiTutor': { en: 'Edulpha AI', fr: 'Edulpha IA', es: 'Edulpha IA', ar: 'إيدولفا ذكاء اصطناعي', de: 'Edulpha KI', pt: 'Edulpha IA' },
+  'nav.lms': { en: 'Learning Portal (LMS)', fr: 'Portail de Cours (LMS)', es: 'Portal de Aprendizaje', ar: 'بوابة التعلم', de: 'Lernportal', pt: 'Portal de Aprendizagem' },
+  'nav.dailyDrill': { en: 'Daily Drill', fr: 'Exercice Quotidien', es: 'Ejercicio Diario', ar: 'التمرين اليومي', de: 'Tägliche Übung', pt: 'Treino Diário' },
+  'nav.challenges': { en: 'Challenges & Duels', fr: 'Défis & Duels', es: 'Desafíos y Dueloss', ar: 'التحديات والمبارزات', de: 'Herausforderungen & Duelle', pt: 'Desafios e Duelos' },
+  'nav.leaderboard': { en: 'Leaderboard', fr: 'Classement', es: 'Tabla de Clasificación', ar: 'قائمة المتصدرين', de: 'Bestenliste', pt: 'Classificação' },
+  'nav.analytics': { en: 'Exam Analytics', fr: 'Analyses des Examens', es: 'Análisis de Exámenes', ar: 'تحليلات الامتحانات', de: 'Prüfungsanalysen', pt: 'Análise de Exames' },
+  'nav.profile': { en: 'Profile & Settings', fr: 'Profil & Paramètres', es: 'Perfil y Configuración', ar: 'الملف الشخصي والإعدادات', de: 'Profil & Einstellungen', pt: 'Perfil e Configurações' },
+  'nav.admin': { en: 'Admin Portal', fr: 'Portail Administrateur', es: 'Portal de Administración', ar: 'بوابة الإدارة', de: 'Admin-Portal', pt: 'Portal do Administrador' },
+  'nav.teacherStudio': { en: 'AI Teacher Studio', fr: 'Studio Enseignant IA', es: 'Estudio de Profesores IA', ar: 'استوديو المعلم بالذكاء الاصطناعي', de: 'KI-Lehrerstudio', pt: 'Estúdio do Professor IA' },
+  'nav.logout': { en: 'Log Out', fr: 'Déconnexion', es: 'Cerrar Sesión', ar: 'تسجيل الخروج', de: 'Abmelden', pt: 'Sair' },
 
   // --- Authentication & Curriculum Selection ---
-  'auth.login': { en: 'Log In', fr: 'Connexion' },
-  'auth.register': { en: 'Register', fr: 'S\'inscrire' },
-  'auth.email': { en: 'Email Address', fr: 'Adresse Email' },
-  'auth.password': { en: 'Password', fr: 'Mot de passe' },
-  'auth.fullName': { en: 'Full Name', fr: 'Nom Complet' },
-  'auth.school': { en: 'School / Institution', fr: 'Établissement / École' },
-  'auth.region': { en: 'Region / City', fr: 'Région / Ville' },
-  'auth.selectCurriculum': { en: 'Select Educational Curriculum', fr: 'Sélectionner le Système Éducatif' },
-  'auth.englishCurriculum': { en: 'English Curriculum (GCE)', fr: 'Système Anglophone (GCE)' },
-  'auth.frenchCurriculum': { en: 'French Curriculum (Francophone)', fr: 'Système Francophone' },
-  'auth.educationLevel': { en: 'Education Level', fr: 'Niveau d\'Études' },
-  'auth.targetSubject': { en: 'Target Subject', fr: 'Matière Principale' },
-  'auth.targetGrade': { en: 'Target Grade / Goal', fr: 'Objectif de Note' },
-  'auth.alreadyHaveAccount': { en: 'Already have an account?', fr: 'Vous avez déjà un compte ?' },
-  'auth.dontHaveAccount': { en: 'Don\'t have an account?', fr: 'Vous n\'avez pas encore de compte ?' },
+  'auth.login': { en: 'Log In', fr: 'Connexion', es: 'Iniciar Sesión', ar: 'تسجيل الدخول', de: 'Anmelden', pt: 'Entrar' },
+  'auth.register': { en: 'Register', fr: 'S\'inscrire', es: 'Registrarse', ar: 'إنشاء حساب', de: 'Registrieren', pt: 'Cadastrar-se' },
+  'auth.email': { en: 'Email Address', fr: 'Adresse Email', es: 'Correo Electrónico', ar: 'البريد الإلكتروني', de: 'E-Mail-Adresse', pt: 'Endereço de E-mail' },
+  'auth.password': { en: 'Password', fr: 'Mot de passe', es: 'Contraseña', ar: 'كلمة المرور', de: 'Passwort', pt: 'Senha' },
+  'auth.fullName': { en: 'Full Name', fr: 'Nom Complet', es: 'Nombre Completo', ar: 'الاسم الكامل', de: 'Vollständiger Name', pt: 'Nome Completo' },
+  'auth.school': { en: 'School / Institution', fr: 'Établissement / École', es: 'Escuela / Institución', ar: 'المدرسة / المؤسسة', de: 'Schule / Institution', pt: 'Escola / Instituição' },
+  'auth.region': { en: 'Region / City', fr: 'Région / Ville', es: 'Región / Ciudad', ar: 'المنطقة / المدينة', de: 'Region / Stadt', pt: 'Região / Cidade' },
+  'auth.selectCurriculum': { en: 'Select Educational Curriculum', fr: 'Sélectionner le Système Éducatif', es: 'Seleccionar Plan de Estudios', ar: 'اختر المنهاج التعليمي', de: 'Lehrplan auswählen', pt: 'Selecionar Currículo' },
+  'auth.englishCurriculum': { en: 'English Curriculum (GCE)', fr: 'Système Anglophone (GCE)', es: 'Currículo en Inglés (GCE)', ar: 'المنهاج الإنجليزي (GCE)', de: 'Englisches System (GCE)', pt: 'Currículo em Inglês (GCE)' },
+  'auth.frenchCurriculum': { en: 'French Curriculum (Francophone)', fr: 'Système Francophone', es: 'Currículo Francés', ar: 'المنهاج الفرنسي', de: 'Französisches System', pt: 'Currículo Francês' },
+  'auth.educationLevel': { en: 'Education Level', fr: 'Niveau d\'Études', es: 'Nivel Educativo', ar: 'المستوى التعليمي', de: 'Bildungsstufe', pt: 'Nível de Ensino' },
+  'auth.targetSubject': { en: 'Target Subject', fr: 'Matière Principale', es: 'Materia Objetivo', ar: 'المادة المستهدفة', de: 'Ziel-Fach', pt: 'Matéria Alvo' },
+  'auth.targetGrade': { en: 'Target Grade / Goal', fr: 'Objectif de Note', es: 'Nota Objetivo', ar: 'الدرجة المستهدفة', de: 'Ziel-Note', pt: 'Nota Alvo' },
+  'auth.alreadyHaveAccount': { en: 'Already have an account?', fr: 'Vous avez déjà un compte ?', es: '¿Ya tienes una cuenta?', ar: 'هل لديك حساب بالفعل؟', de: 'Bereits ein Konto?', pt: 'Já tem uma conta?' },
+  'auth.dontHaveAccount': { en: 'Don\'t have an account?', fr: 'Vous n\'avez pas encore de compte ?', es: '¿No tienes una cuenta?', ar: 'ليس لديك حساب؟', de: 'Noch kein Konto?', pt: 'Não tem uma conta?' },
 
   // --- Curriculum & Academic Titles ---
-  'curriculum.gceOlevel': { en: 'Ordinary Level (O-Level)', fr: 'Ordinary Level (O-Level)' },
-  'curriculum.gceAlevel': { en: 'Advanced Level (A-Level)', fr: 'Advanced Level (A-Level)' },
-  'curriculum.frTroisieme': { en: 'Troisième (BEPC)', fr: 'Troisième (BEPC)' },
-  'curriculum.frSeconde': { en: 'Seconde', fr: 'Seconde' },
-  'curriculum.frPremiere': { en: 'Première', fr: 'Première' },
-  'curriculum.frTerminale': { en: 'Terminale (Baccalauréat)', fr: 'Terminale (Baccalauréat)' },
+  'curriculum.gceOlevel': { en: 'Ordinary Level (O-Level)', fr: 'Ordinary Level (O-Level)', es: 'Nivel Ordinario (O-Level)', ar: 'المستوى العادي (O-Level)', de: 'Ordinary Level', pt: 'Nível Ordinário (O-Level)' },
+  'curriculum.gceAlevel': { en: 'Advanced Level (A-Level)', fr: 'Advanced Level (A-Level)', es: 'Nivel Avanzado (A-Level)', ar: 'المستوى المتقدم (A-Level)', de: 'Advanced Level', pt: 'Nível Avançado (A-Level)' },
+  'curriculum.frTroisieme': { en: 'Troisième (BEPC)', fr: 'Troisième (BEPC)', es: 'Tercero (BEPC)', ar: 'الثالثة (BEPC)', de: 'Klasse 9 (BEPC)', pt: 'Terceiro Ano (BEPC)' },
+  'curriculum.frSeconde': { en: 'Seconde', fr: 'Seconde', es: 'Segundo Año', ar: 'الثانية ثانوية', de: 'Klasse 10', pt: 'Segundo Ano' },
+  'curriculum.frPremiere': { en: 'Première', fr: 'Première', es: 'Primer Año', ar: 'الأولى ثانوية', de: 'Klasse 11', pt: 'Primeiro Ano' },
+  'curriculum.frTerminale': { en: 'Terminale (Baccalauréat)', fr: 'Terminale (Baccalauréat)', es: 'Terminale (Bachillerato)', ar: 'السامية (البكالوريا)', de: 'Abschlussklasse (Abitur)', pt: 'Ano Final (Baccalauréat)' },
 
   // --- Student Dashboard & LMS ---
-  'dashboard.welcomeBack': { en: 'Welcome back to your study hub', fr: 'Bienvenue sur votre espace d\'étude' },
-  'dashboard.readinessScore': { en: 'Exam Readiness Score', fr: 'Score de Préparation aux Examens' },
-  'dashboard.studyStreak': { en: 'Study Streak', fr: 'Série d\'Études' },
-  'dashboard.daysLeft': { en: 'Days until Examination', fr: 'Jours avant les examens' },
-  'dashboard.recommendedLessons': { en: 'Recommended Lessons & Notes', fr: 'Leçons et Notes Recommandées' },
-  'dashboard.recentActivity': { en: 'Recent Practice History', fr: 'Historique des Entraînements' },
-  'dashboard.aiTipOfDay': { en: 'Edulpha AI Tip of the Day', fr: 'Conseil IA du Jour' },
+  'dashboard.welcomeBack': { en: 'Welcome back to your study hub', fr: 'Bienvenue sur votre espace d\'étude', es: 'Bienvenido de nuevo a tu centro de estudios', ar: 'مرحبا بك مجدداً في مركز دراستك', de: 'Willkommen zurück in deinem Lernzentrum', pt: 'Bem-vindo de volta ao seu centro de estudos' },
+  'dashboard.readinessScore': { en: 'Exam Readiness Score', fr: 'Score de Préparation aux Examens', es: 'Puntuación de Preparación', ar: 'درجة الجاهزية للامتحان', de: 'Prüfungsbereitschaft', pt: 'Pontuação de Preparação para o Exame' },
+  'dashboard.studyStreak': { en: 'Study Streak', fr: 'Série d\'Études', es: 'Racha de Estudio', ar: 'سلسلة الدراسة اليومية', de: 'Lernserie', pt: 'Sequência de Estudos' },
+  'dashboard.daysLeft': { en: 'Days until Examination', fr: 'Jours avant les examens', es: 'Días hasta los exámenes', ar: 'أيام متبقية للامتحانات', de: 'Tage bis zur Prüfung', pt: 'Dias até o Exame' },
+  'dashboard.recommendedLessons': { en: 'Recommended Lessons & Notes', fr: 'Leçons et Notes Recommandées', es: 'Lecciones y Notas Recomendadas', ar: 'الدروس والملاحظات الموصى بها', de: 'Empfohlene Lektionen & Notizen', pt: 'Lições e Notas Recomendadas' },
+  'dashboard.recentActivity': { en: 'Recent Practice History', fr: 'Historique des Entraînements', es: 'Historial de Práctica Reciente', ar: 'سجل التمرين الأخير', de: 'Verlauf der letzten Übungen', pt: 'Histórico de Prática Recente' },
+  'dashboard.aiTipOfDay': { en: 'Edulpha AI Tip of the Day', fr: 'Conseil IA du Jour', es: 'Consejo de IA del Día', ar: 'نصيحة الذكاء الاصطناعي اليومية', de: 'KI-Tipp des Tages', pt: 'Dica do Dia da IA' },
 
   // --- Edulpha AI ---
-  'ai.title': { en: 'Edulpha AI 24/7 Smart Tutor', fr: 'Tuteur Intelligent Edulpha IA' },
-  'ai.subtitle': { en: 'Ask questions, solve step-by-step problems, and practice exam methodology', fr: 'Posez des questions, résolvez des problèmes étape par étape et révisez les méthodologies d\'examen' },
-  'ai.inputPlaceholder': { en: 'Type your study question or paste a past paper problem...', fr: 'Posez votre question de cours ou collez une épreuve d\'examen...' },
-  'ai.askAi': { en: 'Ask AI', fr: 'Demander à l\'IA' },
-  'ai.modeOffline': { en: 'Offline AI Response', fr: 'Réponse IA Hors-Ligne' },
-  'ai.examTip': { en: 'Exam Tip', fr: 'Conseil d\'Examen' },
-  'ai.commonMistake': { en: 'Common Mistake', fr: 'Erreur Fréquente' },
+  'ai.title': { en: 'Edulpha AI 24/7 Smart Tutor', fr: 'Tuteur Intelligent Edulpha IA', es: 'Tutor Inteligente 24/7', ar: 'المعلم الذكي 24/7', de: 'Intelligenter 24/7 KI-Tutor', pt: 'Tutor Inteligente 24/7' },
+  'ai.subtitle': { en: 'Ask questions, solve step-by-step problems, and practice exam methodology', fr: 'Posez des questions, résolvez des problèmes étape par étape et révisez les méthodologies d\'examen', es: 'Haz preguntas, resuelve problemas paso a paso y practica metodologías de examen', ar: 'اطرح الأسئلة وحل المشكلات خطوة بخطوة وتدرب على منهجية الامتحانات', de: 'Fragen stellen, Aufgaben Schritt für Schritt lösen und Prüfungsmethoden üben', pt: 'Faça perguntas, resolva problemas passo a passo e pratique a metodologia do exame' },
+  'ai.inputPlaceholder': { en: 'Type your study question or paste a past paper problem...', fr: 'Posez votre question de cours ou collez une épreuve d\'examen...', es: 'Escribe tu duda o pega un problema de examen...', ar: 'اكتب سؤالك أو ألصق مسألة من امتحان سابق...', de: 'Stelle deine Frage oder füge eine Prüfungsaufgabe ein...', pt: 'Digite sua dúvida de estudo ou cole uma questão de exame...' },
+  'ai.askAi': { en: 'Ask AI', fr: 'Demander à l\'IA', es: 'Preguntar a la IA', ar: 'اسأل الذكاء الاصطناعي', de: 'KI fragen', pt: 'Perguntar à IA' },
+  'ai.modeOffline': { en: 'Offline AI Response', fr: 'Réponse IA Hors-Ligne', es: 'Respuesta de IA fuera de línea', ar: 'إجابة الذكاء الاصطناعي بدون إنترنت', de: 'Offline KI-Antwort', pt: 'Resposta da IA Offline' },
+  'ai.examTip': { en: 'Exam Tip', fr: 'Conseil d\'Examen', es: 'Consejo de Examen', ar: 'نصيحة للامتحان', de: 'Prüfungstipp', pt: 'Dica de Exame' },
+  'ai.commonMistake': { en: 'Common Mistake', fr: 'Erreur Fréquente', es: 'Error Común', ar: 'خطأ شائع', de: 'Häufiger Fehler', pt: 'Erro Comum' },
 
-  // --- Admin & Teacher Management ---
-  'admin.curriculumTitle': { en: 'Multi-Curriculum Management', fr: 'Gestion Multi-Programmes Éducatifs' },
-  'admin.translationTitle': { en: 'Multi-Language & Translation Studio', fr: 'Studio Multi-Langues & Traductions' },
-  'admin.manageCurricula': { en: 'Manage Curricula & Levels', fr: 'Gérer les Programmes et Niveaux' },
-  'admin.manageSubjects': { en: 'Manage Subjects & Papers', fr: 'Gérer les Matières et Épreuves' },
-  'admin.manageUsers': { en: 'User Management & Access Control', fr: 'Gestion des Utilisateurs & Accès' },
-  'admin.systemSettings': { en: 'System Settings & Branding', fr: 'Paramètres Système & Image de Marque' },
+  // --- Admin & Translation Studio ---
+  'admin.curriculumTitle': { en: 'Multi-Curriculum Management', fr: 'Gestion Multi-Programmes Éducatifs', es: 'Gestión Multicurricular', ar: 'إدارة المناهج المتعددة', de: 'Multi-Lehrplan-Verwaltung', pt: 'Gestão Multicurrículo' },
+  'admin.translationTitle': { en: 'Multi-Language & Translation Studio', fr: 'Studio Multi-Langues & Traductions', es: 'Estudio Multilingüe y Traducciones', ar: 'استوديو اللغات والترجمة', de: 'Multi-Sprachen & Übersetzungsstudio', pt: 'Estúdio Multilíngue e de Tradução' },
+  'admin.manageCurricula': { en: 'Manage Curricula & Levels', fr: 'Gérer les Programmes et Niveaux', es: 'Gestionar Planes de Estudio y Niveles', ar: 'إدارة المناهج والمستويات', de: 'Lehrpläne & Stufen verwalten', pt: 'Gerenciar Currículos e Níveis' },
+  'admin.manageSubjects': { en: 'Manage Subjects & Papers', fr: 'Gérer les Matières et Épreuves', es: 'Gestionar Materias y Exámenes', ar: 'إدارة المواد والورقات الامتحانية', de: 'Fächer & Prüfungen verwalten', pt: 'Gerenciar Matérias e Provas' },
+  'admin.manageUsers': { en: 'User Management & Access Control', fr: 'Gestion des Utilisateurs & Accès', es: 'Gestión de Usuarios y Accesos', ar: 'إدارة المستخدمين وصلاحيات الوصول', de: 'Benutzerverwaltung & Zugriffskontrolle', pt: 'Gestão de Usuários e Controle de Acesso' },
+  'admin.systemSettings': { en: 'System Settings & Branding', fr: 'Paramètres Système & Image de Marque', es: 'Configuración del Sistema', ar: 'إعدادات النظام والعلامة التجارية', de: 'Systemeinstellungen & Branding', pt: 'Configurações do Sistema' },
 
   // --- Profile Settings ---
-  'profile.title': { en: 'Student Profile & Settings', fr: 'Profil Étudiant & Paramètres' },
-  'profile.changeLanguage': { en: 'Interface Language', fr: 'Langue de l\'Interface' },
-  'profile.changeCurriculum': { en: 'Change Curriculum System', fr: 'Changer de Système Éducatif' },
-  'profile.personalDetails': { en: 'Personal Information', fr: 'Informations Personnelles' },
-  'profile.savedSuccessfully': { en: 'Profile updated successfully!', fr: 'Profil mis à jour avec succès !' },
+  'profile.title': { en: 'Student Profile & Settings', fr: 'Profil Étudiant & Paramètres', es: 'Perfil de Estudiante y Configuración', ar: 'ملف الطالب والإعدادات', de: 'Schülerprofil & Einstellungen', pt: 'Perfil do Estudante e Configurações' },
+  'profile.changeLanguage': { en: 'Interface Language', fr: 'Langue de l\'Interface', es: 'Idioma de la Interfaz', ar: 'لغة الواجهة', de: 'Schnittstellensprache', pt: 'Idioma da Interface' },
+  'profile.changeCurriculum': { en: 'Change Curriculum System', fr: 'Changer de Système Éducatif', es: 'Cambiar Sistema de Estudio', ar: 'تغيير المنهاج التعليمي', de: 'Lehrplansystem ändern', pt: 'Alterar Sistema de Currículo' },
+  'profile.personalDetails': { en: 'Personal Information', fr: 'Informations Personnelles', es: 'Información Personal', ar: 'المعلومات الشخصية', de: 'Persönliche Informationen', pt: 'Informações Pessoais' },
+  'profile.savedSuccessfully': { en: 'Profile updated successfully!', fr: 'Profil mis à jour avec succès !', es: '¡Perfil actualizado con éxito!', ar: 'تم تحديث الملف الشخصي بنجاح!', de: 'Profil erfolgreich aktualisiert!', pt: 'Perfil atualizado com sucesso!' },
 
   // --- Landing Page Translations ---
-  'nav.features': { en: 'Features', fr: 'Fonctionnalités' },
-  'nav.curriculum': { en: 'Curriculum', fr: 'Programmes' },
-  'nav.subjects': { en: 'Subjects', fr: 'Matières' },
-  'nav.pricing': { en: 'Pricing', fr: 'Tarifs' },
-  'nav.mobileApp': { en: 'Mobile App', fr: 'Application Mobile' },
-  'nav.faq': { en: 'FAQ', fr: 'FAQ' },
+  'nav.features': { en: 'Features', fr: 'Fonctionnalités', es: 'Características', ar: 'المميزات', de: 'Funktionen', pt: 'Recursos' },
+  'nav.curriculum': { en: 'Curriculum', fr: 'Programmes', es: 'Planes de Estudio', ar: 'المناهج', de: 'Lehrplan', pt: 'Currículo' },
+  'nav.subjects': { en: 'Subjects', fr: 'Matières', es: 'Materias', ar: 'المواد', de: 'Fächer', pt: 'Disciplinas' },
+  'nav.pricing': { en: 'Pricing', fr: 'Tarifs', es: 'Precios', ar: 'الأسعار', de: 'Preise', pt: 'Preços' },
+  'nav.partners': { en: 'Partners & Alliances', fr: 'Partenaires & Alliances', es: 'Socios y Alianzas', ar: 'الشركاء والتحالفات', de: 'Partner & Allianzen', pt: 'Parceiros e Alianças' },
+  'nav.mobileApp': { en: 'Mobile App', fr: 'Application Mobile', es: 'Aplicación Móvil', ar: 'تطبيق الهاتف', de: 'Mobile App', pt: 'Aplicativo Móvel' },
+  'nav.faq': { en: 'FAQ', fr: 'FAQ', es: 'Preguntas Frecuentes', ar: 'الأسئلة الشائعة', de: 'FAQ', pt: 'Perguntas Frequentes' },
 
-  'hero.badge': { en: 'Cameroon GCE & French Curriculum Ecosystem', fr: 'Écosystème GCE Cameroun & Programme Francophone' },
-  'hero.title1': { en: 'Learn Smarter.', fr: 'Apprenez Plus Malin.' },
-  'hero.title2': { en: 'Achieve More with', fr: 'Réussissez Plus avec' },
-  'hero.subtitle': { en: 'A bilingual AI-powered learning platform helping students prepare for GCE Ordinary & Advanced Level, BEPC, Baccalauréat, and beyond.', fr: 'Une plateforme d\'apprentissage bilingue propulsée par l\'IA pour préparer le GCE O/A Levels, le BEPC, le Baccalauréat et bien plus.' },
-  'hero.startLearning': { en: 'Start Learning Free', fr: 'Commencer Gratuitement' },
-  'hero.exploreCourses': { en: 'Explore Courses', fr: 'Explorer les Cours' },
-  'hero.downloadApp': { en: 'Download Mobile App', fr: 'Télécharger l\'App Mobile' },
+  'hero.badge': { en: 'Cameroon GCE & French Curriculum Ecosystem', fr: 'Écosystème GCE Cameroun & Programme Francophone', es: 'Ecosistema de Currículo GCE y Francés', ar: 'منظومة المناهج التعليمية بالكاميرون', de: 'GCE & Französisches Lehrplansystem', pt: 'Ecossistema Educacional GCE e Francês' },
+  'hero.title1': { en: 'Learn Smarter.', fr: 'Apprenez Plus Malin.', es: 'Aprende Más Inteligente.', ar: 'تعلم بذكاء أكبر.', de: 'Lerne cleverer.', pt: 'Aprenda Mais Inteligente.' },
+  'hero.title2': { en: 'Achieve More with', fr: 'Réussissez Plus avec', es: 'Logra Más con', ar: 'وحقق المزيد مع', de: 'Erreiche mehr mit', pt: 'Conquiste Mais com' },
+  'hero.subtitle': { en: 'A bilingual AI-powered learning platform helping students prepare for GCE Ordinary & Advanced Level, BEPC, Baccalauréat, and beyond.', fr: 'Une plateforme d\'apprentissage bilingue propulsée par l\'IA pour préparer le GCE O/A Levels, le BEPC, le Baccalauréat et bien plus.', es: 'Una plataforma de aprendizaje bilingüe impulsada por IA que ayuda a preparar exámenes oficiales.', ar: 'منصة تعليمية متعددة اللغات بالذكاء الاصطناعي لمساعدة الطلاب في التحضير للامتحانات الوطنية.', de: 'Eine mehrsprachige KI-Lernplattform zur Vorbereitung auf nationale Prüfungen.', pt: 'Uma plataforma de aprendizagem bilíngue com IA para preparar alunos para exames oficiais.' },
+  'hero.startLearning': { en: 'Start Learning Free', fr: 'Commencer Gratuitement', es: 'Empezar Gratis', ar: 'ابدأ التعلم مجاناً', de: 'Kostenlos starten', pt: 'Começar Gratuitamente' },
+  'hero.exploreCourses': { en: 'Explore Courses', fr: 'Explorer les Cours', es: 'Explorar Cursos', ar: 'استكشف الدروس', de: 'Kurse erkunden', pt: 'Explorar Cursos' },
 
-  'hero.previewMath': { en: 'GCE A-Level Mathematics', fr: 'Mathématiques GCE A-Level' },
-  'hero.previewMathSub': { en: 'Pure Math P3 • Vector Mechanics & Calculus', fr: 'Maths Pures P3 • Mécanique Vectorielle & Calcul' },
-  'hero.masteryScore': { en: 'Mastery Score: 88%', fr: 'Score de Maîtrise : 88%' },
-  'hero.gradeProjected': { en: 'Grade A Projected', fr: 'Mention A Projetée' },
+  'pricing.badge': { en: 'Flexible Subscriptions', fr: 'Abonnements Flexibles', es: 'Suscripciones Flexibles', ar: 'اشتراكات مرنة', de: 'Flexible Abonnements', pt: 'Assinaturas Flexíveis' },
+  'pricing.title': { en: 'Simple, Transparent Pricing', fr: 'Tarifs Simples et Transparents', es: 'Precios Simples y Transparentes', ar: 'أسعار بسيطة وشفافة', de: 'Einfache, transparente Preise', pt: 'Preços Simples e Transparentes' },
+  'pricing.freeTitle': { en: 'Free Access', fr: 'Accès Gratuit', es: 'Acceso Gratuito', ar: 'وصول مجاني', de: 'Kostenloser Zugang', pt: 'Acesso Gratuito' },
+  'pricing.premTitle': { en: 'Edulpha Premium', fr: 'Edulpha Premium', es: 'Edulpha Premium', ar: 'إيدولفا بريميوم', de: 'Edulpha Premium', pt: 'Edulpha Premium' },
 
-  'hero.previewAiTitle': { en: 'Edulpha AI Study Sprint', fr: 'Sprint d\'Étude Edulpha IA' },
-  'hero.previewAiSub': { en: 'Personalized 7-day weak topic recovery plan', fr: 'Plan de révision personnalisé de 7 jours' },
-  'hero.statusInProgress': { en: 'Status: In Progress', fr: 'Statut : En Cours' },
-  'hero.daily15min': { en: '15 min daily', fr: '15 min par jour' },
-
-  'hero.previewMockTitle': { en: 'National Mock Exams', fr: 'Examens Blancs Nationaux' },
-  'hero.previewMockSub': { en: 'Timed GCE simulation with instant AI marking', fr: 'Simulation GCE chronométrée avec correction IA' },
-  'hero.nextExam': { en: 'Next Exam: Saturday', fr: 'Prochain Examen : Samedi' },
-  'hero.freeRegistration': { en: 'Free Registration', fr: 'Inscription Gratuite' },
-
-  'stats.students': { en: 'Students', fr: 'Étudiants' },
-  'stats.lessons': { en: 'Lessons', fr: 'Leçons' },
-  'stats.questions': { en: 'Practice Questions', fr: 'Questions d\'Entraînement' },
-  'stats.mocks': { en: 'Mock Exams', fr: 'Examens Blancs' },
-  'stats.aiChats': { en: 'AI Conversations', fr: 'Conversations IA' },
-  'stats.teachers': { en: 'Teachers', fr: 'Enseignants' },
-  'stats.schools': { en: 'Partner Schools', fr: 'Écoles Partenaires' },
-
-  'features.badge': { en: 'Platform Advantages', fr: 'Avantages de la Plateforme' },
-  'features.title': { en: 'Why Choose Edulpha?', fr: 'Pourquoi Choisir Edulpha ?' },
-  'features.subtitle': { en: 'Engineered specifically for Cameroon GCE and French educational standards with state-of-the-art AI assistance.', fr: 'Conçu spécifiquement pour les standards éducatifs du GCE Cameroun et du système francophone avec l\'aide d\'une IA de pointe.' },
-
-  'features.f1Title': { en: '24/7 AI Tutor', fr: 'Tuteur IA 24/7' },
-  'features.f1Desc': { en: 'Get instant, syllabus-aligned answers, step-by-step math solutions, and concept breakdowns in English or French.', fr: 'Obtenez des réponses instantanées alignées sur le programme, des solutions mathématiques étape par étape en anglais ou français.' },
-  'features.f2Title': { en: 'Interactive Lessons', fr: 'Leçons Interactives' },
-  'features.f2Desc': { en: 'Comprehensive digital lesson modules with multimedia explanations, diagrams, and summary notes.', fr: 'Modules de leçons numériques complets avec explications multimédias, schémas et notes de synthèse.' },
-  'features.f3Title': { en: 'Past Questions & Drills', fr: 'Anciennes Épreuves & Exercices' },
-  'features.f3Desc': { en: 'Access decades of official GCE and BEPC past examination papers with instant automated grading.', fr: 'Accédez à des décennies d\'épreuves officielles du GCE et du BEPC avec correction automatique instantanée.' },
-  'features.f4Title': { en: 'Smart Analytics', fr: 'Analyses Intelligentes' },
-  'features.f4Desc': { en: 'Real-time performance tracking identifies your weak topics and generates targeted practice sprints.', fr: 'Le suivi des performances en temps réel identifie vos points faibles et génère des sprints d\'entraînement ciblés.' },
-  'features.f5Title': { en: 'Personalized Learning', fr: 'Apprentissage Personnalisé' },
-  'features.f5Desc': { en: 'Custom study plans tailored to your target exam date, current grades, and university aspirations.', fr: 'Plans d\'étude sur mesure adaptés à votre date d\'examen, vos notes actuelles et vos aspirations universitaires.' },
-  'features.f6Title': { en: 'Mobile Learning', fr: 'Apprentissage Mobile' },
-  'features.f6Desc': { en: 'Study seamlessly across smartphone, tablet, and computer with automatic cloud progress syncing.', fr: 'Étudiez de manière fluide sur smartphone, tablette et ordinateur avec synchronisation automatique dans le cloud.' },
-  'features.f7Title': { en: 'Offline Access', fr: 'Accès Hors-Ligne' },
-  'features.f7Desc': { en: 'Download lessons, study notes, and past questions for offline revision anywhere in Cameroon.', fr: 'Téléchargez leçons, fiches et épreuves pour réviser hors-ligne partout au Cameroun.' },
-  'features.f8Title': { en: 'Bilingual Platform', fr: 'Plateforme Bilingue' },
-  'features.f8Desc': { en: 'Fully switch between English and French interfaces and lesson materials with a single click.', fr: 'Basculez entièrement entre les interfaces et leçons en anglais et en français en un seul clic.' },
-  'features.f9Title': { en: 'Community Discussions', fr: 'Discussions Communautaires' },
-  'features.f9Desc': { en: 'Collaborate with top students nationwide, ask questions, and share revision tips in our peer forum.', fr: 'Collaborez avec les meilleurs étudiants du pays, posez des questions et partagez des astuces de révision.' },
-
-  'cur.badge': { en: 'Bilingual Educational Excellence', fr: 'Excellence Éducative Bilingue' },
-  'cur.title': { en: 'Two Systems. One Ultimate Platform.', fr: 'Deux Systèmes. Une Seule Plateforme Ultime.' },
-  'cur.subtitle': { en: 'Fully customized curriculum coverage for both English-subsystem and French-subsystem students in Cameroon.', fr: 'Couverture complète des programmes pour les élèves du sous-système anglophone et francophone au Cameroun.' },
-
-  'cur.engTitle': { en: 'English Subsystem', fr: 'Sous-Système Anglophone' },
-  'cur.engSub': { en: 'Cameroon GCE Board Syllabus', fr: 'Programme du GCE Board Cameroun' },
-  'cur.engBadge': { en: 'O & A Levels', fr: 'O & A Levels' },
-  'cur.oLevelTitle': { en: 'Ordinary Level (GCE O-Level)', fr: 'Ordinary Level (GCE O-Level)' },
-  'cur.oLevelDesc': { en: 'Complete preparation for Mathematics, English Language, Physics, Chemistry, Biology, Computer Science, Economics, Commerce, and History.', fr: 'Préparation complète pour les Mathématiques, l\'Anglais, la Physique, la Chimie, la Biologie, l\'Informatique, l\'Économie et l\'Histoire.' },
-  'cur.aLevelTitle': { en: 'Advanced Level (A-Level)', fr: 'Advanced Level (A-Level)' },
-  'cur.aLevelDesc': { en: 'Rigorous modules for Pure Mathematics, Mechanics, Statistics, Physics, Computer Science, ICT, Chemistry, Biology, and Literature.', fr: 'Modules rigoureux en Mathématiques Pures, Mécanique, Statistiques, Physique, Informatique, Chimie, Biologie et Littérature.' },
-  'cur.exploreOa': { en: 'Explore O/A Level', fr: 'Explorer O/A Level' },
-
-  'cur.frTitle': { en: 'Système Francophone', fr: 'Système Francophone' },
-  'cur.frSub': { en: 'Programme Officiel du MINESEC', fr: 'Programme Officiel du MINESEC' },
-  'cur.frBadge': { en: 'BEPC & Baccalauréat', fr: 'BEPC & Baccalauréat' },
-  'cur.collegeTitle': { en: 'Cycle Collège (BEPC)', fr: 'Cycle Collège (BEPC)' },
-  'cur.collegeDesc': { en: 'Préparation complète pour les classes de 6ème en 3ème : Mathématiques, Physique-Chimie, SVT, Français, Anglais et Histoire-Géographie.', fr: 'Préparation complète pour les classes de 6ème en 3ème : Mathématiques, Physique-Chimie, SVT, Français, Anglais et Histoire-Géographie.' },
-  'cur.lyceeTitle': { en: 'Cycle Lycée (Seconde, Première, Terminale)', fr: 'Cycle Lycée (Seconde, Première, Terminale)' },
-  'cur.lyceeDesc': { en: 'Cours approfondis et sujets d\'examen corrigés pour les séries scientifiques (C, D, TI) et littéraires (A4, E).', fr: 'Cours approfondis et sujets d\'examen corrigés pour les séries scientifiques (C, D, TI) et littéraires (A4, E).' },
-  'cur.exploreLycee': { en: 'Explorer le Lycée', fr: 'Explorer le Lycée' },
-
-  'subjects.badge': { en: 'Comprehensive Course Catalog', fr: 'Catalogue de Cours Complet' },
-  'subjects.title': { en: 'Explore Our Subjects', fr: 'Explorez Nos Matières' },
-  'subjects.subtitle': { en: 'Over 40+ subjects equipped with digital lessons, quizzes, past exam papers, and AI tutoring.', fr: 'Plus de 40 matières dotées de leçons numériques, quiz, épreuves et tutorat par IA.' },
-
-  'sub.math': { en: 'Algebra, Calculus, Trigonometry & Probability', fr: 'Algèbre, Calcul, Trigonométrie & Probabilité' },
-  'sub.comp': { en: 'Algorithms, Data Structures & Python Coding', fr: 'Algorithmes, Structures de Données & Code Python' },
-  'sub.ict': { en: 'Databases, Networking & Web Technologies', fr: 'Bases de Données, Réseaux & Technologies Web' },
-  'sub.phys': { en: 'Mechanics, Electricity, Optics & Thermodynamics', fr: 'Mécanique, Électricité, Optique & Thermodynamique' },
-  'sub.chem': { en: 'Organic, Inorganic & Physical Chemistry', fr: 'Chimie Organique, Minérale & Physique' },
-  'sub.bio': { en: 'Genetics, Ecology, Human Anatomy & Physiology', fr: 'Génétique, Écologie, Anatomie & Physiologie Humaine' },
-  'sub.eng': { en: 'Composition, Summary Writing & Grammar', fr: 'Composition, Résumé de Texte & Grammaire' },
-  'sub.fr': { en: 'Dissertation, Grammaire & Expression Écrite', fr: 'Dissertation, Grammaire & Expression Écrite' },
-  'sub.geo': { en: 'Physical, Human & Cameroon Geography', fr: 'Géographie Physique, Humaine & du Cameroun' },
-  'sub.hist': { en: 'World History, African History & Cameroon', fr: 'Histoire Mondiale, Africaine & du Cameroun' },
-  'sub.econ': { en: 'Microeconomics, Macroeconomics & Development', fr: 'Microéconomie, Macroéconomie & Développement' },
-  'sub.acc': { en: 'Financial Accounting, Costing & Business Law', fr: 'Comptabilité Financière, Analytique & Droit des Affaires' },
-  'sub.start': { en: 'Start', fr: 'Commencer' },
-  'sub.lessonsCount': { en: 'Lessons', fr: 'Leçons' },
-
-  'ai.badge': { en: 'Edulpha AI Engine 2.0', fr: 'Moteur Edulpha IA 2.0' },
-  'ai.titleSec': { en: 'Your Personal 24/7 AI Tutor', fr: 'Votre Tuteur IA Personnel 24/7' },
-  'ai.subtitleSec': { en: 'Ask any question, solve complex past exam problems, generate custom practice quizzes, and get instant bilingual feedback.', fr: 'Posez des questions, résolvez des problèmes d\'examen complexes, générez des quiz personnalisés et obtenez des retours bilingues instantanés.' },
-  'ai.assistantTitle': { en: 'Edulpha AI Assistant', fr: 'Assistant Edulpha IA' },
-  'ai.assistantSub': { en: 'Online • GCE & Baccalauréat Expert', fr: 'En Ligne • Expert GCE & Baccalauréat' },
-  'ai.langBadge': { en: 'English / Français', fr: 'Anglais / Français' },
-  'ai.btnQuad': { en: '📐 Explain Quadratic Equations', fr: '📐 Expliquer les Équations Quadratiques' },
-  'ai.btnPython': { en: '💻 Python Binary Search', fr: '💻 Recherche Binaire en Python' },
-  'ai.btnDiff': { en: '🇫🇷 Équations Différentielles', fr: '🇫🇷 Équations Différentielles' },
-  'ai.youLabel': { en: 'You', fr: 'Vous' },
-  'ai.aiLabel': { en: 'AI', fr: 'IA' },
-  'ai.analyzing': { en: 'Edulpha AI is analyzing syllabus & formulating response...', fr: 'Edulpha IA analyse le programme et formule la réponse...' },
-  'ai.tryFullBtn': { en: 'Try Full AI Tutor Studio Now', fr: 'Essayer le Studio Tuteur IA Complet' },
-
-  'roadmap.badge': { en: 'Step-by-Step Success', fr: 'Succès Étape par Étape' },
-  'roadmap.title': { en: 'Your Learning Journey', fr: 'Votre Parcours d\'Apprentissage' },
-  'roadmap.subtitle': { en: 'Follow our proven 7-step roadmap from registration to achieving top grades in your national exams.', fr: 'Suivez notre feuille de route en 7 étapes pour décrocher les meilleures notes aux examens nationaux.' },
-
-  'roadmap.step1Title': { en: 'Create Account', fr: 'Créer un Compte' },
-  'roadmap.step1Desc': { en: 'Sign up in seconds with email or Google.', fr: 'Inscrivez-vous en quelques secondes.' },
-  'roadmap.step2Title': { en: 'Choose Curriculum', fr: 'Choisir le Programme' },
-  'roadmap.step2Desc': { en: 'Select GCE O/A Levels or French System.', fr: 'Sélectionnez GCE ou Système Français.' },
-  'roadmap.step3Title': { en: 'Learn with AI', fr: 'Apprendre avec l\'IA' },
-  'roadmap.step3Desc': { en: 'Master topics with 24/7 AI tutor guidance.', fr: 'Maîtrisez les notions avec l\'IA 24/7.' },
-  'roadmap.step4Title': { en: 'Practice Questions', fr: 'Pratiquer les Épreuves' },
-  'roadmap.step4Desc': { en: 'Drill past exam papers & instant quizzes.', fr: 'Entraînez-vous sur les annales et quiz.' },
-  'roadmap.step5Title': { en: 'Take Mock Exams', fr: 'Passer les Examens Blancs' },
-  'roadmap.step5Desc': { en: 'Simulate real national exam conditions.', fr: 'Simulez les conditions réelles d\'examen.' },
-  'roadmap.step6Title': { en: 'Track Progress', fr: 'Suivre les Progrès' },
-  'roadmap.step6Desc': { en: 'Analyze weak spots & grade projections.', fr: 'Analysez vos points faibles et notes.' },
-  'roadmap.step7Title': { en: 'Achieve Success', fr: 'Décrocher le Succès' },
-  'roadmap.step7Desc': { en: 'Score A grades and secure admission.', fr: 'Obtenez la mention et votre admission.' },
-
-  'mobile.badge': { en: 'Mobile Learning Ecosystem', fr: 'Écosystème Mobile' },
-  'mobile.title': { en: 'Study Anywhere, Anytime with Edulpha Mobile', fr: 'Étudiez Partout, Tout le Temps avec Edulpha Mobile' },
-  'mobile.desc': { en: 'Never miss a revision session. Download the Edulpha app for Android and iOS to access lessons, flashcards, past questions, and offline mode.', fr: 'Ne manquez aucune révision. Téléchargez l\'application Edulpha pour Android et iOS.' },
-  'mobile.feat1': { en: 'Offline mode for studying without internet connection', fr: 'Mode hors-ligne pour étudier sans connexion internet' },
-  'mobile.feat2': { en: 'Push notifications for daily study reminders & quizzes', fr: 'Notifications push pour les rappels de révision et quiz' },
-  'mobile.feat3': { en: 'Instant AI tutor chat right from your smartphone', fr: 'Chat direct avec le tuteur IA depuis votre smartphone' },
-  'mobile.feat4': { en: 'Cloud syncing of quiz scores, bookmarks & study plans', fr: 'Synchronisation cloud des scores, favoris et plans d\'étude' },
-  'mobile.androidLabel': { en: 'Download for', fr: 'Télécharger pour' },
-  'mobile.androidStore': { en: 'Android APK & Google Play', fr: 'Android APK & Google Play' },
-  'mobile.iosLabel': { en: 'Available on', fr: 'Disponible sur' },
-  'mobile.iosStore': { en: 'App Store (iOS)', fr: 'App Store (iOS)' },
-  'mobile.cardTitle': { en: 'Edulpha Mobile App', fr: 'Application Mobile Edulpha' },
-  'mobile.cardDesc': { en: 'Scan QR code or click below to install on your mobile device.', fr: 'Scannez le QR code ou cliquez pour installer sur votre mobile.' },
-  'mobile.version': { en: 'Version 2.4.0 • Updated for 2026 GCE Syllabus', fr: 'Version 2.4.0 • Mis à jour pour le programme 2026' },
-
-  'pricing.badge': { en: 'Flexible Subscriptions', fr: 'Abonnements Flexibles' },
-  'pricing.title': { en: 'Simple, Transparent Pricing', fr: 'Tarifs Simples et Transparents' },
-  'pricing.subtitle': { en: 'Choose the plan that fits your academic goals. Unlock unlimited AI tutoring and mock exams.', fr: 'Choisissez le forfait adapté à vos objectifs académiques. Débloquez le tutorat IA illimité.' },
-
-  'pricing.freeBadge': { en: 'Starter', fr: 'Débutant' },
-  'pricing.freeTitle': { en: 'Free Access', fr: 'Accès Gratuit' },
-  'pricing.freeDesc': { en: 'Essential tools to get started with basic revision.', fr: 'Outils essentiels pour démarrer la révision.' },
-  'pricing.freePrice': { en: '0 FCFA', fr: '0 FCFA' },
-  'pricing.freeDuration': { en: '/ forever', fr: '/ pour toujours' },
-  'pricing.freeFeat1': { en: 'Basic Subject Lessons', fr: 'Leçons de Base' },
-  'pricing.freeFeat2': { en: 'Limited AI Tutor Queries', fr: 'Requêtes Tuteur IA Limitées' },
-  'pricing.freeFeat3': { en: 'Public Discussion Forum', fr: 'Forum de Discussion Public' },
-  'pricing.freeBtn': { en: 'Get Started Free', fr: 'Commencer Gratuitement' },
-
-  'pricing.premBadge': { en: 'Recommended', fr: 'Recommandé' },
-  'pricing.premTitle': { en: 'Edulpha Premium', fr: 'Edulpha Premium' },
-  'pricing.premDesc': { en: 'Full unlimited access for serious GCE & Baccalauréat candidates.', fr: 'Accès illimité complet pour les candidats sérieux au GCE & Bac.' },
-  'pricing.premPrice': { en: '5,000 FCFA', fr: '5 000 FCFA' },
-  'pricing.premDuration': { en: '/ term', fr: '/ trimestre' },
-  'pricing.premFeat1': { en: 'Unlimited AI Tutor 24/7', fr: 'Tuteur IA Illimité 24/7' },
-  'pricing.premFeat2': { en: 'All Past Questions & Solutions', fr: 'Toutes les Annales & Solutions' },
-  'pricing.premFeat3': { en: 'National Mock Exams & Certificates', fr: 'Examens Blancs Nationaux & Certificats' },
-  'pricing.premFeat4': { en: 'Weakness Analyzer & Study Planner', fr: 'Analyseur de Faiblesses & Plan d\'Étude' },
-  'pricing.premFeat5': { en: 'Offline App Access', fr: 'Accès App Hors-Ligne' },
-  'pricing.premBtn': { en: 'Unlock Premium', fr: 'Débloquer le Premium' },
-  'pricing.mostPopular': { en: 'Most Popular', fr: 'Le Plus Populaire' },
-
-  'pricing.instBadge': { en: 'Schools & Colleges', fr: 'Écoles & Collèges' },
-  'pricing.instTitle': { en: 'Institution License', fr: 'Licence Institutionnelle' },
-  'pricing.instDesc': { en: 'For secondary schools, colleges, and coaching centers.', fr: 'Pour les lycées, collèges et centres de soutien.' },
-  'pricing.instPrice': { en: 'Custom', fr: 'Sur Mesure' },
-  'pricing.instDuration': { en: '/ school', fr: '/ école' },
-  'pricing.instFeat1': { en: 'Teacher Administration Dashboard', fr: 'Tableau de Bord Administrateur Enseignant' },
-  'pricing.instFeat2': { en: 'Bulk Student Accounts & Analytics', fr: 'Comptes Étudiants en Masse & Analyses' },
-  'pricing.instFeat3': { en: 'Custom School Mock Exam Builder', fr: 'Générateur d\'Examens Blancs sur Mesure' },
-  'pricing.instFeat4': { en: 'Dedicated Support & Training', fr: 'Support & Formation Dédiés' },
-  'pricing.instBtn': { en: 'Contact Sales', fr: 'Contacter les Ventes' },
-
-  'test.badge': { en: 'Success Stories', fr: 'Témoignages de Réussite' },
-  'test.title': { en: 'Trusted by Students & Teachers', fr: 'Approuvé par les Élèves et Professeurs' },
-  'test.subtitle': { en: 'Hear how Edulpha transformed exam preparation across Cameroon.', fr: 'Découvrez comment Edulpha a transformé la préparation aux examens au Cameroun.' },
-
-  'test.quote1': { en: 'Edulpha\'s AI tutor helped me jump from a C grade to an A in GCE Advanced Level Computer Science. The past question explanations are unmatched!', fr: 'Le tuteur IA d\'Edulpha m\'a aidé à passer d\'une note C à A en Informatique GCE A-Level. Les explications des annales sont incomparables !' },
-  'test.author1': { en: 'Tening Emmanuel', fr: 'Tening Emmanuel' },
-  'test.role1': { en: 'GCE A-Level Student, Bamenda', fr: 'Étudiant GCE A-Level, Bamenda' },
-
-  'test.quote2': { en: 'As a Physics teacher, I use Edulpha Teacher Studio to generate quizzes and track my students\' weak points. It saves me hours of work every week.', fr: 'En tant que prof de physique, j\'utilise le Studio Enseignant Edulpha pour générer des quiz et suivre les points faibles de mes élèves. Ça me fait gagner des heures chaque semaine.' },
-  'test.author2': { en: 'Mme. Ngo Balep', fr: 'Mme Ngo Balep' },
-  'test.role2': { en: 'Physics Teacher, Douala', fr: 'Professeur de Physique, Douala' },
-
-  'test.quote3': { en: 'The bilingual support and national mock exams gave my daughter the exact confidence she needed to pass her Baccalauréat with distinction.', fr: 'Le support bilingue et les examens blancs nationaux ont donné à ma fille la confiance nécessaire pour réussir son Baccalauréat avec mention.' },
-  'test.author3': { en: 'Dr. Achu Paul', fr: 'Dr Achu Paul' },
-  'test.role3': { en: 'Parent, Yaoundé', fr: 'Parent d\'élève, Yaoundé' },
-
-  'faq.badge': { en: 'Got Questions?', fr: 'Des Questions ?' },
-  'faq.title': { en: 'Frequently Asked Questions', fr: 'Foire Aux Questions' },
-  'faq.subtitle': { en: 'Everything you need to know about Edulpha registrations, pricing, and AI features.', fr: 'Tout ce que vous devez savoir sur les inscriptions, les tarifs et l\'IA d\'Edulpha.' },
-
-  'faq.q1': { en: 'How do I register for Edulpha?', fr: 'Comment m\'inscrire sur Edulpha ?' },
-  'faq.a1': { en: 'Registration is simple. Click "Get Started" or "Create Free Account", enter your details, choose your curriculum (English Cameroon GCE or French Curriculum), and start accessing instant revision tools.', fr: 'L\'inscription est simple. Cliquez sur "Commencer" ou "Créer un Compte", entrez vos informations, choisissez votre système éducatif (GCE ou Système Français) et accédez instantanément aux outils.' },
-  'faq.q2': { en: 'What payment methods are supported for Premium access?', fr: 'Quels modes de paiement sont acceptés pour l\'accès Premium ?' },
-  'faq.a2': { en: 'We support secure mobile money payments (MTN Mobile Money, Orange Money) as well as bank cards for instant activation of your Edulpha Premium subscription.', fr: 'Nous prenons en charge les paiements mobiles sécurisés (MTN Mobile Money, Orange Money) ainsi que les cartes bancaires pour une activation immédiate.' },
-  'faq.q3': { en: 'How does Edulpha AI Tutor work?', fr: 'Comment fonctionne le tuteur IA d\'Edulpha ?' },
-  'faq.a3': { en: 'Edulpha AI is trained specifically on Cameroon GCE and French BEPC/Baccalauréat syllabi. It provides 24/7 instant explanations, solves past exam questions, generates custom quizzes, and builds personalized 7-day study sprints.', fr: 'L\'IA d\'Edulpha est entraînée spécifiquement sur les programmes du GCE et du BEPC/Bac camerounais. Elle offre des explications 24/7, résout des annales et crée des plannings de révision.' },
-  'faq.q4': { en: 'Can I use Edulpha on my mobile phone?', fr: 'Puis-je utiliser Edulpha sur mon téléphone portable ?' },
-  'faq.a4': { en: 'Yes! Edulpha is fully optimized for mobile browsers, and our official Android & iOS app is available for download with offline mode support for studying anywhere.', fr: 'Oui ! Edulpha est optimisé pour les mobiles, et notre application officielle Android et iOS est disponible avec mode hors-ligne.' },
-  'faq.q5': { en: 'Does Edulpha support both English and French systems?', fr: 'Edulpha prend-il en charge les systèmes anglophone et francophone ?' },
-  'faq.a5': { en: 'Absolutely. Edulpha is a bilingual learning ecosystem fully supporting the English-subsystem (O/A Levels) and French-subsystem (BEPC, Seconde, Première, Terminale) with seamless language switching.', fr: 'Absolument. Edulpha est un écosystème bilingue soutenant pleinement le sous-système anglophone (O/A Levels) et francophone (BEPC, Lycée) avec basculement fluide.' },
-  'faq.q6': { en: 'Are certificates awarded upon completing mock exams?', fr: 'Des certificats sont-ils décernés après les examens blancs ?' },
-  'faq.a6': { en: 'Yes, students who complete our national mock exams and achieve passing grades receive verified Edulpha Academic Board certificates with unique verification IDs.', fr: 'Oui, les étudiants qui complètent nos examens blancs et obtiennent la moyenne reçoivent des certificats vérifiés de l\'Edulpha Academic Board avec ID unique.' },
-
-  'cta.title': { en: 'Start Learning Today', fr: 'Commencez à Apprendre Dès Aujourd\'hui' },
-  'cta.desc': { en: 'Join thousands of Cameroon students achieving academic excellence with Edulpha AI.', fr: 'Rejoignez des milliers d\'étudiants camerounais qui réussissent brillamment avec Edulpha IA.' },
-  'cta.createAccount': { en: 'Create Free Account', fr: 'Créer un Compte Gratuit' },
-
-  'footer.desc': { en: 'The premier bilingual AI-powered educational platform for Cameroon GCE and French curricula.', fr: 'La première plateforme éducative bilingue propulsée par l\'IA pour les programmes du GCE et du système français.' },
-  'footer.excellence': { en: 'Built for Academic Excellence', fr: 'Conçu pour l\'Excellence Académique' },
-  'footer.resources': { en: 'Resources', fr: 'Ressources' },
-  'footer.support': { en: 'Support & Contact', fr: 'Support & Contact' },
-  'footer.legal': { en: 'Legal & Security', fr: 'Légal & Sécurité' },
-  'footer.terms': { en: 'Terms of Service', fr: 'Conditions d\'Utilisation' },
-  'footer.privacy': { en: 'Privacy Policy', fr: 'Politique de Confidentialité' },
-  'footer.data': { en: 'Data Protection', fr: 'Protection des Données' },
-  'footer.rights': { en: '© 2026 Edulpha AI Technologies. All rights reserved.', fr: '© 2026 Edulpha AI Technologies. Tous droits réservés.' },
-  'footer.secure': { en: 'Secure SSL Encryption', fr: 'Chiffrement SSL Sécurisé' },
-  'footer.bilingual': { en: 'English & Français Bilingual', fr: 'Bilingue Anglais & Français' },
-  'footer.catalog': { en: 'Subject Catalog', fr: 'Catalogue des Matières' },
-  'footer.whatsapp': { en: 'WhatsApp Support', fr: 'Support WhatsApp' },
-  'footer.community': { en: 'Join Student Community', fr: 'Rejoindre la Communauté' },
-  'footer.help': { en: 'Help Center & FAQs', fr: 'Centre d\'Aide & FAQs' }
+  'footer.rights': { en: '© 2026 Edulpha AI Technologies. All rights reserved.', fr: '© 2026 Edulpha AI Technologies. Tous droits réservés.', es: '© 2026 Edulpha AI Technologies. Todos los derechos reservados.', ar: '© 2026 تقنيات إيدولفا للذكاء الاصطناعي. جميع الحقوق محفوظة.', de: '© 2026 Edulpha AI Technologies. Alle Rechte vorbehalten.', pt: '© 2026 Edulpha AI Technologies. Todos os direitos reservados.' }
 };
 
-export const getTranslation = (key: string, lang: LanguageCode = 'en', fallback?: string): string => {
+export const getTranslation = (
+  key: string,
+  lang: LanguageCode = 'en',
+  customDict?: TranslationDictionary,
+  fallback?: string
+): string => {
+  // Check custom dynamic Firestore dictionary first if provided
+  if (customDict && customDict[key] && customDict[key][lang]) {
+    return customDict[key][lang];
+  }
+  // Check core built-in translations
   if (TRANSLATIONS[key] && TRANSLATIONS[key][lang]) {
     return TRANSLATIONS[key][lang];
+  }
+  // Fall back to English in core or custom
+  if (customDict && customDict[key] && customDict[key]['en']) {
+    return customDict[key]['en'];
   }
   if (TRANSLATIONS[key] && TRANSLATIONS[key]['en']) {
     return TRANSLATIONS[key]['en'];
   }
   return fallback || key;
+};
+
+/**
+ * Helper to fetch localized field from database models dynamically.
+ * Resolves properties like name_fr, nameFr, description_ar, etc.
+ */
+export const getLocalizedField = <T extends Record<string, any>>(
+  item: T | null | undefined,
+  field: string,
+  language: LanguageCode = 'en',
+  fallback: string = ''
+): string => {
+  if (!item) return fallback;
+
+  // 1. Direct translation object (e.g. item.translations?.[lang]?.[field])
+  if (item.translations && item.translations[language] && item.translations[language][field]) {
+    return item.translations[language][field];
+  }
+
+  // 2. Language snake_case property (e.g. name_fr, description_es)
+  const snakeKey = `${field}_${language}`;
+  if (item[snakeKey] && typeof item[snakeKey] === 'string') {
+    return item[snakeKey];
+  }
+
+  // 3. Language camelCase property (e.g. nameFr, descriptionEs, nameAr)
+  const langSuffix = language.charAt(0).toUpperCase() + language.slice(1).toLowerCase();
+  const camelKey = `${field}${langSuffix}`;
+  if (item[camelKey] && typeof item[camelKey] === 'string') {
+    return item[camelKey];
+  }
+
+  // 4. Default primary field (e.g. item.name, item.description)
+  if (item[field] && typeof item[field] === 'string') {
+    return item[field];
+  }
+
+  return fallback;
 };

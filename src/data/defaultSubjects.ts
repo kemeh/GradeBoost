@@ -1,5 +1,6 @@
 import { SubjectModel, PaperConfig } from '../types';
 import { collection, getDocs, doc, setDoc, query, where, serverTimestamp, writeBatch } from 'firebase/firestore';
+import { generateAllCommercialSubjectsSeed } from '../constants/commercialCurriculum';
 
 export const DEFAULT_GCE_SUBJECTS: Omit<SubjectModel, 'id' | 'createdAt'>[] = [
   // ==========================================
@@ -655,10 +656,13 @@ export async function seedDefaultGceSubjects(db: any): Promise<number> {
     let addedCount = 0;
     const batch = writeBatch(db);
 
-    for (const subjectData of DEFAULT_GCE_SUBJECTS) {
+    const allCommercialSeed = generateAllCommercialSubjectsSeed();
+    const combinedSubjects = [...DEFAULT_GCE_SUBJECTS, ...allCommercialSeed];
+
+    for (const subjectData of combinedSubjects) {
       const key = `${subjectData.name}_${subjectData.level}`;
       if (!existingNames.has(key)) {
-        const docId = subjectData.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + (subjectData.level === 'Advance level' ? 'al' : 'ol');
+        const docId = subjectData.name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + (subjectData.level === 'Advance level' ? 'al' : subjectData.level === 'Intermediate level' ? 'il' : 'ol');
         const docRef = doc(db, 'subjects', docId);
         batch.set(docRef, {
           ...subjectData,

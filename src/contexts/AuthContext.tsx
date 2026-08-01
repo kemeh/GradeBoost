@@ -53,9 +53,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let unsubDoc: (() => void) | null = null;
+    let hasUpdatedLoginTime = false;
 
     const unsubscribe = onAuthStateChanged(auth, async (fUser) => {
       setFirebaseUser(fUser);
+      hasUpdatedLoginTime = false;
       
       if (unsubDoc) {
         unsubDoc();
@@ -92,14 +94,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(profile);
             setLoading(false);
 
-            // Update last active date periodically
-            try {
-              await updateDoc(userRef, {
-                lastLoginAt: serverTimestamp(),
-                lastActiveDate: serverTimestamp(),
-              });
-            } catch (err) {
-              // Non-critical background update ignore
+            // Update last active date once per session, NOT on every snapshot to avoid infinite re-trigger loop
+            if (!hasUpdatedLoginTime) {
+              hasUpdatedLoginTime = true;
+              try {
+                await updateDoc(userRef, {
+                  lastLoginAt: serverTimestamp(),
+                  lastActiveDate: serverTimestamp(),
+                });
+              } catch (err) {
+                // Non-critical background update ignore
+              }
             }
           } else {
             // Auto-create profile if it doesn't exist

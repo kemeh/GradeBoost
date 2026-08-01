@@ -17,12 +17,29 @@ declare global {
 
 export type Subject = string;
 
-export interface Curriculum {
-  id: string; // e.g., 'cameroon_gce', 'cameroon_francophone', 'waec'
-  name: string; // e.g., 'English Curriculum (Cameroon GCE)', 'French Curriculum (Cameroon Francophone)'
-  code: string; // e.g., 'GCE', 'FRANCOPHONE'
+export interface EducationCategory {
+  id: string;
+  curriculumId: string;
+  name: string;
+  nameFr?: string;
+  code: string;
   description?: string;
-  language: 'en' | 'fr' | 'bilingual';
+  descriptionFr?: string;
+  isActive: boolean;
+  order?: number;
+  createdAt?: any;
+}
+
+export interface Curriculum {
+  id: string; // e.g., 'cameroon_gce', 'cameroon_gce_tvee', 'cameroon_francophone', 'bac_general', 'bac_technologique'
+  name: string; // e.g., 'English Curriculum (Cameroon GCE)', 'French Curriculum (Cameroon Francophone)'
+  nameFr?: string;
+  code: string; // e.g., 'GCE', 'TVEE', 'BAC-FR'
+  country?: string; // e.g., 'Cameroon', 'France', 'International'
+  examinationBoard?: string; // e.g., 'Cameroon GCE Board', 'MINESEC', 'Ministry of National Education'
+  description?: string;
+  descriptionFr?: string;
+  language: 'en' | 'fr' | 'bilingual' | string;
   isActive: boolean;
   order?: number;
   createdAt?: any;
@@ -31,21 +48,27 @@ export interface Curriculum {
 export interface EducationLevel {
   id: string; // e.g., 'ordinary_level', 'advanced_level', 'troisieme', 'seconde', 'premiere', 'terminale'
   curriculumId: string;
+  categoryId?: string;
   name: string; // e.g., 'Ordinary Level', 'Advanced Level', 'Troisième (BEPC)', 'Seconde', 'Première', 'Terminale'
+  nameFr?: string;
   code: string;
   description?: string;
+  descriptionFr?: string;
   isActive: boolean;
   order?: number;
   createdAt?: any;
 }
 
 export interface Department {
-  id: string;
+  id: string; // e.g., Series, Streams, Sections, Departments
   curriculumId: string;
   levelId?: string;
-  name: string; // e.g., 'Science & Tech', 'Sciences Exactes', 'Lettres & Arts'
+  categoryId?: string;
+  name: string; // e.g., 'Science & Tech', 'Sciences Exactes', 'Série C', 'Série D', 'Série F', 'Industrial'
+  nameFr?: string;
   code?: string;
   description?: string;
+  descriptionFr?: string;
   isActive: boolean;
   createdAt?: any;
 }
@@ -53,10 +76,14 @@ export interface Department {
 export interface PaperConfig {
   id: string;
   name: string;
-  type: 'MCQ' | 'Theory' | 'Practical' | 'Structured' | 'Essay' | 'Oral' | 'Synthese';
+  nameFr?: string;
+  type: 'MCQ' | 'Theory' | 'Practical' | 'Structured' | 'Essay' | 'Oral' | 'Synthese' | string;
   totalMarks?: number;
   durationMinutes?: number;
+  passMark?: number;
+  weightingCoefficient?: number;
   instructions?: string;
+  instructionsFr?: string;
   questionTypes?: string[];
   examYear?: number;
   examSession?: string;
@@ -66,18 +93,44 @@ export interface PaperConfig {
 export interface SubjectModel {
   id: string;
   name: string;
+  nameFr?: string;
   code?: string;
   description?: string;
+  descriptionFr?: string;
   curriculumId?: string;
   curriculumName?: string;
   levelId?: string;
   level?: 'Ordinary level' | 'Advance level' | string;
   educationLevel?: string;
   departmentId?: string;
-  category?: string;
+  category?: string; // e.g., 'Professional Subject', 'Related Subject', 'General Subject', 'Pool Subject', 'Optional Subject'
   isActive?: boolean;
   papers?: PaperConfig[];
   createdAt?: any;
+}
+
+export interface SpecialtyModel {
+  id: string;
+  name: string;
+  nameFr?: string;
+  code: string;
+  frenchCode?: string;
+  curriculumId: string;
+  levelId?: string;
+  level?: 'Intermediate level' | 'Advance level' | string;
+  departmentId?: string;
+  department?: 'Industrial' | 'Commercial' | string;
+  description?: string;
+  descriptionFr?: string;
+  icon?: string;
+  isActive: boolean;
+  professionalSubjects: string[];
+  relatedSubjects: string[];
+  poolSubjects: string[];
+  passRequirements?: string;
+  passRequirementsFr?: string;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
 export type PaperType = 'Paper 1' | 'Paper 2' | 'Paper 3' | 'Combined' | string;
@@ -98,9 +151,16 @@ export interface UserProfile {
   educationLevelName?: string;
   departmentId?: string;
   departmentName?: string;
-  level?: 'Ordinary level' | 'Advance level' | string;
+  level?: 'Ordinary level' | 'Advance level' | 'Intermediate level' | string;
   school: string;
   region: string;
+  commercialSpecialtyId?: string;
+  commercialSpecialtyName?: string;
+  commercialSpecialtyCode?: string;
+  selectedSubjects?: string[];
+  professionalSubjects?: string[];
+  relatedSubjects?: string[];
+  poolOrGeneralSubjects?: string[];
   assignedPapers: string[]; // e.g., ["paper1", "paper2", "paper3"]
   targetGrade: Grade;
   createdAt: string;

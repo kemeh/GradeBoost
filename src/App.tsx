@@ -49,6 +49,7 @@ const StudentExamPortal = lazy(() => import('./pages/StudentExamPortal'));
 const ExamSession = lazy(() => import('./pages/ExamSession'));
 const ExamResultScreen = lazy(() => import('./pages/ExamResultScreen'));
 const ExamAnalyticsDashboard = lazy(() => import('./pages/ExamAnalyticsDashboard'));
+const DocumentationHub = lazy(() => import('./pages/DocumentationHub'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
@@ -108,6 +109,8 @@ export default function App() {
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/docs" element={<DocumentationHub />} />
+              <Route path="/documentation" element={<DocumentationHub />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />

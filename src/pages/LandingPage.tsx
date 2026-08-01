@@ -12,6 +12,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { Button, Card, Badge, cn } from '../components/ui';
+import { LandingPartnersSection } from '../components/LandingPartnersSection';
 
 export default function LandingPage() {
   const { user, loading, isAdmin } = useAuth();
@@ -81,6 +82,11 @@ export default function LandingPage() {
             <a href="#curriculum" className="hover:text-indigo-600 transition-colors">{t('nav.curriculum')}</a>
             <a href="#subjects" className="hover:text-indigo-600 transition-colors">{t('nav.subjects')}</a>
             <a href="#ai-tutor" className="hover:text-indigo-600 transition-colors">{t('nav.aiTutor')}</a>
+            <a href="#partners" className="hover:text-indigo-600 transition-colors">{t('nav.partners')}</a>
+            <Link to="/docs" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+              <span>Docs</span>
+              <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[9px] font-black rounded uppercase">Package</span>
+            </Link>
             <a href="#pricing" className="hover:text-indigo-600 transition-colors">{t('nav.pricing')}</a>
             <a href="#mobile-app" className="hover:text-indigo-600 transition-colors">{t('nav.mobileApp')}</a>
             <a href="#faq" className="hover:text-indigo-600 transition-colors">{t('nav.faq')}</a>
@@ -605,6 +611,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* 9.5 Partners Section */}
+      <LandingPartnersSection />
+
       {/* 10. Pricing Section */}
       <section id="pricing" className="py-24 px-6 bg-white">
         <div className="max-w-7xl mx-auto space-y-16">
@@ -806,6 +815,7 @@ export default function LandingPage() {
           <div className="space-y-3">
             <h4 className="font-black text-sm text-white uppercase tracking-widest">{t('footer.resources')}</h4>
             <ul className="space-y-2 text-xs font-bold text-slate-400">
+              <li><Link to="/docs" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5"><FileText size={14} /> Pre-Launch Docs Hub</Link></li>
               <li><a href="#subjects" className="hover:text-white transition-colors">{t('footer.catalog')}</a></li>
               <li><a href="#curriculum" className="hover:text-white transition-colors">{t('cur.engBadge')}</a></li>
               <li><a href="#curriculum" className="hover:text-white transition-colors">{t('cur.frBadge')}</a></li>

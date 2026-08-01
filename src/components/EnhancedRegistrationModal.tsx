@@ -8,6 +8,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { logAuditEvent } from '../services/auditService';
+import { INTERMEDIATE_LEVEL_COMMERCIAL_SPECIALTIES, ADVANCED_LEVEL_TVEE_COMMERCIAL_SPECIALTIES } from '../constants/commercialCurriculum';
 import toast from 'react-hot-toast';
 
 interface EnhancedRegistrationProps {
@@ -46,6 +47,10 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
     
     // Academic Details
     department: 'Science' as string, // Science, Arts, Commercial, Technical, General
+    commercialSpecialtyId: '' as string,
+    commercialSpecialtyName: '' as string,
+    commercialSpecialtyCode: '' as string,
+    commercialLevel: 'Advance level' as 'Intermediate level' | 'Advance level',
     selectedSubjects: ['Mathematics', 'Physics', 'Computer Science'] as string[],
     targetExam: 'GCE Advanced Level' as string,
     
@@ -140,6 +145,10 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         curriculumName: formData.curriculum === 'cameroon_gce' ? 'Cameroon GCE (English)' : formData.curriculum === 'cameroon_francophone' ? 'Système Francophone (MINESEC)' : 'Bilingual',
         educationLevel: formData.educationLevel,
         department: formData.department,
+        commercialSpecialtyId: formData.commercialSpecialtyId || '',
+        commercialSpecialtyName: formData.commercialSpecialtyName || '',
+        commercialSpecialtyCode: formData.commercialSpecialtyCode || '',
+        level: formData.department === 'Commercial' ? formData.commercialLevel : 'Advanced Level',
         subjects: formData.selectedSubjects,
         subject: formData.selectedSubjects[0] || 'General Studies',
         targetExam: formData.targetExam,
@@ -474,13 +483,22 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
             <h3 className="font-bold text-base text-slate-900">3. Academic Department & Subject Selection</h3>
             
             <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-600">Department / Series</label>
+              <label className="text-xs font-bold text-slate-600">Department / Stream</label>
               <div className="grid grid-cols-3 gap-2">
                 {['Science', 'Arts', 'Commercial', 'Technical', 'General Education'].map(dept => (
                   <button
                     key={dept}
                     type="button"
-                    onClick={() => setFormData({ ...formData, department: dept })}
+                    onClick={() => {
+                      setFormData({ 
+                        ...formData, 
+                        department: dept,
+                        commercialSpecialtyId: '',
+                        commercialSpecialtyName: '',
+                        commercialSpecialtyCode: '',
+                        selectedSubjects: dept === 'Commercial' ? [] : ['Mathematics', 'Physics', 'Computer Science']
+                      });
+                    }}
                     className={`p-3 rounded-xl border font-bold text-xs transition text-center ${
                       formData.department === dept
                         ? 'bg-blue-600 text-white border-blue-600'
@@ -493,45 +511,203 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2 pt-2">
-              <label className="text-xs font-bold text-slate-600">Select Your Main Subjects (Select multiple)</label>
-              <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1">
-                {[
-                  'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science',
-                  'English Language', 'French', 'Economics', 'Geography', 'History', 'Accounting', 'Mechanics'
-                ].map(subj => {
-                  const isSelected = formData.selectedSubjects.includes(subj);
-                  return (
-                    <button
-                      key={subj}
-                      type="button"
-                      onClick={() => handleSubjectToggle(subj)}
-                      className={`p-2.5 rounded-xl border text-xs font-bold text-left flex items-center justify-between transition ${
-                        isSelected ? 'bg-blue-50 border-blue-600 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-600'
-                      }`}
-                    >
-                      <span>{subj}</span>
-                      {isSelected && <Check className="w-4 h-4 text-blue-600" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {formData.department === 'Commercial' ? (
+              <div className="space-y-3 pt-2 border-t border-slate-100">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600">Commercial Level</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { id: 'Intermediate level', name: 'Intermediate Level (TVE IL)' },
+                      { id: 'Advance level', name: 'Advanced Level (TVEE)' }
+                    ].map(lvl => (
+                      <button
+                        key={lvl.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            commercialLevel: lvl.id as any,
+                            commercialSpecialtyId: '',
+                            commercialSpecialtyName: '',
+                            commercialSpecialtyCode: '',
+                            selectedSubjects: []
+                          });
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition text-center ${
+                          formData.commercialLevel === lvl.id
+                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            : 'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        {lvl.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            <div className="space-y-2 pt-2">
-              <label className="text-xs font-bold text-slate-600">Target Examination</label>
-              <select
-                value={formData.targetExam}
-                onChange={e => setFormData({ ...formData, targetExam: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none"
-              >
-                <option value="GCE Advanced Level">GCE Advanced Level</option>
-                <option value="GCE Ordinary Level">GCE Ordinary Level</option>
-                <option value="BEPC">BEPC (Brevet d'Études du Premier Cycle)</option>
-                <option value="Baccalauréat C/D">Baccalauréat (Série C / D)</option>
-                <option value="Probatoire">Probatoire</option>
-              </select>
-            </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-600">Select Commercial Specialty</label>
+                  <select
+                    value={formData.commercialSpecialtyId}
+                    onChange={e => {
+                      const specId = e.target.value;
+                      const specs = formData.commercialLevel === 'Intermediate level' 
+                        ? INTERMEDIATE_LEVEL_COMMERCIAL_SPECIALTIES 
+                        : ADVANCED_LEVEL_TVEE_COMMERCIAL_SPECIALTIES;
+                      const found = specs.find(s => s.id === specId);
+                      if (found) {
+                        setFormData({
+                          ...found,
+                          ...formData,
+                          commercialSpecialtyId: found.id,
+                          commercialSpecialtyName: found.name,
+                          commercialSpecialtyCode: found.code,
+                          selectedSubjects: [...found.professionalSubjects] // Auto-select compulsory professional subjects
+                        });
+                      } else {
+                        setFormData({
+                          ...formData,
+                          commercialSpecialtyId: '',
+                          commercialSpecialtyName: '',
+                          commercialSpecialtyCode: '',
+                          selectedSubjects: []
+                        });
+                      }
+                    }}
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none"
+                  >
+                    <option value="">-- Select Specialty --</option>
+                    {(formData.commercialLevel === 'Intermediate level' 
+                      ? INTERMEDIATE_LEVEL_COMMERCIAL_SPECIALTIES 
+                      : ADVANCED_LEVEL_TVEE_COMMERCIAL_SPECIALTIES
+                    ).map(spec => (
+                      <option key={spec.id} value={spec.id}>
+                        {spec.code} - {spec.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {formData.commercialSpecialtyId && (() => {
+                  const specs = formData.commercialLevel === 'Intermediate level' 
+                    ? INTERMEDIATE_LEVEL_COMMERCIAL_SPECIALTIES 
+                    : ADVANCED_LEVEL_TVEE_COMMERCIAL_SPECIALTIES;
+                  const currentSpec = specs.find(s => s.id === formData.commercialSpecialtyId);
+                  if (!currentSpec) return null;
+
+                  return (
+                    <div className="space-y-3 pt-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                      <div>
+                        <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">
+                          1. Professional Subjects (Compulsory - All 3)
+                        </span>
+                        <div className="space-y-1">
+                          {currentSpec.professionalSubjects.map(sub => (
+                            <div key={sub} className="text-xs font-semibold bg-white p-2 rounded-lg border border-emerald-200 text-emerald-900 flex items-center justify-between">
+                              <span>{sub}</span>
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Compulsory</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div>
+                        <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider block mb-1">
+                          2. Related & Elective Subjects (Select at least 3)
+                        </span>
+                        <div className="grid grid-cols-1 gap-1.5 max-h-40 overflow-y-auto">
+                          {[...currentSpec.relatedSubjects, ...currentSpec.generalOrPoolSubjects, ...(currentSpec.complementarySubjects || [])].map(sub => {
+                            const isSelected = formData.selectedSubjects.includes(sub);
+                            return (
+                              <button
+                                key={sub}
+                                type="button"
+                                onClick={() => {
+                                  if (isSelected) {
+                                    // Do not allow unchecking professional subjects
+                                    if (currentSpec.professionalSubjects.includes(sub)) return;
+                                    setFormData({
+                                      ...formData,
+                                      selectedSubjects: formData.selectedSubjects.filter(s => s !== sub)
+                                    });
+                                  } else {
+                                    if (formData.selectedSubjects.length >= 8) {
+                                      toast.error('Maximum 8 subjects allowed.');
+                                      return;
+                                    }
+                                    setFormData({
+                                      ...formData,
+                                      selectedSubjects: [...formData.selectedSubjects, sub]
+                                    });
+                                  }
+                                }}
+                                className={`p-2 rounded-lg border text-xs font-semibold text-left flex items-center justify-between transition ${
+                                  isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-900' : 'bg-white border-slate-200 text-slate-700'
+                                }`}
+                              >
+                                <span>{sub}</span>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600" />}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] font-bold text-slate-600 pt-1 flex items-center justify-between">
+                        <span>Selected Subjects: <span className="text-blue-600">{formData.selectedSubjects.length}</span> (Rule: 6–8 total)</span>
+                        {formData.selectedSubjects.length >= 6 && formData.selectedSubjects.length <= 8 ? (
+                          <span className="text-emerald-600 flex items-center gap-1"><CheckCircle2 size={12} /> Valid Selection</span>
+                        ) : (
+                          <span className="text-amber-600">Select {6 - formData.selectedSubjects.length > 0 ? 6 - formData.selectedSubjects.length : 0} more</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2 pt-2">
+                  <label className="text-xs font-bold text-slate-600">Select Your Main Subjects (Select multiple)</label>
+                  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1">
+                    {[
+                      'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science',
+                      'English Language', 'French', 'Economics', 'Geography', 'History', 'Accounting', 'Mechanics'
+                    ].map(subj => {
+                      const isSelected = formData.selectedSubjects.includes(subj);
+                      return (
+                        <button
+                          key={subj}
+                          type="button"
+                          onClick={() => handleSubjectToggle(subj)}
+                          className={`p-2.5 rounded-xl border text-xs font-bold text-left flex items-center justify-between transition ${
+                            isSelected ? 'bg-blue-50 border-blue-600 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-600'
+                          }`}
+                        >
+                          <span>{subj}</span>
+                          {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-2 pt-2">
+                  <label className="text-xs font-bold text-slate-600">Target Examination</label>
+                  <select
+                    value={formData.targetExam}
+                    onChange={e => setFormData({ ...formData, targetExam: e.target.value })}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none"
+                  >
+                    <option value="GCE Advanced Level">GCE Advanced Level</option>
+                    <option value="GCE Ordinary Level">GCE Ordinary Level</option>
+                    <option value="BEPC">BEPC (Brevet d'Études du Premier Cycle)</option>
+                    <option value="Baccalauréat C/D">Baccalauréat (Série C / D)</option>
+                    <option value="Probatoire">Probatoire</option>
+                  </select>
+                </div>
+              </>
+            )}
           </div>
         )}
 

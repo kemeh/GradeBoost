@@ -158,6 +158,17 @@ service cloud.firestore {
     // Rules
     // ===============================================================
 
+    // Partners & Partner Categories
+    match /partners/{partnerId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /partner_categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
