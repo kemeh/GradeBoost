@@ -129,8 +129,17 @@ export const LandingPartnersSection: React.FC = () => {
         {loading ? (
           <div className="text-center py-12 text-slate-400 font-medium">Loading partner ecosystem...</div>
         ) : filteredPartners.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-3xl border border-slate-200">
-            <p className="text-slate-500 font-bold">No partners found in this category.</p>
+          <div className="text-center py-16 px-6 bg-white rounded-3xl border border-dashed border-slate-200 space-y-3 max-w-2xl mx-auto shadow-sm">
+            <Building2 className="w-12 h-12 text-slate-400 mx-auto" />
+            <h3 className="font-bold text-slate-900 text-lg">
+              {language === 'fr' ? 'Partenariats en Cours' : 'Building Institutional Partnerships'}
+            </h3>
+            <p className="text-sm text-slate-600 font-medium leading-relaxed">
+              {language === 'fr'
+                ? 'Edulpha développe des partenariats avec des écoles, universités, centres de formation, ONG et organisations éducatives à travers le Cameroun et l\'Afrique. Nos partenaires seront présentés ici.'
+                : 'Edulpha is building partnerships with schools, universities, training centres, NGOs, and educational organizations across Cameroon and Africa. Our partners will be showcased here.'
+              }
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

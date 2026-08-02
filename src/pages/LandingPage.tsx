@@ -23,6 +23,9 @@ import { AfricaFocusSection } from '../components/AfricaFocusSection';
 import { DownloadAppSection } from '../components/DownloadAppSection';
 import { DynamicFooter } from '../components/DynamicFooter';
 import { SEO } from '../components/SEO';
+import { StatsService, PlatformStats } from '../services/statsService';
+import { TestimonialService } from '../services/testimonialService';
+import { Testimonial } from '../types/testimonial';
 
 export default function LandingPage() {
   const { user, loading, isAdmin } = useAuth();
@@ -33,6 +36,24 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [heroSearch, setHeroSearch] = useState('');
   const [filteredHeroSuggestions, setFilteredHeroSuggestions] = useState<string[]>([]);
+  const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    async function loadDynamicContent() {
+      try {
+        const [st, ts] = await Promise.all([
+          StatsService.getRealPlatformStats(),
+          TestimonialService.getTestimonials(true)
+        ]);
+        setStats(st);
+        setTestimonials(ts);
+      } catch (err) {
+        console.warn('Error loading dynamic landing content:', err);
+      }
+    }
+    loadDynamicContent();
+  }, []);
 
   const SEARCH_SUGGESTIONS = [
     'Mathematics (GCE O/A Level)',
@@ -89,7 +110,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
       <SEO 
         title="Edulpha | Africa's Premier AI Learning & Exam Preparation Platform"
-        description="Master Ordinary Level, Advanced Level, Probatoire, Baccalauréat, and TVEE Technical specialties with 15,000+ past questions, Gemini AI step-by-step solutions, and offline mobile app."
+        description="Master Ordinary Level, Advanced Level, Probatoire, Baccalauréat, and TVEE Technical specialties with official past questions, Edulpha AI step-by-step solutions, and offline mobile app."
         keywords="Edulpha, Coursera Africa, Cameroon GCE, GCE O Level, GCE A Level, Baccalauréat, MINESEC, TVEE Technical, AI Tutor, Past Papers, Exam Revision, Cameroon Education"
       />
       
@@ -98,9 +119,9 @@ export default function LandingPage() {
         <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase border border-emerald-500/30">
           🇨🇲 Cameroon & Africa #1
         </span>
-        <span>Empowering 50,000+ Students across General, Technical, Commercial & TVEE Sub-systems</span>
+        <span>Empowering Students across General, Technical, Commercial & TVEE Sub-systems</span>
         <a href="#subjects" className="underline text-indigo-300 hover:text-white flex items-center gap-1 hidden sm:inline-flex">
-          <span>Explore 45+ Subjects</span>
+          <span>Explore Subjects</span>
           <ArrowRight size={12} />
         </a>
       </div>
@@ -210,7 +231,7 @@ export default function LandingPage() {
                 transition={{ delay: 0.2 }}
                 className="text-slate-300 text-base sm:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed"
               >
-                Master General Education, Technical Specialties, Commercial Studies, and TVEE Intermediate & Advanced levels with 15,000+ official MINESEC & GCE Board past papers, step-by-step Edulpha AI solvers, and offline mobile access.
+                Master General Education, Technical Specialties, Commercial Studies, and TVEE Intermediate & Advanced levels with official MINESEC & GCE Board past papers, step-by-step Edulpha AI solvers, and offline mobile access.
               </motion.p>
 
               {/* Coursera-Inspired Interactive Search Bar */}
@@ -381,15 +402,14 @@ export default function LandingPage() {
 
           </div>
 
-          {/* Statistics Counter Bar (5 Key Metrics) */}
+          {/* Statistics Counter Bar (Real Database Metrics) */}
           <div className="pt-8 border-t border-slate-800/80">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
               {[
-                { value: '50,000+', label: 'Active Students' },
-                { value: '45+', label: 'Subjects & Specialties' },
-                { value: '15,000+', label: 'Practice Questions' },
-                { value: '120+', label: 'Partner Schools & Hubs' },
-                { value: '120,000+', label: 'AI Study Sessions' },
+                { value: stats ? stats.studentsCount.toLocaleString() : '0', label: 'Active Registered Students' },
+                { value: stats ? (stats.subjectsCount > 0 ? `${stats.subjectsCount}+` : '0') : '0', label: 'Subjects & Specialties' },
+                { value: stats ? (stats.questionsCount > 0 ? `${stats.questionsCount.toLocaleString()}+` : '0') : '0', label: 'Past Questions & Drills' },
+                { value: stats ? (stats.partnersCount > 0 ? `${stats.partnersCount}` : '0') : '0', label: 'Verified Partner Institutions' },
               ].map((stat, i) => (
                 <div key={i} className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800/80 space-y-1">
                   <div className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">{stat.value}</div>
@@ -424,7 +444,7 @@ export default function LandingPage() {
       {/* 8. Partner Institutions Carousel & Showcase */}
       <LandingPartnersSection />
 
-      {/* 9. Coursera-Style Testimonials Section */}
+      {/* 9. Dynamic Testimonials Section */}
       <section id="testimonials" className="py-24 px-6 bg-slate-50 border-y border-slate-200">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-center space-y-4 max-w-3xl mx-auto">
@@ -440,56 +460,48 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                quote: "Edulpha’s AI tutor helped me understand complex calculus and organic chemistry equations step-by-step. I scored 5 A grades in my GCE A-Levels!",
-                author: "Jean-Paul Etoo",
-                role: "GCE A-Level Student • GBHS Douala",
-                rating: 5,
-                avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80"
-              },
-              {
-                quote: "For technical education, Edulpha is revolutionary. Our TVEE Electrical Technology students practice circuit schematics offline even without school Wi-Fi.",
-                author: "Eng. Marie Talla",
-                role: "Head of Technical Department • Lycée Technique Bafoussam",
-                rating: 5,
-                avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80"
-              },
-              {
-                quote: "As a parent, being able to track my child’s daily practice sessions and weak topics in commercial accounting gives me total peace of mind.",
-                author: "Grace Mbarga",
-                role: "Parent & PTA Vice-President • Yaoundé",
-                rating: 5,
-                avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80"
-              }
-            ].map((item, i) => (
-              <Card key={i} className="p-8 space-y-6 bg-white border border-slate-200 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(item.rating)].map((_, idx) => (
-                      <Star key={idx} size={16} fill="currentColor" />
-                    ))}
+          {testimonials.length === 0 ? (
+            <div className="p-12 text-center bg-white rounded-3xl border border-dashed border-slate-200 space-y-3 max-w-2xl mx-auto shadow-sm">
+              <MessageSquare className="w-12 h-12 text-slate-400 mx-auto" />
+              <h3 className="font-bold text-slate-900 text-lg">
+                {language === 'fr' ? 'Aucun Témoignage Publié' : 'No Testimonials Published Yet'}
+              </h3>
+              <p className="text-sm text-slate-600 font-medium leading-relaxed">
+                {language === 'fr' 
+                  ? 'Aucun témoignage publié pour le moment. Les avis d\'étudiants et les histoires de réussite réelles apparaîtront ici.'
+                  : 'No testimonials published yet. Real student reviews and success stories from Cameroon and Africa will appear here.'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {testimonials.map((item) => (
+                <Card key={item.id} className="p-8 space-y-6 bg-white border border-slate-200 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-1 text-amber-400">
+                      {[...Array(item.rating)].map((_, idx) => (
+                        <Star key={idx} size={16} fill="currentColor" />
+                      ))}
+                    </div>
+                    <p className="text-slate-600 font-medium text-sm leading-relaxed italic">
+                      "{language === 'fr' ? (item.quoteFr || item.quoteEn) : item.quoteEn}"
+                    </p>
                   </div>
-                  <p className="text-slate-600 font-medium text-sm leading-relaxed italic">
-                    "{item.quote}"
-                  </p>
-                </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
-                  <img 
-                    src={item.avatar} 
-                    alt={item.author} 
-                    className="w-11 h-11 rounded-full object-cover ring-2 ring-indigo-500/20 shrink-0"
-                  />
-                  <div>
-                    <h4 className="font-black text-slate-900 text-sm">{item.author}</h4>
-                    <p className="text-xs text-slate-500 font-bold">{item.role}</p>
+                  <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
+                    <img 
+                      src={item.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"} 
+                      alt={item.authorName} 
+                      className="w-11 h-11 rounded-full object-cover ring-2 ring-indigo-500/20 shrink-0"
+                    />
+                    <div>
+                      <h4 className="font-black text-slate-900 text-sm">{item.authorName}</h4>
+                      <p className="text-xs text-slate-500 font-bold">{item.schoolOrOrg || (language === 'fr' ? item.roleFr : item.roleEn)}</p>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

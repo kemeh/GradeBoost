@@ -27,15 +27,15 @@ export function WhyStudentsLoveEdulpha() {
     {
       icon: Sparkles,
       title: 'AI-Powered Study Assistant',
-      desc: 'Instant 24/7 Gemini AI tutor explaining step-by-step solutions for mathematics, physics, accounting, and technical formulas.',
-      badge: 'Gemini AI Integration',
+      desc: 'Instant 24/7 Edulpha AI tutor explaining step-by-step solutions for mathematics, physics, accounting, and technical formulas.',
+      badge: 'Edulpha AI Assistant',
       color: 'bg-amber-50 text-amber-600 border-amber-200'
     },
     {
       icon: FileText,
-      title: 'Thousands of Exam Questions',
-      desc: 'Over 15,000+ past questions with verified MINESEC & Cameroon GCE Board solution guides and paper breakdowns.',
-      badge: '15,000+ Past Papers',
+      title: 'Exam Question Library',
+      desc: 'Past examination papers with verified MINESEC & Cameroon GCE Board solution guides and paper breakdowns.',
+      badge: 'Official Past Papers',
       color: 'bg-blue-50 text-blue-600 border-blue-200'
     },
     {
@@ -158,7 +158,7 @@ export function WhyStudentsLoveEdulpha() {
               Ready to Master Your General, Technical, or Commercial Exams?
             </h3>
             <p className="text-sm text-slate-500 font-medium">
-              Join 50,000+ students across Cameroon passing their GCE Ordinary & Advanced levels, TVEE Intermediate/Advanced exams, and Baccalauréat with Edulpha.
+              Join students across Cameroon passing their GCE Ordinary & Advanced levels, TVEE Intermediate/Advanced exams, and Baccalauréat with Edulpha.
             </p>
           </div>
 

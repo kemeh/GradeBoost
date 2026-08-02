@@ -33,6 +33,7 @@ import AdminTranslationManager from '../components/admin/AdminTranslationManager
 import { AdminPartnerManagement } from '../components/admin/AdminPartnerManagement';
 import { AdminDocumentManagement } from '../components/admin/AdminDocumentManagement';
 import { AdminFooterManagement } from '../components/AdminFooterManagement';
+import { AdminTestimonialManagement } from '../components/admin/AdminTestimonialManagement';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -44,7 +45,7 @@ export default function Admin() {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   
-  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'translations' | 'partners' | 'documents' | 'papers' | 'manual' | 'samples' | 'duels';
+  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'translations' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'papers' | 'manual' | 'samples' | 'duels';
   const activeTab = (searchParams.get('tab') as AdminTab) || 'analytics';
 
   const [users, setUsers] = useState<any[]>([]);
@@ -547,6 +548,7 @@ export default function Admin() {
             <TabsTrigger value="reports" className="rounded-xl py-2 px-4 text-xs font-bold">Reports & Intelligence</TabsTrigger>
             <TabsTrigger value="translations" className="rounded-xl py-2 px-4 text-xs font-bold">Multi-Language & i18n Studio</TabsTrigger>
             <TabsTrigger value="partners" className="rounded-xl py-2 px-4 text-xs font-bold">Partners & Alliances</TabsTrigger>
+            <TabsTrigger value="testimonials" className="rounded-xl py-2 px-4 text-xs font-bold">Testimonials</TabsTrigger>
             <TabsTrigger value="documents" className="rounded-xl py-2 px-4 text-xs font-bold">Document Management</TabsTrigger>
             <TabsTrigger value="footer" className="rounded-xl py-2 px-4 text-xs font-bold">Footer Management</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl py-2 px-4 text-xs font-bold">Platform Settings</TabsTrigger>
@@ -611,6 +613,11 @@ export default function Admin() {
           {/* Tab 9.5: Partners & Alliances */}
           <TabsContent value="partners">
             <AdminPartnerManagement />
+          </TabsContent>
+
+          {/* Tab 9.6: Testimonials Management */}
+          <TabsContent value="testimonials">
+            <AdminTestimonialManagement />
           </TabsContent>
 
           {/* Tab 9.8: Document Management Engine */}

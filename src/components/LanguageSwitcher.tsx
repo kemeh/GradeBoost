@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { LanguageCode } from '../constants/translations';
 import { Globe, ChevronDown, Check } from 'lucide-react';
 
 interface LanguageSwitcherProps {
@@ -31,7 +32,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = 'd
           <button
             key={l.code}
             type="button"
-            onClick={() => setLanguage(l.code)}
+            onClick={() => setLanguage(l.code as LanguageCode)}
             className={`px-2 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 ${
               language === l.code ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-600 hover:text-slate-900'
             }`}
@@ -75,7 +76,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = 'd
               <button
                 key={lang.code}
                 onClick={() => {
-                  setLanguage(lang.code);
+                  setLanguage(lang.code as LanguageCode);
                   setIsOpen(false);
                 }}
                 className={`w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-slate-800/80 transition-colors ${

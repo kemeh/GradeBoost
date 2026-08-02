@@ -1,4 +1,4 @@
-export type LanguageCode = 'en' | 'fr' | 'es' | 'ar' | 'de' | 'pt' | string;
+export type LanguageCode = 'en' | 'fr';
 
 export interface LanguageMeta {
   code: string;
@@ -12,10 +12,6 @@ export interface LanguageMeta {
 export const DEFAULT_LANGUAGES: LanguageMeta[] = [
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', direction: 'ltr', enabled: true },
   { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷', direction: 'ltr', enabled: true },
-  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', direction: 'ltr', enabled: false },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇦🇪', direction: 'rtl', enabled: false },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', direction: 'ltr', enabled: false },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹', direction: 'ltr', enabled: false },
 ];
 
 export interface TranslationDictionary {
