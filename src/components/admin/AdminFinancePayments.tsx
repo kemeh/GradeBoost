@@ -13,6 +13,7 @@ import { getSystemSettings, updateSystemSettings } from '../../services/settings
 import { DEFAULT_PLANS, DEFAULT_PAYMENT_METHODS } from '../../services/paymentService';
 import { PaymentReceiptModal } from '../PaymentReceiptModal';
 import { PaymentReceipt } from '../../types';
+import AdminPaymentPlanManagement from './AdminPaymentPlanManagement';
 
 export default function AdminFinancePayments() {
   const [activeSubTab, setActiveSubTab] = useState<'overview' | 'approvals' | 'coupons' | 'plans' | 'methods' | 'refunds'>('overview');
@@ -376,6 +377,10 @@ export default function AdminFinancePayments() {
             )}
           </Card>
         </div>
+      )}
+
+      {activeSubTab === 'plans' && (
+        <AdminPaymentPlanManagement />
       )}
 
       {activeSubTab === 'approvals' && (

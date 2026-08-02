@@ -1102,10 +1102,19 @@ export interface SubscriptionPlan {
   description: string;
   descriptionFr?: string;
   price: number;
-  currency: 'XAF' | 'USD' | 'EUR';
-  billingCycle: 'free' | 'monthly' | 'annual' | 'lifetime';
+  currency: string;
+  billingCycle: 'free' | 'monthly' | 'quarterly' | 'annual' | 'yearly' | 'lifetime' | 'one-time' | string;
+  duration?: string; // e.g., "30 Days", "1 Year"
+  maxDevices?: number;
+  maxAttempts?: number;
   trialDays?: number;
   isActive: boolean;
+  isRecommended?: boolean; // Current active/recommended plan
+  isDefault?: boolean;
+  badge?: string; // e.g. "Popular", "Best Value", "New", "Premium"
+  order?: number; // Display order index
+  visibility?: 'public' | 'hidden';
+  scheduledDate?: string; // Future activation schedule
   features: string[];
   featuresFr?: string[];
   maxDailyQuizzes?: number;
@@ -1115,6 +1124,19 @@ export interface SubscriptionPlan {
   allowsPrioritySupport: boolean;
   createdAt?: any;
   updatedAt?: any;
+}
+
+export interface PricingHistoryRecord {
+  id: string;
+  planId: string;
+  planName: string;
+  previousPrice: number;
+  newPrice: number;
+  currency: string;
+  changedAt: string;
+  changedBy: string;
+  changedByEmail?: string;
+  reason?: string;
 }
 
 export interface UserSubscription {

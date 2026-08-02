@@ -1,5 +1,5 @@
 import { 
-  collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, 
+  collection, doc, getDocs, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, orderBy, limit, serverTimestamp 
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -7,7 +7,7 @@ import {
   SubscriptionPlan, UserSubscription, PaymentRecord, 
   PaymentMethodConfig, PaymentReceipt, CouponCode, RefundRequest 
 } from '../types';
-import { getSystemSettings } from './settingsService';
+import { getSystemSettings, updateSystemSettings } from './settingsService';
 
 // Default Subscription Plans
 export const DEFAULT_PLANS: SubscriptionPlan[] = [
@@ -20,8 +20,16 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
     price: 0,
     currency: 'XAF',
     billingCycle: 'free',
+    duration: 'Forever',
+    maxDevices: 1,
+    maxAttempts: 3,
     trialDays: 0,
     isActive: true,
+    isRecommended: false,
+    isDefault: false,
+    badge: 'Starter',
+    order: 1,
+    visibility: 'public',
     features: [
       'Browse all academic subjects',
       'Access selected free lessons',
@@ -51,8 +59,16 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
     price: 1000,
     currency: 'XAF',
     billingCycle: 'monthly',
+    duration: '30 Days',
+    maxDevices: 3,
+    maxAttempts: 999,
     trialDays: 3,
     isActive: true,
+    isRecommended: true,
+    isDefault: true,
+    badge: 'Popular',
+    order: 2,
+    visibility: 'public',
     features: [
       'Unlimited lessons and past paper solutions',
       'Unlimited mock examinations & daily drills',
@@ -84,8 +100,16 @@ export const DEFAULT_PLANS: SubscriptionPlan[] = [
     price: 10000,
     currency: 'XAF',
     billingCycle: 'annual',
+    duration: '365 Days',
+    maxDevices: 5,
+    maxAttempts: 999,
     trialDays: 7,
     isActive: true,
+    isRecommended: false,
+    isDefault: false,
+    badge: 'Best Value',
+    order: 3,
+    visibility: 'public',
     features: [
       'Everything in Premium Monthly',
       '2 Months FREE (Save over 15%)',
@@ -168,17 +192,242 @@ export const DEFAULT_PAYMENT_METHODS: PaymentMethodConfig[] = [
 
 // --- API & Service Functions ---
 
-/** Get all active subscription plans */
-export const getSubscriptionPlans = async (): Promise<SubscriptionPlan[]> => {
+/** Get all subscription plans (optionally filtered by visibility/active) */
+export const getSubscriptionPlans = async (includeHidden: boolean = true): Promise<SubscriptionPlan[]> => {
   try {
     const snap = await getDocs(collection(db, 'subscription_plans'));
     if (!snap.empty) {
-      return snap.docs.map(d => ({ id: d.id, ...d.data() } as SubscriptionPlan));
+      let plansList = snap.docs.map(d => ({ id: d.id, ...d.data() } as SubscriptionPlan));
+      if (!includeHidden) {
+        plansList = plansList.filter(p => p.isActive && p.visibility !== 'hidden');
+      }
+      return plansList.sort((a, b) => (a.order || 0) - (b.order || 0));
     }
-    return DEFAULT_PLANS;
+    const defaultList = includeHidden ? DEFAULT_PLANS : DEFAULT_PLANS.filter(p => p.isActive && p.visibility !== 'hidden');
+    return defaultList.sort((a, b) => (a.order || 0) - (b.order || 0));
   } catch (err) {
     console.warn('Using default plans:', err);
     return DEFAULT_PLANS;
+  }
+};
+
+/** Record a pricing change history entry */
+export const addPricingHistoryRecord = async (data: {
+  planId: string;
+  planName: string;
+  previousPrice: number;
+  newPrice: number;
+  currency: string;
+  changedBy: string;
+  changedByEmail?: string;
+  reason?: string;
+}) => {
+  try {
+    const record = {
+      ...data,
+      changedAt: new Date().toISOString()
+    };
+    await addDoc(collection(db, 'pricing_history'), record);
+  } catch (err) {
+    console.error('Error recording pricing history:', err);
+  }
+};
+
+/** Get pricing change history log */
+export const getPricingHistory = async () => {
+  try {
+    const q = query(collection(db, 'pricing_history'), orderBy('changedAt', 'desc'), limit(100));
+    const snap = await getDocs(q);
+    if (!snap.empty) {
+      return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+    return [];
+  } catch (err) {
+    console.error('Error fetching pricing history:', err);
+    return [];
+  }
+};
+
+/** Create or Save Subscription Plan */
+export const saveSubscriptionPlan = async (
+  plan: SubscriptionPlan, 
+  adminUser?: { name?: string; email?: string; uid?: string },
+  reason?: string
+): Promise<SubscriptionPlan> => {
+  try {
+    const planId = plan.id || `plan_${Date.now()}`;
+    const planRef = doc(db, 'subscription_plans', planId);
+    
+    // Check if updating price
+    const existingDoc = await getDoc(planRef);
+    if (existingDoc.exists()) {
+      const oldPrice = existingDoc.data().price;
+      if (oldPrice !== undefined && oldPrice !== plan.price) {
+        await addPricingHistoryRecord({
+          planId,
+          planName: plan.name,
+          previousPrice: oldPrice,
+          newPrice: plan.price,
+          currency: plan.currency || 'XAF',
+          changedBy: adminUser?.name || adminUser?.email || 'Admin',
+          changedByEmail: adminUser?.email || '',
+          reason: reason || 'Plan price update'
+        });
+      }
+    } else {
+      await addPricingHistoryRecord({
+        planId,
+        planName: plan.name,
+        previousPrice: 0,
+        newPrice: plan.price,
+        currency: plan.currency || 'XAF',
+        changedBy: adminUser?.name || adminUser?.email || 'Admin',
+        changedByEmail: adminUser?.email || '',
+        reason: reason || 'New plan creation'
+      });
+    }
+
+    // If marked as active/recommended, unset isRecommended and isDefault on all other plans
+    if (plan.isRecommended || plan.isDefault) {
+      const allPlansSnap = await getDocs(collection(db, 'subscription_plans'));
+      for (const d of allPlansSnap.docs) {
+        if (d.id !== planId) {
+          await updateDoc(doc(db, 'subscription_plans', d.id), {
+            isRecommended: false,
+            isDefault: false
+          });
+        }
+      }
+    }
+
+    const payload = {
+      ...plan,
+      id: planId,
+      price: Number(plan.price),
+      currency: plan.currency || 'XAF',
+      billingCycle: plan.billingCycle || 'monthly',
+      duration: plan.duration || '30 Days',
+      maxDevices: Number(plan.maxDevices || 1),
+      maxAttempts: Number(plan.maxAttempts || 999),
+      trialDays: Number(plan.trialDays || 0),
+      order: Number(plan.order || 1),
+      visibility: plan.visibility || 'public',
+      isRecommended: Boolean(plan.isRecommended),
+      isDefault: Boolean(plan.isDefault),
+      isActive: Boolean(plan.isActive),
+      updatedAt: serverTimestamp()
+    };
+
+    await setDoc(planRef, payload, { merge: true });
+
+    // Also sync system_settings if this is the active plan
+    if (plan.isRecommended || plan.isDefault) {
+      await updateSystemSettings({ paymentPrice: plan.price });
+    }
+
+    return { id: planId, ...payload };
+  } catch (err) {
+    console.error('Error saving subscription plan:', err);
+    throw err;
+  }
+};
+
+/** Delete Subscription Plan */
+export const deleteSubscriptionPlan = async (planId: string): Promise<void> => {
+  try {
+    await deleteDoc(doc(db, 'subscription_plans', planId));
+  } catch (err) {
+    console.error('Error deleting subscription plan:', err);
+    throw err;
+  }
+};
+
+/** Duplicate Subscription Plan */
+export const duplicateSubscriptionPlan = async (plan: SubscriptionPlan): Promise<SubscriptionPlan> => {
+  const newId = `${plan.id}_copy_${Date.now().toString().slice(-4)}`;
+  const duplicatedPlan: SubscriptionPlan = {
+    ...plan,
+    id: newId,
+    name: `${plan.name} (Copy)`,
+    nameFr: plan.nameFr ? `${plan.nameFr} (Copie)` : undefined,
+    isRecommended: false,
+    isDefault: false,
+    order: (plan.order || 1) + 1,
+    createdAt: new Date().toISOString()
+  };
+  return await saveSubscriptionPlan(duplicatedPlan);
+};
+
+/** Set a single plan as the current Active / Recommended Plan */
+export const setActivePlan = async (
+  planId: string, 
+  adminUser?: { name?: string; email?: string },
+  reason?: string
+): Promise<void> => {
+  try {
+    const plansSnap = await getDocs(collection(db, 'subscription_plans'));
+    
+    // Unset all plans first
+    for (const d of plansSnap.docs) {
+      await updateDoc(doc(db, 'subscription_plans', d.id), {
+        isRecommended: false,
+        isDefault: false
+      });
+    }
+
+    // Set target plan as active and recommended
+    const targetRef = doc(db, 'subscription_plans', planId);
+    const targetSnap = await getDoc(targetRef);
+    if (targetSnap.exists()) {
+      const planData = targetSnap.data();
+      await updateDoc(targetRef, {
+        isRecommended: true,
+        isDefault: true,
+        isActive: true
+      });
+      await updateSystemSettings({ paymentPrice: planData.price });
+      await addPricingHistoryRecord({
+        planId,
+        planName: planData.name,
+        previousPrice: planData.price,
+        newPrice: planData.price,
+        currency: planData.currency || 'XAF',
+        changedBy: adminUser?.name || adminUser?.email || 'Admin',
+        changedByEmail: adminUser?.email || '',
+        reason: reason || 'Set as Current Active Plan'
+      });
+    }
+  } catch (err) {
+    console.error('Error setting active plan:', err);
+    throw err;
+  }
+};
+
+/** Toggle Plan Active / Inactive Status */
+export const togglePlanStatus = async (planId: string, isActive: boolean): Promise<void> => {
+  try {
+    await updateDoc(doc(db, 'subscription_plans', planId), {
+      isActive,
+      updatedAt: serverTimestamp()
+    });
+  } catch (err) {
+    console.error('Error toggling plan status:', err);
+    throw err;
+  }
+};
+
+/** Reorder Plans */
+export const reorderPlans = async (plansList: SubscriptionPlan[]): Promise<void> => {
+  try {
+    for (let index = 0; index < plansList.length; index++) {
+      const plan = plansList[index];
+      await updateDoc(doc(db, 'subscription_plans', plan.id), {
+        order: index + 1
+      });
+    }
+  } catch (err) {
+    console.error('Error reordering plans:', err);
+    throw err;
   }
 };
 

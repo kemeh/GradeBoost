@@ -573,7 +573,7 @@ export default function AdminSettings() {
                       Reset to Today
                     </button>
                   </div>
-                  <p className="mt-3 text-sm text-slate-500 bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
+                  <div className="mt-3 text-sm text-slate-500 bg-indigo-50 p-6 rounded-2xl border border-indigo-100">
                     <div className="flex items-center justify-between mb-2">
                       <span className="font-bold text-indigo-900 uppercase tracking-wider text-xs">Current Challenge Status</span>
                       <Badge variant="primary" className="bg-indigo-600 text-white">Day {getCurrentDayNumber(challengeStartDate)}</Badge>
@@ -586,7 +586,7 @@ export default function AdminSettings() {
                     <span className="text-indigo-400 text-[10px] mt-2 block">
                       Changing this will affect which daily drill is active for all students.
                     </span>
-                  </p>
+                  </div>
                 </div>
               </div>
             </motion.section>

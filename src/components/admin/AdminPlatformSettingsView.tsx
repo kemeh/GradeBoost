@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getSystemSettings, updateSystemSettings } from '../../services/settingsService';
-import { Card, Button, Badge } from '../ui';
-import { Settings, Key, Save, CheckCircle2, RefreshCw, CreditCard, Calendar } from 'lucide-react';
+import { Card, Button, Badge, cn } from '../ui';
+import { Settings, Key, Save, CheckCircle2, RefreshCw, CreditCard, Calendar, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { GoogleGenAI } from '@google/genai';
-import FileUpload from '../FileUpload';
 import { DEFAULT_CHALLENGE_START_DATE } from '../../utils/challenge';
+import AdminBrandingLogosView from './AdminBrandingLogosView';
 
 export default function AdminPlatformSettingsView() {
+  const [activeTab, setActiveTab] = useState<'branding' | 'general'>('branding');
   const [apiKey, setApiKey] = useState('');
   const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
   const [paymentPrice, setPaymentPrice] = useState(1000);
@@ -104,14 +105,44 @@ export default function AdminPlatformSettingsView() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-black text-slate-900 tracking-tight">Platform System Settings</h2>
-        <p className="text-sm font-medium text-slate-500">
-          Global branding, Gemini AI key configuration, support channels, and payment gateway details.
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">Platform System Settings</h2>
+          <p className="text-sm font-medium text-slate-500">
+            Global branding, logo uploads, Gemini AI key configuration, support channels, and payment details.
+          </p>
+        </div>
+
+        <div className="bg-slate-100 p-1 rounded-xl flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab('branding')}
+            className={cn(
+              'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5',
+              activeTab === 'branding' ? 'bg-white text-indigo-600 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
+            )}
+          >
+            <ImageIcon size={14} />
+            Logos & Branding
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('general')}
+            className={cn(
+              'px-4 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5',
+              activeTab === 'general' ? 'bg-white text-indigo-600 shadow-xs font-black' : 'text-slate-600 hover:text-slate-900'
+            )}
+          >
+            <Settings size={14} />
+            General Config
+          </button>
+        </div>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      {activeTab === 'branding' && <AdminBrandingLogosView />}
+
+      {activeTab === 'general' && (
+        <form onSubmit={handleSave} className="space-y-6">
         {/* Branding & Info */}
         <Card className="p-6 space-y-4">
           <h3 className="text-base font-black text-slate-900">Application Identity & Contact</h3>
@@ -206,6 +237,7 @@ export default function AdminPlatformSettingsView() {
           <Save size={18} className="mr-2" /> Save All System Settings
         </Button>
       </form>
+      )}
     </div>
   );
 }

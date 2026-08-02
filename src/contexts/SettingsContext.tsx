@@ -6,6 +6,15 @@ interface SettingsContextType {
   loading: boolean;
   appName: string;
   logoUrl: string;
+  platformLogoUrl: string;
+  landingLogoUrl: string;
+  footerLogoUrl: string;
+  partnerLogoUrl: string;
+  institutionLogoUrl: string;
+  sponsorLogoUrl: string;
+  aiLogoUrl: string;
+  faviconUrl: string;
+  appIconUrl: string;
   contactEmail: string;
   whatsappNumber: string;
   whatsappGroupLink: string;
@@ -42,6 +51,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     loading,
     appName: settings?.appName || 'Edulpha',
     logoUrl: settings?.logoUrl || '/edulpha-logo.png',
+    platformLogoUrl: settings?.platformLogoUrl || settings?.logoUrl || '/edulpha-logo.png',
+    landingLogoUrl: settings?.landingLogoUrl || settings?.logoUrl || '/edulpha-logo.png',
+    footerLogoUrl: settings?.footerLogoUrl || settings?.logoUrl || '/edulpha-logo.png',
+    partnerLogoUrl: settings?.partnerLogoUrl || '',
+    institutionLogoUrl: settings?.institutionLogoUrl || '',
+    sponsorLogoUrl: settings?.sponsorLogoUrl || '',
+    aiLogoUrl: settings?.aiLogoUrl || '/ai-logo.png',
+    faviconUrl: settings?.faviconUrl || '/favicon.ico',
+    appIconUrl: settings?.appIconUrl || '/icon.png',
     contactEmail: settings?.contactEmail || 'support@edulpha.com',
     whatsappNumber: settings?.whatsappNumber || '',
     whatsappGroupLink: settings?.whatsappGroupLink || '',

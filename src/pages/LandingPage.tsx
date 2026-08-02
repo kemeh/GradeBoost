@@ -21,6 +21,7 @@ import { SubjectsSection } from '../components/SubjectsSection';
 import { EdulphaAISection } from '../components/EdulphaAISection';
 import { AfricaFocusSection } from '../components/AfricaFocusSection';
 import { DownloadAppSection } from '../components/DownloadAppSection';
+import LandingPricingSection from '../components/landing/LandingPricingSection';
 import { DynamicFooter } from '../components/DynamicFooter';
 import { SEO } from '../components/SEO';
 import { StatsService, PlatformStats } from '../services/statsService';
@@ -504,6 +505,9 @@ export default function LandingPage() {
           )}
         </div>
       </section>
+
+      {/* 9.5 Dynamic Pricing Section (DB Driven) */}
+      <LandingPricingSection />
 
       {/* 10. Download Mobile App Section */}
       <DownloadAppSection />

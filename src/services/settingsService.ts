@@ -7,6 +7,15 @@ export interface SystemSettings {
   paymentPrice: number;
   appName?: string;
   logoUrl?: string;
+  platformLogoUrl?: string;
+  landingLogoUrl?: string;
+  footerLogoUrl?: string;
+  partnerLogoUrl?: string;
+  institutionLogoUrl?: string;
+  sponsorLogoUrl?: string;
+  aiLogoUrl?: string;
+  faviconUrl?: string;
+  appIconUrl?: string;
   contactEmail?: string;
   whatsappNumber?: string;
   whatsappGroupLink?: string;
