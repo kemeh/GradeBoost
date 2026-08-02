@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   BookOpen, Target, TrendingUp, ArrowRight, CheckCircle2, Sparkles, ShieldCheck, 
   Cpu, Award, Users, Globe, Download, Play, MessageSquare, Check, ChevronDown, 
   HelpCircle, Star, Phone, Mail, MapPin, Smartphone, Laptop, Zap, Clock, BookMarked,
   FileText, GraduationCap, Building2, CheckCircle, QrCode, Share2, Layers, ExternalLink,
-  Shield, Lock, FileCode, Compass
+  Shield, Lock, FileCode, Compass, Search, Wrench, Briefcase, Flame, Calculator,
+  Atom, FlaskConical, Dna, LineChart, Heart, RefreshCw, Send, CheckCircle as CheckIcon
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
@@ -16,21 +17,34 @@ import { Button, Card, Badge, cn } from '../components/ui';
 import { LandingPartnersSection } from '../components/LandingPartnersSection';
 import { ExploreLearningPaths } from '../components/ExploreLearningPaths';
 import { WhyStudentsLoveEdulpha } from '../components/WhyStudentsLoveEdulpha';
+import { SubjectsSection } from '../components/SubjectsSection';
+import { EdulphaAISection } from '../components/EdulphaAISection';
+import { AfricaFocusSection } from '../components/AfricaFocusSection';
+import { DownloadAppSection } from '../components/DownloadAppSection';
 import { DynamicFooter } from '../components/DynamicFooter';
 import { SEO } from '../components/SEO';
 
 export default function LandingPage() {
   const { user, loading, isAdmin } = useAuth();
-  const { appName, logoUrl, contactEmail, whatsappNumber, whatsappGroupLink } = useSettings();
-  const { language, setLanguage, t } = useLanguage();
+  const { logoUrl } = useSettings();
+  const { language, t } = useLanguage();
   const navigate = useNavigate();
 
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const [chatPrompt, setChatPrompt] = useState('Explain Quadratic Equations in Cameroon GCE Mathematics');
-  const [chatResponse, setChatResponse] = useState(
-    'In Cameroon GCE Ordinary/Advanced Level Mathematics, quadratic equations take the form ax² + bx + c = 0. To solve them, you can use factorization, completing the square, or the quadratic formula: x = (-b ± √(b² - 4ac)) / 2a. Would you like a sample past question solved step-by-step?'
-  );
-  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [heroSearch, setHeroSearch] = useState('');
+  const [filteredHeroSuggestions, setFilteredHeroSuggestions] = useState<string[]>([]);
+
+  const SEARCH_SUGGESTIONS = [
+    'Mathematics (GCE O/A Level)',
+    'Physics & Quantum Mechanics',
+    'Electrical Technology & AC Circuits',
+    'Financial Accounting & Ledgers',
+    'Computer Science & Python',
+    'French Literature & Dissertation',
+    'Building Construction & Masonry',
+    'Biology & Human Anatomy',
+    'Economics & Trade Policy'
+  ];
 
   useEffect(() => {
     if (!loading && (user || isAdmin)) {
@@ -44,13 +58,22 @@ export default function LandingPage() {
     }
   }, [user, loading, isAdmin, navigate]);
 
-  const handleSampleQuery = (prompt: string, response: string) => {
-    setIsChatLoading(true);
-    setChatPrompt(prompt);
-    setTimeout(() => {
-      setChatResponse(response);
-      setIsChatLoading(false);
-    }, 400);
+  const handleHeroSearchChange = (val: string) => {
+    setHeroSearch(val);
+    if (val.trim()) {
+      setFilteredHeroSuggestions(
+        SEARCH_SUGGESTIONS.filter(item => item.toLowerCase().includes(val.toLowerCase()))
+      );
+    } else {
+      setFilteredHeroSuggestions([]);
+    }
+  };
+
+  const handleExecuteSearch = (query: string) => {
+    const el = document.getElementById('subjects');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   const faqs = [
@@ -65,15 +88,29 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white overflow-x-hidden">
       <SEO 
-        title="Edulpha | AI-Powered GCE & Baccalauréat Learning Platform"
-        description="Master Ordinary Level, Advanced Level, Probatoire, and Baccalauréat exams with 15,000+ past questions, Gemini AI step-by-step explanations, offline mobile app, and verified partner school hubs."
-        keywords="Edulpha, Cameroon GCE, GCE O Level, GCE A Level, Baccalauréat, MINESEC, AI Tutor, Past Papers, Exam Revision, Cameroon Education"
+        title="Edulpha | Africa's Premier AI Learning & Exam Preparation Platform"
+        description="Master Ordinary Level, Advanced Level, Probatoire, Baccalauréat, and TVEE Technical specialties with 15,000+ past questions, Gemini AI step-by-step solutions, and offline mobile app."
+        keywords="Edulpha, Coursera Africa, Cameroon GCE, GCE O Level, GCE A Level, Baccalauréat, MINESEC, TVEE Technical, AI Tutor, Past Papers, Exam Revision, Cameroon Education"
       />
       
-      {/* 1. Modern Navigation Bar */}
-      <nav className="fixed top-0 w-full z-50 bg-white/90 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+      {/* 0. Coursera-Style Top Announcement Banner */}
+      <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 text-white py-2.5 px-4 text-center text-xs font-bold border-b border-indigo-900/40 flex items-center justify-center gap-2">
+        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase border border-emerald-500/30">
+          🇨🇲 Cameroon & Africa #1
+        </span>
+        <span>Empowering 50,000+ Students across General, Technical, Commercial & TVEE Sub-systems</span>
+        <a href="#subjects" className="underline text-indigo-300 hover:text-white flex items-center gap-1 hidden sm:inline-flex">
+          <span>Explore 45+ Subjects</span>
+          <ArrowRight size={12} />
+        </a>
+      </div>
+
+      {/* 1. Coursera-Inspired Navigation Bar */}
+      <nav className="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
+          
+          {/* Logo & Brand */}
+          <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
             <img 
               src={logoUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80"} 
               alt="Edulpha Logo" 
@@ -82,611 +119,372 @@ export default function LandingPage() {
                 (e.target as HTMLElement).style.display = 'none';
               }}
             />
-            <span className="text-2xl font-black tracking-tight bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-800 bg-clip-text text-transparent">
-              Edulpha
-            </span>
+            <div className="flex flex-col">
+              <span className="text-2xl font-black tracking-tight text-slate-900">
+                Edulpha<span className="text-emerald-600">.</span>
+              </span>
+              <span className="text-[9px] font-black tracking-widest text-indigo-600 uppercase -mt-1">
+                Learn. Practice. Succeed.
+              </span>
+            </div>
           </div>
 
-          <div className="hidden lg:flex items-center gap-7 text-sm font-bold text-slate-600">
+          {/* Nav Links */}
+          <div className="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-700">
             <a href="#curriculum" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
-              <span>Learning Paths</span>
-              <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-black rounded uppercase">All Fields</span>
+              <span>Pathways</span>
+              <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 text-[9px] font-black rounded uppercase border border-indigo-200">Sub-systems</span>
             </a>
-            <a href="#why-edulpha" className="hover:text-indigo-600 transition-colors">Why Edulpha</a>
-            <a href="#how-it-works" className="hover:text-indigo-600 transition-colors">How It Works</a>
-            <a href="#ai-tutor" className="hover:text-indigo-600 transition-colors">{t('nav.aiTutor')}</a>
+            <a href="#subjects" className="hover:text-indigo-600 transition-colors">Subjects</a>
+            <a href="#ai-tutor" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+              <Sparkles size={14} className="text-amber-500" />
+              <span>Edulpha AI</span>
+            </a>
+            <a href="#africa-focus" className="hover:text-indigo-600 transition-colors">Africa Mission</a>
             <a href="#partners" className="hover:text-indigo-600 transition-colors">{t('nav.partners')}</a>
-            <Link to="/docs" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
-              <span>Docs</span>
-              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black rounded uppercase">Hub</span>
-            </Link>
-            <a href="#mobile-app" className="hover:text-indigo-600 transition-colors flex items-center gap-1 text-indigo-600">
+            <a href="#testimonials" className="hover:text-indigo-600 transition-colors">Testimonials</a>
+            <a href="#mobile-app" className="hover:text-indigo-600 transition-colors flex items-center gap-1 text-emerald-600">
               <Download size={14} />
               <span>Mobile App</span>
             </a>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Action Tools */}
+          <div className="flex items-center gap-3 shrink-0">
             <LanguageSwitcher />
 
             <Link to="/auth">
-              <Button size="sm" variant="ghost" className="hidden sm:flex font-bold text-slate-700">
+              <Button size="sm" variant="ghost" className="hidden sm:flex font-bold text-slate-700 hover:text-indigo-600">
                 {t('nav.login')}
               </Button>
             </Link>
-            <a href="#mobile-app">
-              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 font-bold flex items-center gap-1.5">
-                <Download size={14} />
-                <span>Get App</span>
+            
+            <Link to="/auth">
+              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 font-black px-4 py-2 rounded-xl">
+                Get Started Free
               </Button>
-            </a>
+            </Link>
           </div>
         </div>
       </nav>
 
-      {/* 2. Hero Section */}
-      <section className="pt-32 pb-20 px-6 relative overflow-hidden bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
+      {/* 2. Hero Section (Coursera-Inspired Full-Width & Search Driven) */}
+      <section className="pt-20 pb-24 px-6 relative overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white">
+        
+        {/* Animated Background Lights */}
+        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-          <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold"
-            >
-              <Sparkles size={16} className="text-amber-400" />
-              <span>Complete Learning Ecosystem for General, Technical & Commercial Education</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-            </motion.div>
-
-            <motion.h1 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1]"
-            >
-              Master Every Path with <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-300 bg-clip-text text-transparent">Gemini AI</span> & Past Papers
-            </motion.h1>
-
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-slate-300 text-lg sm:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed"
-            >
-              Empowering students in General Education, Technical Education, Commercial Studies, and TVEE Intermediate & Advanced levels. Access 15,000+ past questions, step-by-step AI problem solvers, workshop schematics, and offline APK capabilities.
-            </motion.p>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4"
-            >
-              <a href="/downloads/edulpha-v1.0.4-release.apk" download className="w-full sm:w-auto">
-                <Button size="lg" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 text-base font-black px-8 py-6 rounded-2xl flex items-center justify-center gap-3">
-                  <Download size={20} />
-                  <span>Download Android APK (v1.0.4)</span>
-                </Button>
-              </a>
-
-              <a href="#partners" className="w-full sm:w-auto">
-                <Button size="lg" variant="outline" className="w-full sm:w-auto border-slate-700 text-slate-200 hover:bg-slate-800 text-base font-bold px-8 py-6 rounded-2xl flex items-center justify-center gap-2">
-                  <Building2 size={20} className="text-indigo-400" />
-                  <span>Become a Partner School</span>
-                </Button>
-              </a>
-            </motion.div>
-
-            {/* Quick Metrics Badge */}
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-              className="pt-6 border-t border-slate-800/80 flex flex-wrap items-center justify-center lg:justify-start gap-8 text-xs font-bold text-slate-400"
-            >
-              <div className="flex items-center gap-2">
-                <CheckCircle2 size={16} className="text-emerald-400" />
-                <span>100% Syllabus Aligned</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck size={16} className="text-indigo-400" />
-                <span>Cameroon GCE & MINESEC Certified</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Smartphone size={16} className="text-purple-400" />
-                <span>Works 100% Offline</span>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Mobile App Screen Mockup */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="lg:col-span-5 relative"
-          >
-            <div className="relative mx-auto max-w-[320px] bg-slate-900 border-[8px] border-slate-800 rounded-[3rem] shadow-2xl overflow-hidden p-4 space-y-4">
-              <div className="w-32 h-4 bg-slate-800 rounded-full mx-auto mb-2" />
+        <div className="max-w-7xl mx-auto space-y-16 relative z-10">
+          
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
+            {/* Left Main Hero Copy */}
+            <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
               
-              <div className="bg-indigo-900/60 p-4 rounded-2xl border border-indigo-700/50 space-y-2 text-left">
-                <div className="flex items-center justify-between text-[10px] font-black uppercase text-indigo-300">
-                  <span>GCE A-Level Mathematics 2025</span>
-                  <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded">Passed 96%</span>
+              <motion.div 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider"
+              >
+                <Sparkles size={14} className="text-amber-400" />
+                <span>Africa's Leading Educational Platform</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              </motion.div>
+
+              <motion.h1 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08]"
+              >
+                Learn. Practice. <br />
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                  Succeed.
+                </span>
+              </motion.h1>
+
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="text-slate-300 text-base sm:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+              >
+                Master General Education, Technical Specialties, Commercial Studies, and TVEE Intermediate & Advanced levels with 15,000+ official MINESEC & GCE Board past papers, step-by-step Edulpha AI solvers, and offline mobile access.
+              </motion.p>
+
+              {/* Coursera-Inspired Interactive Search Bar */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="space-y-3 relative max-w-xl mx-auto lg:mx-0"
+              >
+                <div className="relative bg-white p-2 rounded-2xl shadow-2xl flex items-center border-2 border-slate-200 focus-within:border-emerald-500 transition-colors">
+                  <Search size={20} className="text-slate-400 ml-3 shrink-0" />
+                  <input
+                    type="text"
+                    value={heroSearch}
+                    onChange={(e) => handleHeroSearchChange(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleExecuteSearch(heroSearch)}
+                    placeholder="What do you want to learn today? (e.g. Physics, Electrical, Accounting...)"
+                    className="w-full px-3 py-2 text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none bg-transparent"
+                  />
+                  <button
+                    onClick={() => handleExecuteSearch(heroSearch)}
+                    className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shrink-0 transition shadow-md flex items-center gap-1.5"
+                  >
+                    <span>Search</span>
+                    <ArrowRight size={14} />
+                  </button>
                 </div>
-                <h4 className="text-xs font-bold text-white">Solve: ∫ (3x² + 2x - 5) dx</h4>
-                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[11px] text-slate-300 font-mono space-y-1">
-                  <div className="text-purple-400 font-bold">▶ Gemini AI Step 1:</div>
-                  <div>Integrate term by term: ∫ 3x² dx = x³</div>
-                  <div>∫ 2x dx = x², ∫ -5 dx = -5x</div>
-                  <div className="text-emerald-400 font-bold pt-1">Result: x³ + x² - 5x + C</div>
+
+                {/* Dropdown Suggestions */}
+                <AnimatePresence>
+                  {filteredHeroSuggestions.length > 0 && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      className="absolute top-full left-0 w-full mt-1 bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-2xl z-30 space-y-1"
+                    >
+                      {filteredHeroSuggestions.map((sug, i) => (
+                        <div
+                          key={i}
+                          onClick={() => {
+                            setHeroSearch(sug);
+                            setFilteredHeroSuggestions([]);
+                            handleExecuteSearch(sug);
+                          }}
+                          className="p-2.5 rounded-xl hover:bg-slate-800 text-xs font-bold text-slate-200 cursor-pointer flex items-center justify-between"
+                        >
+                          <span>{sug}</span>
+                          <span className="text-[10px] text-emerald-400 font-bold">Explore →</span>
+                        </div>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {/* Popular Tags */}
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-[11px] font-bold text-slate-400">
+                  <span className="text-slate-500">Popular:</span>
+                  {[
+                    'Mathematics', 'Physics', 'Electrical Tech', 'Accounting', 'Computer Science', 'French'
+                  ].map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => handleExecuteSearch(tag)}
+                      className="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-400 transition"
+                    >
+                      {tag}
+                    </button>
+                  ))}
                 </div>
+              </motion.div>
+
+              {/* Action Buttons */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2"
+              >
+                <Link to="/auth" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 text-sm font-black px-8 py-6 rounded-2xl flex items-center justify-center gap-2">
+                    <span>Start Learning Free</span>
+                    <ArrowRight size={18} />
+                  </Button>
+                </Link>
+
+                <a href="#mobile-app" className="w-full sm:w-auto">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 text-sm font-bold px-8 py-6 rounded-2xl flex items-center justify-center gap-2">
+                    <Download size={18} />
+                    <span>Download Mobile App (APK)</span>
+                  </Button>
+                </a>
+              </motion.div>
+
+              {/* Trust Badges */}
+              <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs font-bold text-slate-400">
+                <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-emerald-400" /> Official MINESEC Syllabus</span>
+                <span className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-indigo-400" /> Bilingual EN & FR</span>
+                <span className="flex items-center gap-1.5"><Smartphone size={16} className="text-amber-400" /> 100% Offline Capability</span>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-[10px] font-bold">
-                <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 text-center space-y-1">
-                  <div className="text-lg font-black text-amber-400">14 Days</div>
-                  <div className="text-slate-400">Study Streak</div>
-                </div>
-                <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/60 text-center space-y-1">
-                  <div className="text-lg font-black text-indigo-400">15,000+</div>
-                  <div className="text-slate-400">Past Papers</div>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-3 rounded-xl text-[11px] font-bold text-center">
-                Interactive Android APK Mode Active
-              </div>
             </div>
-          </motion.div>
-        </div>
-      </section>
 
-      {/* 3. Trusted Statistics Bar */}
-      <section className="py-16 bg-slate-900 text-white border-y border-slate-800">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-8 text-center">
-            {[
-              { label: t('stats.students'), value: '50,000+' },
-              { label: t('stats.lessons'), value: '12,500+' },
-              { label: t('stats.questions'), value: '15,000+' },
-              { label: t('stats.mocks'), value: '3,500+' },
-              { label: t('stats.aiChats'), value: '2.4M+' },
-              { label: t('stats.teachers'), value: '450+' },
-              { label: t('stats.schools'), value: '120+' }
-            ].map((stat, i) => (
-              <div key={i} className="space-y-1">
-                <div className="text-3xl lg:text-4xl font-black text-indigo-400 tracking-tight">{stat.value}</div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</div>
+            {/* Right Student Visual Card */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="lg:col-span-5 relative"
+            >
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+                
+                {/* Header Badge */}
+                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
+                      alt="Student Avatar"
+                      className="w-10 h-10 rounded-full object-cover ring-2 ring-emerald-500"
+                    />
+                    <div>
+                      <h4 className="text-sm font-black text-white">Amina Nguema</h4>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase">GBHS Douala • GCE A-Level Candidate</p>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-black uppercase">
+                    Grade A Target
+                  </span>
+                </div>
+
+                {/* Simulated Practice Session */}
+                <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                    <span>Physics Paper 2 • 2025 Mock</span>
+                    <span className="text-amber-400 flex items-center gap-1"><Clock size={12} /> 12m remaining</span>
+                  </div>
+
+                  <p className="text-xs font-bold text-white leading-relaxed">
+                    Q3: Determine the electric field strength E at a distance of 0.5m from a point charge of 4μC in vacuum.
+                  </p>
+
+                  <div className="p-3 bg-slate-900 rounded-xl text-xs text-slate-300 font-mono space-y-1 border border-slate-800">
+                    <span className="text-indigo-400 font-bold">▶ Edulpha AI Resolution:</span>
+                    <div>E = k · |q| / r²</div>
+                    <div>E = (8.99 × 10⁹ N·m²/C²) × (4 × 10⁻⁶ C) / (0.5m)²</div>
+                    <div className="text-emerald-400 font-bold pt-1">Result: E = 1.44 × 10⁵ N/C</div>
+                  </div>
+                </div>
+
+                {/* Live Stats Row */}
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="block text-lg font-black text-emerald-400">98%</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="block text-lg font-black text-indigo-400">14 Days</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Streak</span>
+                  </div>
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="block text-lg font-black text-amber-400">1,450+</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Questions Solved</span>
+                  </div>
+                </div>
+
               </div>
-            ))}
+            </motion.div>
+
           </div>
+
+          {/* Statistics Counter Bar (5 Key Metrics) */}
+          <div className="pt-8 border-t border-slate-800/80">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-6 text-center">
+              {[
+                { value: '50,000+', label: 'Active Students' },
+                { value: '45+', label: 'Subjects & Specialties' },
+                { value: '15,000+', label: 'Practice Questions' },
+                { value: '120+', label: 'Partner Schools & Hubs' },
+                { value: '120,000+', label: 'AI Study Sessions' },
+              ].map((stat, i) => (
+                <div key={i} className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800/80 space-y-1">
+                  <div className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">{stat.value}</div>
+                  <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* 4. Explore Every Learning Path (General, Technical, Commercial, TVEE Intermediate, TVEE Advanced) */}
-      <ExploreLearningPaths />
+      {/* 3. Featured Learning Pathways (Coursera-Inspired Categories) */}
+      <section id="curriculum">
+        <ExploreLearningPaths />
+      </section>
 
-      {/* 5. Why Students Love Edulpha (11 Core Student Pillars) */}
-      <WhyStudentsLoveEdulpha />
+      {/* 4. Interactive Subjects Explorer Section */}
+      <SubjectsSection />
 
-      {/* 6. Dynamic Partners Showcase Section */}
+      {/* 5. Edulpha AI Intelligent Companion Section */}
+      <EdulphaAISection />
+
+      {/* 6. Why Choose Edulpha Section */}
+      <section id="why-edulpha">
+        <WhyStudentsLoveEdulpha />
+      </section>
+
+      {/* 7. Cameroon & Africa Focus Mission Section */}
+      <AfricaFocusSection />
+
+      {/* 8. Partner Institutions Carousel & Showcase */}
       <LandingPartnersSection />
 
-      {/* 5. How It Works Section */}
-      <section id="how-it-works" className="py-24 px-6 bg-slate-50 border-b border-slate-200">
+      {/* 9. Coursera-Style Testimonials Section */}
+      <section id="testimonials" className="py-24 px-6 bg-slate-50 border-y border-slate-200">
         <div className="max-w-7xl mx-auto space-y-16">
           <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <Badge variant="primary">Simple Step-by-Step Journey</Badge>
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">How Edulpha Drives High Pass Rates</h2>
-            <p className="text-slate-500 font-medium text-lg">
-              Designed specifically for students, educators, and institutional partners preparing for competitive examinations.
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider">
+              <Star size={14} className="text-amber-500 fill-amber-500" />
+              Verified Success Stories
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+              Loved by Students, Teachers & School Leaders Across Cameroon
+            </h2>
+            <p className="text-slate-500 font-medium text-base sm:text-lg">
+              See how Edulpha is raising national exam pass rates in GCE Ordinary & Advanced Level, BEPC, Probatoire, and TVEE Technical certifications.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                step: '01',
-                title: 'Download App or Access Web',
-                desc: 'Get the Android APK file directly or log in via web browser with zero data loss.',
-                icon: Download,
-                color: 'bg-indigo-50 text-indigo-600 border-indigo-200'
+                quote: "Edulpha’s AI tutor helped me understand complex calculus and organic chemistry equations step-by-step. I scored 5 A grades in my GCE A-Levels!",
+                author: "Jean-Paul Etoo",
+                role: "GCE A-Level Student • GBHS Douala",
+                rating: 5,
+                avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&auto=format&fit=crop&q=80"
               },
               {
-                step: '02',
-                title: 'Select Exam & Subjects',
-                desc: 'Pick your sub-system (English GCE O/A Level or French Probatoire/Baccalauréat).',
-                icon: BookOpen,
-                color: 'bg-purple-50 text-purple-600 border-purple-200'
+                quote: "For technical education, Edulpha is revolutionary. Our TVEE Electrical Technology students practice circuit schematics offline even without school Wi-Fi.",
+                author: "Eng. Marie Talla",
+                role: "Head of Technical Department • Lycée Technique Bafoussam",
+                rating: 5,
+                avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&auto=format&fit=crop&q=80"
               },
               {
-                step: '03',
-                title: 'Ask Gemini AI & Drill Mocks',
-                desc: 'Generate instant step-by-step solutions and test yourself under real examination timers.',
-                icon: Sparkles,
-                color: 'bg-amber-50 text-amber-600 border-amber-200'
-              },
-              {
-                step: '04',
-                title: 'Achieve Top Score Results',
-                desc: 'Track mastery stats, receive school certificates, and excel in national board exams.',
-                icon: Award,
-                color: 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                quote: "As a parent, being able to track my child’s daily practice sessions and weak topics in commercial accounting gives me total peace of mind.",
+                author: "Grace Mbarga",
+                role: "Parent & PTA Vice-President • Yaoundé",
+                rating: 5,
+                avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=100&auto=format&fit=crop&q=80"
               }
-            ].map((s, i) => (
-              <Card key={i} className="p-8 space-y-4 bg-white border border-slate-200 shadow-sm relative overflow-hidden hover:shadow-lg transition">
-                <div className="text-4xl font-black text-slate-200 absolute top-4 right-4">{s.step}</div>
-                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center border", s.color)}>
-                  <s.icon size={26} />
-                </div>
-                <h3 className="text-lg font-black text-slate-900">{s.title}</h3>
-                <p className="text-xs text-slate-500 leading-relaxed font-medium">{s.desc}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 6. Why Choose Edulpha / Features Section */}
-      <section id="features" className="py-24 px-6 bg-white">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <Badge variant="primary">{t('features.badge')}</Badge>
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">{t('features.title')}</h2>
-            <p className="text-slate-500 font-medium text-lg">
-              {t('features.subtitle')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { icon: Sparkles, title: t('features.f1Title'), desc: t('features.f1Desc'), color: 'bg-indigo-50 text-indigo-600' },
-              { icon: BookOpen, title: t('features.f2Title'), desc: t('features.f2Desc'), color: 'bg-purple-50 text-purple-600' },
-              { icon: Target, title: t('features.f3Title'), desc: t('features.f3Desc'), color: 'bg-emerald-50 text-emerald-600' },
-              { icon: TrendingUp, title: t('features.f4Title'), desc: t('features.f4Desc'), color: 'bg-blue-50 text-blue-600' },
-              { icon: GraduationCap, title: t('features.f5Title'), desc: t('features.f5Desc'), color: 'bg-amber-50 text-amber-600' },
-              { icon: Smartphone, title: t('features.f6Title'), desc: t('features.f6Desc'), color: 'bg-rose-50 text-rose-600' },
-              { icon: Clock, title: t('features.f7Title'), desc: t('features.f7Desc'), color: 'bg-teal-50 text-teal-600' },
-              { icon: Globe, title: t('features.f8Title'), desc: t('features.f8Desc'), color: 'bg-indigo-50 text-indigo-700' },
-              { icon: Users, title: t('features.f9Title'), desc: t('features.f9Desc'), color: 'bg-purple-50 text-purple-700' }
-            ].map((feature, i) => (
-              <Card key={i} className="p-8 space-y-4 hover:shadow-xl transition-all border border-slate-100 hover:border-indigo-100">
-                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center", feature.color)}>
-                  <feature.icon size={28} />
-                </div>
-                <h3 className="text-xl font-black text-slate-900 tracking-tight">{feature.title}</h3>
-                <p className="text-slate-500 font-medium leading-relaxed text-sm">{feature.desc}</p>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 7. Gemini AI Tutor Interactive Preview */}
-      <section id="ai-tutor" className="py-24 px-6 bg-slate-900 text-white relative">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <Badge variant="primary" className="bg-indigo-500/20 text-indigo-300 border-indigo-400/30">
-              {t('ai.badge')}
-            </Badge>
-            <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">{t('ai.title')}</h2>
-            <p className="text-slate-400 font-medium text-lg">
-              {t('ai.subtitle')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            <div className="lg:col-span-5 space-y-6">
-              <h3 className="text-2xl font-black text-white">{t('ai.samplePromptsTitle')}</h3>
-              <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                Click any of the curriculum sample questions below to test how Gemini AI explains complex Ordinary & Advanced level concepts step-by-step.
-              </p>
-
-              <div className="space-y-3">
-                {[
-                  {
-                    prompt: 'Explain Quadratic Equations in Cameroon GCE Mathematics',
-                    resp: 'In Cameroon GCE Ordinary/Advanced Level Mathematics, quadratic equations take the form ax² + bx + c = 0. To solve them, you can use factorization, completing the square, or the quadratic formula: x = (-b ± √(b² - 4ac)) / 2a.'
-                  },
-                  {
-                    prompt: 'Explain Le Chatelier\'s Principle in GCE Chemistry',
-                    resp: 'Le Chatelier\'s Principle states that if a dynamic equilibrium is disturbed by changing conditions (temperature, pressure, or concentration), the position of equilibrium shifts to counteract the change.'
-                  },
-                  {
-                    prompt: 'Explain Newton\'s Second Law of Motion in Physics',
-                    resp: 'Newton\'s Second Law states that the rate of change of momentum of a body is directly proportional to the applied force: F = ma. In GCE Physics Paper 2, always include correct SI units (Newtons, N).'
-                  }
-                ].map((s, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSampleQuery(s.prompt, s.resp)}
-                    className="w-full text-left p-4 rounded-2xl bg-slate-800/80 hover:bg-indigo-900/40 border border-slate-700/60 hover:border-indigo-500/50 text-xs font-bold text-slate-200 transition-all flex items-center justify-between"
-                  >
-                    <span>{s.prompt}</span>
-                    <Sparkles size={16} className="text-amber-400 shrink-0" />
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="lg:col-span-7 bg-slate-950 p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
-                    <Sparkles size={20} />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-white text-sm">Edulpha Gemini AI Tutor</h4>
-                    <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider">Online & Ready</p>
-                  </div>
-                </div>
-
-                <Badge variant="secondary" className="bg-slate-800 text-slate-300">
-                  Bilingual (EN / FR)
-                </Badge>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-xs font-bold text-indigo-300 space-y-1">
-                  <span className="text-[10px] uppercase font-black text-slate-400 block">Student Query:</span>
-                  <p>{chatPrompt}</p>
-                </div>
-
-                <div className="bg-indigo-950/60 p-5 rounded-2xl border border-indigo-800/50 text-xs text-slate-200 leading-relaxed font-medium space-y-2">
-                  <span className="text-[10px] uppercase font-black text-amber-400 block flex items-center gap-1">
-                    <Sparkles size={12} /> Gemini Step-by-Step Resolution:
-                  </span>
-                  {isChatLoading ? (
-                    <p className="text-slate-400 animate-pulse font-mono">Generating syllabus solution...</p>
-                  ) : (
-                    <p>{chatResponse}</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="pt-2 flex items-center justify-between text-[11px] font-bold text-slate-400">
-                <span>Free unlimited questions for registered students</span>
-                <Link to="/auth" className="text-indigo-400 underline hover:text-white">Ask custom question →</Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 8. Dedicated Mobile App Download Section with QR Code */}
-      <section id="mobile-app" className="py-24 px-6 bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-950 text-white relative">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <Badge variant="primary" className="bg-indigo-500/20 text-indigo-300 border-indigo-400/30">
-              Official Production Android APK
-            </Badge>
-            <h2 className="text-4xl sm:text-5xl font-black tracking-tight text-white">Download Edulpha Mobile App</h2>
-            <p className="text-slate-300 font-medium text-lg">
-              Study past papers, take timed mocks, and ask the Gemini AI tutor anytime — even without internet data.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            
-            {/* Download Buttons & Release Stats */}
-            <div className="lg:col-span-7 space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Direct Android APK Download */}
-                <a href="/downloads/edulpha-v1.0.4-release.apk" download className="block">
-                  <Card className="p-6 bg-gradient-to-br from-indigo-600 to-indigo-800 border border-indigo-500 hover:border-white text-white shadow-xl transition space-y-3 cursor-pointer">
-                    <div className="flex items-center justify-between">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center font-bold">
-                        <Download size={22} />
-                      </div>
-                      <span className="px-2 py-0.5 bg-emerald-500 text-white rounded text-[9px] font-black uppercase">Direct APK</span>
-                    </div>
-                    <div>
-                      <h4 className="font-black text-lg text-white">Android APK Download</h4>
-                      <p className="text-xs text-indigo-100">Release v1.0.4 (42.8 MB)</p>
-                    </div>
-                  </Card>
-                </a>
-
-                {/* Google Play Store Badge (Coming Soon) */}
-                <Card className="p-6 bg-slate-900 border border-slate-800 text-slate-400 space-y-3 opacity-90">
-                  <div className="flex items-center justify-between">
-                    <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-slate-300 font-bold">
-                      <Smartphone size={22} />
-                    </div>
-                    <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[9px] font-black uppercase">In Review</span>
-                  </div>
-                  <div>
-                    <h4 className="font-black text-lg text-slate-200">Google Play Store</h4>
-                    <p className="text-xs text-slate-400">Publishing Target Q3 2026</p>
-                  </div>
-                </Card>
-              </div>
-
-              {/* Technical Release Details Box */}
-              <div className="bg-slate-900/90 p-6 rounded-3xl border border-slate-800 space-y-4">
-                <h4 className="font-black text-sm text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                  <ShieldCheck size={18} /> Production APK Technical Specifications
-                </h4>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-bold text-slate-300">
-                  <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-                    <div className="text-[10px] text-slate-400 uppercase">Version</div>
-                    <div className="text-sm font-black text-white">v1.0.4 Release</div>
-                  </div>
-                  <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-                    <div className="text-[10px] text-slate-400 uppercase">File Size</div>
-                    <div className="text-sm font-black text-white">42.8 MB</div>
-                  </div>
-                  <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-                    <div className="text-[10px] text-slate-400 uppercase">Min Android</div>
-                    <div className="text-sm font-black text-white">7.0 (Nougat)+</div>
-                  </div>
-                  <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
-                    <div className="text-[10px] text-slate-400 uppercase">Security</div>
-                    <div className="text-sm font-black text-emerald-400">RSA-2048 Signed</div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-mono text-slate-400">
-                  <span>SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</span>
-                  <Link to="/docs" className="text-indigo-400 hover:text-white underline">Full Spec →</Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Visual QR Code Card for Scan to Download */}
-            <div className="lg:col-span-5 flex justify-center">
-              <Card className="p-8 bg-white text-slate-900 rounded-3xl space-y-6 shadow-2xl border border-slate-200 max-w-sm text-center">
-                <div className="space-y-2">
-                  <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-black uppercase tracking-wider">
-                    Instant Camera Scan
-                  </span>
-                  <h3 className="text-xl font-black text-slate-900">Scan QR Code to Download</h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Point your Android device camera at the QR code to begin downloading the APK file directly.
-                  </p>
-                </div>
-
-                {/* SVG QR Code Illustration */}
-                <div className="p-4 bg-slate-50 border-2 border-dashed border-indigo-200 rounded-2xl flex items-center justify-center">
-                  <svg className="w-44 h-44 text-slate-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h2v2h-2zM19 15h2v2h-2zM17 17h2v2h-2zM15 19h2v2h-2zM19 19h2v2h-2zM5 5h2v2H5zM17 5h2v2h-2zM5 17h2v2H5z" fill="currentColor" />
-                  </svg>
-                </div>
-
-                <a
-                  href="/downloads/edulpha-v1.0.4-release.apk"
-                  download
-                  className="block w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-lg"
-                >
-                  Download File Directly
-                </a>
-              </Card>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 9. Pricing & Subscriptions */}
-      <section id="pricing" className="py-24 px-6 bg-white">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <Badge variant="primary">{t('pricing.badge')}</Badge>
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">{t('pricing.title')}</h2>
-            <p className="text-slate-500 font-medium text-lg">
-              {t('pricing.subtitle')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Free Plan */}
-            <Card className="p-8 space-y-6 border border-slate-200 bg-white flex flex-col justify-between">
-              <div className="space-y-4">
-                <Badge variant="secondary">{t('pricing.freeBadge')}</Badge>
-                <h3 className="text-2xl font-black text-slate-900">{t('pricing.freeTitle')}</h3>
-                <p className="text-xs text-slate-500">{t('pricing.freeDesc')}</p>
-                <div className="text-4xl font-black text-slate-900">{t('pricing.freePrice')} <span className="text-xs font-medium text-slate-400">{t('pricing.freeDuration')}</span></div>
-                
-                <div className="space-y-3 pt-4 border-t border-slate-100 text-xs font-bold text-slate-600">
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-600" /> {t('pricing.freeFeat1')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-600" /> {t('pricing.freeFeat2')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-600" /> {t('pricing.freeFeat3')}</div>
-                </div>
-              </div>
-
-              <Link to="/auth" className="w-full">
-                <Button variant="outline" className="w-full">{t('pricing.freeBtn')}</Button>
-              </Link>
-            </Card>
-
-            {/* Premium Plan (Recommended) */}
-            <Card className="p-8 space-y-6 border-2 border-indigo-600 bg-indigo-950 text-white flex flex-col justify-between shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest px-4 py-1.5 rounded-bl-2xl">
-                {t('pricing.mostPopular')}
-              </div>
-
-              <div className="space-y-4">
-                <Badge variant="primary" className="bg-indigo-500/20 text-indigo-300 border-indigo-400/30">{t('pricing.premBadge')}</Badge>
-                <h3 className="text-2xl font-black text-white">{t('pricing.premTitle')}</h3>
-                <p className="text-xs text-indigo-200">{t('pricing.premDesc')}</p>
-                <div className="text-4xl font-black text-white">{t('pricing.premPrice')} <span className="text-xs font-medium text-indigo-300">{t('pricing.premDuration')}</span></div>
-                
-                <div className="space-y-3 pt-4 border-t border-indigo-800/60 text-xs font-bold text-indigo-100">
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-400" /> {t('pricing.premFeat1')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-400" /> {t('pricing.premFeat2')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-400" /> {t('pricing.premFeat3')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-400" /> {t('pricing.premFeat4')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-400" /> {t('pricing.premFeat5')}</div>
-                </div>
-              </div>
-
-              <Link to="/auth" className="w-full">
-                <Button variant="secondary" className="w-full bg-indigo-600 hover:bg-indigo-500 shadow-xl">{t('pricing.premBtn')}</Button>
-              </Link>
-            </Card>
-
-            {/* Institution Plan */}
-            <Card className="p-8 space-y-6 border border-slate-200 bg-white flex flex-col justify-between">
-              <div className="space-y-4">
-                <Badge variant="secondary">{t('pricing.instBadge')}</Badge>
-                <h3 className="text-2xl font-black text-slate-900">{t('pricing.instTitle')}</h3>
-                <p className="text-xs text-slate-500">{t('pricing.instDesc')}</p>
-                <div className="text-4xl font-black text-slate-900">{t('pricing.instPrice')} <span className="text-xs font-medium text-slate-400">{t('pricing.instDuration')}</span></div>
-                
-                <div className="space-y-3 pt-4 border-t border-slate-100 text-xs font-bold text-slate-600">
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-600" /> {t('pricing.instFeat1')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-600" /> {t('pricing.instFeat2')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-600" /> {t('pricing.instFeat3')}</div>
-                  <div className="flex items-center gap-2"><Check size={16} className="text-emerald-600" /> {t('pricing.instFeat4')}</div>
-                </div>
-              </div>
-
-              <Link to="/auth" className="w-full">
-                <Button variant="outline" className="w-full">{t('pricing.instBtn')}</Button>
-              </Link>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* 10. Testimonials */}
-      <section className="py-24 px-6 bg-slate-50 border-y border-slate-200">
-        <div className="max-w-7xl mx-auto space-y-16">
-          <div className="text-center space-y-4 max-w-3xl mx-auto">
-            <Badge variant="primary">{t('test.badge')}</Badge>
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">{t('test.title')}</h2>
-            <p className="text-slate-500 font-medium text-lg">
-              {t('test.subtitle')}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { quote: t('test.quote1'), author: t('test.author1'), role: t('test.role1'), rating: 5 },
-              { quote: t('test.quote2'), author: t('test.author2'), role: t('test.role2'), rating: 5 },
-              { quote: t('test.quote3'), author: t('test.author3'), role: t('test.role3'), rating: 5 }
-            ].map((tItem, i) => (
-              <Card key={i} className="p-8 space-y-6 bg-white border border-slate-200 shadow-sm flex flex-col justify-between">
+            ].map((item, i) => (
+              <Card key={i} className="p-8 space-y-6 bg-white border border-slate-200 shadow-sm hover:shadow-xl transition-all flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="flex items-center gap-1 text-amber-400">
-                    {[...Array(tItem.rating)].map((_, idx) => (
+                    {[...Array(item.rating)].map((_, idx) => (
                       <Star key={idx} size={16} fill="currentColor" />
                     ))}
                   </div>
-                  <p className="text-slate-600 font-medium text-sm leading-relaxed italic">"{tItem.quote}"</p>
+                  <p className="text-slate-600 font-medium text-sm leading-relaxed italic">
+                    "{item.quote}"
+                  </p>
                 </div>
+
                 <div className="pt-4 border-t border-slate-100 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 font-black flex items-center justify-center text-sm">
-                    {tItem.author.charAt(0)}
-                  </div>
+                  <img 
+                    src={item.avatar} 
+                    alt={item.author} 
+                    className="w-11 h-11 rounded-full object-cover ring-2 ring-indigo-500/20 shrink-0"
+                  />
                   <div>
-                    <h4 className="font-black text-slate-900 text-sm">{tItem.author}</h4>
-                    <p className="text-xs text-slate-400 font-medium">{tItem.role}</p>
+                    <h4 className="font-black text-slate-900 text-sm">{item.author}</h4>
+                    <p className="text-xs text-slate-500 font-bold">{item.role}</p>
                   </div>
                 </div>
               </Card>
@@ -694,15 +492,21 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* 10. Download Mobile App Section */}
+      <DownloadAppSection />
 
       {/* 11. FAQ Section */}
       <section id="faq" className="py-24 px-6 bg-white">
         <div className="max-w-4xl mx-auto space-y-12">
           <div className="text-center space-y-4">
-            <Badge variant="secondary">{t('faq.badge')}</Badge>
-            <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">{t('faq.title')}</h2>
-            <p className="text-slate-500 font-medium text-lg">
-              {t('faq.subtitle')}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider">
+              <HelpCircle size={14} />
+              Frequently Asked Questions
+            </div>
+            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">Everything You Need to Know</h2>
+            <p className="text-slate-500 font-medium text-base sm:text-lg">
+              Got questions about Edulpha, GCE past papers, or offline Android access? We've got answers.
             </p>
           </div>
 
@@ -727,26 +531,38 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 12. Call-to-Action Conversion Banner */}
-      <section className="py-20 px-6">
-        <Card className="max-w-7xl mx-auto bg-gradient-to-r from-indigo-950 via-indigo-900 to-purple-950 text-white p-12 md:p-20 text-center space-y-8 relative overflow-hidden shadow-2xl rounded-[3rem]">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.1),transparent)]" />
-          <h2 className="text-4xl md:text-6xl font-black tracking-tight relative z-10">
-            {t('cta.title')}
+      {/* 12. Final Call-to-Action Conversion Banner */}
+      <section className="py-20 px-6 bg-slate-50">
+        <Card className="max-w-7xl mx-auto bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 text-white p-10 md:p-20 text-center space-y-8 relative overflow-hidden shadow-2xl rounded-[3rem] border border-indigo-900/40">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_50%_50%,rgba(99,102,241,0.15),transparent)] pointer-events-none" />
+          
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider relative z-10">
+            <Sparkles size={14} />
+            Start Your Journey Today
+          </div>
+
+          <h2 className="text-3xl md:text-6xl font-black tracking-tight leading-tight relative z-10">
+            Transform Your Academic Career <br />
+            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+              With Africa's Premier Learning Hub
+            </span>
           </h2>
-          <p className="text-indigo-200 text-lg max-w-2xl mx-auto font-medium relative z-10">
-            {t('cta.desc')}
+
+          <p className="text-slate-300 text-base md:text-xl max-w-2xl mx-auto font-medium relative z-10 leading-relaxed">
+            Join over 50,000 students and educators mastering GCE O/A Levels, BEPC, Baccalauréat, and TVEE Technical specialties.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 pt-4">
             <Link to="/auth">
-              <Button size="lg" variant="secondary" className="bg-white text-indigo-900 hover:bg-slate-100 shadow-xl font-bold">
-                {t('cta.createAccount')}
+              <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-black text-sm px-8 py-6 rounded-2xl shadow-xl shadow-emerald-400/20 transition-all">
+                Create Free Account
               </Button>
             </Link>
-            <a href="/downloads/edulpha-v1.0.4-release.apk" download>
-              <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10 font-bold flex items-center gap-2">
+            
+            <a href="#mobile-app">
+              <Button size="lg" variant="outline" className="w-full sm:w-auto border-slate-700 text-white hover:bg-slate-800 text-sm font-bold px-8 py-6 rounded-2xl flex items-center justify-center gap-2">
                 <Download size={18} />
-                <span>Download Android APK</span>
+                <span>Get Mobile App</span>
               </Button>
             </a>
           </div>
