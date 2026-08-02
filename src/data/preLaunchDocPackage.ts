@@ -51,7 +51,7 @@ Edulpha is a next-generation, AI-assisted multi-curriculum Learning & Examinatio
 
 ### Primary Objectives:
 1. **Curriculum Alignment:** Provide 100% official past paper & mock exam coverage for GCE Board & Ministry of Secondary Education (MINESEC) curricula.
-2. **AI-Powered Learning Support:** Deliver real-time diagnostic evaluation, step-by-step problem resolution, and adaptive daily drills powered by Google Gemini AI models.
+2. **AI-Powered Learning Support:** Deliver real-time diagnostic evaluation, step-by-step problem resolution, and adaptive daily drills powered by Edulpha AI models.
 3. **Multi-System Agility:** Seamlessly switch between English (Anglo-Saxon system) and French (French Sub-system) with single-click translation and specialized terminology mapping.
 4. **Institutional Partnership Integration:** Enable education boards, telecom partners, and school networks to manage co-branded learning hubs, scholarship allocations, and official verified resources.
 

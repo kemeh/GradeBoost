@@ -1951,10 +1951,10 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
           await window.aistudio.openSelectKey();
           setIsProcessing(false);
           setProcessingStatus('');
-          toast.error('Gemini API Key is missing or empty. Please select a key in the dialog and try again.');
+          toast.error('Edulpha AI API Key is missing or empty. Please select a key in the dialog and try again.');
           return;
         }
-        throw new Error('Gemini API Key is missing. Please add API key in Settings.');
+        throw new Error('Edulpha AI API Key is missing. Please add API key in Settings.');
       }
       
       const ai = new GoogleGenAI({ apiKey: apiKey.trim() });
@@ -2121,7 +2121,7 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
       console.error('Import error:', err);
       let msg = err.message || 'Failed to process file.';
       if (msg.includes('403') || msg.includes('PERMISSION_DENIED') || msg.includes('denied access')) {
-        msg = 'Gemini API Access Denied (403). Your project might be blocked or the API key is restricted. Please check your System Settings or try selecting a different key in the Settings menu.';
+        msg = 'Edulpha AI Access Denied (403). Your project might be blocked or the API key is restricted. Please check your System Settings or try selecting a different key in the Settings menu.';
       }
       setError(msg);
       toast.error(msg);
@@ -2244,9 +2244,9 @@ function BulkImportModal({ onClose, onImported, confirmDialog, setConfirmDialog,
               <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <p className="text-sm font-bold text-amber-900">Gemini API Key is missing</p>
+                  <p className="text-sm font-bold text-amber-900">Edulpha AI API Key is missing</p>
                   <p className="text-xs text-amber-700 mt-1">
-                    AI-powered bulk upload requires a Gemini API key. Please add one in the <Link to="/admin/settings" className="font-bold underline">System Settings</Link> page.
+                    AI-powered bulk upload requires an Edulpha AI API key. Please add one in the <Link to="/admin/settings" className="font-bold underline">System Settings</Link> page.
                   </p>
                 </div>
               </div>

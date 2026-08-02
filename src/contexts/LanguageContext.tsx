@@ -73,11 +73,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const [language, setLanguageState] = useState<LanguageCode>(() => {
     const saved = localStorage.getItem('edulpha_lang');
-    if (saved) return saved;
-    if (user?.language) return user.language;
+    if (saved && (saved === 'en' || saved === 'fr')) return saved;
+    if (user?.language && (user.language === 'en' || user.language === 'fr')) return user.language;
     if (typeof navigator !== 'undefined' && navigator.language) {
       const code = navigator.language.split('-')[0];
-      if (['en', 'fr', 'es', 'ar', 'de', 'pt'].includes(code)) return code;
+      if (code === 'fr') return 'fr';
     }
     return 'en';
   });
@@ -143,13 +143,14 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, [user?.language]);
 
   const setLanguage = async (newLang: LanguageCode) => {
-    setLanguageState(newLang);
-    localStorage.setItem('edulpha_lang', newLang);
+    const validLang = (newLang === 'fr' || newLang === 'en') ? newLang : 'en';
+    setLanguageState(validLang);
+    localStorage.setItem('edulpha_lang', validLang);
 
     if (user?.uid) {
       try {
         await updateDoc(doc(db, 'users', user.uid), {
-          language: newLang
+          language: validLang
         });
       } catch (err) {
         console.warn('Failed to persist language choice to user profile:', err);

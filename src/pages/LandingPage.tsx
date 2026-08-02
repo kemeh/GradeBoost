@@ -14,6 +14,9 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { LanguageSwitcher } from '../components/LanguageSwitcher';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { LandingPartnersSection } from '../components/LandingPartnersSection';
+import { ExploreLearningPaths } from '../components/ExploreLearningPaths';
+import { WhyStudentsLoveEdulpha } from '../components/WhyStudentsLoveEdulpha';
+import { DynamicFooter } from '../components/DynamicFooter';
 import { SEO } from '../components/SEO';
 
 export default function LandingPage() {
@@ -84,15 +87,18 @@ export default function LandingPage() {
             </span>
           </div>
 
-          <div className="hidden lg:flex items-center gap-8 text-sm font-bold text-slate-600">
-            <a href="#features" className="hover:text-indigo-600 transition-colors">{t('nav.features')}</a>
+          <div className="hidden lg:flex items-center gap-7 text-sm font-bold text-slate-600">
+            <a href="#curriculum" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
+              <span>Learning Paths</span>
+              <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-black rounded uppercase">All Fields</span>
+            </a>
+            <a href="#why-edulpha" className="hover:text-indigo-600 transition-colors">Why Edulpha</a>
             <a href="#how-it-works" className="hover:text-indigo-600 transition-colors">How It Works</a>
-            <a href="#curriculum" className="hover:text-indigo-600 transition-colors">{t('nav.curriculum')}</a>
             <a href="#ai-tutor" className="hover:text-indigo-600 transition-colors">{t('nav.aiTutor')}</a>
             <a href="#partners" className="hover:text-indigo-600 transition-colors">{t('nav.partners')}</a>
             <Link to="/docs" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
               <span>Docs</span>
-              <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 text-[9px] font-black rounded uppercase">Hub</span>
+              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[9px] font-black rounded uppercase">Hub</span>
             </Link>
             <a href="#mobile-app" className="hover:text-indigo-600 transition-colors flex items-center gap-1 text-indigo-600">
               <Download size={14} />
@@ -131,7 +137,7 @@ export default function LandingPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold"
             >
               <Sparkles size={16} className="text-amber-400" />
-              <span>Next-Generation Exam Mastery Engine</span>
+              <span>Complete Learning Ecosystem for General, Technical & Commercial Education</span>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
             </motion.div>
 
@@ -141,7 +147,7 @@ export default function LandingPage() {
               transition={{ delay: 0.1 }}
               className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1]"
             >
-              Master Your Exams with <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-300 bg-clip-text text-transparent">Gemini AI</span> & Past Papers
+              Master Every Path with <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-300 bg-clip-text text-transparent">Gemini AI</span> & Past Papers
             </motion.h1>
 
             <motion.p 
@@ -150,7 +156,7 @@ export default function LandingPage() {
               transition={{ delay: 0.2 }}
               className="text-slate-300 text-lg sm:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed"
             >
-              Empowering 50,000+ students across Cameroon and West Africa. Access 15,000+ past questions, step-by-step AI problem resolution, timed mock drills, and offline APK capabilities.
+              Empowering students in General Education, Technical Education, Commercial Studies, and TVEE Intermediate & Advanced levels. Access 15,000+ past questions, step-by-step AI problem solvers, workshop schematics, and offline APK capabilities.
             </motion.p>
 
             <motion.div 
@@ -261,7 +267,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 4. Dynamic Partners Showcase Section */}
+      {/* 4. Explore Every Learning Path (General, Technical, Commercial, TVEE Intermediate, TVEE Advanced) */}
+      <ExploreLearningPaths />
+
+      {/* 5. Why Students Love Edulpha (11 Core Student Pillars) */}
+      <WhyStudentsLoveEdulpha />
+
+      {/* 6. Dynamic Partners Showcase Section */}
       <LandingPartnersSection />
 
       {/* 5. How It Works Section */}
@@ -741,119 +753,8 @@ export default function LandingPage() {
         </Card>
       </section>
 
-      {/* 13. Complete 5-Column Professional Footer */}
-      <footer className="bg-slate-900 text-white py-16 px-6 border-t border-slate-800">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
-          
-          {/* Column 1: Brand Information & Social Links */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <img 
-                src={logoUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80"} 
-                alt="Edulpha Logo" 
-                className="h-9 w-auto rounded-lg object-contain"
-              />
-              <span className="text-2xl font-black tracking-tight text-white">Edulpha</span>
-            </div>
-            <p className="text-xs text-slate-400 font-medium leading-relaxed">
-              Cameroon's premier AI-powered educational technology platform for Ordinary Level, Advanced Level, Probatoire, and Baccalauréat success.
-            </p>
-            
-            {/* Social Media Links */}
-            <div className="pt-2 flex items-center gap-3 text-slate-400">
-              <a href="https://facebook.com/edulpha" target="_blank" rel="noreferrer" className="p-2 bg-slate-800 hover:bg-indigo-600 hover:text-white rounded-lg transition" title="Facebook">
-                <Globe size={16} />
-              </a>
-              <a href="https://twitter.com/edulpha" target="_blank" rel="noreferrer" className="p-2 bg-slate-800 hover:bg-indigo-600 hover:text-white rounded-lg transition" title="X / Twitter">
-                <Share2 size={16} />
-              </a>
-              <a href="https://linkedin.com/company/edulpha" target="_blank" rel="noreferrer" className="p-2 bg-slate-800 hover:bg-indigo-600 hover:text-white rounded-lg transition" title="LinkedIn">
-                <Users size={16} />
-              </a>
-              <a href="https://youtube.com/@edulpha" target="_blank" rel="noreferrer" className="p-2 bg-slate-800 hover:bg-indigo-600 hover:text-white rounded-lg transition" title="YouTube">
-                <Play size={16} />
-              </a>
-              <a href="https://wa.me/237670000000" target="_blank" rel="noreferrer" className="p-2 bg-slate-800 hover:bg-emerald-600 hover:text-white rounded-lg transition" title="WhatsApp Support">
-                <MessageSquare size={16} />
-              </a>
-            </div>
-          </div>
-
-          {/* Column 2: Platform Links */}
-          <div className="space-y-3">
-            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">Platform Links</h4>
-            <ul className="space-y-2 text-xs font-bold text-slate-400">
-              <li><a href="#" className="hover:text-white transition">Home</a></li>
-              <li><a href="#features" className="hover:text-white transition">About Us & Features</a></li>
-              <li><a href="#how-it-works" className="hover:text-white transition">How It Works</a></li>
-              <li><a href="#mobile-app" className="hover:text-white transition">Download Mobile App</a></li>
-              <li><a href="#partners" className="hover:text-white transition">Partner School Hubs</a></li>
-              <li><a href="#pricing" className="hover:text-white transition">Pricing & Subscriptions</a></li>
-              <li><a href="#faq" className="hover:text-white transition">FAQ & Support</a></li>
-            </ul>
-          </div>
-
-          {/* Column 3: Legal Documents (Dynamic Routes) */}
-          <div className="space-y-3">
-            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">Legal & Governance</h4>
-            <ul className="space-y-2 text-xs font-bold text-slate-400">
-              <li><Link to="/privacy-policy" className="hover:text-white transition">Privacy Policy</Link></li>
-              <li><Link to="/terms-and-conditions" className="hover:text-white transition">Terms & Conditions</Link></li>
-              <li><Link to="/cookie-policy" className="hover:text-white transition">Cookie Policy</Link></li>
-              <li><Link to="/data-protection" className="hover:text-white transition">Data Protection Policy</Link></li>
-              <li><Link to="/user-agreement" className="hover:text-white transition">User Agreement</Link></li>
-              <li><Link to="/community-guidelines" className="hover:text-white transition">Community Guidelines</Link></li>
-              <li><Link to="/refund-policy" className="hover:text-white transition">Refund & Billing Policy</Link></li>
-              <li><Link to="/disclaimer" className="hover:text-white transition">Official Disclaimer</Link></li>
-              <li><Link to="/intellectual-property" className="hover:text-white transition">Intellectual Property</Link></li>
-            </ul>
-          </div>
-
-          {/* Column 4: Resources & Guides */}
-          <div className="space-y-3">
-            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">Resources & Manuals</h4>
-            <ul className="space-y-2 text-xs font-bold text-slate-400">
-              <li><Link to="/user-guide" className="hover:text-white transition">Student & Parent Guide</Link></li>
-              <li><Link to="/partner-guide" className="hover:text-white transition">School Partner Guide</Link></li>
-              <li><Link to="/security-policy" className="hover:text-white transition">Security Architecture</Link></li>
-              <li><Link to="/docs" className="hover:text-emerald-400 transition flex items-center gap-1"><FileText size={14} /> Pre-Launch Package</Link></li>
-              <li><a href="#ai-tutor" className="hover:text-white transition">Gemini AI Tutor Guide</a></li>
-            </ul>
-          </div>
-
-          {/* Column 5: Contact Information */}
-          <div className="space-y-3">
-            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">Contact & Offices</h4>
-            <div className="space-y-3 text-xs font-medium text-slate-400">
-              <div className="flex items-start gap-2">
-                <Mail size={16} className="text-indigo-400 shrink-0 mt-0.5" />
-                <span>support@edulpha.cm<br />partners@edulpha.cm</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Phone size={16} className="text-indigo-400 shrink-0 mt-0.5" />
-                <span>+237 670 000 000<br />+237 690 000 000</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <MapPin size={16} className="text-indigo-400 shrink-0 mt-0.5" />
-                <span>Edulpha Hub, Akwa, Douala & Bastos, Yaoundé, Cameroon</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <Clock size={16} className="text-indigo-400 shrink-0 mt-0.5" />
-                <span>Mon - Sat: 08:00 - 20:00 (WAT)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Bottom Rights & Security Bar */}
-        <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-400">
-          <div>© 2026 Edulpha Learning Systems. All Rights Reserved.</div>
-          <div className="flex items-center gap-6">
-            <span className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-emerald-400" /> AES-256 Encrypted</span>
-            <span className="flex items-center gap-1.5"><Globe size={16} className="text-indigo-400" /> Bilingual Support</span>
-          </div>
-        </div>
-      </footer>
+      {/* 13. Dynamic Professional Footer (Managed via Admin Dashboard) */}
+      <DynamicFooter />
     </div>
   );
 }

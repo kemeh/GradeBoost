@@ -555,7 +555,7 @@ export const EdulphaMobileHub: React.FC = () => {
             </div>
             <h3 className="text-lg font-bold text-white">Edulpha AI Intelligence</h3>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Powered by Google Gemini generative AI models, providing step-by-step math solvers, past paper feedback, and interactive quizzes in English & French.
+              Powered by Edulpha AI generative learning engines, providing step-by-step math solvers, past paper feedback, and interactive quizzes in English & French.
             </p>
           </div>
         </div>

@@ -191,18 +191,18 @@ export default function AdminSettings() {
       });
       const response = await model;
       if (response.text) {
-        setTestResult({ success: true, message: 'Connection successful! Gemini is responding.' });
-        toast.success('Gemini connection test passed!');
+        setTestResult({ success: true, message: 'Connection successful! Edulpha AI is responding.' });
+        toast.success('Edulpha AI connection test passed!');
       } else {
-        throw new Error('Empty response from Gemini');
+        throw new Error('Empty response from Edulpha AI');
       }
     } catch (error: any) {
-      console.error('Gemini test error:', error);
+      console.error('Edulpha AI test error:', error);
       setTestResult({ 
         success: false, 
         message: `Connection failed: ${error.message || 'Unknown error'}` 
       });
-      toast.error('Gemini connection test failed');
+      toast.error('Edulpha AI connection test failed');
     } finally {
       setIsTesting(false);
     }
@@ -350,7 +350,7 @@ export default function AdminSettings() {
                   <Key className="w-6 h-6 text-indigo-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Gemini AI Configuration</h2>
+                  <h2 className="text-xl font-bold text-slate-900">Edulpha AI Configuration</h2>
                   <p className="text-sm text-slate-500">Configure the API key used for automated question generation and feedback.</p>
                 </div>
               </div>
@@ -358,14 +358,14 @@ export default function AdminSettings() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Gemini API Key
+                    Edulpha AI API Key
                   </label>
                   <div className="relative">
                     <input
                       type="password"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
-                      placeholder="Enter your Gemini API Key"
+                      placeholder="Enter your Edulpha AI API Key"
                       className="w-full px-6 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl focus:border-indigo-500 focus:ring-0 transition-all font-mono text-sm"
                     />
                     <ShieldCheck className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -379,7 +379,7 @@ export default function AdminSettings() {
                     className="px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-600 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-50 transition-all disabled:opacity-50 flex items-center gap-2 text-sm"
                   >
                     {isTesting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-                    Test Gemini Connection
+                    Test Edulpha AI Connection
                   </button>
                 </div>
 
@@ -766,11 +766,11 @@ export default function AdminSettings() {
               <ul className="space-y-3 text-sm text-slate-600">
                 <li className="flex gap-2">
                   <span className="font-bold text-indigo-600">•</span>
-                  The Gemini API key is required for bulk importing questions from PDFs and generating automated student feedback.
+                  The Edulpha AI API key is required for bulk importing questions from PDFs and generating automated student feedback.
                 </li>
                 <li className="flex gap-2">
                   <span className="font-bold text-indigo-600">•</span>
-                  Ensure your API key has access to the <strong>gemini-flash-latest</strong> model.
+                  Ensure your API key is active and has access to high-speed AI evaluation models.
                 </li>
                 <li className="flex gap-2">
                   <span className="font-bold text-indigo-600">•</span>

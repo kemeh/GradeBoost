@@ -32,6 +32,7 @@ import AdminPlatformSettingsView from '../components/admin/AdminPlatformSettings
 import AdminTranslationManager from '../components/admin/AdminTranslationManager';
 import { AdminPartnerManagement } from '../components/admin/AdminPartnerManagement';
 import { AdminDocumentManagement } from '../components/admin/AdminDocumentManagement';
+import { AdminFooterManagement } from '../components/AdminFooterManagement';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -547,6 +548,7 @@ export default function Admin() {
             <TabsTrigger value="translations" className="rounded-xl py-2 px-4 text-xs font-bold">Multi-Language & i18n Studio</TabsTrigger>
             <TabsTrigger value="partners" className="rounded-xl py-2 px-4 text-xs font-bold">Partners & Alliances</TabsTrigger>
             <TabsTrigger value="documents" className="rounded-xl py-2 px-4 text-xs font-bold">Document Management</TabsTrigger>
+            <TabsTrigger value="footer" className="rounded-xl py-2 px-4 text-xs font-bold">Footer Management</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl py-2 px-4 text-xs font-bold">Platform Settings</TabsTrigger>
           </TabsList>
 
@@ -1011,6 +1013,11 @@ export default function Admin() {
               </table>
             </div>
           </Card>
+          </TabsContent>
+
+          {/* Tab 13: Footer Content Management */}
+          <TabsContent value="footer">
+            <AdminFooterManagement />
           </TabsContent>
         </Tabs>
 

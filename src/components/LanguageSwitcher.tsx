@@ -12,7 +12,7 @@ export const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ variant = 'd
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const activeLangs = supportedLanguages.filter(l => l.enabled);
+  const activeLangs = supportedLanguages.filter(l => l.enabled && (l.code === 'en' || l.code === 'fr'));
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

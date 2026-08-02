@@ -281,11 +281,11 @@ export default function AdminTranslationManager() {
 
       {/* TAB 1: SUPPORTED LANGUAGES MANAGEMENT */}
       {activeTab === 'languages' && (
-        <div className="space-y-6">
+        <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-bold text-slate-900 text-sm">Platform Languages Registry</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Enable or disable languages, configure text direction (LTR / RTL), and add new supported dialects.</p>
+              <p className="text-xs text-slate-500 mt-0.5">English and French are the active production languages. Other languages are kept disabled until future updates.</p>
             </div>
 
             <button
@@ -296,51 +296,98 @@ export default function AdminTranslationManager() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {supportedLanguages.map(lang => (
-              <div key={lang.code} className="p-5 bg-white border border-slate-200 rounded-2xl flex flex-col justify-between space-y-4 shadow-xs hover:border-indigo-300 transition-all">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">{lang.flag}</span>
-                      <div>
-                        <h4 className="font-bold text-slate-900 text-sm leading-tight">{lang.name}</h4>
-                        <span className="text-xs text-slate-500 font-medium">{lang.nativeName}</span>
+          {/* Enabled Languages Section */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-black uppercase tracking-wider text-emerald-700 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Enabled Languages ({supportedLanguages.filter(l => l.enabled).length})
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {supportedLanguages.filter(l => l.enabled).map(lang => (
+                <div key={lang.code} className="p-5 bg-white border border-emerald-200 rounded-2xl flex flex-col justify-between space-y-4 shadow-xs">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">{lang.flag}</span>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-sm leading-tight">{lang.name}</h4>
+                          <span className="text-xs text-slate-500 font-medium">{lang.nativeName}</span>
+                        </div>
                       </div>
+
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                        {lang.direction.toUpperCase()}
+                      </span>
                     </div>
 
-                    <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                      lang.direction === 'rtl' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-700'
-                    }`}>
-                      {lang.direction.toUpperCase()}
+                    <div className="flex items-center gap-2 pt-2 text-xs">
+                      <span className="text-slate-500 font-semibold">Language Code:</span>
+                      <code className="px-2 py-0.5 bg-slate-100 font-mono font-bold text-slate-800 rounded">{lang.code}</code>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                    <span className="text-xs font-bold text-emerald-600 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" /> Active
                     </span>
-                  </div>
 
-                  <div className="flex items-center gap-2 pt-2 text-xs">
-                    <span className="text-slate-500 font-semibold">Language Code:</span>
-                    <code className="px-2 py-0.5 bg-slate-100 font-mono font-bold text-slate-800 rounded">{lang.code}</code>
+                    <button
+                      onClick={() => toggleLanguageStatus(lang.code, false)}
+                      className="px-3 py-1 rounded-xl text-xs font-bold transition-all bg-rose-50 text-rose-600 hover:bg-rose-100"
+                    >
+                      Disable
+                    </button>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                  <span className={`text-xs font-bold flex items-center gap-1 ${lang.enabled ? 'text-emerald-600' : 'text-slate-400'}`}>
-                    <span className={`w-2 h-2 rounded-full ${lang.enabled ? 'bg-emerald-500' : 'bg-slate-300'}`}></span>
-                    {lang.enabled ? 'Enabled' : 'Disabled'}
-                  </span>
+          {/* Disabled Languages Section */}
+          <div className="space-y-3 pt-4 border-t border-slate-200">
+            <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-slate-300" /> Disabled Languages ({supportedLanguages.filter(l => !l.enabled).length})
+            </h4>
 
-                  <button
-                    onClick={() => toggleLanguageStatus(lang.code, !lang.enabled)}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
-                      lang.enabled
-                        ? 'bg-rose-50 text-rose-600 hover:bg-rose-100'
-                        : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
-                    }`}
-                  >
-                    {lang.enabled ? 'Disable' : 'Enable'}
-                  </button>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {supportedLanguages.filter(l => !l.enabled).map(lang => (
+                <div key={lang.code} className="p-5 bg-slate-50/70 border border-slate-200 rounded-2xl flex flex-col justify-between space-y-4 opacity-75 hover:opacity-100 transition-all">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl opacity-60">{lang.flag}</span>
+                        <div>
+                          <h4 className="font-bold text-slate-700 text-sm leading-tight">{lang.name}</h4>
+                          <span className="text-xs text-slate-400 font-medium">{lang.nativeName}</span>
+                        </div>
+                      </div>
+
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-200 text-slate-600">
+                        {lang.direction.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 text-xs">
+                      <span className="text-slate-400 font-semibold">Language Code:</span>
+                      <code className="px-2 py-0.5 bg-slate-200 font-mono font-bold text-slate-600 rounded">{lang.code}</code>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-200">
+                    <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-slate-400" /> Disabled
+                    </span>
+
+                    <button
+                      onClick={() => toggleLanguageStatus(lang.code, true)}
+                      className="px-3 py-1 rounded-xl text-xs font-bold transition-all bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                    >
+                      Enable
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       )}

@@ -12,10 +12,10 @@ export interface LanguageMeta {
 export const DEFAULT_LANGUAGES: LanguageMeta[] = [
   { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧', direction: 'ltr', enabled: true },
   { code: 'fr', name: 'French', nativeName: 'Français', flag: '🇫🇷', direction: 'ltr', enabled: true },
-  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', direction: 'ltr', enabled: true },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇦🇪', direction: 'rtl', enabled: true },
-  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', direction: 'ltr', enabled: true },
-  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹', direction: 'ltr', enabled: true },
+  { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸', direction: 'ltr', enabled: false },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', flag: '🇦🇪', direction: 'rtl', enabled: false },
+  { code: 'de', name: 'German', nativeName: 'Deutsch', flag: '🇩🇪', direction: 'ltr', enabled: false },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português', flag: '🇵🇹', direction: 'ltr', enabled: false },
 ];
 
 export interface TranslationDictionary {
@@ -231,7 +231,7 @@ export const TRANSLATIONS: TranslationDictionary = {
   'ai.titleSec': { en: 'Meet Your 24/7 Personal Exam Tutor', fr: 'Rencontrez Votre Tuteur Personnel IA 24h/24' },
   'ai.subtitleSec': { en: 'Ask questions, solve step-by-step problems, and practice exam methodology in real time.', fr: 'Posez vos questions, résolvez des problèmes complexes et révisez les méthodologies d\'examen.' },
   'ai.assistantTitle': { en: 'Edulpha AI Assistant', fr: 'Assistant IA Edulpha' },
-  'ai.assistantSub': { en: 'Powered by Gemini 2.5 Flash', fr: 'Propulsé par Gemini 2.5 Flash' },
+  'ai.assistantSub': { en: 'Powered by Edulpha AI Engine', fr: 'Propulsé par le Moteur Edulpha AI' },
   'ai.langBadge': { en: 'Bilingual English / Français', fr: 'Bilingue Anglais / Français' },
   'ai.btnQuad': { en: '📐 Quadratic Equations', fr: '📐 Équations du Second Degré' },
   'ai.btnPython': { en: '💻 Python Binary Search', fr: '💻 Recherche Binaire Python' },
@@ -293,7 +293,7 @@ export const TRANSLATIONS: TranslationDictionary = {
   'pricing.premPrice': { en: '2,500 FCFA', fr: '2 500 FCFA' },
   'pricing.premDuration': { en: '/ term', fr: '/ trimestre' },
   'pricing.premFeat1': { en: 'Unlimited access to 15,000+ past papers & solutions', fr: 'Accès illimité à 15 000+ sujets et corrigés' },
-  'pricing.premFeat2': { en: 'Unlimited 24/7 Gemini AI tutor queries', fr: 'Questions illimitées 24/7 au tuteur IA' },
+  'pricing.premFeat2': { en: 'Unlimited 24/7 Edulpha AI tutor queries', fr: 'Questions illimitées 24/7 au tuteur IA Edulpha' },
   'pricing.premFeat3': { en: 'Timed mock exam simulations & analytics', fr: 'Examens blancs chronométrés et analyses' },
   'pricing.premFeat4': { en: '1v1 challenge duels & leaderboard ranking', fr: 'Duels de connaissances et classements' },
   'pricing.premFeat5': { en: 'Full offline mobile download package', fr: 'Téléchargement complet hors-ligne' },
@@ -331,8 +331,8 @@ export const TRANSLATIONS: TranslationDictionary = {
   'faq.a1': { en: 'Edulpha fully supports both the Anglophone GCE system (O-Level and A-Level) and the Francophone system (BEPC, Probatoire, and Baccalauréat) aligned with MINESEC requirements.', fr: 'Edulpha prend en charge le système anglophone GCE (O-Level et A-Level) et le système francophone (BEPC, Probatoire et Baccalauréat) conformes aux exigences du MINESEC.' },
   'faq.q2': { en: 'Can I use Edulpha offline without internet?', fr: 'Puis-je utiliser Edulpha hors-ligne sans connexion internet ?' },
   'faq.a2': { en: 'Yes! The Edulpha Android App allows you to download past questions, solutions, and lesson notes for offline study anytime.', fr: 'Oui ! L\'application Android Edulpha vous permet de télécharger les anciennes épreuves, corrigés et fiches de cours pour réviser hors-ligne.' },
-  'faq.q3': { en: 'How does the Gemini AI Tutor work?', fr: 'Comment fonctionne le tuteur IA Edulpha ?' },
-  'faq.a3': { en: 'Edulpha AI uses Google Gemini models trained on official curriculum standards to provide step-by-step solutions, explanations, and exam methodology tips 24/7.', fr: 'L\'IA Edulpha utilise des modèles Google Gemini adaptés aux programmes officiels pour vous fournir des solutions détaillées et conseils méthodologiques 24h/24.' },
+  'faq.q3': { en: 'How does the Edulpha AI Tutor work?', fr: 'Comment fonctionne le tuteur Edulpha AI ?' },
+  'faq.a3': { en: 'Edulpha AI uses advanced intelligent learning models trained on official curriculum standards to provide step-by-step solutions, explanations, and exam methodology tips 24/7.', fr: 'L\'IA Edulpha utilise des modèles intelligents adaptés aux programmes officiels pour vous fournir des solutions détaillées et conseils méthodologiques 24h/24.' },
   'faq.q4': { en: 'How do I pay for Edulpha Premium in Cameroon?', fr: 'Comment payer mon abonnement Edulpha Premium au Cameroun ?' },
   'faq.a4': { en: 'We support Mobile Money (MTN Mobile Money & Orange Money) via secure instant payment gateways.', fr: 'Nous acceptons les paiements Mobile Money (MTN Mobile Money & Orange Money) en toute sécurité.' },
   'faq.q5': { en: 'Can teachers and schools create custom exams on Edulpha?', fr: 'Les enseignants et écoles peuvent-ils créer leurs propres examens ?' },
@@ -389,6 +389,9 @@ export const getTranslation = (
   if (typeof key === 'string' && key.includes('.')) {
     const parts = key.split('.');
     const lastPart = parts[parts.length - 1];
+    if (['title', 'subtitle', 'description', 'label', 'text'].includes(lastPart)) {
+      return '';
+    }
     return lastPart.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
   }
   return key;
