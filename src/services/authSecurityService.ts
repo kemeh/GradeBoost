@@ -45,7 +45,7 @@ export async function checkAccountLockout(email: string): Promise<LockoutState> 
 
     return { isLocked: false, remainingSeconds: 0, failedAttempts };
   } catch (error) {
-    console.error('Error checking account lockout state:', error);
+    // If client is offline or network unavailable, degrade gracefully without blocking user login
     return { isLocked: false, remainingSeconds: 0, failedAttempts: 0 };
   }
 }
@@ -94,7 +94,6 @@ export async function recordFailedAttempt(email: string): Promise<LockoutState> 
 
     return { isLocked, remainingSeconds, failedAttempts: attempts };
   } catch (error) {
-    console.error('Error recording failed login attempt:', error);
     return { isLocked: false, remainingSeconds: 0, failedAttempts: 0 };
   }
 }
@@ -106,7 +105,7 @@ export async function clearFailedAttempts(email: string): Promise<void> {
     const lockRef = doc(db, 'auth_security', key);
     await deleteDoc(lockRef);
   } catch (error) {
-    console.error('Error clearing failed attempts:', error);
+    // Graceful offline fallback
   }
 }
 
@@ -134,6 +133,6 @@ export async function adminUnlockAccount(email: string, userId?: string): Promis
       details: 'Account manually unlocked by Administrator.',
     });
   } catch (error) {
-    console.error('Error unlocking account by Admin:', error);
+    // Graceful offline fallback
   }
 }
