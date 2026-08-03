@@ -19,6 +19,7 @@ import FileUpload from '../components/FileUpload';
 import { AIAdminDashboard } from '../components/GradeBoostAI/AIAdminDashboard';
 import { AdminCurriculumManager } from '../components/AdminCurriculumManager';
 import { AdminTranslationManager } from '../components/AdminTranslationManager';
+import AdminNavigationManagement from '../components/admin/AdminNavigationManagement';
 
 export default function AdminSettings() {
   const navigate = useNavigate();
@@ -421,6 +422,15 @@ export default function AdminSettings() {
               transition={{ delay: 0.025 }}
             >
               <AdminTranslationManager />
+            </motion.section>
+
+            {/* Navigation Bar Builder & Admin Extensibility */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.028 }}
+            >
+              <AdminNavigationManagement />
             </motion.section>
 
             {/* Edulpha AI System Configuration & Moderation */}

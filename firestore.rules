@@ -529,6 +529,102 @@ service cloud.firestore {
     }
 
     // ===============================================================
+    // Subscription Plans, Coupons, Payment Methods & Receipts
+    // ===============================================================
+    match /subscription_plans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /coupons/{couponId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /payment_methods/{methodId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /payment_receipts/{receiptId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    match /refund_requests/{refundId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // Forum, Discussions & Moderation
+    // ===============================================================
+    match /forum_categories/{categoryId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /forum_discussions/{discussionId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    match /forum_replies/{replyId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.authorId == request.auth.uid || isAdmin());
+    }
+
+    match /forum_reports/{reportId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // Announcements & Notifications
+    // ===============================================================
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /user_notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    match /notification_preferences/{userId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isOwner(userId) || isAdmin());
+      allow create, update: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    match /notification_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Documentation
+    match /docs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /platform_docs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ===============================================================
     // GradeBoost AI Collections
     // ===============================================================
     match /ai_conversations/{id} {

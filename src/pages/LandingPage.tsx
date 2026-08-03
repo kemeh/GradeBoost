@@ -27,6 +27,7 @@ import { SEO } from '../components/SEO';
 import { StatsService, PlatformStats } from '../services/statsService';
 import { TestimonialService } from '../services/testimonialService';
 import { Testimonial } from '../types/testimonial';
+import Navbar from '../components/navigation/Navbar';
 
 export default function LandingPage() {
   const { user, loading, isAdmin } = useAuth();
@@ -127,68 +128,8 @@ export default function LandingPage() {
         </a>
       </div>
 
-      {/* 1. Coursera-Inspired Navigation Bar */}
-      <nav className="sticky top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between gap-6">
-          
-          {/* Logo & Brand */}
-          <div className="flex items-center gap-3 cursor-pointer shrink-0" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <img 
-              src={logoUrl || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=120&auto=format&fit=crop&q=80"} 
-              alt="Edulpha Logo" 
-              className="h-10 w-auto rounded-xl object-contain shadow-sm"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
-            <div className="flex flex-col">
-              <span className="text-2xl font-black tracking-tight text-slate-900">
-                Edulpha<span className="text-emerald-600">.</span>
-              </span>
-              <span className="text-[9px] font-black tracking-widest text-indigo-600 uppercase -mt-1">
-                Learn. Practice. Succeed.
-              </span>
-            </div>
-          </div>
-
-          {/* Nav Links */}
-          <div className="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-700">
-            <a href="#curriculum" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
-              <span>Pathways</span>
-              <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-700 text-[9px] font-black rounded uppercase border border-indigo-200">Sub-systems</span>
-            </a>
-            <a href="#subjects" className="hover:text-indigo-600 transition-colors">Subjects</a>
-            <a href="#ai-tutor" className="hover:text-indigo-600 transition-colors flex items-center gap-1">
-              <Sparkles size={14} className="text-amber-500" />
-              <span>Edulpha AI</span>
-            </a>
-            <a href="#africa-focus" className="hover:text-indigo-600 transition-colors">Africa Mission</a>
-            <a href="#partners" className="hover:text-indigo-600 transition-colors">{t('nav.partners')}</a>
-            <a href="#testimonials" className="hover:text-indigo-600 transition-colors">Testimonials</a>
-            <a href="#mobile-app" className="hover:text-indigo-600 transition-colors flex items-center gap-1 text-emerald-600">
-              <Download size={14} />
-              <span>Mobile App</span>
-            </a>
-          </div>
-
-          {/* Action Tools */}
-          <div className="flex items-center gap-3 shrink-0">
-            <LanguageSwitcher />
-
-            <Link to="/auth">
-              <Button size="sm" variant="ghost" className="hidden sm:flex font-bold text-slate-700 hover:text-indigo-600">
-                {t('nav.login')}
-              </Button>
-            </Link>
-            
-            <Link to="/auth">
-              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-600/20 font-black px-4 py-2 rounded-xl">
-                Get Started Free
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </nav>
+      {/* 1. Coursera & Duolingo-Inspired Redesigned Navigation Bar */}
+      <Navbar />
 
       {/* 2. Hero Section (Coursera-Inspired Full-Width & Search Driven) */}
       <section className="pt-20 pb-24 px-6 relative overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white">
