@@ -1,10 +1,12 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { Trophy, Zap, Target } from 'lucide-react';
 import { Badge } from './ui';
 
 export default function WelcomeDashboard() {
   const { user, loading } = useAuth();
+  const { language, t } = useLanguage();
 
   if (loading || !user) {
     return (
@@ -20,9 +22,7 @@ export default function WelcomeDashboard() {
     );
   }
 
-  const firstName = user.firstName || user.name?.split(' ')[0] || 'Student';
-  // In our UserProfile, subject is a single string. 
-  // We'll wrap it in an array to match the requested UI structure.
+  const firstName = user.firstName || user.name?.split(' ')[0] || (language === 'fr' ? 'Élève' : 'Student');
   const subjects = user.subject ? [user.subject] : [];
 
   return (
@@ -30,16 +30,22 @@ export default function WelcomeDashboard() {
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
         <div className="flex-1">
           <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
-            Welcome, {firstName}! 👋
+            {language === 'fr' ? `Bienvenue, ${firstName} ! 👋` : `Welcome, ${firstName}! 👋`}
           </h1>
           <p className="text-slate-500 font-medium mb-6 max-w-2xl leading-relaxed">
             {user.paymentStatus === 'paid' 
-              ? "You have full access to all practice materials, interactive quizzes, and performance insights. Get learning, explore new concepts, and crush those goals! 🚀"
-              : "Try our free sample questions or unlock the full course for complete access to all materials. Get learning, explore new concepts, and crush those goals! 🚀"}
+              ? (language === 'fr'
+                  ? "Vous disposez d'un accès complet à tout le matériel de révision, quiz interactifs et statistiques de performance. Bonnes révisions ! 🚀"
+                  : "You have full access to all practice materials, interactive quizzes, and performance insights. Get learning, explore new concepts, and crush those goals! 🚀")
+              : (language === 'fr'
+                  ? "Essayez nos sujets d'exemple gratuits ou débloquez la formation complète. Explorez de nouveaux concepts et atteignez vos objectifs ! 🚀"
+                  : "Try our free sample questions or unlock the full course for complete access to all materials. Get learning, explore new concepts, and crush those goals! 🚀")}
           </p>
           
           <div className="space-y-4">
-            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">Today’s subjects:</h3>
+            <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">
+              {language === 'fr' ? 'Matières du jour :' : 'Today’s subjects:'}
+            </h3>
             {subjects.length > 0 ? (
               <div className="flex flex-wrap gap-3">
                 {subjects.map((subject, index) => (
@@ -54,7 +60,9 @@ export default function WelcomeDashboard() {
               </div>
             ) : (
               <p className="text-slate-400 italic text-sm">
-                No subjects assigned yet. Check your profile to set your target subject!
+                {language === 'fr'
+                  ? "Aucune matière attribuée pour l'instant. Mettez à jour votre profil pour choisir votre matière principale !"
+                  : "No subjects assigned yet. Check your profile to set your target subject!"}
               </p>
             )}
           </div>
@@ -63,11 +71,13 @@ export default function WelcomeDashboard() {
         <div className="flex flex-wrap items-center gap-4 lg:flex-col lg:items-end">
           <Badge variant="primary" className="px-4 py-2 text-sm font-black">
             <Target size={16} className="mr-2" />
-            Target: Grade {user.targetGrade || 'A'}
+            {language === 'fr' ? `Objectif : Note ${user.targetGrade || 'A'}` : `Target: Grade ${user.targetGrade || 'A'}`}
           </Badge>
           <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-100">
             <Zap className="text-amber-500" size={16} />
-            <span className="text-sm font-black text-amber-700">{user.streak || 0} Day Streak</span>
+            <span className="text-sm font-black text-amber-700">
+              {language === 'fr' ? `${user.streak || 0} Jours de Suite` : `${user.streak || 0} Day Streak`}
+            </span>
           </div>
           <div className="flex items-center gap-2 px-4 py-2 bg-indigo-50 rounded-xl border border-indigo-100">
             <Trophy className="text-indigo-600" size={16} />
