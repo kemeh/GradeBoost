@@ -1,4 +1,5 @@
 import express from "express";
+import compression from "compression";
 import { createServer } from "http";
 import path from "path";
 import axios from "axios";
@@ -39,6 +40,7 @@ const paymentLimiter = rateLimit({
 
 async function startServer() {
   const app = express();
+  app.use(compression());
   const httpServer = createServer(app);
 
   const PORT = 3000;
@@ -1122,7 +1124,17 @@ Return ONLY valid JSON matching this structure:
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      maxAge: '7d',
+      etag: true,
+      setHeaders: (res, path) => {
+        if (path.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+        }
+      }
+    }));
     app.get('*', (req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
