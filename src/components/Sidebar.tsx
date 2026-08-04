@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, Target, Trophy, 
-  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield
+  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield, FlaskConical
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +36,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const studentLinks = [
     { icon: LayoutDashboard, label: t('nav.dashboard', 'Dashboard'), path: '/dashboard' },
+    { icon: FlaskConical, label: `🔬 ${t('sidebar.practicalLab', 'Virtual Practical Lab')}`, path: '/practicals' },
     { icon: Smartphone, label: `📱 ${t('sidebar.mobileApp', 'Edulpha Mobile App')}`, path: '/mobile-app' },
     { icon: TrendingUp, label: t('sidebar.analytics', 'Learning Analytics'), path: '/analytics' },
     { icon: Bell, label: t('sidebar.notifications', 'Notifications & Alerts'), path: '/notifications' },
@@ -54,6 +55,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const teacherLinks = [
     { icon: LayoutDashboard, label: t('sidebar.teacherDashboard', 'Teacher Dashboard'), path: '/teacher' },
+    { icon: FlaskConical, label: `🔬 ${t('sidebar.practicalStudio', 'Practical Studio')}`, path: '/admin/practicals' },
     { icon: Smartphone, label: `📱 ${t('sidebar.mobileApp', 'Edulpha Mobile App')}`, path: '/mobile-app' },
     { icon: TrendingUp, label: t('sidebar.classAnalytics', 'Class Analytics'), path: '/teacher/analytics' },
     { icon: Bell, label: t('sidebar.notifications', 'Notifications & Alerts'), path: '/notifications' },
@@ -69,6 +71,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const adminLinks = [
     { icon: ShieldCheck, label: t('sidebar.usersSystemAdmin', 'Users & System Admin'), path: '/admin' },
+    { icon: FlaskConical, label: `🔬 ${t('sidebar.practicalStudio', 'Practical Studio')}`, path: '/admin/practicals' },
     { icon: Smartphone, label: `📱 ${t('sidebar.mobileApp', 'Edulpha Mobile App')}`, path: '/mobile-app' },
     { icon: Shield, label: `🔒 ${t('sidebar.securityPerformance', 'Security & Performance')}`, path: '/admin/security' },
     { icon: TrendingUp, label: t('sidebar.executiveAnalytics', 'Executive Analytics & Reports'), path: '/admin/analytics' },

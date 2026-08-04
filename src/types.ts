@@ -1664,6 +1664,137 @@ export interface AnalyticsFilter {
   role?: string;
 }
 
+// ===============================================================
+// Edulpha Virtual Practical Lab Interfaces
+// ===============================================================
+
+export type PracticalType = 'coding' | 'science_simulation' | 'step_by_step' | 'practical_assignment';
+export type PracticalSubject = 'Computer Science' | 'ICT' | 'Physics' | 'Chemistry' | 'Biology' | 'Technical Education' | string;
+export type PracticalDifficulty = 'Beginner' | 'Intermediate' | 'Advanced' | 'Easy' | 'Medium' | 'Hard';
+export type PracticalStatus = 'draft' | 'published' | 'archived';
+export type CodingLabLanguage = 'c' | 'cpp' | 'python' | 'javascript' | 'html' | 'css' | 'sql';
+
+export interface CodingTestCase {
+  id: string;
+  input: string;
+  expectedOutput: string;
+  isHidden?: boolean;
+  weight?: number;
+  description?: string;
+}
+
+export interface SQLDatabaseTable {
+  tableName: string;
+  schema: string;
+  dataSql: string;
+  description?: string;
+}
+
+export interface PracticalCodingConfig {
+  language: CodingLabLanguage;
+  starterCode: string;
+  solutionCode?: string;
+  testCases: CodingTestCase[];
+  allowedLanguages?: CodingLabLanguage[];
+  databaseTables?: SQLDatabaseTable[];
+}
+
+export interface PracticalSimulationConfig {
+  simulationType: 
+    | 'biology_microscope' 
+    | 'biology_food_test' 
+    | 'biology_quadrat' 
+    | 'physics_ohms_law' 
+    | 'physics_motion' 
+    | 'physics_optics' 
+    | 'chemistry_titration' 
+    | 'chemistry_ph' 
+    | 'chemistry_separation' 
+    | 'custom';
+  initialParams?: Record<string, any>;
+  interactiveGuide?: Array<{ step: number; title: string; instruction: string }>;
+}
+
+export interface PracticalAssessmentQuestion {
+  id: string;
+  type: 'mcq' | 'structured' | 'observation' | 'calculation';
+  question: string;
+  options?: string[];
+  correctAnswer?: string;
+  explanation?: string;
+  marks: number;
+}
+
+export interface PracticalActivity {
+  id: string;
+  title: string;
+  description: string;
+  subject: PracticalSubject;
+  level: string; // e.g. Ordinary Level, Advanced Level, BEPC, Baccalauréat
+  classLevel?: string;
+  topic: string;
+  durationMinutes: number;
+  difficulty: PracticalDifficulty;
+  practicalType: PracticalType;
+  instructions: string; // Markdown / rich text
+  attachments?: Array<{ id: string; name: string; url: string; type: 'pdf' | 'image' | 'doc' | 'zip' | 'link' }>;
+  codingConfig?: PracticalCodingConfig;
+  simulationConfig?: PracticalSimulationConfig;
+  assessmentQuestions?: PracticalAssessmentQuestion[];
+  totalMarks?: number;
+  status: PracticalStatus;
+  createdBy?: string;
+  createdByName?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface PracticalReportData {
+  aim: string;
+  apparatus: string;
+  procedure: string;
+  observations: string;
+  results: string;
+  analysis: string;
+  conclusion: string;
+  attachments?: string[];
+}
+
+export interface PracticalAttempt {
+  id: string;
+  practicalId: string;
+  practicalTitle?: string;
+  subject?: PracticalSubject;
+  practicalType?: PracticalType;
+  userId: string;
+  userName?: string;
+  userEmail?: string;
+  status: 'in_progress' | 'submitted' | 'graded';
+  startedAt: any;
+  submittedAt?: any;
+  timeSpentSeconds: number;
+  codingSubmissions?: Record<string, {
+    code: string;
+    language: CodingLabLanguage;
+    testResults?: Array<{ testId: string; passed: boolean; actualOutput: string; expectedOutput: string }>;
+    passedAll?: boolean;
+    scorePercent?: number;
+  }>;
+  simulationState?: Record<string, any>;
+  report?: PracticalReportData;
+  questionAnswers?: Record<string, any>;
+  score?: number;
+  maxScore?: number;
+  grade?: string;
+  feedback?: string;
+  aiFeedback?: string;
+  gradedBy?: string;
+  gradedAt?: any;
+}
+
+export interface PracticalSubmission extends PracticalAttempt {}
+
+
 
 
 

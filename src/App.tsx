@@ -51,6 +51,8 @@ const ExamResultScreen = lazy(() => import('./pages/ExamResultScreen'));
 const ExamAnalyticsDashboard = lazy(() => import('./pages/ExamAnalyticsDashboard'));
 const DocumentationHub = lazy(() => import('./pages/DocumentationHub'));
 const PublicDocumentView = lazy(() => import('./pages/PublicDocumentView'));
+const StudentPracticalLab = lazy(() => import('./pages/StudentPracticalLab'));
+const AdminPracticalManager = lazy(() => import('./pages/AdminPracticalManager'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
@@ -149,6 +151,8 @@ export default function App() {
               <Route path="/daily-drill-new" element={<PrivateRoute><DailyDrill /></PrivateRoute>} />
               <Route path="/random-practice" element={<PrivateRoute><RandomPractice /></PrivateRoute>} />
               <Route path="/challenges" element={<PrivateRoute><LearningChallenges /></PrivateRoute>} />
+              <Route path="/practicals" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
+              <Route path="/practicals/:id" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
               <Route path="/lms" element={<PrivateRoute><StudentLMSPortal /></PrivateRoute>} />
               <Route path="/exams" element={<PrivateRoute><StudentExamPortal /></PrivateRoute>} />
               <Route path="/exams/:examId/take" element={<PrivateRoute><ExamSession /></PrivateRoute>} />
@@ -165,6 +169,7 @@ export default function App() {
               <Route path="/admin/bulk-import" element={<TeacherRoute><AdminBulkImport /></TeacherRoute>} />
               <Route path="/admin/exam-builder" element={<TeacherRoute><AdminExamBuilder /></TeacherRoute>} />
               <Route path="/admin/challenges" element={<TeacherRoute><AdminChallenges /></TeacherRoute>} />
+              <Route path="/admin/practicals" element={<TeacherRoute><AdminPracticalManager /></TeacherRoute>} />
               <Route path="/admin/daily-drill" element={<TeacherRoute><AdminDailyDrill /></TeacherRoute>} />
               <Route path="/admin/resources" element={<TeacherRoute><AdminManagement /></TeacherRoute>} />
               <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />

@@ -786,6 +786,37 @@ export default function StudentDashboard() {
               </Card>
             </div>
 
+            {/* Virtual Practical Lab Promo Banner */}
+            <Card className="p-6 bg-gradient-to-r from-blue-950 via-slate-900 to-amber-950/70 text-white rounded-3xl border border-amber-500/30 space-y-3 relative overflow-hidden shadow-xl">
+              <div className="flex items-center justify-between">
+                <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles size={14} className="text-amber-400" /> New Module
+                </span>
+                <span className="text-xs text-amber-300 font-bold font-mono">GCE Practical Examinations</span>
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                  Edulpha Virtual Practical Lab
+                </h3>
+                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                  Interactive multi-language code execution sandboxes for C, C++, Python, JS, HTML & SQL, plus virtual Biology microscopy, Chemistry titration, and Physics circuit simulations.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <Button 
+                  onClick={() => navigate('/practicals')} 
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs gap-2 rounded-xl uppercase tracking-wider shadow-lg"
+                >
+                  Enter Virtual Practical Lab <ArrowRight size={14} />
+                </Button>
+                <span className="text-[11px] text-amber-300/80 font-mono hidden sm:inline">
+                  Automated Test Cases + AI Socratic Tutor
+                </span>
+              </div>
+            </Card>
+
             {/* Continue Learning Widget */}
             {lessons.length > 0 && (
               <Card className="p-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl space-y-4">
