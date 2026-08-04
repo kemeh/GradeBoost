@@ -65,8 +65,16 @@ export default function LogoImageUploader({
   /** Compress and optimize images client-side before upload */
   const optimizeImage = (fileToOptimize: File): Promise<Blob | File> => {
     return new Promise((resolve) => {
-      // If SVG or ICO, do not compress
-      if (fileToOptimize.type === 'image/svg+xml' || fileToOptimize.type === 'image/x-icon' || fileToOptimize.name.endsWith('.ico')) {
+      console.log(`[LogoUpload Stage 2] Starting image optimization for: "${fileToOptimize.name}"`);
+      // If SVG or ICO or GIF, skip canvas compression
+      if (
+        fileToOptimize.type === 'image/svg+xml' ||
+        fileToOptimize.type === 'image/x-icon' ||
+        fileToOptimize.type === 'image/gif' ||
+        fileToOptimize.name.toLowerCase().endsWith('.ico') ||
+        fileToOptimize.name.toLowerCase().endsWith('.svg')
+      ) {
+        console.log(`[LogoUpload Stage 2] Bypassing canvas compression for vector/icon type: ${fileToOptimize.type}`);
         resolve(fileToOptimize);
         return;
       }
@@ -95,6 +103,7 @@ export default function LogoImageUploader({
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (!ctx) {
+            console.warn('[LogoUpload Stage 2 Warning] Canvas context unavailable, using original file.');
             resolve(fileToOptimize);
             return;
           }
@@ -105,8 +114,10 @@ export default function LogoImageUploader({
           canvas.toBlob(
             (blob) => {
               if (blob) {
+                console.log(`[LogoUpload Stage 2 Complete] Canvas output blob created: ${(blob.size / 1024).toFixed(2)} KB`);
                 resolve(blob);
               } else {
+                console.warn('[LogoUpload Stage 2 Warning] canvas.toBlob returned null, using original file.');
                 resolve(fileToOptimize);
               }
             },
@@ -114,10 +125,16 @@ export default function LogoImageUploader({
             0.85
           );
         };
-        img.onerror = () => resolve(fileToOptimize);
+        img.onerror = (err) => {
+          console.warn('[LogoUpload Stage 2 Warning] Image element failed to load, using original file:', err);
+          resolve(fileToOptimize);
+        };
         img.src = e.target?.result as string;
       };
-      reader.onerror = () => resolve(fileToOptimize);
+      reader.onerror = (err) => {
+        console.warn('[LogoUpload Stage 2 Warning] FileReader error, using original file:', err);
+        resolve(fileToOptimize);
+      };
       reader.readAsDataURL(fileToOptimize);
     });
   };
@@ -133,8 +150,12 @@ export default function LogoImageUploader({
   };
 
   const startUpload = useCallback(async (selectedFile: File) => {
+    console.log(`================ LOGO UPLOAD TRACE START ================`);
+    console.log(`[LogoUpload Stage 1: Validation] Selected File: "${selectedFile.name}", Size: ${(selectedFile.size / 1024).toFixed(2)} KB, MIME: "${selectedFile.type}"`);
+
     if (!auth.currentUser || !isAdmin) {
       const msg = 'Administrator privileges required for logo upload.';
+      console.error(`[LogoUpload Stage 1 Error] Auth check failed. User: ${auth.currentUser?.uid || 'none'}, isAdmin: ${isAdmin}`);
       setError(msg);
       toast.error(msg);
       return;
@@ -145,69 +166,129 @@ export default function LogoImageUploader({
     setError(null);
 
     try {
-      // Step 1: Optimize image
+      // Stage 2: Optimize image
+      console.log(`[LogoUpload Stage 2] Initiating client-side optimization...`);
       const optimizedBlob = await optimizeImage(selectedFile);
+      if (!isMounted.current) return;
       setProgress(40);
+      console.log(`[LogoUpload Stage 2 Complete] Progress advanced to 40%. Entering Stage 3: Storage Upload.`);
 
-      // Step 2: Attempt Firebase Storage upload
+      const storagePath = `${folder}/${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      let uploadSuccess = false;
+
+      // Stage 3 Tier 1: Attempt Firebase Storage Client SDK with a 6-second timeout safeguard
       try {
-        const storagePath = `${folder}/${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        console.log(`[LogoUpload Stage 3: Tier 1] Trying Firebase Storage Client Upload (Path: ${storagePath})...`);
         const storageRef = ref(storage, storagePath);
         const uploadTask = uploadBytesResumable(storageRef, optimizedBlob);
 
-        uploadTask.on(
-          'state_changed',
-          (snapshot) => {
-            if (!isMounted.current) return;
-            const prog = 40 + (snapshot.bytesTransferred / snapshot.totalBytes) * 55;
-            setProgress(Math.round(prog));
-          },
-          async (err) => {
-            console.warn('Firebase Storage upload failed, executing Data URL fallback:', err);
-            // Fallback to Data URL
-            const dataUrl = await blobToDataURL(optimizedBlob);
-            if (isMounted.current) {
-              setImageUrl(dataUrl);
-              setProgress(100);
-              setUploading(false);
-              onUploadComplete(dataUrl);
-              toast.success(`${label} uploaded and optimized!`);
+        const clientUploadPromise = new Promise<string>((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              if (!isMounted.current) return;
+              const transferred = snapshot.bytesTransferred || 0;
+              const total = snapshot.totalBytes || 1;
+              const prog = 40 + (transferred / total) * 50;
+              console.log(`[LogoUpload Stage 3: Firebase Progress] Transferred: ${transferred}/${total} (${Math.round(prog)}%)`);
+              setProgress(Math.round(prog));
+            },
+            (err) => {
+              console.warn('[LogoUpload Stage 3: Firebase Error]', err);
+              reject(err);
+            },
+            async () => {
+              try {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(url);
+              } catch (urlErr) {
+                reject(urlErr);
+              }
             }
-          },
-          async () => {
-            if (!isMounted.current) return;
+          );
+        });
+
+        const timeoutPromise = new Promise<string>((_, reject) => {
+          setTimeout(() => {
             try {
-              const url = await getDownloadURL(uploadTask.snapshot.ref);
-              setImageUrl(url);
-              setProgress(100);
-              setUploading(false);
-              onUploadComplete(url);
-              toast.success(`${label} uploaded successfully!`);
-            } catch (urlErr) {
-              const dataUrl = await blobToDataURL(optimizedBlob);
-              setImageUrl(dataUrl);
-              setProgress(100);
-              setUploading(false);
-              onUploadComplete(dataUrl);
-              toast.success(`${label} uploaded!`);
+              uploadTask.cancel();
+            } catch (e) {
+              // Ignore cancel error
             }
-          }
-        );
-      } catch (storageErr) {
-        console.warn('Direct storage error, falling back to data URL:', storageErr);
+            reject(new Error('Firebase Storage connection timed out (6s threshold exceeded). Switching to Edulpha Server Upload API.'));
+          }, 6000);
+        });
+
+        const firebaseUrl = await Promise.race([clientUploadPromise, timeoutPromise]);
+        if (isMounted.current) {
+          console.log(`[LogoUpload Stage 4: Success] Firebase Client Storage upload completed: ${firebaseUrl}`);
+          setImageUrl(firebaseUrl);
+          setProgress(100);
+          setUploading(false);
+          onUploadComplete(firebaseUrl);
+          toast.success(`${label} uploaded successfully!`);
+          uploadSuccess = true;
+        }
+      } catch (tier1Err: any) {
+        console.warn(`[LogoUpload Stage 3: Tier 1 Stalled/Failed] ${tier1Err.message || tier1Err}`);
+      }
+
+      if (uploadSuccess || !isMounted.current) return;
+
+      // Stage 3 Tier 2: Edulpha Server API Upload (/api/upload)
+      try {
+        console.log(`[LogoUpload Stage 3: Tier 2] Initiating Server Upload API (/api/upload)...`);
         const dataUrl = await blobToDataURL(optimizedBlob);
-        setImageUrl(dataUrl);
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileData: dataUrl,
+            fileName: selectedFile.name,
+            fileType: selectedFile.type,
+            folder,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url && isMounted.current) {
+            console.log(`[LogoUpload Stage 4: Success] Server API upload completed: ${data.url} (Provider: ${data.provider})`);
+            setImageUrl(data.url);
+            setProgress(100);
+            setUploading(false);
+            onUploadComplete(data.url);
+            toast.success(`${label} uploaded and optimized!`);
+            uploadSuccess = true;
+          }
+        } else {
+          console.warn('[LogoUpload Stage 3: Tier 2 Error] Server API returned status:', res.status);
+        }
+      } catch (tier2Err: any) {
+        console.warn(`[LogoUpload Stage 3: Tier 2 Failed] ${tier2Err.message || tier2Err}`);
+      }
+
+      if (uploadSuccess || !isMounted.current) return;
+
+      // Stage 3 Tier 3: Client-side Optimized Data URL Fallback
+      console.log(`[LogoUpload Stage 3: Tier 3] Using Client Optimized Data URL fallback.`);
+      const fallbackDataUrl = await blobToDataURL(optimizedBlob);
+      if (isMounted.current) {
+        setImageUrl(fallbackDataUrl);
         setProgress(100);
         setUploading(false);
-        onUploadComplete(dataUrl);
-        toast.success(`${label} saved!`);
+        onUploadComplete(fallbackDataUrl);
+        toast.success(`${label} uploaded and saved!`);
+        console.log(`[LogoUpload Stage 4: Success] Fallback Data URL active.`);
       }
     } catch (err: any) {
       if (!isMounted.current) return;
-      console.error('Upload processing error:', err);
-      setError('Image optimization failed. Please try a different image file.');
+      console.error('[LogoUpload Fatal Error]', err);
+      setError('Image optimization & upload failed. Please try a different file.');
       setUploading(false);
       toast.error('Image upload failed.');
+    } finally {
+      console.log(`================ LOGO UPLOAD TRACE END ================`);
     }
   }, [folder, label, isAdmin, onUploadComplete]);
 

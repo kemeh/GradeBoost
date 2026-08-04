@@ -132,7 +132,7 @@ export default function FileUpload({
   };
 
   const startUpload = useCallback(async (fileToUpload: File) => {
-    console.log('--- STARTING UPLOAD ---');
+    console.log('--- STARTING FILE UPLOAD ---');
     console.log('File:', fileToUpload.name, 'Size:', (fileToUpload.size / 1024 / 1024).toFixed(2), 'MB');
     
     if (!auth.currentUser) {
@@ -152,100 +152,130 @@ export default function FileUpload({
     }
 
     setUploading(true);
-    setProgress(10); // Initial progress to show it started
+    setProgress(15);
     setError(null);
     if (onUploadStart) onUploadStart();
 
-    try {
-      const bucket = storage.app.options.storageBucket;
-      console.log('Bucket:', bucket);
-      console.log('Folder:', folder);
-      console.log('User UID:', auth.currentUser.uid);
-      
-      const storageRef = ref(storage, `${folder}/${Date.now()}_${fileToUpload.name}`);
-      console.log('Storage path:', storageRef.fullPath);
-      
-      // Using uploadBytesResumable for better progress feedback and consistency with bulk import
-      console.log('Initiating uploadBytesResumable...');
-      const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+    let uploadSuccess = false;
 
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          if (!isMounted.current) return;
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log('Upload progress:', progress.toFixed(2) + '%');
-          setProgress(progress);
-        },
-        (err: any) => {
-          if (!isMounted.current) return;
-          
-          console.error('--- UPLOAD ERROR (Task) ---');
-          console.error('Code:', err.code);
-          console.error('Message:', err.message);
-          console.error('--------------------');
-          
-          let errorMessage = 'Upload failed. Check your connection.';
-          
-          if (err.code === 'storage/unauthorized') {
-            errorMessage = `Permission denied (${err.code}). Ensure you are an admin and the file size is within limits.`;
-          } else if (err.code === 'storage/retry-limit-exceeded') {
-            errorMessage = `Upload timed out (${err.code}). This might be a network issue or an incorrect storage bucket configuration.`;
-          } else if (err.code === 'storage/canceled') {
-            errorMessage = 'Upload canceled.';
-          }
-          
-          setError(errorMessage);
+    // Helper: Convert File to Data URL
+    const fileToDataURL = (file: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    };
+
+    try {
+      const storagePath = `${folder}/${Date.now()}_${fileToUpload.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      console.log('Target Storage path:', storagePath);
+
+      // Tier 1: Client Firebase Storage Upload with 6-second Timeout
+      try {
+        const storageRef = ref(storage, storagePath);
+        const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+
+        const clientUploadPromise = new Promise<string>((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              if (!isMounted.current) return;
+              const transferred = snapshot.bytesTransferred || 0;
+              const total = snapshot.totalBytes || 1;
+              const prog = 15 + (transferred / total) * 75;
+              console.log('Firebase progress:', Math.round(prog) + '%');
+              setProgress(Math.round(prog));
+            },
+            (err) => reject(err),
+            async () => {
+              try {
+                const url = await getDownloadURL(uploadTask.snapshot.ref);
+                resolve(url);
+              } catch (urlErr) {
+                reject(urlErr);
+              }
+            }
+          );
+        });
+
+        const timeoutPromise = new Promise<string>((_, reject) => {
+          setTimeout(() => {
+            try { uploadTask.cancel(); } catch (e) {}
+            reject(new Error('Firebase Storage timeout (6s threshold). Using Server Upload API.'));
+          }, 6000);
+        });
+
+        const firebaseUrl = await Promise.race([clientUploadPromise, timeoutPromise]);
+        if (isMounted.current) {
+          const sizeStr = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
+          setDownloadUrl(firebaseUrl);
           setUploading(false);
-          if (onUploadError) onUploadError(errorMessage);
-          toast.error(errorMessage);
-        },
-        async () => {
-          if (!isMounted.current) return;
-          try {
-            console.log('Upload successful, getting download URL...');
-            const url = await getDownloadURL(uploadTask.snapshot.ref);
-            const size = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
-            
-            setDownloadUrl(url);
+          setProgress(100);
+          onUploadComplete(firebaseUrl, fileToUpload.name, sizeStr);
+          toast.success('Upload complete!');
+          uploadSuccess = true;
+        }
+      } catch (tier1Err: any) {
+        console.warn('Firebase Storage client upload stalled/failed, attempting Server Upload API:', tier1Err.message || tier1Err);
+      }
+
+      if (uploadSuccess || !isMounted.current) return;
+
+      // Tier 2: Server API Upload (/api/upload)
+      try {
+        console.log('Attempting Server Upload API (/api/upload)...');
+        const dataUrl = await fileToDataURL(fileToUpload);
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileData: dataUrl,
+            fileName: fileToUpload.name,
+            fileType: fileToUpload.type,
+            folder,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.url && isMounted.current) {
+            const sizeStr = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
+            setDownloadUrl(data.url);
             setUploading(false);
             setProgress(100);
-            onUploadComplete(url, fileToUpload.name, size);
+            onUploadComplete(data.url, fileToUpload.name, sizeStr);
             toast.success('Upload complete!');
-          } catch (err: any) {
-            if (!isMounted.current) return;
-            console.error('Error getting download URL:', err);
-            setError('Failed to finalize upload.');
-            setUploading(false);
+            uploadSuccess = true;
           }
         }
-      );
+      } catch (tier2Err: any) {
+        console.warn('Server Upload API failed, using Data URL fallback:', tier2Err.message || tier2Err);
+      }
+
+      if (uploadSuccess || !isMounted.current) return;
+
+      // Tier 3: Client Data URL Fallback
+      const fallbackUrl = await fileToDataURL(fileToUpload);
+      if (isMounted.current) {
+        const sizeStr = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
+        setDownloadUrl(fallbackUrl);
+        setUploading(false);
+        setProgress(100);
+        onUploadComplete(fallbackUrl, fileToUpload.name, sizeStr);
+        toast.success('Upload complete!');
+      }
     } catch (err: any) {
       if (!isMounted.current) return;
-      
-      console.error('--- UPLOAD ERROR ---');
-      console.error('Code:', err.code);
-      console.error('Message:', err.message);
-      console.error('Full Error:', err);
-      console.error('--------------------');
-      
-      let errorMessage = 'Upload failed. Check your connection.';
-      
-      if (err.code === 'storage/unauthorized') {
-        errorMessage = `Permission denied (${err.code}). Ensure you are an admin and the file size is within limits.`;
-      } else if (err.code === 'storage/retry-limit-exceeded') {
-        errorMessage = `Upload timed out (${err.code}). This might be a network issue or an incorrect storage bucket configuration. Please check if Firebase Storage is enabled in your console.`;
-      } else if (err.code === 'storage/unknown') {
-        errorMessage = `An unknown error occurred (${err.code}). Please try again.`;
-      } else {
-        errorMessage = `Upload failed: ${err.message || 'Unknown error'} (${err.code || 'no-code'})`;
-      }
-      
+      console.error('--- UPLOAD ERROR ---', err);
+      const errorMessage = `Upload failed: ${err.message || 'Unknown error'}`;
       setError(errorMessage);
       setUploading(false);
       if (onUploadError) onUploadError(errorMessage);
       toast.error(errorMessage);
     }
-  }, [folder, onUploadComplete, onUploadStart, onUploadError, storage, isAdmin]);
+  }, [folder, onUploadComplete, onUploadStart, onUploadError, isAdmin]);
 
   const handleRetry = () => {
     if (file) {

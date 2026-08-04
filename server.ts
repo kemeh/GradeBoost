@@ -1,5 +1,6 @@
 import express from "express";
 import compression from "compression";
+import helmet from "helmet";
 import { createServer } from "http";
 import path from "path";
 import axios from "axios";
@@ -20,10 +21,26 @@ if (!admin.apps.length) {
 
 const db = getAdminFirestore(admin.app(), "ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d");
 
-// Rate Limiters
+// Security Rate Limiters
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15,
+  message: { error: "Too many authentication attempts. Please try again later for security." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const aiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 30,
+  message: { error: "Rate limit reached for AI services. Please wait a moment." },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -31,7 +48,7 @@ const apiLimiter = rateLimit({
 const paymentLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10,
-  message: "Too many payment attempts, please try again later",
+  message: { error: "Too many payment attempts, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -40,14 +57,102 @@ const paymentLimiter = rateLimit({
 
 async function startServer() {
   const app = express();
+  
+  // Security Headers (Helmet)
+  app.use(helmet({
+    contentSecurityPolicy: false, // Compatibility with Vite applet iframe & dev server
+    crossOriginEmbedderPolicy: false,
+    referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    xContentTypeOptions: true,
+    dnsPrefetchControl: { allow: false },
+    frameguard: false, // Applet preview is loaded in an iframe
+  }));
+
   app.use(compression());
   const httpServer = createServer(app);
 
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: "10mb" }));
   app.use("/api/", apiLimiter);
+  app.use("/api/auth/", authLimiter);
+  app.use("/api/ai/", aiLimiter);
   app.use("/api/payment/", paymentLimiter);
+
+  // ===============================================================
+  // High-Reliability File & Logo Upload Endpoint
+  // ===============================================================
+  app.post("/api/upload", async (req, res) => {
+    try {
+      console.log("[Server Upload API] Received upload request");
+      const { fileData, fileName, fileType, folder = "uploads" } = req.body;
+      
+      if (!fileData) {
+        return res.status(400).json({ error: "No file data provided" });
+      }
+
+      const safeName = (fileName || `file_${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, "_");
+      const storagePath = `${folder}/${Date.now()}_${safeName}`;
+      console.log(`[Server Upload API] Processing file: ${safeName} (${fileType || 'unknown type'}), Target path: ${storagePath}`);
+
+      // 1. Try Firebase Admin Storage if bucket is available
+      try {
+        const bucketName = process.env.STORAGE_BUCKET || "gradeboost-df887.appspot.com";
+        const bucket = admin.storage().bucket(bucketName);
+        
+        const base64Content = fileData.includes(",") ? fileData.split(",")[1] : fileData;
+        const buffer = Buffer.from(base64Content, "base64");
+        const fileRef = bucket.file(storagePath);
+
+        await fileRef.save(buffer, {
+          metadata: {
+            contentType: fileType || "image/png",
+            metadata: { uploadedVia: "EdulphaServerAPI" }
+          },
+          public: true,
+        });
+
+        const publicUrl = `https://storage.googleapis.com/${bucketName}/${storagePath}`;
+        console.log(`[Server Upload API Success] File uploaded to Firebase Admin Storage: ${publicUrl}`);
+        return res.json({
+          success: true,
+          url: publicUrl,
+          fileName: safeName,
+          size: buffer.length,
+          provider: "firebase-admin"
+        });
+      } catch (storageErr: any) {
+        console.warn("[Server Upload API Storage Warning] Storage bucket save failed, using Firestore asset storage:", storageErr.message);
+      }
+
+      // 2. Fallback: Save asset metadata & data URL in Firestore system_uploads collection
+      const uploadId = `up_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+      const uploadDoc = {
+        id: uploadId,
+        fileName: safeName,
+        fileType: fileType || "image/png",
+        folder,
+        dataUrl: fileData.length < 3 * 1024 * 1024 ? fileData : null,
+        createdAt: FieldValue.serverTimestamp(),
+      };
+
+      await db.collection("system_uploads").doc(uploadId).set(uploadDoc);
+      console.log(`[Server Upload API Success] File metadata saved to Firestore system_uploads (${uploadId})`);
+
+      const returnUrl = uploadDoc.dataUrl || fileData;
+      return res.json({
+        success: true,
+        url: returnUrl,
+        uploadId,
+        fileName: safeName,
+        provider: "firestore-asset"
+      });
+    } catch (err: any) {
+      console.error("[Server Upload API Error]", err);
+      return res.status(500).json({ error: err.message || "Failed to process file upload on server" });
+    }
+  });
 
   // ... (keep existing API routes)
 
