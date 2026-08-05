@@ -119,6 +119,12 @@ export default function AdminSettings() {
 
     setIsSaving(true);
     try {
+      console.log('[SETTINGS UPDATE] Initiating system settings update...', {
+        userId: user?.uid,
+        email: user?.email,
+        timestamp: new Date().toISOString()
+      });
+
       await updateSystemSettings(
         apiKey.trim(), 
         challengeStartDate, 
@@ -136,8 +142,16 @@ export default function AdminSettings() {
       );
       await refreshSettings();
       toast.success('Settings updated successfully');
-    } catch (error) {
-      toast.error('Failed to update settings');
+    } catch (error: any) {
+      console.error('[SETTINGS UPDATE ERROR]', {
+        userId: user?.uid,
+        errorCode: error?.code,
+        errorMessage: error?.message,
+        fullError: error,
+        timestamp: new Date().toISOString()
+      });
+      const detailedMsg = `Settings update failed: ${error?.message || 'Unknown error'}`;
+      toast.error(detailedMsg);
     } finally {
       setIsSaving(false);
     }

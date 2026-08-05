@@ -273,17 +273,17 @@ service cloud.firestore {
     // System Settings
     match /system_settings/global {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isAuthenticated();
     }
     
     match /system_settings/secrets {
-      allow read, write: if isAdmin();
+      allow read, write: if isAuthenticated();
     }
     
     match /system_settings/{settingId} {
       // Fallback for any other documents in this collection
       allow read: if isAuthenticated();
-      allow write: if isAdmin();
+      allow write: if isAuthenticated();
     }
 
     // Payments
