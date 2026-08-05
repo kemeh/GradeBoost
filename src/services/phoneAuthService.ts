@@ -13,6 +13,7 @@ import {
 import { PhoneAuthConfig, UserProfile } from '../types';
 import { getSystemSettings } from './settingsService';
 import { SmsService } from './smsService';
+import { OtpService } from './otp/otpService';
 
 export interface PhoneCarrierInfo {
   carrier: 'MTN' | 'Orange' | 'Nexttel' | 'Camtel' | 'Other';
@@ -28,6 +29,9 @@ export interface VerificationResult {
   expiresAt?: number;
   simulatedOtp?: string;
   resendCooldownSeconds?: number;
+  channelUsed?: 'whatsapp' | 'sms';
+  fallbackTriggered?: boolean;
+  fallbackReason?: string;
 }
 
 const DEFAULT_CONFIG: PhoneAuthConfig = {
@@ -37,6 +41,17 @@ const DEFAULT_CONFIG: PhoneAuthConfig = {
   otpExpiryMinutes: 5,
   maxResendAttempts: 3,
   maxVerificationAttempts: 5,
+  
+  primaryChannel: 'whatsapp',
+  enableWhatsapp: true,
+  enableSmsFallback: true,
+
+  whatsappProvider: 'simulation',
+  whatsappApiKey: '',
+  whatsappPhoneNumberId: '',
+  whatsappSenderNumber: '',
+  whatsappTemplateName: 'edulpha_otp_verification',
+
   smsProvider: 'simulation',
   smsApiKey: '',
   smsApiSecret: '',
@@ -218,12 +233,13 @@ export function generateOtpCode(length: number = 6): string {
 }
 
 /**
- * Generate and send an SMS OTP for phone verification.
+ * Generate and send an OTP for phone verification via WhatsApp (primary) or SMS (fallback).
  */
 export async function sendPhoneOtp(
   phone: string, 
   reason: 'registration' | 'login' | 'reset_password' | 'update_phone' = 'registration',
-  lang: 'en' | 'fr' = 'en'
+  lang: 'en' | 'fr' = 'en',
+  preferredChannel?: 'whatsapp' | 'sms'
 ): Promise<VerificationResult> {
   const formattedPhone = formatPhoneNumber(phone);
   const carrierInfo = detectCarrier(formattedPhone);
@@ -265,7 +281,7 @@ export async function sendPhoneOtp(
         success: false,
         message: lang === 'fr'
           ? 'Nombre maximum de tentatives d\'envoi atteint. Veuillez réessayer dans 1 heure.'
-          : 'Maximum SMS resend limit reached. Please try again in 1 hour.'
+          : 'Maximum verification resend limit reached. Please try again in 1 hour.'
       };
     }
   }
@@ -275,6 +291,22 @@ export async function sendPhoneOtp(
 
   const resendCount = existingDoc.exists() ? (existingDoc.data().resendCount || 0) + 1 : 1;
   const firstSentAt = existingDoc.exists() ? (existingDoc.data().firstSentAt || now) : now;
+
+  // Dispatch OTP via modular OtpService (WhatsApp primary + SMS fallback)
+  const otpRes = await OtpService.sendOtpWithFallback(
+    formattedPhone,
+    otpCode,
+    config,
+    lang,
+    preferredChannel
+  );
+
+  if (!otpRes.success) {
+    return {
+      success: false,
+      message: otpRes.error || 'Failed to dispatch verification code. Please try again.'
+    };
+  }
 
   // Store verification record in Firestore
   await setDoc(verificationRef, {
@@ -287,26 +319,37 @@ export async function sendPhoneOtp(
     resendCount,
     verificationAttempts: 0,
     verified: false,
-    carrier: carrierInfo.carrier
+    carrier: carrierInfo.carrier,
+    channelUsed: otpRes.channel,
+    providerUsed: otpRes.provider,
+    fallbackTriggered: otpRes.fallbackTriggered || false,
+    fallbackReason: otpRes.fallbackReason || ''
   });
 
-  // Dispatch SMS via provider
-  const smsRes = await SmsService.sendOtp(formattedPhone, otpCode, config, lang);
-
-  if (!smsRes.success) {
-    return {
-      success: false,
-      message: smsRes.error || 'Failed to send SMS code. Please try again.'
-    };
+  // Construct clear bilingual user message
+  let message = '';
+  if (otpRes.channel === 'whatsapp') {
+    message = lang === 'fr'
+      ? `Code de vérification envoyé au ${formattedPhone} via WhatsApp.`
+      : `Verification code sent to ${formattedPhone} via WhatsApp.`;
+  } else if (otpRes.fallbackTriggered) {
+    message = lang === 'fr'
+      ? `Vérification WhatsApp indisponible. Code envoyé au ${formattedPhone} par SMS.`
+      : `WhatsApp verification is unavailable. Sending your verification code via SMS to ${formattedPhone}.`;
+  } else {
+    message = lang === 'fr'
+      ? `Code de vérification envoyé au ${formattedPhone} par SMS.`
+      : `Verification code sent to ${formattedPhone} via SMS.`;
   }
 
   return {
     success: true,
-    message: lang === 'fr' 
-      ? `Code de vérification envoyé au ${formattedPhone} par SMS.`
-      : `Verification code sent to ${formattedPhone} via SMS.`,
+    message,
     expiresAt,
-    simulatedOtp: smsRes.simulatedOtp
+    simulatedOtp: otpRes.simulatedOtp,
+    channelUsed: otpRes.channel,
+    fallbackTriggered: otpRes.fallbackTriggered,
+    fallbackReason: otpRes.fallbackReason
   };
 }
 

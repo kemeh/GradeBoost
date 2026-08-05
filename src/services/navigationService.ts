@@ -62,6 +62,34 @@ export const DEFAULT_NAV_ITEMS: NavItem[] = [
     allowedRoles: ['public', 'student', 'teacher', 'admin']
   },
   {
+    id: 'nav-student-ambassador',
+    labelEn: 'Student Ambassadors',
+    labelFr: 'Ambassadeurs Élèves',
+    href: '/student-ambassadors',
+    megaType: 'none',
+    icon: 'Sparkles',
+    badgeEn: 'Leaders',
+    badgeFr: 'Leaders',
+    badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
+    isVisible: true,
+    order: 6.4,
+    allowedRoles: ['public', 'student', 'teacher', 'admin']
+  },
+  {
+    id: 'nav-alumni',
+    labelEn: 'Become an Alumni',
+    labelFr: 'Devenir Alumni',
+    href: '/alumni',
+    megaType: 'none',
+    icon: 'Award',
+    badgeEn: 'Join',
+    badgeFr: 'Rejoindre',
+    badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    isVisible: true,
+    order: 6.5,
+    allowedRoles: ['public', 'student', 'teacher', 'admin']
+  },
+  {
     id: 'nav-pricing',
     labelEn: 'Pricing',
     labelFr: 'Tarifs',

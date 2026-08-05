@@ -502,6 +502,30 @@
     "/feedback/{feedbackId}": {
       "schema": "Feedback",
       "description": "User feedback."
+    },
+    "/alumniProfiles/{profileId}": {
+      "schema": "AlumniProfile",
+      "description": "Featured alumni profiles and leaders."
+    },
+    "/alumniGallery/{itemId}": {
+      "schema": "AlumniGalleryItem",
+      "description": "Alumni program photo and event gallery items."
+    },
+    "/alumniApplications/{applicationId}": {
+      "schema": "AlumniApplication",
+      "description": "Applications submitted by former students to become Alumni Leaders."
+    },
+    "/ambassadorProfiles/{profileId}": {
+      "schema": "AmbassadorProfile",
+      "description": "Active student ambassador profiles, school details, and referral codes."
+    },
+    "/ambassadorGallery/{itemId}": {
+      "schema": "AmbassadorGalleryItem",
+      "description": "School activity and event gallery photos for student ambassadors."
+    },
+    "/ambassadorApplications/{applicationId}": {
+      "schema": "AmbassadorApplication",
+      "description": "Applications submitted by secondary school students to become Edulpha Ambassadors."
     }
   }
 }

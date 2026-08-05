@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, Target, Trophy, 
-  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield, FlaskConical
+  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield, FlaskConical, Award
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -70,6 +70,8 @@ export default function Sidebar({ className }: SidebarProps) {
   ];
 
   const adminLinks = [
+    { icon: Sparkles, label: '🎒 Student Ambassador Admin', path: '/admin?tab=ambassadors' },
+    { icon: Award, label: '🎓 Alumni Management', path: '/admin?tab=alumni' },
     { icon: ShieldCheck, label: t('sidebar.usersSystemAdmin', 'Users & System Admin'), path: '/admin' },
     { icon: FlaskConical, label: `🔬 ${t('sidebar.practicalStudio', 'Practical Studio')}`, path: '/admin/practicals' },
     { icon: Smartphone, label: `📱 ${t('sidebar.mobileApp', 'Edulpha Mobile App')}`, path: '/mobile-app' },

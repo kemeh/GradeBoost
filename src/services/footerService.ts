@@ -81,7 +81,9 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
   },
   quickLinks: [
     { id: 'ql-1', label: 'Home', url: '#', enabled: true, order: 1 },
-    { id: 'ql-2', label: 'About Us & Features', url: '#features', enabled: true, order: 2 },
+    { id: 'ql-ambassador', label: 'Become a Student Ambassador', url: '/student-ambassadors', enabled: true, order: 2 },
+    { id: 'ql-alumni', label: 'Become an Alumni', url: '/alumni', enabled: true, order: 3 },
+    { id: 'ql-2', label: 'About Us & Features', url: '#features', enabled: true, order: 3 },
     { id: 'ql-3', label: 'Learning Ecosystems', url: '#learning-paths', enabled: true, order: 3 },
     { id: 'ql-4', label: 'How It Works', url: '#how-it-works', enabled: true, order: 4 },
     { id: 'ql-5', label: 'Download Mobile App', url: '#mobile-app', enabled: true, order: 5 },

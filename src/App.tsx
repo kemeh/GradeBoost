@@ -53,6 +53,8 @@ const DocumentationHub = lazy(() => import('./pages/DocumentationHub'));
 const PublicDocumentView = lazy(() => import('./pages/PublicDocumentView'));
 const StudentPracticalLab = lazy(() => import('./pages/StudentPracticalLab'));
 const AdminPracticalManager = lazy(() => import('./pages/AdminPracticalManager'));
+const AlumniProgramPage = lazy(() => import('./pages/AlumniProgramPage'));
+const StudentAmbassadorPage = lazy(() => import('./pages/StudentAmbassadorPage'));
 
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
@@ -112,6 +114,8 @@ export default function App() {
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/student-ambassadors" element={<StudentAmbassadorPage />} />
+              <Route path="/alumni" element={<AlumniProgramPage />} />
               <Route path="/docs" element={<DocumentationHub />} />
               <Route path="/documentation" element={<DocumentationHub />} />
               

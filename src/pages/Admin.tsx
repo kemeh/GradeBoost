@@ -34,6 +34,8 @@ import { AdminPartnerManagement } from '../components/admin/AdminPartnerManageme
 import { AdminDocumentManagement } from '../components/admin/AdminDocumentManagement';
 import { AdminFooterManagement } from '../components/AdminFooterManagement';
 import { AdminTestimonialManagement } from '../components/admin/AdminTestimonialManagement';
+import { AdminAlumniManagement } from '../components/admin/AdminAlumniManagement';
+import { AdminAmbassadorManagement } from '../components/admin/AdminAmbassadorManagement';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -45,7 +47,7 @@ export default function Admin() {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   
-  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'translations' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'papers' | 'manual' | 'samples' | 'duels';
+  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'translations' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'papers' | 'manual' | 'samples' | 'duels';
   const activeTab = (searchParams.get('tab') as AdminTab) || 'analytics';
 
   const [users, setUsers] = useState<any[]>([]);
@@ -551,6 +553,8 @@ export default function Admin() {
             <TabsTrigger value="testimonials" className="rounded-xl py-2 px-4 text-xs font-bold">Testimonials</TabsTrigger>
             <TabsTrigger value="documents" className="rounded-xl py-2 px-4 text-xs font-bold">Document Management</TabsTrigger>
             <TabsTrigger value="footer" className="rounded-xl py-2 px-4 text-xs font-bold">Footer Management</TabsTrigger>
+            <TabsTrigger value="ambassadors" className="rounded-xl py-2 px-4 text-xs font-bold bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300">🎒 Student Ambassador Admin</TabsTrigger>
+            <TabsTrigger value="alumni" className="rounded-xl py-2 px-4 text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">🎓 Alumni Management</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl py-2 px-4 text-xs font-bold">Platform Settings</TabsTrigger>
           </TabsList>
 
@@ -628,6 +632,16 @@ export default function Admin() {
           {/* Tab 10: Platform Settings */}
           <TabsContent value="settings">
             <AdminPlatformSettingsView />
+          </TabsContent>
+
+          {/* Tab 10.4: Student Ambassador Management */}
+          <TabsContent value="ambassadors">
+            <AdminAmbassadorManagement />
+          </TabsContent>
+
+          {/* Tab 10.5: Alumni Program Management */}
+          <TabsContent value="alumni">
+            <AdminAlumniManagement />
           </TabsContent>
 
 

@@ -198,6 +198,54 @@ export const LandingPartnersSection: React.FC = () => {
             })}
           </div>
         )}
+
+        {/* Student Ambassador Banner */}
+        <div className="p-8 md:p-12 bg-gradient-to-r from-amber-950/90 via-slate-900 to-indigo-950 rounded-3xl border border-amber-500/30 shadow-2xl text-white flex flex-col lg:flex-row items-center justify-between gap-8 mt-12">
+          <div className="space-y-3 max-w-2xl text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400 text-slate-950 text-xs font-black uppercase tracking-wider border border-amber-300">
+              <Sparkles size={14} className="fill-slate-950" /> {language === 'fr' ? 'Programme Ambassadeurs Élèves' : 'Edulpha Student Ambassador Program'}
+            </div>
+            <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white">
+              {language === 'fr' ? 'Guidez Votre École. Inspirez Vos Camarades.' : 'Lead Your School. Inspire Your Classmates.'}
+            </h3>
+            <p className="text-amber-100/90 text-sm font-medium leading-relaxed">
+              {language === 'fr'
+                ? 'Vous êtes élève au secondaire ? Devenez Ambassadeur Edulpha dans votre établissement, gagnez des récompenses et aidez vos camarades à réussir.'
+                : 'Are you a secondary school student? Become an Edulpha Leader in your school, build leadership skills, earn rewards, and boost academic success.'}
+            </p>
+          </div>
+
+          <a href="/student-ambassadors">
+            <button className="px-8 py-4 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl transition shrink-0 flex items-center gap-2">
+              <span>{language === 'fr' ? 'Devenir Ambassadeur Élève' : 'Become a Student Ambassador'}</span>
+              <ChevronRight size={16} />
+            </button>
+          </a>
+        </div>
+
+        {/* Alumni Leaders & Community Alliance Banner */}
+        <div className="p-8 md:p-12 bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 rounded-3xl border border-indigo-900/50 shadow-2xl text-white flex flex-col lg:flex-row items-center justify-between gap-8 mt-12">
+          <div className="space-y-3 max-w-2xl text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 text-xs font-black uppercase tracking-wider border border-amber-400/30">
+              <Star size={14} fill="currentColor" /> {language === 'fr' ? 'Réseau Alumni Leaders' : 'Edulpha Alumni Leaders Program'}
+            </div>
+            <h3 className="text-2xl sm:text-4xl font-black tracking-tight">
+              {language === 'fr' ? 'Anciens Élèves & Mentors de Demain' : 'Empowering the Next Generation of African Scholars'}
+            </h3>
+            <p className="text-slate-300 text-sm font-medium leading-relaxed">
+              {language === 'fr'
+                ? 'Vous avez fait partie du parcours Edulpha ? Rejoignez nos leaders Alumni pour mentorer les élèves préparant le GCE, le TVEE et le Baccalauréat.'
+                : 'Were you part of the Edulpha learning journey? Join our Alumni Network to mentor high school candidates across Cameroon and Africa.'}
+            </p>
+          </div>
+
+          <a href="/alumni">
+            <button className="px-8 py-4 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-xl transition shrink-0 flex items-center gap-2">
+              <span>{language === 'fr' ? 'Devenir un Alumni' : 'Become an Alumni'}</span>
+              <ChevronRight size={16} />
+            </button>
+          </a>
+        </div>
       </div>
 
       {/* Partner Detail Modal */}

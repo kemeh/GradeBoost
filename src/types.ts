@@ -199,6 +199,20 @@ export interface PhoneAuthConfig {
   otpExpiryMinutes: number;
   maxResendAttempts: number;
   maxVerificationAttempts: number;
+  
+  // Verification Channel Controls
+  primaryChannel?: 'whatsapp' | 'sms';
+  enableWhatsapp?: boolean;
+  enableSmsFallback?: boolean;
+
+  // WhatsApp Provider Configuration
+  whatsappProvider?: 'simulation' | 'meta_cloud' | 'twilio_whatsapp' | 'ultramsg';
+  whatsappApiKey?: string;
+  whatsappPhoneNumberId?: string;
+  whatsappSenderNumber?: string;
+  whatsappTemplateName?: string;
+
+  // SMS Gateway Configuration (Preserved)
   smsProvider: 'simulation' | 'twilio' | 'africastalking' | 'infobip' | 'termii' | 'custom';
   smsApiKey: string;
   smsApiSecret: string;

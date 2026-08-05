@@ -660,5 +660,41 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
+
+    // ===============================================================
+    // Alumni Program Collections
+    // ===============================================================
+    match /alumniProfiles/{profileId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /alumniGallery/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /alumniApplications/{applicationId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ===============================================================
+    // Student Ambassador Program Collections
+    // ===============================================================
+    match /ambassadorProfiles/{profileId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /ambassadorGallery/{itemId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /ambassadorApplications/{applicationId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
   }
 }
