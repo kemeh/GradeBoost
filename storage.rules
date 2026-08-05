@@ -1,9 +1,10 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Basic rules for debugging - allowing read/write for authenticated users
+    // Allow public read of logos and uploaded assets, allow write for authenticated users/admins
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read: if true;
+      allow write: if request.auth != null;
     }
   }
 }

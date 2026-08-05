@@ -153,9 +153,17 @@ export default function LogoImageUploader({
     console.log(`================ LOGO UPLOAD TRACE START ================`);
     console.log(`[LogoUpload Stage 1: Validation] Selected File: "${selectedFile.name}", Size: ${(selectedFile.size / 1024).toFixed(2)} KB, MIME: "${selectedFile.type}"`);
 
-    if (!auth.currentUser || !isAdmin) {
-      const msg = 'Administrator privileges required for logo upload.';
-      console.error(`[LogoUpload Stage 1 Error] Auth check failed. User: ${auth.currentUser?.uid || 'none'}, isAdmin: ${isAdmin}`);
+    if (!auth.currentUser) {
+      const msg = 'Permission denied: User not authenticated.';
+      console.error(`[LogoUpload Stage 1 Error] ${msg}`);
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    if (!isAdmin) {
+      const msg = 'Permission denied: Admin does not have upload rights.';
+      console.error(`[LogoUpload Stage 1 Error] ${msg}`);
       setError(msg);
       toast.error(msg);
       return;
@@ -173,7 +181,8 @@ export default function LogoImageUploader({
       setProgress(40);
       console.log(`[LogoUpload Stage 2 Complete] Progress advanced to 40%. Entering Stage 3: Storage Upload.`);
 
-      const storagePath = `${folder}/${Date.now()}_${selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const storagePath = `${folder}/${Date.now()}_${safeName}`;
       let uploadSuccess = false;
 
       // Stage 3 Tier 1: Attempt Firebase Storage Client SDK with a 6-second timeout safeguard
@@ -212,10 +221,8 @@ export default function LogoImageUploader({
           setTimeout(() => {
             try {
               uploadTask.cancel();
-            } catch (e) {
-              // Ignore cancel error
-            }
-            reject(new Error('Firebase Storage connection timed out (6s threshold exceeded). Switching to Edulpha Server Upload API.'));
+            } catch (e) {}
+            reject(new Error('Firebase Storage connection failed. Switching to Edulpha Server Upload API.'));
           }, 6000);
         });
 
@@ -226,7 +233,7 @@ export default function LogoImageUploader({
           setProgress(100);
           setUploading(false);
           onUploadComplete(firebaseUrl);
-          toast.success(`${label} uploaded successfully!`);
+          toast.success('Logo uploaded successfully.');
           uploadSuccess = true;
         }
       } catch (tier1Err: any) {
@@ -258,7 +265,7 @@ export default function LogoImageUploader({
             setProgress(100);
             setUploading(false);
             onUploadComplete(data.url);
-            toast.success(`${label} uploaded and optimized!`);
+            toast.success('Logo uploaded successfully.');
             uploadSuccess = true;
           }
         } else {
@@ -278,15 +285,16 @@ export default function LogoImageUploader({
         setProgress(100);
         setUploading(false);
         onUploadComplete(fallbackDataUrl);
-        toast.success(`${label} uploaded and saved!`);
+        toast.success('Logo uploaded successfully.');
         console.log(`[LogoUpload Stage 4: Success] Fallback Data URL active.`);
       }
     } catch (err: any) {
       if (!isMounted.current) return;
       console.error('[LogoUpload Fatal Error]', err);
-      setError('Image optimization & upload failed. Please try a different file.');
+      const detailedMsg = err.message?.includes('storage') ? 'Firebase Storage connection failed.' : (err.message || 'Image optimization & upload failed.');
+      setError(detailedMsg);
       setUploading(false);
-      toast.error('Image upload failed.');
+      toast.error(detailedMsg);
     } finally {
       console.log(`================ LOGO UPLOAD TRACE END ================`);
     }
@@ -295,7 +303,7 @@ export default function LogoImageUploader({
   const handleFileSelect = (selectedFile: File) => {
     // Size validation
     if (selectedFile.size > maxSizeMB * 1024 * 1024) {
-      const msg = `File size exceeds limit of ${maxSizeMB}MB.`;
+      const msg = 'File exceeds maximum size.';
       setError(msg);
       toast.error(msg);
       return;
@@ -312,7 +320,7 @@ export default function LogoImageUploader({
     );
 
     if (!matchesType && selectedFile.type && !selectedFile.type.startsWith('image/')) {
-      const msg = `Invalid image type (${selectedFile.type}). Please select an image file.`;
+      const msg = 'Invalid file format.';
       setError(msg);
       toast.error(msg);
       return;
@@ -440,7 +448,7 @@ export default function LogoImageUploader({
                 {file?.name || label}
               </p>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Optimizing & Uploading...
+                Uploading logo...
               </p>
             </div>
           </div>
