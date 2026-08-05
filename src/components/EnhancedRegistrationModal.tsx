@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { 
   User, Mail, Lock, Phone, MapPin, School, BookOpen, Sparkles, 
-  CheckCircle2, ArrowRight, ArrowLeft, Shield, Award, Globe, Check, Eye, EyeOff, AlertCircle 
+  CheckCircle2, ArrowRight, ArrowLeft, Shield, Award, Globe, Check, Eye, EyeOff, AlertCircle, Smartphone 
 } from 'lucide-react';
-import { createUserWithEmailAndPassword, sendEmailVerification, deleteUser } from 'firebase/auth';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { logAuditEvent } from '../services/auditService';
 import { INTERMEDIATE_LEVEL_COMMERCIAL_SPECIALTIES, ADVANCED_LEVEL_TVEE_COMMERCIAL_SPECIALTIES } from '../constants/commercialCurriculum';
+import { sendPhoneOtp, formatPhoneNumber, detectCarrier, phoneToVirtualEmail } from '../services/phoneAuthService';
+import { PhoneOtpVerificationModal } from './PhoneOtpVerificationModal';
 import toast from 'react-hot-toast';
 
 interface EnhancedRegistrationProps {
@@ -69,15 +71,27 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
     yearsExperience: '5+ Years',
   });
 
+  // OTP Verification Modal State
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [initialSimulatedOtp, setInitialSimulatedOtp] = useState<string | undefined>();
+
   const totalSteps = accountType === 'student' ? 6 : 3;
 
   const handleNext = () => {
     setError('');
     if (currentStep === 1) {
-      if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-        setError(lang === 'fr' ? 'Veuillez remplir tous les champs obligatoires.' : 'Please fill in all required fields.');
+      if (!formData.firstName || !formData.lastName || !formData.phone || !formData.password) {
+        setError(lang === 'fr' ? 'Veuillez remplir le nom, le numéro de téléphone et le mot de passe.' : 'Please fill in First Name, Last Name, Phone Number, and Password.');
         return;
       }
+
+      const formattedPhone = formatPhoneNumber(formData.phone);
+      const carrier = detectCarrier(formattedPhone);
+      if (!carrier.isValid) {
+        setError(lang === 'fr' ? 'Veuillez saisir un numéro de téléphone mobile valide (ex: +237 670000000).' : 'Please enter a valid mobile phone number (e.g. +237 670000000).');
+        return;
+      }
+
       if (formData.password !== formData.confirmPassword) {
         setError(lang === 'fr' ? 'Les mots de passe ne correspondent pas.' : 'Passwords do not match.');
         return;
@@ -90,41 +104,79 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
     setCurrentStep(prev => Math.min(prev + 1, totalSteps));
   };
 
-  const handlePrev = () => {
-    setError('');
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-  };
-
-  const handleSubjectToggle = (subj: string) => {
-    setFormData(prev => ({
-      ...prev,
-      selectedSubjects: prev.selectedSubjects.includes(subj)
-        ? prev.selectedSubjects.filter(s => s !== subj)
-        : [...prev.selectedSubjects, subj]
-    }));
-  };
-
-  const handleGoalToggle = (goal: string) => {
-    setFormData(prev => ({
-      ...prev,
-      goals: prev.goals.includes(goal)
-        ? prev.goals.filter(g => g !== goal)
-        : [...prev.goals, goal]
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleStartPhoneVerification = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    const formattedPhone = formatPhoneNumber(formData.phone);
+    const carrier = detectCarrier(formattedPhone);
+
+    if (!carrier.isValid) {
+      setError(lang === 'fr' ? 'Numéro de téléphone invalide.' : 'Invalid phone number format.');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const { user } = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const res = await sendPhoneOtp(formattedPhone, 'registration', lang);
+      if (res.success) {
+        setInitialSimulatedOtp(res.simulatedOtp);
+        setShowOtpModal(true);
+      } else {
+        setError(res.message);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to dispatch verification SMS code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePrev = () => {
+    setError('');
+    setCurrentStep((prev) => Math.max(1, prev - 1));
+  };
+
+  const handleSubjectToggle = (subj: string) => {
+    setFormData((prev) => {
+      const exists = prev.selectedSubjects.includes(subj);
+      if (exists) {
+        return { ...prev, selectedSubjects: prev.selectedSubjects.filter((s) => s !== subj) };
+      }
+      return { ...prev, selectedSubjects: [...prev.selectedSubjects, subj] };
+    });
+  };
+
+  const handleGoalToggle = (goal: string) => {
+    setFormData((prev) => {
+      const exists = prev.goals.includes(goal);
+      if (exists) {
+        return { ...prev, goals: prev.goals.filter((g) => g !== goal) };
+      }
+      return { ...prev, goals: [...prev.goals, goal] };
+    });
+  };
+
+  const handleOtpVerifiedCompleteRegistration = async () => {
+    setShowOtpModal(false);
+    setLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(formData.phone);
+      const carrier = detectCarrier(formattedPhone);
       
-      try {
-        await sendEmailVerification(user);
-      } catch (err) {
-        console.error("Failed to send verification email:", err);
+      // Use provided email or fallback to virtual email
+      const authEmail = formData.email.trim() ? formData.email.trim() : phoneToVirtualEmail(formattedPhone);
+
+      const { user } = await createUserWithEmailAndPassword(auth, authEmail, formData.password);
+      
+      if (formData.email.trim()) {
+        try {
+          await sendEmailVerification(user);
+        } catch (err) {
+          console.error("Failed to send verification email:", err);
+        }
       }
 
       const profileCompletion = accountType === 'student' ? 100 : 90;
@@ -134,8 +186,11 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         firstName: formData.firstName,
         lastName: formData.lastName,
         name: `${formData.firstName} ${formData.lastName}`,
-        email: formData.email,
-        phone: formData.phone,
+        email: authEmail,
+        userProvidedEmail: formData.email.trim() || null,
+        phone: formattedPhone,
+        phoneVerified: true,
+        phoneProvider: carrier.carrier,
         country: formData.country,
         region: formData.region,
         city: formData.city,
@@ -168,12 +223,12 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
 
       await logAuditEvent({
         userId: user.uid,
-        userEmail: formData.email,
+        userEmail: authEmail,
         action: 'REGISTER_SUCCESS',
-        details: `Successfully registered new ${accountType} account with Edulpha ecosystem.`,
+        details: `Successfully registered new ${accountType} account via phone ${formattedPhone} (${carrier.carrier}).`,
       });
 
-      toast.success(lang === 'fr' ? 'Compte Edulpha créé avec succès !' : 'Edulpha account created successfully!');
+      toast.success(lang === 'fr' ? 'Compte Edulpha créé et téléphone vérifié avec succès !' : 'Edulpha account created and phone verified successfully!');
       onSuccess();
     } catch (err: any) {
       console.error('Registration error:', err);
@@ -267,7 +322,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
       )}
 
       {/* FORM WIZARD */}
-      <form onSubmit={currentStep === totalSteps ? handleSubmit : (e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
+      <form onSubmit={currentStep === totalSteps ? handleStartPhoneVerification : (e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
         
         {/* STUDENT STEP 1: Basic Information */}
         {accountType === 'student' && currentStep === 1 && (
@@ -275,7 +330,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
             <h3 className="font-bold text-base text-slate-900">1. Basic Personal Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600">First Name</label>
+                <label className="text-xs font-bold text-slate-600">First Name <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -286,7 +341,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600">Last Name</label>
+                <label className="text-xs font-bold text-slate-600">Last Name <span className="text-rose-500">*</span></label>
                 <input
                   type="text"
                   required
@@ -300,23 +355,39 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600">Email Address</label>
+                <label className="text-xs font-bold text-slate-600 flex items-center justify-between">
+                  <span>Mobile Phone Number (Primary) <span className="text-rose-500">*</span></span>
+                  {formData.phone && (() => {
+                    const c = detectCarrier(formData.phone);
+                    return c.isValid ? (
+                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 uppercase">
+                        {c.carrier}
+                      </span>
+                    ) : null;
+                  })()}
+                </label>
+                <div className="relative">
+                  <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    placeholder="+237 670 00 00 00"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-900 focus:bg-white focus:border-blue-600 outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-600">
+                  Email Address <span className="text-slate-400 font-normal">(Optional)</span>
+                </label>
                 <input
                   type="email"
-                  required
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="kemehhilary@gmail.com"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none"
-                />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-slate-600">Phone Number (MTN / Orange)</label>
-                <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="+237 670 00 00 00"
+                  placeholder="name@example.com (Optional)"
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none"
                 />
               </div>
@@ -948,6 +1019,17 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
           )}
         </div>
       </form>
+
+      {/* OTP Modal */}
+      <PhoneOtpVerificationModal
+        isOpen={showOtpModal}
+        onClose={() => setShowOtpModal(false)}
+        phone={formatPhoneNumber(formData.phone)}
+        onSuccess={handleOtpVerifiedCompleteRegistration}
+        reason="registration"
+        initialSimulatedOtp={initialSimulatedOtp}
+        lang={lang}
+      />
     </div>
   );
 };

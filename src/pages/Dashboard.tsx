@@ -26,6 +26,7 @@ import { updateStreak } from '../services/gamificationService';
 import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
 import { getSystemSettings } from '../services/settingsService';
 import { fetchDailyDrill } from '../services/dailyDrillService';
+import PhoneMigrationBanner from '../components/PhoneMigrationBanner';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -302,6 +303,9 @@ export default function Dashboard() {
             </Button>
           </div>
         )}
+        
+        {/* Phone Number Migration Banner for Existing Users */}
+        <PhoneMigrationBanner />
         
         <WelcomeDashboard />
 

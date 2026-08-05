@@ -24,6 +24,7 @@ interface AuthContextType {
   setRememberMe: (remember: boolean) => Promise<void>;
   resendVerificationEmail: () => Promise<boolean>;
   refreshSessionToken: () => Promise<string | null>;
+  refreshUserProfile?: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -247,6 +248,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await auth.signOut();
   };
 
+  const refreshUserProfile = async () => {
+    if (!auth.currentUser) return;
+    try {
+      const token = await auth.currentUser.getIdToken(true);
+      console.log('Refreshed user token:', token ? 'Token updated' : 'No token');
+    } catch (err) {
+      console.error('Error refreshing profile:', err);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -260,7 +271,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout,
       setRememberMe,
       resendVerificationEmail,
-      refreshSessionToken
+      refreshSessionToken,
+      refreshUserProfile
     }}>
       {children}
     </AuthContext.Provider>

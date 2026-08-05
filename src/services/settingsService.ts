@@ -23,6 +23,7 @@ export interface SystemSettings {
   momoName?: string;
   omNumber?: string;
   omName?: string;
+  phoneAuthConfig?: any;
   updatedAt: any;
   updatedBy: string;
 }

@@ -20,6 +20,7 @@ import { AIAdminDashboard } from '../components/GradeBoostAI/AIAdminDashboard';
 import { AdminCurriculumManager } from '../components/AdminCurriculumManager';
 import { AdminTranslationManager } from '../components/AdminTranslationManager';
 import AdminNavigationManagement from '../components/admin/AdminNavigationManagement';
+import { PhoneAuthSettings } from '../components/PhoneAuthSettings';
 
 export default function AdminSettings() {
   const navigate = useNavigate();
@@ -340,6 +341,14 @@ export default function AdminSettings() {
           </header>
 
           <div className="grid gap-8">
+            {/* Primary Phone Auth & SMS Gateway Settings */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <PhoneAuthSettings />
+            </motion.section>
+
             {/* API Configuration Section */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}

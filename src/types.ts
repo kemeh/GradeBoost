@@ -144,6 +144,9 @@ export interface UserProfile {
   lastName?: string;
   email: string;
   phone?: string;
+  phoneVerified?: boolean;
+  phoneProvider?: 'MTN' | 'Orange' | 'Nexttel' | 'Camtel' | 'Other' | string;
+  isEmailVerified?: boolean;
   subject: Subject;
   curriculumId?: string; // e.g. 'cameroon_gce' | 'cameroon_francophone'
   curriculumName?: string;
@@ -187,6 +190,21 @@ export interface UserProfile {
   streak: number;
   lastActiveDate?: any; // Timestamp
   badges: string[]; // Array of badge IDs
+}
+
+export interface PhoneAuthConfig {
+  phoneAuthRequired: boolean;
+  emailAuthRequired: boolean;
+  otpLength: number;
+  otpExpiryMinutes: number;
+  maxResendAttempts: number;
+  maxVerificationAttempts: number;
+  smsProvider: 'simulation' | 'twilio' | 'africastalking' | 'infobip' | 'termii' | 'custom';
+  smsApiKey: string;
+  smsApiSecret: string;
+  smsSenderId: string;
+  smsCustomEndpoint: string;
+  enablePasswordlessLogin: boolean;
 }
 
 export interface Achievement {
