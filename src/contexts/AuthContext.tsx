@@ -4,7 +4,7 @@ import {
   browserLocalPersistence, browserSessionPersistence, 
   sendEmailVerification 
 } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { UserProfile } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
@@ -77,14 +77,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const data = docSnap.data();
             const profile = { uid: fUser.uid, ...data } as UserProfile;
 
-            // Handle suspended account
-            if (profile.status === 'suspended') {
-              toast.error('Your account has been suspended by an Administrator.');
+            // Handle suspended or deleted account
+            if (profile.status === 'suspended' || profile.status === 'deleted' || (profile as any).deleted) {
+              toast.error(profile.status === 'deleted' || (profile as any).deleted ? 'Your account has been deleted by an administrator.' : 'Your account has been suspended by an Administrator.');
               await logAuditEvent({
                 userId: fUser.uid,
                 userEmail: fUser.email || undefined,
                 action: 'LOGOUT',
-                details: 'Forced logout due to account suspension.',
+                details: `Forced logout due to account ${profile.status || 'deletion'}.`,
               });
               await auth.signOut();
               setUser(null);
@@ -108,6 +108,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
           } else {
+            // Check if user is in deletedUsers collection before auto-creating profile
+            let isDeletedAccount = false;
+            try {
+              const delSnap = await getDoc(doc(db, 'deletedUsers', fUser.uid));
+              if (delSnap.exists()) {
+                isDeletedAccount = true;
+              } else if (fUser.email) {
+                const delEmailSnap = await getDoc(doc(db, 'deletedUsersByEmail', fUser.email.toLowerCase().trim()));
+                if (delEmailSnap.exists()) isDeletedAccount = true;
+              }
+            } catch (e) {
+              console.warn('Error checking deletedUsers collection:', e);
+            }
+
+            if (isDeletedAccount) {
+              toast.error('Your account has been deleted or disabled by an administrator.');
+              await logAuditEvent({
+                userId: fUser.uid,
+                userEmail: fUser.email || undefined,
+                action: 'LOGOUT',
+                details: 'Blocked authentication for deleted user account.',
+              });
+              await auth.signOut();
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+
             // Auto-create profile if it doesn't exist
             const isAdminEmail = fUser.email?.toLowerCase() === 'kemehhilary@gmail.com';
             try {

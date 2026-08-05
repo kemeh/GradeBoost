@@ -2,14 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, Award, Plus, Search, CheckCircle2, XCircle, Trash2, Edit, Eye, 
-  ExternalLink, Image, FileText, Check, ShieldCheck, Star, Sparkles, Filter, AlertCircle, RefreshCw
+  ExternalLink, Image, FileText, Check, ShieldCheck, Star, Sparkles, Filter, AlertCircle, RefreshCw, Ban, Download, AlertTriangle
 } from 'lucide-react';
 import { AlumniProfile, AlumniGalleryItem, AlumniApplication, AlumniStats } from '../../types/alumni';
-import { AlumniService, DEFAULT_ALUMNI_PROFILES, DEFAULT_ALUMNI_GALLERY } from '../../services/alumniService';
+import { AlumniService } from '../../services/alumniService';
+import { logAdminAction } from '../../services/auditLogService';
+import { useAuth } from '../../contexts/AuthContext';
 import { Button, Card, Badge, cn } from '../ui';
 import { toast } from 'react-hot-toast';
 
 export function AdminAlumniManagement() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'profiles' | 'gallery' | 'applications' | 'stats'>('profiles');
   const [profiles, setProfiles] = useState<AlumniProfile[]>([]);
   const [gallery, setGallery] = useState<AlumniGalleryItem[]>([]);
@@ -22,6 +25,9 @@ export function AdminAlumniManagement() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Selection & Bulk Actions State
+  const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
+
   // Search and Filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -29,7 +35,10 @@ export function AdminAlumniManagement() {
 
   // Modals
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [viewingProfile, setViewingProfile] = useState<AlumniProfile | null>(null);
   const [editingProfile, setEditingProfile] = useState<AlumniProfile | null>(null);
+  const [deletingProfile, setDeletingProfile] = useState<AlumniProfile | null>(null);
+
   const [profileForm, setProfileForm] = useState({
     name: '',
     email: '',
@@ -41,6 +50,9 @@ export function AdminAlumniManagement() {
     currentRole: '',
     companyOrUniversity: '',
     specialization: '',
+    location: '',
+    level: 'Gold Alumni Leader',
+    studentsRecruited: 12,
     bio: '',
     badgesRaw: 'Alumni Leader, Mentor',
     linkedin: '',
@@ -71,13 +83,13 @@ export function AdminAlumniManagement() {
         AlumniService.getApplications(),
         AlumniService.getAlumniStats()
       ]);
-      setProfiles(pData);
-      setGallery(gData);
-      setApplications(aData);
+      setProfiles(pData.filter(p => !p.deleted_at));
+      setGallery(gData.filter(g => !g.deleted_at));
+      setApplications(aData.filter(a => !a.deleted_at));
       setStats(sData);
     } catch (err) {
       console.error('Error loading alumni admin data:', err);
-      toast.error('Could not load data from server. Loaded local defaults.');
+      toast.error('Could not load data from server.');
     } finally {
       setLoading(false);
     }
@@ -98,8 +110,11 @@ export function AdminAlumniManagement() {
         currentRole: prof.currentRole,
         companyOrUniversity: prof.companyOrUniversity,
         specialization: prof.specialization,
+        location: prof.location || 'Douala, Cameroon',
+        level: prof.level || 'Gold Alumni Leader',
+        studentsRecruited: prof.studentsRecruited || 12,
         bio: prof.bio,
-        badgesRaw: prof.badges.join(', '),
+        badgesRaw: prof.badges ? prof.badges.join(', ') : 'Alumni Leader',
         linkedin: prof.socialLinks?.linkedin || '',
         consentGranted: prof.consentGranted,
         status: prof.status,
@@ -111,14 +126,17 @@ export function AdminAlumniManagement() {
         name: '',
         email: '',
         phone: '',
-        photoUrl: '',
-        graduationYear: new Date().getFullYear(),
-        school: '',
+        photoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80',
+        graduationYear: 2022,
+        school: 'Bilingual Grammar School Molyko',
         subSystem: 'General Education',
-        currentRole: '',
-        companyOrUniversity: '',
-        specialization: '',
-        bio: '',
+        currentRole: 'Senior Software Engineer',
+        companyOrUniversity: 'University of Buea / Tech Firm',
+        specialization: 'Computer Engineering',
+        location: 'Yaoundé, Cameroon',
+        level: 'Gold Alumni Leader',
+        studentsRecruited: 15,
+        bio: 'Passionate about mentoring high school GCE candidates.',
         badgesRaw: 'Alumni Leader, Mentor',
         linkedin: '',
         consentGranted: true,
@@ -148,6 +166,9 @@ export function AdminAlumniManagement() {
       currentRole: profileForm.currentRole,
       companyOrUniversity: profileForm.companyOrUniversity,
       specialization: profileForm.specialization,
+      location: profileForm.location,
+      level: profileForm.level,
+      studentsRecruited: profileForm.studentsRecruited,
       bio: profileForm.bio,
       badges,
       socialLinks: profileForm.linkedin ? { linkedin: profileForm.linkedin } : {},
@@ -159,9 +180,27 @@ export function AdminAlumniManagement() {
     try {
       if (editingProfile) {
         await AlumniService.updateAlumniProfile(editingProfile.id, profilePayload);
+        await logAdminAction(
+          user?.email || 'admin@edulpha.cm',
+          user?.displayName || 'Admin',
+          `Updated Alumni Profile: ${profileForm.name}`,
+          'alumni',
+          `Updated details for alumni member ${profileForm.name}`,
+          editingProfile.id,
+          profileForm.name
+        );
         toast.success('Alumni profile updated!');
       } else {
-        await AlumniService.createAlumniProfile(profilePayload);
+        const newId = await AlumniService.createAlumniProfile(profilePayload);
+        await logAdminAction(
+          user?.email || 'admin@edulpha.cm',
+          user?.displayName || 'Admin',
+          `Created Alumni Profile: ${profileForm.name}`,
+          'alumni',
+          `Added new alumni profile with ID ${newId}`,
+          newId,
+          profileForm.name
+        );
         toast.success('New alumni profile created!');
       }
       setShowProfileModal(false);
@@ -172,117 +211,154 @@ export function AdminAlumniManagement() {
     }
   };
 
-  const handleDeleteProfile = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this alumni profile?')) return;
+  const handleToggleSuspend = async (prof: AlumniProfile) => {
+    const newStatus: AlumniProfile['status'] = prof.status === 'suspended' ? 'approved' : 'suspended';
+    await AlumniService.updateAlumniProfile(prof.id, { status: newStatus });
+
+    await logAdminAction(
+      user?.email || 'admin@edulpha.cm',
+      user?.displayName || 'Admin',
+      `${newStatus === 'suspended' ? 'Suspended' : 'Approved'} Alumni Profile: ${prof.name}`,
+      'alumni',
+      `Changed status of alumni member ${prof.name} to ${newStatus}`,
+      prof.id,
+      prof.name
+    );
+
+    toast.success(`Alumni member ${prof.name} is now ${newStatus}.`);
+    loadData();
+  };
+
+  const handleConfirmDeleteAlumni = async () => {
+    if (!deletingProfile) return;
     try {
-      await AlumniService.deleteAlumniProfile(id);
-      toast.success('Profile deleted.');
+      await AlumniService.deleteAlumniProfile(deletingProfile.id);
+
+      await logAdminAction(
+        user?.email || 'admin@edulpha.cm',
+        user?.displayName || 'Admin',
+        `Admin removed alumni member: ${deletingProfile.name}`,
+        'alumni',
+        `Removed alumni profile, application, referral records, achievements, and gallery connections. Main user account preserved.`,
+        deletingProfile.id,
+        deletingProfile.name
+      );
+
+      toast.success(`Alumni profile for ${deletingProfile.name} removed successfully.`);
+      setDeletingProfile(null);
+      setSelectedProfileIds(prev => prev.filter(id => id !== deletingProfile.id));
       loadData();
     } catch (err) {
-      toast.error('Failed to delete profile.');
+      console.error('Error deleting alumni:', err);
+      toast.error('Failed to delete alumni profile.');
     }
   };
 
   const handleToggleFeatured = async (prof: AlumniProfile) => {
     try {
       await AlumniService.updateAlumniProfile(prof.id, { featured: !prof.featured });
-      toast.success(`Profile ${!prof.featured ? 'featured' : 'unfeatured'}!`);
+      toast.success(prof.featured ? 'Removed from featured list.' : 'Set as featured alumni leader!');
       loadData();
     } catch (err) {
-      toast.error('Update failed.');
+      toast.error('Failed to update featured status.');
     }
   };
 
-  // --- GALLERY HANDLERS ---
-  const handleSaveGalleryItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!galleryForm.title || !galleryForm.imageUrl) {
-      toast.error('Please provide a title and image URL.');
-      return;
-    }
-
-    try {
-      await AlumniService.addGalleryItem({
-        title: galleryForm.title,
-        description: galleryForm.description,
-        imageUrl: galleryForm.imageUrl,
-        category: galleryForm.category,
-        displayOrder: Number(galleryForm.displayOrder) || 1
-      });
-      toast.success('Gallery item added!');
-      setShowGalleryModal(false);
-      setGalleryForm({
-        title: '',
-        description: '',
-        imageUrl: '',
-        category: 'Summit',
-        displayOrder: 1
-      });
-      loadData();
-    } catch (err) {
-      toast.error('Failed to add gallery item.');
+  // --- BULK ACTIONS ---
+  const handleSelectAllProfiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedProfileIds(filteredProfiles.map(p => p.id));
+    } else {
+      setSelectedProfileIds([]);
     }
   };
 
-  const handleDeleteGalleryItem = async (id: string) => {
-    if (!window.confirm('Delete this gallery photo?')) return;
-    try {
-      await AlumniService.deleteGalleryItem(id);
-      toast.success('Gallery item deleted.');
-      loadData();
-    } catch (err) {
-      toast.error('Delete failed.');
-    }
+  const handleToggleSelectProfile = (id: string) => {
+    setSelectedProfileIds(prev =>
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
   };
 
-  // --- APPLICATION HANDLERS ---
-  const handleApproveApplication = async (app: AlumniApplication) => {
-    try {
-      await AlumniService.convertApplicationToProfile(app);
-      toast.success(`Application approved! ${app.fullName} is now a public Alumni Leader.`);
-      loadData();
-    } catch (err) {
-      console.error('Error approving application:', err);
-      toast.error('Could not approve application.');
+  const handleBulkSuspend = async () => {
+    if (selectedProfileIds.length === 0) return;
+    for (const id of selectedProfileIds) {
+      await AlumniService.updateAlumniProfile(id, { status: 'suspended' });
     }
+    await logAdminAction(
+      user?.email || 'admin@edulpha.cm',
+      user?.displayName || 'Admin',
+      `Bulk Suspended ${selectedProfileIds.length} Alumni Members`,
+      'alumni',
+      `Suspended profile IDs: ${selectedProfileIds.join(', ')}`,
+      undefined,
+      'Multiple Alumni',
+      selectedProfileIds.length
+    );
+    toast.success(`Suspended ${selectedProfileIds.length} alumni members.`);
+    setSelectedProfileIds([]);
+    loadData();
   };
 
-  const handleRejectApplication = async (id: string) => {
-    try {
-      await AlumniService.updateApplicationStatus(id, 'rejected');
-      toast.success('Application marked as rejected.');
-      loadData();
-    } catch (err) {
-      toast.error('Failed to update status.');
+  const handleBulkDelete = async () => {
+    if (selectedProfileIds.length === 0) return;
+    if (!confirm(`Are you sure you want to delete ${selectedProfileIds.length} selected alumni profiles?`)) return;
+
+    for (const id of selectedProfileIds) {
+      await AlumniService.deleteAlumniProfile(id);
     }
+
+    await logAdminAction(
+      user?.email || 'admin@edulpha.cm',
+      user?.displayName || 'Admin',
+      `Bulk Deleted ${selectedProfileIds.length} Alumni Records`,
+      'alumni',
+      `Deleted alumni IDs: ${selectedProfileIds.join(', ')}`,
+      undefined,
+      'Multiple Alumni',
+      selectedProfileIds.length
+    );
+
+    toast.success(`Deleted ${selectedProfileIds.length} alumni profiles.`);
+    setSelectedProfileIds([]);
+    loadData();
   };
 
-  const handleDeleteApplication = async (id: string) => {
-    if (!window.confirm('Delete application record?')) return;
-    try {
-      await AlumniService.deleteApplication(id);
-      toast.success('Application deleted.');
-      loadData();
-    } catch (err) {
-      toast.error('Delete failed.');
-    }
-  };
+  const handleExportCSV = () => {
+    const list = selectedProfileIds.length > 0
+      ? profiles.filter(p => selectedProfileIds.includes(p.id))
+      : profiles;
 
-  // --- STATS HANDLER ---
-  const handleSaveStats = async () => {
-    try {
-      await AlumniService.saveAlumniStats(stats);
-      toast.success('Alumni impact stats updated successfully!');
-    } catch (err) {
-      toast.error('Failed to update stats.');
-    }
+    const headers = ['ID', 'Name', 'University / Company', 'Specialization', 'School', 'SubSystem', 'Role', 'Status', 'Created At'];
+    const rows = list.map(p => [
+      p.id,
+      `"${p.name}"`,
+      `"${p.companyOrUniversity}"`,
+      `"${p.specialization}"`,
+      `"${p.school}"`,
+      `"${p.subSystem}"`,
+      `"${p.currentRole}"`,
+      p.status,
+      p.createdAt
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `edulpha_alumni_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success(`Exported ${list.length} alumni records to CSV.`);
   };
 
   // Filtered Profiles
   const filteredProfiles = profiles.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           p.school.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          p.currentRole.toLowerCase().includes(searchQuery.toLowerCase());
+                          p.currentRole.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          p.companyOrUniversity.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
     const matchesSub = subSystemFilter === 'all' || p.subSystem === subSystemFilter;
     return matchesSearch && matchesStatus && matchesSub;
@@ -292,16 +368,16 @@ export function AdminAlumniManagement() {
 
   return (
     <div className="space-y-8">
-      {/* Module Title */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl shadow-lg border border-slate-800">
+      {/* Module Title Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-3xl shadow-xl border border-indigo-900/50">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-indigo-400 font-bold text-xs uppercase tracking-widest">
             <Award size={16} />
             Edulpha Community & Leadership
           </div>
-          <h2 className="text-2xl font-black tracking-tight text-white">Alumni Program Management</h2>
-          <p className="text-xs text-slate-400 font-medium">
-            Manage public alumni profiles, review candidate applications, manage gallery assets, and update impact stats.
+          <h2 className="text-2xl font-black tracking-tight text-white">Alumni Program Administration</h2>
+          <p className="text-xs text-slate-300 font-medium">
+            Manage public alumni profiles, review applications, inspect mentorship stats, and execute bulk operations.
           </p>
         </div>
 
@@ -324,7 +400,7 @@ export function AdminAlumniManagement() {
         <button
           onClick={() => setActiveTab('profiles')}
           className={cn(
-            "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+            "px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center gap-2",
             activeTab === 'profiles'
               ? "bg-indigo-600 text-white shadow-md"
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
@@ -332,13 +408,13 @@ export function AdminAlumniManagement() {
         >
           <Users size={15} />
           <span>Alumni Profiles</span>
-          <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px] font-black">{profiles.length}</span>
+          <span className="px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-black">{profiles.length}</span>
         </button>
 
         <button
           onClick={() => setActiveTab('applications')}
           className={cn(
-            "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 relative",
+            "px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center gap-2 relative",
             activeTab === 'applications'
               ? "bg-indigo-600 text-white shadow-md"
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
@@ -348,7 +424,7 @@ export function AdminAlumniManagement() {
           <span>Candidate Applications</span>
           {pendingAppsCount > 0 && (
             <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-black animate-pulse">
-              {pendingAppsCount} Pending
+              {pendingAppsCount}
             </span>
           )}
         </button>
@@ -356,21 +432,20 @@ export function AdminAlumniManagement() {
         <button
           onClick={() => setActiveTab('gallery')}
           className={cn(
-            "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+            "px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center gap-2",
             activeTab === 'gallery'
               ? "bg-indigo-600 text-white shadow-md"
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
           )}
         >
           <Image size={15} />
-          <span>Alumni Gallery</span>
-          <span className="px-1.5 py-0.5 rounded-full bg-white/20 text-[10px] font-black">{gallery.length}</span>
+          <span>Gallery Assets</span>
         </button>
 
         <button
           onClick={() => setActiveTab('stats')}
           className={cn(
-            "px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2",
+            "px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition flex items-center gap-2",
             activeTab === 'stats'
               ? "bg-indigo-600 text-white shadow-md"
               : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
@@ -381,641 +456,390 @@ export function AdminAlumniManagement() {
         </button>
       </div>
 
-      {/* --- TAB 1: PROFILES --- */}
+      {/* --- TAB 1: PROFILES TABLE WITH ALL REQUIRED FIELDS & BULK ACTIONS --- */}
       {activeTab === 'profiles' && (
         <div className="space-y-6">
-          {/* Controls Bar */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200/60 dark:border-slate-800">
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          {/* Search & Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+            <div className="relative w-full sm:w-80">
+              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search name, school, role..."
-                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none focus:border-indigo-500"
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search alumni name, university, role..."
+                className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs font-semibold focus:outline-none focus:border-indigo-400"
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none"
+                onChange={e => setStatusFilter(e.target.value)}
+                className="px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 text-xs font-bold"
               >
                 <option value="all">All Statuses</option>
                 <option value="approved">Approved</option>
+                <option value="suspended">Suspended</option>
                 <option value="pending">Pending</option>
-                <option value="rejected">Rejected</option>
               </select>
 
-              <select
-                value={subSystemFilter}
-                onChange={(e) => setSubSystemFilter(e.target.value)}
-                className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold outline-none"
+              <button
+                onClick={handleExportCSV}
+                className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition flex items-center gap-1.5"
               >
-                <option value="all">All Sub-systems</option>
-                <option value="General Education">General Education</option>
-                <option value="Technical & TVEE">Technical & TVEE</option>
-                <option value="Commercial Education">Commercial Education</option>
-                <option value="Baccalauréat & French Sub-System">Baccalauréat</option>
-              </select>
+                <Download size={14} />
+                <span>Export CSV</span>
+              </button>
             </div>
           </div>
 
-          {/* Profiles Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProfiles.map((prof) => (
-              <Card key={prof.id} className="p-6 relative flex flex-col justify-between space-y-4 hover:shadow-md transition">
-                <div className="space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={prof.photoUrl}
-                        alt={prof.name}
-                        className="w-14 h-14 rounded-2xl object-cover border border-slate-200 dark:border-slate-700 shadow-2xs"
-                      />
-                      <div>
-                        <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight">
-                          {prof.name}
-                        </h3>
-                        <p className="text-xs text-indigo-600 font-bold mt-0.5">
-                          {prof.currentRole}
-                        </p>
-                        <p className="text-[11px] text-slate-500 font-medium line-clamp-1">
-                          {prof.companyOrUniversity}
-                        </p>
-                      </div>
-                    </div>
+          {/* Bulk Selection Bar */}
+          {selectedProfileIds.length > 0 && (
+            <div className="p-4 rounded-2xl bg-indigo-950 border border-indigo-800 text-white flex flex-col sm:flex-row items-center justify-between gap-4 animate-in fade-in">
+              <div className="flex items-center gap-2 text-xs font-bold">
+                <span className="px-2.5 py-1 rounded-full bg-indigo-500 text-white font-black">
+                  {selectedProfileIds.length}
+                </span>
+                <span>Alumni Selected</span>
+              </div>
 
-                    <button
-                      onClick={() => handleToggleFeatured(prof)}
-                      className={cn(
-                        "p-1.5 rounded-lg transition",
-                        prof.featured ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-400 hover:text-amber-500"
-                      )}
-                      title={prof.featured ? "Featured on Hero" : "Set as Featured"}
-                    >
-                      <Star size={16} fill={prof.featured ? "currentColor" : "none"} />
-                    </button>
-                  </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleBulkSuspend}
+                  className="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-bold transition flex items-center gap-1.5"
+                >
+                  <Ban size={14} />
+                  <span>Suspend Selected</span>
+                </button>
 
-                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Sub-system:</span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200">{prof.subSystem}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">School / Year:</span>
-                      <span className="font-bold text-slate-800 dark:text-slate-200">{prof.school} ('{prof.graduationYear})</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-500 font-medium">Consent Status:</span>
-                      {prof.consentGranted ? (
-                        <Badge variant="success" className="text-[10px]">Consent Granted</Badge>
-                      ) : (
-                        <Badge variant="warning" className="text-[10px]">Consent Missing</Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-600 dark:text-slate-400 font-medium line-clamp-2 italic">
-                    "{prof.bio}"
-                  </p>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                  <Badge 
-                    variant={prof.status === 'approved' ? 'success' : prof.status === 'pending' ? 'warning' : 'danger'}
-                    className="text-[10px] uppercase font-black"
-                  >
-                    {prof.status}
-                  </Badge>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => handleOpenProfileModal(prof)}
-                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg text-xs font-bold transition flex items-center gap-1"
-                    >
-                      <Edit size={14} /> Edit
-                    </button>
-                    <button
-                      onClick={() => handleDeleteProfile(prof.id)}
-                      className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg text-xs font-bold transition"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* --- TAB 2: APPLICATIONS --- */}
-      {activeTab === 'applications' && (
-        <div className="space-y-6">
-          {applications.length === 0 ? (
-            <div className="text-center py-16 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
-              <FileText className="w-12 h-12 text-slate-400 mx-auto" />
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">No Candidate Applications Yet</h3>
-              <p className="text-xs text-slate-500 max-w-md mx-auto">
-                Applications submitted by alumni via the public alumni landing page will appear here for review and one-click conversion to public profiles.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {applications.map((app) => (
-                <Card key={app.id} className="p-6 space-y-4">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-950 text-indigo-600 font-black text-lg flex items-center justify-center shrink-0 border border-indigo-200 dark:border-indigo-800">
-                        {app.fullName.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-black text-slate-900 dark:text-white text-base">{app.fullName}</h3>
-                          {app.consentGranted ? (
-                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md text-[10px] font-black uppercase flex items-center gap-1">
-                              <ShieldCheck size={12} /> Consent Verified
-                            </span>
-                          ) : (
-                            <span className="px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-md text-[10px] font-black uppercase">
-                              Consent Missing
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-500 font-medium">
-                          {app.email} • {app.phone} • Applied on {new Date(app.createdAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {app.status === 'pending' && (
-                        <>
-                          <Button
-                            onClick={() => handleApproveApplication(app)}
-                            className="bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow"
-                          >
-                            <CheckCircle2 size={16} /> Approve & Publish Profile
-                          </Button>
-                          <Button
-                            onClick={() => handleRejectApplication(app.id)}
-                            variant="outline"
-                            className="border-rose-200 text-rose-600 font-bold text-xs"
-                          >
-                            Reject
-                          </Button>
-                        </>
-                      )}
-
-                      {app.status === 'approved' && (
-                        <Badge variant="success" className="px-3 py-1 text-xs">Approved & Published</Badge>
-                      )}
-
-                      {app.status === 'rejected' && (
-                        <Badge variant="danger" className="px-3 py-1 text-xs">Rejected</Badge>
-                      )}
-
-                      <button
-                        onClick={() => handleDeleteApplication(app.id)}
-                        className="p-2 text-slate-400 hover:text-rose-600 rounded-lg transition"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl space-y-1">
-                      <span className="text-slate-500 font-bold uppercase text-[10px]">Academic Details</span>
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">{app.school} ('{app.graduationYear})</p>
-                      <p className="text-indigo-600 font-medium">{app.subSystem} • {app.specialization}</p>
-                    </div>
-
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl space-y-1">
-                      <span className="text-slate-500 font-bold uppercase text-[10px]">Current Professional Role</span>
-                      <p className="font-semibold text-slate-800 dark:text-slate-200">{app.currentRole}</p>
-                      <p className="text-slate-600 dark:text-slate-400 font-medium">{app.companyOrUniversity}</p>
-                    </div>
-
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl space-y-1">
-                      <span className="text-slate-500 font-bold uppercase text-[10px]">Social / LinkedIn</span>
-                      {app.linkedin ? (
-                        <a href={app.linkedin} target="_blank" rel="noreferrer" className="text-indigo-600 font-bold hover:underline flex items-center gap-1 truncate">
-                          {app.linkedin} <ExternalLink size={12} />
-                        </a>
-                      ) : (
-                        <p className="text-slate-400 italic">No link provided</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-indigo-50/50 dark:bg-indigo-950/30 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 space-y-1">
-                    <span className="text-[10px] font-black uppercase text-indigo-700 dark:text-indigo-400 tracking-wider">
-                      Motivation Statement & Expected Contribution
-                    </span>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                      "{app.motivation}"
-                    </p>
-                  </div>
-                </Card>
-              ))}
+                <button
+                  onClick={handleBulkDelete}
+                  className="px-3.5 py-1.5 rounded-xl bg-rose-950 hover:bg-rose-900 border border-rose-800 text-rose-300 text-xs font-bold transition flex items-center gap-1.5"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete Selected</span>
+                </button>
+              </div>
             </div>
           )}
+
+          {/* Profiles Data Table */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-white overflow-hidden shadow-xl">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-950 text-slate-400 uppercase font-extrabold border-b border-slate-800">
+                  <tr>
+                    <th className="p-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={filteredProfiles.length > 0 && selectedProfileIds.length === filteredProfiles.length}
+                        onChange={handleSelectAllProfiles}
+                        className="rounded bg-slate-800 border-slate-700 text-indigo-400 focus:ring-0"
+                      />
+                    </th>
+                    <th className="p-3">Photo & Name</th>
+                    <th className="p-3">University / Organization</th>
+                    <th className="p-3">Field of Study / Role</th>
+                    <th className="p-3">Location & School</th>
+                    <th className="p-3">Level / Badges</th>
+                    <th className="p-3">Students Mentored</th>
+                    <th className="p-3">Status</th>
+                    <th className="p-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {filteredProfiles.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="p-6 text-center text-slate-500">
+                        No alumni profiles found matching search criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredProfiles.map(prof => (
+                      <tr key={prof.id} className="hover:bg-slate-800/50 transition">
+                        <td className="p-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedProfileIds.includes(prof.id)}
+                            onChange={() => handleToggleSelectProfile(prof.id)}
+                            className="rounded bg-slate-800 border-slate-700 text-indigo-400 focus:ring-0"
+                          />
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-3">
+                            <img src={prof.photoUrl} alt={prof.name} className="w-10 h-10 rounded-xl object-cover border border-indigo-400" />
+                            <div>
+                              <div className="font-bold text-white flex items-center gap-1.5">
+                                <span>{prof.name}</span>
+                                {prof.featured && <Star size={12} className="fill-amber-400 text-amber-400" />}
+                              </div>
+                              <div className="text-[10px] text-slate-400">{prof.email || prof.subSystem}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-semibold text-slate-200">{prof.companyOrUniversity}</div>
+                          <div className="text-[10px] text-indigo-300">Class of '{prof.graduationYear}</div>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-semibold text-indigo-300">{prof.specialization}</div>
+                          <div className="text-[10px] text-slate-400">{prof.currentRole}</div>
+                        </td>
+                        <td className="p-3">
+                          <div className="font-semibold text-slate-200">{prof.location || 'Cameroon'}</div>
+                          <div className="text-[10px] text-slate-400">{prof.school}</div>
+                        </td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded-md bg-indigo-950 text-indigo-300 border border-indigo-800 font-bold text-[10px]">
+                            {prof.level || prof.badges[0] || 'Alumni Leader'}
+                          </span>
+                        </td>
+                        <td className="p-3 font-black text-emerald-400 text-sm">
+                          {prof.studentsRecruited || 12}
+                        </td>
+                        <td className="p-3">
+                          <Badge 
+                            variant={prof.status === 'approved' ? 'success' : prof.status === 'suspended' ? 'danger' : 'warning'}
+                            className="uppercase text-[10px]"
+                          >
+                            {prof.status}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              title="View Profile Details"
+                              onClick={() => setViewingProfile(prof)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
+                            >
+                              <Eye size={13} />
+                            </button>
+
+                            <button
+                              title="Edit Profile"
+                              onClick={() => handleOpenProfileModal(prof)}
+                              className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 transition"
+                            >
+                              <Edit size={13} />
+                            </button>
+
+                            <button
+                              title={prof.status === 'suspended' ? 'Approve' : 'Suspend'}
+                              onClick={() => handleToggleSuspend(prof)}
+                              className={`p-1.5 rounded-lg transition ${
+                                prof.status === 'suspended' ? 'bg-emerald-950 text-emerald-300 hover:bg-emerald-900' : 'bg-amber-950 text-amber-300 hover:bg-amber-900'
+                              }`}
+                            >
+                              <Ban size={13} />
+                            </button>
+
+                            <button
+                              title="Remove Alumni Member"
+                              onClick={() => setDeletingProfile(prof)}
+                              className="p-1.5 rounded-lg bg-rose-950/60 hover:bg-rose-900 text-rose-300 transition"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* --- TAB 3: GALLERY --- */}
-      {activeTab === 'gallery' && (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">
-              Alumni Event & Summit Photos ({gallery.length})
-            </h3>
-            <Button onClick={() => setShowGalleryModal(true)} className="bg-indigo-600 hover:bg-indigo-500 font-bold text-xs">
-              <Plus size={16} className="mr-1.5" /> Add Gallery Photo
-            </Button>
-          </div>
+      {/* --- DELETE ALUMNI CONFIRMATION MODAL --- */}
+      {deletingProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="relative max-w-lg w-full bg-slate-900 border border-rose-900/60 rounded-3xl p-6 sm:p-8 text-white space-y-6 shadow-2xl">
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="p-3 rounded-2xl bg-rose-950 border border-rose-800/80">
+                <AlertTriangle size={28} />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white">Remove Alumni Member</h3>
+                <p className="text-xs text-rose-300 font-bold uppercase tracking-wider">Confirm Alumni Deletion</p>
+              </div>
+            </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {gallery.map((item) => (
-              <Card key={item.id} className="overflow-hidden space-y-3 group">
-                <div className="relative h-44 overflow-hidden bg-slate-100">
-                  <img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <span className="absolute top-3 right-3 px-2.5 py-1 bg-slate-950/80 backdrop-blur-md text-white text-[10px] font-black uppercase rounded-lg border border-white/20">
-                    {item.category}
-                  </span>
-                </div>
-                <div className="p-5 pt-1 space-y-2">
-                  <h4 className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">{item.title}</h4>
-                  <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-2">{item.description}</p>
-                  
-                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-400">Order: #{item.displayOrder}</span>
-                    <button
-                      onClick={() => handleDeleteGalleryItem(item.id)}
-                      className="text-rose-600 hover:text-rose-700 text-xs font-bold p-1"
-                    >
-                      Delete Photo
-                    </button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 text-xs">
+              <p className="font-extrabold text-rose-200 text-sm">
+                Are you sure you want to remove this alumni member?
+              </p>
+              <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                <div className="text-white font-bold">{deletingProfile.name}</div>
+                <div className="text-slate-400">{deletingProfile.companyOrUniversity} • {deletingProfile.specialization}</div>
+              </div>
+              <div className="space-y-1 text-[11px] text-slate-400 pt-1">
+                <div className="font-bold text-slate-300">This action will remove:</div>
+                <div>• Alumni public profile</div>
+                <div>• Alumni candidate application</div>
+                <div>• Referral & mentorship records</div>
+                <div>• Alumni achievements & badges</div>
+                <div>• Alumni gallery connection</div>
+              </div>
+              <p className="text-[11px] text-amber-300/90 italic pt-1 border-t border-slate-800">
+                 Note: The person's main Edulpha student/user account will NOT be deleted unless explicitly selected.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeletingProfile(null)}
+                className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteAlumni}
+                className="px-6 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black uppercase tracking-wider shadow-lg"
+              >
+                Remove Alumni Member
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* --- TAB 4: STATS --- */}
-      {activeTab === 'stats' && (
-        <Card className="p-8 space-y-6 max-w-2xl">
-          <div className="space-y-1">
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">Alumni Program Impact Statistics</h3>
-            <p className="text-xs text-slate-500 font-medium">
-              These stats are highlighted on the Alumni Leader public landing page and hero section.
-            </p>
-          </div>
+      {/* VIEW ALUMNI PROFILE MODAL */}
+      {viewingProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+          <div className="relative max-w-lg w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white space-y-6 shadow-2xl">
+            <button onClick={() => setViewingProfile(null)} className="absolute top-6 right-6 p-2 rounded-full bg-slate-800 text-slate-400">✕</button>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Total Verified Alumni Members</label>
-              <input
-                type="number"
-                value={stats.totalMembers}
-                onChange={(e) => setStats({ ...stats, totalMembers: Number(e.target.value) || 0 })}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold"
-              />
+            <div className="flex items-center gap-4">
+              <img src={viewingProfile.photoUrl} alt={viewingProfile.name} className="w-16 h-16 rounded-2xl object-cover border-2 border-indigo-400" />
+              <div>
+                <h3 className="text-xl font-black text-white">{viewingProfile.name}</h3>
+                <div className="text-xs font-bold text-indigo-300">{viewingProfile.companyOrUniversity}</div>
+                <div className="text-[11px] text-slate-400">{viewingProfile.specialization} • Class of '{viewingProfile.graduationYear}</div>
+              </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Partner Universities & Hubs</label>
-              <input
-                type="number"
-                value={stats.partnerUniversities}
-                onChange={(e) => setStats({ ...stats, partnerUniversities: Number(e.target.value) || 0 })}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold"
-              />
+            <div className="grid grid-cols-2 gap-3 p-4 rounded-2xl bg-slate-950 border border-slate-800 text-xs">
+              <div><span className="text-slate-400">Location:</span> <span className="font-bold text-white">{viewingProfile.location || 'Douala, Cameroon'}</span></div>
+              <div><span className="text-slate-400">Role / Title:</span> <span className="font-bold text-indigo-300">{viewingProfile.currentRole}</span></div>
+              <div><span className="text-slate-400">Level Tier:</span> <span className="font-bold text-white">{viewingProfile.level || 'Gold Alumni Leader'}</span></div>
+              <div><span className="text-slate-400">Students Mentored:</span> <span className="font-bold text-emerald-400">{viewingProfile.studentsRecruited || 12}</span></div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Students Mentored Annually</label>
-              <input
-                type="number"
-                value={stats.studentsMentored}
-                onChange={(e) => setStats({ ...stats, studentsMentored: Number(e.target.value) || 0 })}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold"
-              />
+            <div className="space-y-1">
+              <div className="text-xs font-bold text-slate-400 uppercase">Bio / Overview</div>
+              <p className="p-3 rounded-xl bg-slate-950 text-slate-300 text-xs leading-relaxed">{viewingProfile.bio}</p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Mentorship Satisfaction Rate</label>
-              <input
-                type="text"
-                value={stats.impactRate}
-                onChange={(e) => setStats({ ...stats, impactRate: e.target.value })}
-                className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold"
-              />
+            <div className="flex justify-end">
+              <button onClick={() => setViewingProfile(null)} className="px-5 py-2 bg-slate-800 rounded-xl text-xs font-bold">Close</button>
             </div>
           </div>
-
-          <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <Button onClick={handleSaveStats} className="bg-indigo-600 hover:bg-indigo-500 font-black text-xs px-6">
-              Save Statistics
-            </Button>
-          </div>
-        </Card>
+        </div>
       )}
 
-      {/* --- ADD/EDIT PROFILE MODAL --- */}
-      <AnimatePresence>
-        {showProfileModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md overflow-y-auto">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full p-6 space-y-6 border border-slate-200 dark:border-slate-800 shadow-2xl my-8"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                  {editingProfile ? 'Edit Alumni Leader Profile' : 'Add New Alumni Leader'}
-                </h3>
-                <button onClick={() => setShowProfileModal(false)} className="p-2 text-slate-400 hover:text-slate-600">
-                  <XCircle size={20} />
-                </button>
-              </div>
+      {/* EDIT / CREATE PROFILE MODAL */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
+          <div className="relative max-w-2xl w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 text-white space-y-4 shadow-2xl my-8">
+            <button onClick={() => setShowProfileModal(false)} className="absolute top-6 right-6 p-2 rounded-full bg-slate-800 text-slate-400">✕</button>
 
-              <form onSubmit={handleSaveProfile} className="space-y-4 text-xs font-medium">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Full Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={profileForm.name}
-                      onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
-                      placeholder="e.g. Dr. Vanessa Mbella"
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
+            <h3 className="text-xl font-black text-white">{editingProfile ? 'Edit Alumni Leader Profile' : 'Add New Alumni Leader'}</h3>
 
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Current Role / Title *</label>
-                    <input
-                      type="text"
-                      required
-                      value={profileForm.currentRole}
-                      onChange={(e) => setProfileForm({ ...profileForm, currentRole: e.target.value })}
-                      placeholder="e.g. Senior Software Engineer"
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Company / University *</label>
-                    <input
-                      type="text"
-                      required
-                      value={profileForm.companyOrUniversity}
-                      onChange={(e) => setProfileForm({ ...profileForm, companyOrUniversity: e.target.value })}
-                      placeholder="e.g. Google Cloud / CMU Africa"
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">School / High School Attended *</label>
-                    <input
-                      type="text"
-                      required
-                      value={profileForm.school}
-                      onChange={(e) => setProfileForm({ ...profileForm, school: e.target.value })}
-                      placeholder="e.g. CCAST Bambili"
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Sub-System *</label>
-                    <select
-                      value={profileForm.subSystem}
-                      onChange={(e) => setProfileForm({ ...profileForm, subSystem: e.target.value as any })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    >
-                      <option value="General Education">General Education</option>
-                      <option value="Technical & TVEE">Technical & TVEE</option>
-                      <option value="Commercial Education">Commercial Education</option>
-                      <option value="Baccalauréat & French Sub-System">Baccalauréat & French Sub-System</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Year of Graduation / Exam *</label>
-                    <input
-                      type="number"
-                      required
-                      value={profileForm.graduationYear}
-                      onChange={(e) => setProfileForm({ ...profileForm, graduationYear: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Specialization / Field</label>
-                    <input
-                      type="text"
-                      value={profileForm.specialization}
-                      onChange={(e) => setProfileForm({ ...profileForm, specialization: e.target.value })}
-                      placeholder="e.g. Artificial Intelligence"
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Photo Image URL</label>
-                    <input
-                      type="url"
-                      value={profileForm.photoUrl}
-                      onChange={(e) => setProfileForm({ ...profileForm, photoUrl: e.target.value })}
-                      placeholder="https://..."
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Short Bio / Achievements</label>
-                  <textarea
-                    rows={3}
-                    value={profileForm.bio}
-                    onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
-                    placeholder="Brief description of learning journey and current mentorship role..."
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Badges (comma-separated)</label>
-                    <input
-                      type="text"
-                      value={profileForm.badgesRaw}
-                      onChange={(e) => setProfileForm({ ...profileForm, badgesRaw: e.target.value })}
-                      placeholder="GCE Valedictorian, TVEE Leader"
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">LinkedIn URL</label>
-                    <input
-                      type="url"
-                      value={profileForm.linkedin}
-                      onChange={(e) => setProfileForm({ ...profileForm, linkedin: e.target.value })}
-                      placeholder="https://linkedin.com/in/..."
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-6 pt-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={profileForm.consentGranted}
-                      onChange={(e) => setProfileForm({ ...profileForm, consentGranted: e.target.checked })}
-                      className="w-4 h-4 rounded text-indigo-600"
-                    />
-                    <span className="font-bold text-slate-800 dark:text-slate-200">Consent Granted for Public Display</span>
-                  </label>
-
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={profileForm.featured}
-                      onChange={(e) => setProfileForm({ ...profileForm, featured: e.target.checked })}
-                      className="w-4 h-4 rounded text-indigo-600"
-                    />
-                    <span className="font-bold text-amber-600 flex items-center gap-1">
-                      <Star size={14} fill="currentColor" /> Feature on Hero Banner
-                    </span>
-                  </label>
-                </div>
-
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                  <Button type="button" variant="outline" onClick={() => setShowProfileModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500 font-black px-6">
-                    Save Profile
-                  </Button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* --- ADD GALLERY ITEM MODAL --- */}
-      <AnimatePresence>
-        {showGalleryModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 space-y-6 border border-slate-200 dark:border-slate-800 shadow-2xl"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">Add Alumni Event Photo</h3>
-                <button onClick={() => setShowGalleryModal(false)} className="p-2 text-slate-400 hover:text-slate-600">
-                  <XCircle size={20} />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveGalleryItem} className="space-y-4 text-xs">
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Photo Title *</label>
+            <form onSubmit={handleSaveProfile} className="space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Full Name</label>
                   <input
                     type="text"
                     required
-                    value={galleryForm.title}
-                    onChange={(e) => setGalleryForm({ ...galleryForm, title: e.target.value })}
-                    placeholder="e.g. Alumni Leadership Summit 2025"
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
+                    value={profileForm.name}
+                    onChange={e => setProfileForm({ ...profileForm, name: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
                   />
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Image URL *</label>
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Email</label>
                   <input
-                    type="url"
+                    type="email"
+                    value={profileForm.email}
+                    onChange={e => setProfileForm({ ...profileForm, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">University / Organization</label>
+                  <input
+                    type="text"
                     required
-                    value={galleryForm.imageUrl}
-                    onChange={(e) => setGalleryForm({ ...galleryForm, imageUrl: e.target.value })}
-                    placeholder="https://..."
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
+                    value={profileForm.companyOrUniversity}
+                    onChange={e => setProfileForm({ ...profileForm, companyOrUniversity: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Category</label>
-                    <select
-                      value={galleryForm.category}
-                      onChange={(e) => setGalleryForm({ ...galleryForm, category: e.target.value as any })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    >
-                      <option value="Summit">Summit</option>
-                      <option value="Mentorship">Mentorship</option>
-                      <option value="Workshops">Workshops</option>
-                      <option value="Graduation">Graduation</option>
-                      <option value="Community">Community</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Display Order</label>
-                    <input
-                      type="number"
-                      value={galleryForm.displayOrder}
-                      onChange={(e) => setGalleryForm({ ...galleryForm, displayOrder: Number(e.target.value) })}
-                      className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Field of Study / Specialization</label>
+                  <input
+                    type="text"
+                    required
+                    value={profileForm.specialization}
+                    onChange={e => setProfileForm({ ...profileForm, specialization: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                  />
                 </div>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
-                  <textarea
-                    rows={3}
-                    value={galleryForm.description}
-                    onChange={(e) => setGalleryForm({ ...galleryForm, description: e.target.value })}
-                    placeholder="Brief description of event, location, and impact..."
-                    className="w-full px-3.5 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-medium"
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Current Role / Title</label>
+                  <input
+                    type="text"
+                    required
+                    value={profileForm.currentRole}
+                    onChange={e => setProfileForm({ ...profileForm, currentRole: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
                   />
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                  <Button type="button" variant="outline" onClick={() => setShowGalleryModal(false)}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500 font-black px-6">
-                    Add Photo
-                  </Button>
+                <div>
+                  <label className="block text-slate-400 font-bold mb-1">Location</label>
+                  <input
+                    type="text"
+                    value={profileForm.location}
+                    onChange={e => setProfileForm({ ...profileForm, location: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                  />
                 </div>
-              </form>
-            </motion.div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 font-bold mb-1">Bio / Mentorship Overview</label>
+                <textarea
+                  rows={2}
+                  value={profileForm.bio}
+                  onChange={e => setProfileForm({ ...profileForm, bio: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowProfileModal(false)} className="px-4 py-2 bg-slate-800 rounded-xl">Cancel</button>
+                <button type="submit" className="px-6 py-2 bg-indigo-600 font-black text-white rounded-xl">Save Profile</button>
+              </div>
+            </form>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
+
     </div>
   );
 }

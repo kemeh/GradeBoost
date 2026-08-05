@@ -10,18 +10,23 @@ export interface AlumniProfile {
   currentRole: string;
   companyOrUniversity: string;
   specialization: string;
+  location?: string;
   bio: string;
   badges: string[];
+  level?: string;
+  studentsRecruited?: number;
   socialLinks?: {
     linkedin?: string;
     twitter?: string;
     website?: string;
   };
   consentGranted: boolean;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'suspended';
   featured: boolean;
   orderIndex?: number;
   createdAt: string;
+  is_demo?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface AlumniGalleryItem {
@@ -32,6 +37,8 @@ export interface AlumniGalleryItem {
   category: 'Summit' | 'Mentorship' | 'Workshops' | 'Graduation' | 'Community';
   displayOrder: number;
   createdAt: string;
+  is_demo?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface AlumniApplication {
@@ -49,9 +56,11 @@ export interface AlumniApplication {
   linkedin?: string;
   photoUrl?: string;
   consentGranted: boolean;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'suspended';
   createdAt: string;
   reviewedAt?: string;
+  is_demo?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface AlumniStats {

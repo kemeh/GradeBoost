@@ -8,9 +8,13 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Use memoryLocalCache to prevent QuotaExceededError in browser iframe storage
-export const db = initializeFirestore(app, {
-  localCache: memoryLocalCache()
-});
+export const db = initializeFirestore(
+  app,
+  {
+    localCache: memoryLocalCache()
+  },
+  firebaseConfig.firestoreDatabaseId
+);
 
 export const storage = getStorage(app, firebaseConfig.storageBucket);
 

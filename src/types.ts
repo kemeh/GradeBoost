@@ -168,7 +168,7 @@ export interface UserProfile {
   targetGrade: Grade;
   createdAt: string;
   role: 'student' | 'teacher' | 'admin';
-  status?: 'active' | 'suspended' | 'locked';
+  status?: 'active' | 'suspended' | 'locked' | 'deleted' | string;
   isLocked?: boolean;
   lockoutUntil?: string | null;
   failedLoginAttempts?: number;

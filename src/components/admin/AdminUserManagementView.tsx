@@ -4,13 +4,16 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../../firebase';
 import { UserProfile } from '../../types';
 import { Button, Card, Badge, cn, Tabs, TabsList, TabsTrigger, TabsContent } from '../ui';
-import { Search, Shield, User, GraduationCap, Unlock, Lock, UserX, UserCheck, KeyRound, History, Plus, X, Loader2, Mail, CheckCircle2 } from 'lucide-react';
+import { Search, Shield, User, GraduationCap, Unlock, Lock, UserX, UserCheck, KeyRound, History, Plus, X, Loader2, Mail, CheckCircle2, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 import { adminUnlockAccount } from '../../services/authSecurityService';
 import { logAuditEvent, fetchAuditLogs, AuditLogEntry } from '../../services/auditService';
+import { deleteUserAccount } from '../../services/userDeletionService';
 import { formatDate } from '../../utils/dateUtils';
 
 export default function AdminUserManagementView() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [subTab, setSubTab] = useState<'all' | 'teachers' | 'students'>('all');
@@ -20,6 +23,8 @@ export default function AdminUserManagementView() {
   const [selectedUserLogs, setSelectedUserLogs] = useState<{ email: string; logs: AuditLogEntry[] } | null>(null);
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [createForm, setCreateForm] = useState({
     name: '',
     email: '',
@@ -30,6 +35,40 @@ export default function AdminUserManagementView() {
     region: 'Center',
   });
   const [creating, setCreating] = useState(false);
+
+  const handleConfirmDeleteUser = async () => {
+    if (!userToDelete || !currentUser) return;
+    setIsDeleting(true);
+
+    try {
+      const adminUser = {
+        uid: currentUser.uid,
+        email: currentUser.email,
+        name: currentUser.name || 'Admin',
+        role: currentUser.role,
+      };
+
+      const result = await deleteUserAccount(
+        adminUser,
+        userToDelete.uid,
+        userToDelete.email,
+        userToDelete.name || 'Student'
+      );
+
+      if (result.success) {
+        toast.success('Student deleted successfully');
+        setUserToDelete(null);
+        await fetchUsers();
+      } else {
+        toast.error(result.message || 'Unable to delete student. Please try again.');
+      }
+    } catch (err: any) {
+      console.error('Delete user handler error:', err);
+      toast.error('Unable to delete student. Please try again.');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
@@ -379,6 +418,16 @@ export default function AdminUserManagementView() {
                         >
                           <History size={14} />
                         </Button>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setUserToDelete(userItem)}
+                          className="text-red-600 border-red-200 hover:bg-red-50 rounded-xl"
+                          title="Permanently Delete Student Account"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
                       </td>
                     </tr>
                   );
@@ -388,6 +437,46 @@ export default function AdminUserManagementView() {
           </div>
         )}
       </Card>
+
+      {/* Delete User Confirmation Modal */}
+      {userToDelete && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <Card className="max-w-md w-full p-6 space-y-6 bg-white border border-slate-100 shadow-2xl rounded-3xl">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash2 size={24} />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-slate-900">Delete Account Confirmation</h3>
+                <p className="text-xs text-slate-500 font-bold mt-0.5">{userToDelete.name || 'Student'} ({userToDelete.email})</p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-red-50/70 border border-red-100 rounded-2xl text-red-800 text-xs font-bold leading-relaxed">
+              Are you sure you want to permanently delete this student? This action cannot be undone.
+            </div>
+
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
+              <Button
+                variant="outline"
+                disabled={isDeleting}
+                onClick={() => setUserToDelete(null)}
+                className="rounded-xl border-slate-200 font-bold text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                loading={isDeleting}
+                onClick={handleConfirmDeleteUser}
+                className="rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs"
+              >
+                Permanently Delete
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {/* Audit Logs Modal */}
       {selectedUserLogs && (

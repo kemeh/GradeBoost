@@ -20,6 +20,8 @@ export interface AmbassadorProfile {
   featured: boolean;
   subjects: string[];
   createdAt: string;
+  is_demo?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface AmbassadorApplication {
@@ -45,6 +47,8 @@ export interface AmbassadorApplication {
   assignedLevel?: AmbassadorLevel;
   notes?: string;
   submittedAt: string;
+  is_demo?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface AmbassadorGalleryItem {
@@ -55,6 +59,8 @@ export interface AmbassadorGalleryItem {
   category: 'school_activity' | 'presentation' | 'study_session' | 'ambassador_event';
   school?: string;
   date: string;
+  is_demo?: boolean;
+  deleted_at?: string | null;
 }
 
 export interface AmbassadorStats {
