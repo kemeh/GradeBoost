@@ -169,6 +169,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
       // Use provided email or fallback to virtual email
       const authEmail = formData.email.trim() ? formData.email.trim() : phoneToVirtualEmail(formattedPhone);
 
+      // 1. Authenticate user first
       const { user } = await createUserWithEmailAndPassword(auth, authEmail, formData.password);
       
       if (formData.email.trim()) {
@@ -181,7 +182,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
 
       const profileCompletion = accountType === 'student' ? 100 : 90;
 
-      await setDoc(doc(db, 'users', user.uid), {
+      const userPayload = {
         uid: user.uid,
         firstName: formData.firstName,
         lastName: formData.lastName,
@@ -219,7 +220,24 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         streak: 1,
         badges: ['welcome_badge'],
         createdAt: serverTimestamp(),
+      };
+
+      // 2. Log API Insert details for debugging and audit
+      console.log('[REGISTRATION AUDIT INSERT]', {
+        authUserId: auth.currentUser?.uid || user.uid,
+        table: 'users',
+        documentId: user.uid,
+        payloadSummary: {
+          name: userPayload.name,
+          email: userPayload.email,
+          role: userPayload.role,
+          phone: userPayload.phone,
+        },
+        timestamp: new Date().toISOString()
       });
+
+      // 3. Insert profile into Firestore after Auth succeeds
+      await setDoc(doc(db, 'users', user.uid), userPayload);
 
       await logAuditEvent({
         userId: user.uid,
@@ -231,8 +249,15 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
       toast.success(lang === 'fr' ? 'Compte Edulpha créé et téléphone vérifié avec succès !' : 'Edulpha account created and phone verified successfully!');
       onSuccess();
     } catch (err: any) {
-      console.error('Registration error:', err);
-      setError(err.message || 'Registration failed. Please check your details.');
+      console.error('[REGISTRATION API FAILURE]', {
+        authUserId: auth.currentUser?.uid,
+        table: 'users',
+        error: err?.message || err,
+        code: err?.code,
+        fullErrorObject: err
+      });
+      const debugErrorMsg = `Registration Error (${err.code || 'permission-denied'}): ${err.message || 'Firestore access denied'}`;
+      setError(debugErrorMsg);
     } finally {
       setLoading(false);
     }
