@@ -19,12 +19,17 @@
 
 @layer base {
   body {
-    @apply font-sans text-slate-900 bg-slate-50;
+    @apply font-sans text-slate-900 bg-slate-50 overflow-x-hidden;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
   
   h1, h2, h3, h4 {
     @apply font-display tracking-tight font-bold;
+  }
+  
+  input, select, textarea, button {
+    @apply text-base sm:text-sm;
   }
 }
 
