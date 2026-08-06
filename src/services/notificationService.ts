@@ -262,10 +262,10 @@ const INITIAL_DELIVERY_REPORTS: DeliveryReport[] = [
 ];
 
 class NotificationService {
-  private announcementsKey = 'gb60_announcements';
-  private notificationsKey = 'gb60_user_notifications';
-  private preferencesKey = 'gb60_user_preferences';
-  private templatesKey = 'gb60_notification_templates';
+  private announcementsKey = 'edulpha_announcements';
+  private notificationsKey = 'edulpha_user_notifications';
+  private preferencesKey = 'edulpha_user_preferences';
+  private templatesKey = 'edulpha_notification_templates';
 
   constructor() {
     this.initStorage();

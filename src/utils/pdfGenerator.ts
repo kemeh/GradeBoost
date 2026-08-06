@@ -185,10 +185,10 @@ export const downloadQuestionAsPDF = async (question: ExamQuestion, dayNumber?: 
   doc.setFontSize(8);
   doc.setTextColor(148, 163, 184); // slate-400
   doc.setFont('helvetica', 'normal');
-  doc.text('© GradeBoost60 - Powered by Vertexon Technologies', margin, footerY);
+  doc.text('© Edulpha - Powered by Vertexon Technologies', margin, footerY);
   doc.text(`Downloaded: ${new Date().toLocaleDateString()}`, pageWidth - margin - 40, footerY);
 
-  doc.save(`GradeBoost60_DailyDrill_Day${dayNumber || 'X'}_${question.id?.substring(0, 5) || 'export'}.pdf`);
+  doc.save(`Edulpha_DailyDrill_Day${dayNumber || 'X'}_${question.id?.substring(0, 5) || 'export'}.pdf`);
 };
 
 export interface GCEPaper2Data {
@@ -219,7 +219,7 @@ export const generateGCEPaper2PDF = async (data: GCEPaper2Data) => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(22);
   doc.setTextColor(30, 41, 59); // slate-800
-  doc.text('GRADEBOOST60', pageWidth / 2, currentY, { align: 'center' });
+  doc.text('EDULPHA', pageWidth / 2, currentY, { align: 'center' });
   currentY += 8;
   
   doc.setFontSize(14);

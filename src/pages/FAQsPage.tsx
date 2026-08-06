@@ -12,7 +12,7 @@ export default function FAQsPage() {
   const faqs = [
     {
       q: 'Does Edulpha work offline without internet?',
-      a: 'Yes! Download the GradeBoost60 / Edulpha Android APK to save past questions, notes, and offline diagnostic tests onto your device memory.'
+      a: 'Yes! Download the Edulpha Android APK to save past questions, notes, and offline diagnostic tests onto your device memory.'
     },
     {
       q: 'Are GCE and MINESEC marking schemes included?',

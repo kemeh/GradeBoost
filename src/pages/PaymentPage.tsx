@@ -433,7 +433,7 @@ export default function PaymentPage() {
               <div className="flex gap-2">
                 <input
                   type="text"
-                  placeholder="e.g. GB60BONUS"
+                  placeholder="e.g. EDULPHABONUS"
                   value={couponInput}
                   onChange={e => setCouponInput(e.target.value.toUpperCase())}
                   className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold uppercase outline-none"

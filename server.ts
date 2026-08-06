@@ -157,7 +157,7 @@ async function startServer() {
   // ... (keep existing API routes)
 
   // ===============================================================
-  // GradeBoost AI REST API Endpoints
+  // Edulpha AI REST API Endpoints
   // ===============================================================
 
   // Helper for Gemini AI client initialization
@@ -182,7 +182,7 @@ async function startServer() {
       if (!ai) {
         if (isFrenchCurriculum) {
           return res.json({
-            reply: `[GradeBoost AI - Mode Hors Ligne / Système Francophone]\n\nVoici une vue d'ensemble pour "${prompt}":\n\n📌 **Notions Clés** (${subject || 'Général'} - ${topic || 'Révision'}):\n- Respectez rigoureusement la méthodologie et le vocabulaire du programme officiel camerounais (MINESEC/OBC).\n- Décomposez la démarche étape par étape.\n\n💡 **Conseil d'Examen (BAC / BEPC)**: Citez toujours la définition exacte du cours!\n\n⚠️ **Erreur Fréquente**: Omission des étapes d'explication ou confusion de formules.`,
+            reply: `[Edulpha AI - Mode Hors Ligne / Système Francophone]\n\nVoici une vue d'ensemble pour "${prompt}":\n\n📌 **Notions Clés** (${subject || 'Général'} - ${topic || 'Révision'}):\n- Respectez rigoureusement la méthodologie et le vocabulaire du programme officiel camerounais (MINESEC/OBC).\n- Décomposez la démarche étape par étape.\n\n💡 **Conseil d'Examen (BAC / BEPC)**: Citez toujours la définition exacte du cours!\n\n⚠️ **Erreur Fréquente**: Omission des étapes d'explication ou confusion de formules.`,
             source: 'fallback',
             examTips: ['Utilisez le vocabulaire officiel du MINESEC', 'Présentez clairement vos démarches de calcul'],
             commonMistakes: ['Confusion des définitions de base']
@@ -190,7 +190,7 @@ async function startServer() {
         }
 
         return res.json({
-          reply: `[GradeBoost AI - Offline Mode]\n\nHere is a structured explanation regarding "${prompt}":\n\n📌 **Key Concepts** (${subject || 'General'} - ${topic || 'Revision'}):\n- Focus on core definitions required by the Cameroon GCE marking scheme.\n- Break down complex mechanisms into simple step-by-step algorithms or principles.\n\n💡 **Exam Tip**: Highlight technical keywords in your written answer for full marks!\n\n⚠️ **Common Mistake**: Confusing fundamental terms or skipping unit conversions.`,
+          reply: `[Edulpha AI - Offline Mode]\n\nHere is a structured explanation regarding "${prompt}":\n\n📌 **Key Concepts** (${subject || 'General'} - ${topic || 'Revision'}):\n- Focus on core definitions required by the Cameroon GCE marking scheme.\n- Break down complex mechanisms into simple step-by-step algorithms or principles.\n\n💡 **Exam Tip**: Highlight technical keywords in your written answer for full marks!\n\n⚠️ **Common Mistake**: Confusing fundamental terms or skipping unit conversions.`,
           source: 'fallback',
           examTips: ['Highlight technical keywords for marking scheme points.', 'Show all working steps for calculations.'],
           commonMistakes: ['Confusing basic terminology with related concepts.']
@@ -202,7 +202,7 @@ async function startServer() {
         : '';
 
       const systemPrompt = isFrenchCurriculum
-        ? `Vous êtes GradeBoost AI, un tuteur expert et encourageant pour le Système Éducatif Francophone du Cameroun (MINESEC / OBC).
+        ? `Vous êtes Edulpha AI, un tuteur expert et encourageant pour le Système Éducatif Francophone du Cameroun (MINESEC / OBC).
 Contexte: Matière: ${subject || 'Mathématiques / Général'}, Sujet: ${topic || 'Général'}, Niveau: ${educationLevel || 'Terminale'}.
 
 Instructions:
@@ -214,7 +214,7 @@ Instructions:
    - **Conseils pour le Baccalauréat / BEPC**
    - **Erreurs Fréquentes des Élèves**
 3. Soyez très encourageant, pédagogique et précis.`
-        : `You are GradeBoost AI, an encouraging and expert 24/7 GCE (General Certificate of Education) Tutor specializing in Cameroon GCE (Ordinary & Advanced Level) and international syllabus.
+        : `You are Edulpha AI, an encouraging and expert 24/7 GCE (General Certificate of Education) Tutor specializing in Cameroon GCE (Ordinary & Advanced Level) and international syllabus.
 Context: Subject: ${subject || 'General Studies'}, Topic: ${topic || 'General'}, Level: ${educationLevel || 'O/A Level'}.
 
 Instructions:
@@ -238,7 +238,7 @@ Instructions:
     } catch (err: any) {
       console.error("AI Chat API Error:", err);
       res.json({
-        reply: "GradeBoost AI encountered a temporary connection glitch. Please review key definitions and practice past examination papers!",
+        reply: "Edulpha AI encountered a temporary connection glitch. Please review key definitions and practice past examination papers!",
         source: 'error'
       });
     }
@@ -257,7 +257,7 @@ Instructions:
         });
       }
 
-      const systemInstruction = `You are GradeBoost AI, an expert, encouraging 24/7 GCE Tutor. Subject: ${subject || 'General'}. Topic: ${topic || 'General'}.`;
+      const systemInstruction = `You are Edulpha AI, an expert, encouraging 24/7 GCE Tutor. Subject: ${subject || 'General'}. Topic: ${topic || 'General'}.`;
       const result = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
         contents: `${systemInstruction}\n\nStudent Question: ${prompt}`
@@ -285,7 +285,7 @@ Instructions:
         });
       }
 
-      const prompt = `As a GCE Examiner and GradeBoost AI Tutor, explain this question in detail to the student:
+      const prompt = `As a GCE Examiner and Edulpha AI Tutor, explain this question in detail to the student:
 
 Question: ${questionText}
 Options: ${JSON.stringify(options || [])}
@@ -480,7 +480,7 @@ Note: taskType must be one of: "lesson", "practice", "revision", "mock", "break"
         });
       }
 
-      const prompt = `You are GradeBoost AI. Summarize the following study text for a Cameroon GCE student studying ${subject || 'General Studies'}:
+      const prompt = `You are Edulpha AI. Summarize the following study text for a Cameroon GCE student studying ${subject || 'General Studies'}:
 
 Text to summarize:
 ${(textContent || '').slice(0, 4000)}
@@ -523,13 +523,13 @@ Return ONLY valid JSON matching this structure:
 
       if (!ai) {
         return res.json({
-          analysis: `**[GradeBoost AI Code Assistant - ${language || 'C/C++'}]**\n\n- **Mode**: ${mode || 'explain'}\n- **Explanation**: This program demonstrates basic logic in ${language || 'programming'}. Ensure you include required headers (e.g., \`#include <stdio.h>\` in C or \`import java.util.*;\` in Java).\n\n💡 **GCE Exam Tip**: In GCE Computer Science Paper 3 Practical, write clear comments and declare your variable data types correctly!`,
+          analysis: `**[Edulpha AI Code Assistant - ${language || 'C/C++'}]**\n\n- **Mode**: ${mode || 'explain'}\n- **Explanation**: This program demonstrates basic logic in ${language || 'programming'}. Ensure you include required headers (e.g., \`#include <stdio.h>\` in C or \`import java.util.*;\` in Java).\n\n💡 **GCE Exam Tip**: In GCE Computer Science Paper 3 Practical, write clear comments and declare your variable data types correctly!`,
           fixedCode: code || '',
           source: 'fallback'
         });
       }
 
-      const prompt = `You are GradeBoost AI Programming Assistant specializing in GCE Computer Science (C, C++, Python, Java, JS, HTML/CSS, SQL).
+      const prompt = `You are Edulpha AI Programming Assistant specializing in GCE Computer Science (C, C++, Python, Java, JS, HTML/CSS, SQL).
 Language: ${language || 'C++'}
 Task Mode: ${mode || 'explain'}
 Compiler Error (if any): ${compilerError || 'None'}
@@ -590,7 +590,7 @@ Provide:
         });
       }
 
-      const prompt = `As GradeBoost AI Performance Analyst, recommend 3 targeted study actions for a student in ${userSubject || 'Computer Science'}.
+      const prompt = `As Edulpha AI Performance Analyst, recommend 3 targeted study actions for a student in ${userSubject || 'Computer Science'}.
 
 Return ONLY valid JSON matching this structure:
 {
@@ -648,7 +648,7 @@ Return ONLY valid JSON matching this structure:
             price: 0,
             currency: 'XAF',
             billingCycle: 'free',
-            features: ['Browse all academic subjects', '3 daily practice quizzes', '3 daily GradeBoost AI requests'],
+            features: ['Browse all academic subjects', '3 daily practice quizzes', '3 daily Edulpha AI requests'],
             allowsOfflineDownloads: false
           },
           {
@@ -688,11 +688,11 @@ Return ONLY valid JSON matching this structure:
       const couponsSnap = await db.collection("coupons").where("code", "==", cleanCode).get();
 
       if (couponsSnap.empty) {
-        if (cleanCode === 'GB60BONUS' || cleanCode === 'STUDENT50') {
+        if (cleanCode === 'EDULPHABONUS' || cleanCode === 'GB60BONUS' || cleanCode === 'STUDENT50') {
           return res.json({
             valid: true,
             discountPercent: 20,
-            message: "Promo Code GB60BONUS Applied! 20% Discount."
+            message: `Promo Code ${cleanCode} Applied! 20% Discount.`
           });
         }
         return res.status(404).json({ valid: false, message: "Invalid or expired promo code" });
@@ -1001,7 +1001,7 @@ Return ONLY valid JSON matching this structure:
   });
 
   // ===============================================================
-  // GradeBoost Analytics & Reporting System REST APIs
+  // Edulpha Analytics & Reporting System REST APIs
   // ===============================================================
 
   app.get("/api/analytics/platform", async (req, res) => {
@@ -1192,7 +1192,7 @@ Return ONLY valid JSON matching this structure:
         success: true,
         report: {
           id: reportId,
-          title: title || "GradeBoost Platform Growth Audit",
+          title: title || "Edulpha Platform Growth Audit",
           reportType: reportType || "admin",
           category: category || "growth",
           format: format || "pdf",
@@ -1210,7 +1210,7 @@ Return ONLY valid JSON matching this structure:
   app.get("/api/reports/download", async (req, res) => {
     try {
       const reportId = req.query.reportId as string;
-      res.setHeader("Content-Disposition", `attachment; filename="GradeBoost_Report_${reportId || "download"}.csv"`);
+      res.setHeader("Content-Disposition", `attachment; filename="Edulpha_Report_${reportId || "download"}.csv"`);
       res.setHeader("Content-Type", "text/csv");
       res.send(`Metric,Value,Status\nTotal Users,14850,Active\nMonthly Revenue,3450000 FCFA,Normal\nAI Interactions,142800,High\n`);
     } catch (err) {

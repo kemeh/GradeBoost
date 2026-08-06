@@ -65,6 +65,7 @@ export const AdminTestimonialManagement: React.FC = () => {
         quoteFr: editingItem.quoteFr || editingItem.quoteEn,
         rating: editingItem.rating || 5,
         avatarUrl: editingItem.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80',
+        approvalStatus: editingItem.approvalStatus || 'approved',
         displayStatus: (editingItem.displayStatus as 'active' | 'inactive') || 'active',
         displayOrder: editingItem.displayOrder || 1,
         createdAt: editingItem.createdAt || new Date().toISOString()
@@ -94,9 +95,13 @@ export const AdminTestimonialManagement: React.FC = () => {
 
   const handleToggleStatus = async (id: string) => {
     try {
-      await TestimonialService.toggleStatus(id);
-      toast.success('Visibility toggled');
-      loadData();
+      const item = testimonials.find(t => t.id === id);
+      if (item) {
+        const newStatus = item.approvalStatus === 'approved' ? 'pending' : 'approved';
+        await TestimonialService.updateApprovalStatus(id, newStatus);
+        toast.success('Visibility toggled');
+        loadData();
+      }
     } catch (e) {
       toast.error('Failed to toggle status');
     }

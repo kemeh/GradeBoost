@@ -172,7 +172,7 @@ export default function TestimonialsPage() {
           </h1>
           
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto font-medium">
-            Discover how GradeBoost60/Edulpha is helping candidates achieve top grades in GCE O/A Levels, Baccalauréat, Probatoire, and TVEE technical sub-systems across Cameroon and Africa.
+            Discover how Edulpha is helping candidates achieve top grades in GCE O/A Levels, Baccalauréat, Probatoire, and TVEE technical sub-systems across Cameroon and Africa.
           </p>
 
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">

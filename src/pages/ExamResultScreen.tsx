@@ -239,7 +239,7 @@ export default function ExamResultScreen() {
 
               <div className="pt-4 flex items-center justify-between text-xs text-slate-400 font-mono">
                 <span>Verification ID: {attempt.id}</span>
-                <span>GRADEBOOST60 LMS AUTHENTICATED</span>
+                <span>EDULPHA LMS AUTHENTICATED</span>
               </div>
             </div>
           </div>

@@ -86,7 +86,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     SizedBox(width: 14),
                     Expanded(
                       child: Text(
-                        "Your GradeBoost60 account is Fully Activated! Enjoy unlimited GCE practice.",
+                        "Your Edulpha account is Fully Activated! Enjoy unlimited GCE practice.",
                         style: TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold, fontSize: 14),
                       ),
                     ),

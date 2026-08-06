@@ -9,13 +9,13 @@ import {
 } from '../types';
 
 // Storage keys for local caching/fallback
-const STORAGE_DISCUSSIONS = 'gb60_forum_discussions_v1';
-const STORAGE_CATEGORIES = 'gb60_forum_categories_v1';
-const STORAGE_REPLIES = 'gb60_forum_replies_v1';
-const STORAGE_LIKES = 'gb60_forum_likes_v1';
-const STORAGE_BOOKMARKS = 'gb60_forum_bookmarks_v1';
-const STORAGE_NOTIFICATIONS = 'gb60_forum_notifications_v1';
-const STORAGE_REPORTS = 'gb60_forum_reports_v1';
+const STORAGE_DISCUSSIONS = 'edulpha_forum_discussions_v1';
+const STORAGE_CATEGORIES = 'edulpha_forum_categories_v1';
+const STORAGE_REPLIES = 'edulpha_forum_replies_v1';
+const STORAGE_LIKES = 'edulpha_forum_likes_v1';
+const STORAGE_BOOKMARKS = 'edulpha_forum_bookmarks_v1';
+const STORAGE_NOTIFICATIONS = 'edulpha_forum_notifications_v1';
+const STORAGE_REPORTS = 'edulpha_forum_reports_v1';
 
 // Initial Categories Seed
 export const INITIAL_FORUM_CATEGORIES: ForumCategory[] = [

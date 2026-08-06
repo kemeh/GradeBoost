@@ -21,7 +21,7 @@ import {
   SubjectModel 
 } from '../types';
 import { toast } from 'react-hot-toast';
-import { AITeacherTools } from '../components/GradeBoostAI/AITeacherTools';
+import { AITeacherTools } from '../components/EdulphaAI/AITeacherTools';
 
 export default function TeacherDashboard() {
   const { user, isTeacher, isAdmin } = useAuth();

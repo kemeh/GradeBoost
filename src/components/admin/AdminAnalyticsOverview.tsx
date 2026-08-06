@@ -123,7 +123,7 @@ export default function AdminAnalyticsOverview() {
       <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl">
         <div className="relative z-10 max-w-2xl space-y-3">
           <Badge className="bg-indigo-500/30 text-indigo-200 border-indigo-400/30 backdrop-blur-md rounded-xl">
-            GradeBoost60 Executive Dashboard
+            Edulpha Executive Dashboard
           </Badge>
           <h1 className="text-3xl font-black tracking-tight">Enterprise Platform Overview</h1>
           <p className="text-sm font-medium text-indigo-200/80 leading-relaxed">

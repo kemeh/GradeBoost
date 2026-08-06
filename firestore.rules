@@ -672,7 +672,7 @@ service cloud.firestore {
     }
 
     // ===============================================================
-    // GradeBoost AI Collections
+    // Edulpha AI Collections
     // ===============================================================
     match /ai_conversations/{id} {
       allow read, write: if isAuthenticated();

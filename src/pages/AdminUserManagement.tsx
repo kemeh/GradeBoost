@@ -381,7 +381,7 @@ export default function AdminUserManagement() {
             <div className="flex items-center justify-between border-b pb-4">
               <div>
                 <h3 className="text-lg font-black text-slate-900">Audit Logs: {selectedUserLogs.email}</h3>
-                <p className="text-xs text-slate-400 font-medium">Security and action history recorded by GradeBoost60</p>
+                <p className="text-xs text-slate-400 font-medium">Security and action history recorded by Edulpha</p>
               </div>
               <button onClick={() => setSelectedUserLogs(null)} className="p-2 hover:bg-slate-100 rounded-xl">
                 <X size={20} className="text-slate-500" />

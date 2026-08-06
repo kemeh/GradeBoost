@@ -60,7 +60,7 @@ export default async function handler(req, res) {
         amount: amount,
         currency: "XAF",
         from: phone,
-        description: description || "GradeBoost Payment",
+        description: description || "Edulpha Payment",
         external_reference: external_reference
       })
     });

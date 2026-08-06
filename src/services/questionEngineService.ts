@@ -32,10 +32,10 @@ const ATTEMPTS_COLLECTION = 'engine_attempts';
 const BOOKMARKS_COLLECTION = 'question_bookmarks';
 const REPORTS_COLLECTION = 'question_reports';
 
-const LOCAL_QUESTIONS_KEY = 'gb60_question_bank_local';
-const LOCAL_EXAMS_KEY = 'gb60_engine_exams_local';
-const LOCAL_ATTEMPTS_KEY = 'gb60_engine_attempts_local';
-const LOCAL_BOOKMARKS_KEY = 'gb60_question_bookmarks_local';
+const LOCAL_QUESTIONS_KEY = 'edulpha_question_bank_local';
+const LOCAL_EXAMS_KEY = 'edulpha_engine_exams_local';
+const LOCAL_ATTEMPTS_KEY = 'edulpha_engine_attempts_local';
+const LOCAL_BOOKMARKS_KEY = 'edulpha_question_bookmarks_local';
 
 // Helper for local storage persistence
 function getLocalStorageData<T>(key: string, defaultVal: T): T {

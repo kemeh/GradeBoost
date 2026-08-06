@@ -1,6 +1,6 @@
-# GradeBoost60 Flutter Mobile Application Ecosystem
+# Edulpha Flutter Mobile Application Ecosystem
 
-The **GradeBoost60 Mobile App** extends the GradeBoost60 Cameroon GCE Board Exam Preparation Platform to Android and iOS mobile devices. Built with Flutter and powered by the exact same Firebase backend ecosystem as the web platform, students can practice on-the-go with native mobile responsiveness, daily drill notifications, offline caching, and instant Mobile Money (MTN MoMo & Orange Money) payment verification.
+The **Edulpha Mobile App** extends the Edulpha Cameroon GCE Board Exam Preparation Platform to Android and iOS mobile devices. Built with Flutter and powered by the exact same Firebase backend ecosystem as the web platform, students can practice on-the-go with native mobile responsiveness, daily drill notifications, offline caching, and instant Mobile Money (MTN MoMo & Orange Money) payment verification.
 
 ---
 
@@ -82,4 +82,4 @@ flutter build ipa --release
 ---
 
 ## 🤝 Cross-Platform Synchronization
-Changes made by administrators on the GradeBoost60 Web Admin panel (such as adding new questions, setting up daily drills, updating Mobile Money pricing, or approving payments) instantly reflect across all student mobile devices in real-time.
+Changes made by administrators on the Edulpha Web Admin panel (such as adding new questions, setting up daily drills, updating Mobile Money pricing, or approving payments) instantly reflect across all student mobile devices in real-time.

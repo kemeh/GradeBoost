@@ -20,16 +20,16 @@ void main() async {
   } catch (e) {
     debugPrint("Firebase init note: $e");
   }
-  runApp(const GradeBoostApp());
+  runApp(const EdulphaApp());
 }
 
-class GradeBoostApp extends StatelessWidget {
-  const GradeBoostApp({Key? key}) : super(key: key);
+class EdulphaApp extends StatelessWidget {
+  const EdulphaApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GradeBoost60 GCE Exam Prep',
+      title: 'Edulpha GCE Exam Prep',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.dark,

@@ -461,7 +461,7 @@ export default function AdminLMSStudio() {
             <div>
               <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                 <BookOpen className="text-indigo-600" />
-                GradeBoost60 LMS Studio
+                Edulpha LMS Studio
               </h1>
               <p className="text-slate-500 font-medium text-sm mt-0.5">
                 Complete digital school content manager: Education Levels → Departments → Subjects → Papers → Topics → Subtopics → Lessons → Activities.

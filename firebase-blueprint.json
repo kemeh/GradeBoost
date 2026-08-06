@@ -372,7 +372,7 @@
     },
     "LMSLesson": {
       "title": "LMS Lesson",
-      "description": "Comprehensive lesson item in GradeBoost60 LMS.",
+      "description": "Comprehensive lesson item in Edulpha LMS.",
       "type": "object",
       "properties": {
         "title": { "type": "string" },

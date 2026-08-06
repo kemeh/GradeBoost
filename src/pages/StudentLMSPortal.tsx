@@ -243,7 +243,7 @@ export default function StudentLMSPortal() {
     doc.setFontSize(14);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(99, 102, 241);
-    doc.text('GradeBoost60 Digital Learning Management System', 148.5, 55, { align: 'center' });
+    doc.text('Edulpha Digital Learning Management System', 148.5, 55, { align: 'center' });
 
     doc.setFontSize(12);
     doc.setTextColor(100, 116, 139);
@@ -253,7 +253,7 @@ export default function StudentLMSPortal() {
     doc.setFontSize(26);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(15, 23, 42);
-    doc.text(user.displayName || 'GradeBoost60 Scholar', 148.5, 92, { align: 'center' });
+    doc.text(user.displayName || 'Edulpha Scholar', 148.5, 92, { align: 'center' });
 
     // Achievement Description
     doc.setFontSize(12);
@@ -269,7 +269,7 @@ export default function StudentLMSPortal() {
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 116, 139);
-    doc.text(`Level: ${activeLesson.educationLevel} • Instructor: ${activeLesson.teacher || 'GradeBoost60 Faculty'}`, 148.5, 132, { align: 'center' });
+    doc.text(`Level: ${activeLesson.educationLevel} • Instructor: ${activeLesson.teacher || 'Edulpha Faculty'}`, 148.5, 132, { align: 'center' });
 
     // Footer signatures & Seals
     doc.setDrawColor(203, 213, 225);
@@ -277,9 +277,9 @@ export default function StudentLMSPortal() {
     doc.text('Academic Director', 70, 177, { align: 'center' });
 
     doc.line(197, 170, 257, 170);
-    doc.text('GradeBoost60 Admin', 227, 177, { align: 'center' });
+    doc.text('Edulpha Admin', 227, 177, { align: 'center' });
 
-    doc.save(`GradeBoost60_Certificate_${activeLesson.title.replace(/\s+/g, '_')}.pdf`);
+    doc.save(`Edulpha_Certificate_${activeLesson.title.replace(/\s+/g, '_')}.pdf`);
     toast.success("Certificate downloaded!");
   };
 

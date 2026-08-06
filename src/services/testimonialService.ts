@@ -8,7 +8,7 @@ const SEED_TESTIMONIALS: Testimonial[] = [
   {
     id: 't-1',
     authorName: 'Ngu Benedict',
-    roleEn: 'A-Level Student (Grade Boosted: 11/25 to 24/25)',
+    roleEn: 'A-Level Student (Score Improved: 11/25 to 24/25)',
     roleFr: 'Élève en Terminale (Note boostée: 11/25 à 24/25)',
     schoolOrOrg: 'GBHS Bamenda',
     subsystem: 'General',

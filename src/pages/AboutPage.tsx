@@ -25,7 +25,7 @@ export default function AboutPage() {
             Democratizing High-Quality Exam Prep Across <span className="text-emerald-400">Africa</span>
           </h1>
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed font-medium">
-            GradeBoost60 / Edulpha was engineered to solve the acute shortage of quality past question solutions, textbooks, and interactive practical labs for secondary and technical students in Cameroon and Sub-Saharan Africa.
+            Edulpha was engineered to solve the acute shortage of quality past question solutions, textbooks, and interactive practical labs for secondary and technical students in Cameroon and Sub-Saharan Africa.
           </p>
         </div>
       </section>

@@ -16,7 +16,7 @@ import SubjectManager from '../components/SubjectManager';
 import { Badge, Button } from '../components/ui';
 
 import FileUpload from '../components/FileUpload';
-import { AIAdminDashboard } from '../components/GradeBoostAI/AIAdminDashboard';
+import { AIAdminDashboard } from '../components/EdulphaAI/AIAdminDashboard';
 import { AdminCurriculumManager } from '../components/AdminCurriculumManager';
 import { AdminTranslationManager } from '../components/AdminTranslationManager';
 import AdminNavigationManagement from '../components/admin/AdminNavigationManagement';

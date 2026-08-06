@@ -22,12 +22,12 @@ import { LMSLesson, LMSUserProgress, LMSNote, DiscussionThread, TeacherVideo, Te
 import { fetchPublishedLessons, fetchStudentLMSProgress, saveLessonProgress, fetchLessonNotes, saveLessonNote, deleteLessonNote } from '../services/lmsService';
 import { toast } from 'react-hot-toast';
 
-import { AIChatWindow } from '../components/GradeBoostAI/AIChatWindow';
-import { AIQuizGenerator } from '../components/GradeBoostAI/AIQuizGenerator';
-import { AIStudyPlanner } from '../components/GradeBoostAI/AIStudyPlanner';
-import { AIProgrammingAssistant } from '../components/GradeBoostAI/AIProgrammingAssistant';
-import { AILessonSummarizer } from '../components/GradeBoostAI/AILessonSummarizer';
-import { AIWeaknessAnalyzer } from '../components/GradeBoostAI/AIWeaknessAnalyzer';
+import { AIChatWindow } from '../components/EdulphaAI/AIChatWindow';
+import { AIQuizGenerator } from '../components/EdulphaAI/AIQuizGenerator';
+import { AIStudyPlanner } from '../components/EdulphaAI/AIStudyPlanner';
+import { AIProgrammingAssistant } from '../components/EdulphaAI/AIProgrammingAssistant';
+import { AILessonSummarizer } from '../components/EdulphaAI/AILessonSummarizer';
+import { AIWeaknessAnalyzer } from '../components/EdulphaAI/AIWeaknessAnalyzer';
 
 export default function StudentDashboard() {
   const { user } = useAuth();

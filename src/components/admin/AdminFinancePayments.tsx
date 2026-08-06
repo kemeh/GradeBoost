@@ -68,7 +68,7 @@ export default function AdminFinancePayments() {
         setCoupons(couponSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } else {
         setCoupons([
-          { id: 'gb60bonus', code: 'GB60BONUS', discountType: 'percent', discountValue: 20, maxUses: 500, currentUses: 14, isEnabled: true, expiryDate: '2026-12-31' },
+          { id: 'edulphabonus', code: 'EDULPHABONUS', discountType: 'percent', discountValue: 20, maxUses: 500, currentUses: 14, isEnabled: true, expiryDate: '2026-12-31' },
           { id: 'student50', code: 'STUDENT50', discountType: 'percent', discountValue: 50, maxUses: 100, currentUses: 42, isEnabled: true, expiryDate: '2026-12-31' }
         ]);
       }
@@ -179,7 +179,7 @@ export default function AdminFinancePayments() {
   };
 
   const handleGenerateActivationCode = () => {
-    const code = 'GB60-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+    const code = 'EDULPHA-' + Math.random().toString(36).substring(2, 8).toUpperCase();
     setGeneratedCode(code);
     toast.success(`Generated VIP Access Voucher Code: ${code}`);
   };

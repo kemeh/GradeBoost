@@ -7,7 +7,7 @@ import {
   LMSLesson, LMSHierarchyItem, LMSUserProgress, LMSBookmark, LMSNote 
 } from '../types';
 
-// Default initial hierarchy nodes for GradeBoost60
+// Default initial hierarchy nodes for Edulpha
 export const DEFAULT_EDUCATION_LEVELS = ['Ordinary Level', 'Advanced Level', 'TVET & Technical'];
 export const DEFAULT_DEPARTMENTS = ['Science & Tech', 'Commercial & Management', 'Arts & Humanities', 'Languages'];
 
