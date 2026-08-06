@@ -1,7 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { inject } from '@vercel/analytics';
+import { Analytics } from '@vercel/analytics/react';
 import App from './App';
 import './index.css';
+
+// Initialize Vercel Analytics
+inject();
 
 // Handle chunk load errors (common in SPAs when a new version is deployed)
 window.addEventListener('error', (e) => {
@@ -24,5 +29,6 @@ window.addEventListener('unhandledrejection', (e) => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
+    <Analytics />
   </React.StrictMode>
 );
