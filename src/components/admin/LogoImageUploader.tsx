@@ -35,7 +35,7 @@ export default function LogoImageUploader({
   initialUrl = '',
   onUploadComplete,
   onDelete,
-  folder = 'logos',
+  folder = 'edulpha/logos',
   maxSizeMB = 5,
   accept = 'image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon,image/gif',
   aspectRatioHint,

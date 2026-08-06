@@ -3,64 +3,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: users
-    // Document ID: userId (Firebase Auth UID)
-    // Fields:
-    //   - name: string (required)
-    //   - email: string (required, email format)
-    //   - subject: string (required, enum: Computer Science, ICT)
-    //   - role: string (required, enum: student, admin)
-    //   - paymentStatus: string (optional, enum: unpaid, paid, pending, rejected)
-    //   - createdAt: timestamp (required)
-    //   - updatedAt: timestamp (optional)
-    //
-    // Collection: exam_questions
-    // Document ID: auto-generated
-    // Fields:
-    //   - questionText: string (required)
-    //   - options: map (required, keys: A, B, C, D)
-    //   - correctAnswer: string (required)
-    //   - paper: string (required, enum: Paper 1, Paper 2, Paper 3)
-    //   - topic: string (required)
-    //   - difficulty: string (optional, enum: Easy, Medium, Hard)
-    //   - createdAt: timestamp (required)
-    //
-    // Collection: daily_drills
-    // Document ID: auto-generated
-    // Fields:
-    //   - day: number (required, 1-365)
-    //   - questionIds: list (required, list of questionId strings)
-    //   - subject: string (required, enum: Computer Science, ICT)
-    //   - topic: string (required)
-    //   - isFree: bool (optional)
-    //   - createdAt: timestamp (required)
-    //
-    // Collection: drill_submissions
-    // Document ID: auto-generated
-    // Fields:
-    //   - userId: string (required, matches auth.uid)
-    //   - questionId: string (required)
-    //   - day: number (required)
-    //   - selectedAnswer: string (required)
-    //   - correctAnswer: string (required)
-    //   - score: number (required)
-    //   - createdAt: timestamp (required)
-    //
-    // Collection: system_settings
-    // Document ID: 'settings' or auto-generated
-    // Fields:
-    //   - geminiApiKey: string (required)
-    //   - challengeStartDate: string (required, YYYY-MM-DD)
-    //   - paymentPrice: number (required)
-    //   - updatedAt: timestamp (required)
-    //   - updatedBy: string (required)
-    //
-    // ===============================================================
-
-    // ===============================================================
     // Helper Functions
     // ===============================================================
     
@@ -75,7 +17,8 @@ service cloud.firestore {
     function isAdmin() {
       return isAuthenticated() && 
         ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
+          (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin')) ||
          (request.auth.token.email == "kemehhilary@gmail.com"));
     }
 
@@ -83,80 +26,44 @@ service cloud.firestore {
       return isAuthenticated() && 
         ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
           (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher' ||
-           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')) ||
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+           get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'super_admin')) ||
          (request.auth.token.email == "kemehhilary@gmail.com"));
     }
 
-    function hasRequiredFields(fields) {
-      return request.resource.data.keys().hasAll(fields);
-    }
-
-    function hasOnlyAllowedFields(fields) {
-      return request.resource.data.keys().hasOnly(fields);
-    }
-
-    function isValidEmail(email) {
-      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    }
-
-    function isValidUrl(url) {
-      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
-    }
-
     // ===============================================================
-    // Domain Validators
+    // Collection Rules
     // ===============================================================
 
-    function isValidUser(data) {
-      return hasRequiredFields(['name', 'email', 'subject', 'role', 'createdAt']) &&
-        data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
-        isValidEmail(data.email) &&
-        data.subject is string &&
-        data.role in ['student', 'teacher', 'admin'] &&
-        data.createdAt is timestamp;
+    // Public / System Configuration Collections
+    match /system_settings/secrets {
+      allow read, write: if isAdmin();
     }
 
-    function isValidQuestion(data) {
-      return hasRequiredFields(['questionText', 'correctAnswer', 'subject', 'paper', 'topic', 'marks', 'difficulty', 'createdAt']) &&
-        data.questionText is string && data.questionText.size() > 0 && data.questionText.size() < 10000 &&
-        data.correctAnswer is string && data.correctAnswer.size() > 0 &&
-        data.subject is string &&
-        data.paper in ['Paper 1', 'Paper 2', 'Paper 3'] &&
-        data.topic is string && data.topic.size() > 0 &&
-        data.marks is number &&
-        data.difficulty in ['Easy', 'Medium', 'Hard'] &&
-        data.createdAt is timestamp;
+    match /system_settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    function isValidDrill(data) {
-      return hasRequiredFields(['day', 'questionIds', 'subject', 'topic', 'createdAt', 'isFree']) &&
-        data.day is int && data.day >= 1 && data.day <= 365 &&
-        data.questionIds is list && data.questionIds.size() > 0 && data.questionIds.size() <= 100 &&
-        data.subject is string &&
-        data.topic is string &&
-        data.isFree is bool &&
-        data.createdAt is timestamp;
+    match /system_languages/{langId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    function isValidSubmission(data) {
-      return hasRequiredFields(['userId', 'userEmail', 'questionId', 'drillId', 'day', 'selectedAnswer', 'correctAnswer', 'score', 'createdAt', 'paper', 'topic', 'status']) &&
-        data.userId is string &&
-        data.userEmail is string &&
-        data.questionId is string &&
-        data.drillId is string &&
-        data.day is int &&
-        data.selectedAnswer is string &&
-        data.correctAnswer is string &&
-        data.score is number &&
-        data.paper in ['Paper 1', 'Paper 2', 'Paper 3'] &&
-        data.topic is string &&
-        data.status in ['pending', 'graded'] &&
-        data.createdAt is timestamp;
+    match /system_translations/{keyId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
-    // ===============================================================
-    // Rules
-    // ===============================================================
+    match /landing_config/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /landing_sections/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
     // Partners & Partner Categories
     match /partners/{partnerId} {
@@ -174,37 +81,40 @@ service cloud.firestore {
       allow read, create, update: if true;
     }
 
-    // Default deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
     // Users collection
     match /users/{userId} {
-      // Students can read their own profile, admins can read all
-      allow read: if isOwner(userId) || isAdmin();
-      
-      // Allow creation during signup (user creating own profile) OR admin pre-creating any user
+      allow read: if isAuthenticated();
       allow create: if (isAuthenticated() && isOwner(userId)) || isAdmin();
-      
-      // Allow updates to own profile (role locked for non-admin), or admin updates
       allow update: if (isOwner(userId) && (request.resource.data.role == resource.data.role || isAdmin())) || isAdmin();
-
-      // Allow deletion strictly by administrators
       allow delete: if isAdmin();
     }
 
     // User Profiles / Profiles fallback collections
     match /profiles/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isAuthenticated();
       allow create, update: if (isAuthenticated() && isOwner(userId)) || isAdmin();
       allow delete: if isAdmin();
     }
 
     match /user_profiles/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
+      allow read: if isAuthenticated();
       allow create, update: if (isAuthenticated() && isOwner(userId)) || isAdmin();
       allow delete: if isAdmin();
+    }
+
+    match /deletedUsers/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /deletedUsersByEmail/{email} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    match /user_subscriptions/{userId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isOwner(userId) || isAdmin());
+      allow write: if isAuthenticated() && (isOwner(userId) || isAdmin());
     }
 
     // Students collection
@@ -212,6 +122,12 @@ service cloud.firestore {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isOwner(studentId) || isAdmin());
       allow create, update: if isAuthenticated() && (request.resource.data.userId == request.auth.uid || isOwner(studentId) || isAdmin());
       allow delete: if isAdmin();
+    }
+
+    // Testimonials
+    match /testimonials/{testimonialId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Alumni collection
@@ -237,53 +153,27 @@ service cloud.firestore {
 
     // Exam Questions
     match /exam_questions/{questionId} {
-      // Authenticated users can read questions
-      allow read: if isAuthenticated();
-      // Only admins can write
-      allow create, update: if isAdmin() && isValidQuestion(request.resource.data);
+      allow read: if true;
+      allow create, update: if isAdmin();
       allow delete: if isAdmin();
     }
 
     // Daily Drills
     match /daily_drills/{drillId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isAdmin() && isValidDrill(request.resource.data);
-      allow delete: if isAdmin();
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     match /dailyDrills/{drillId} {
-      allow read: if isAuthenticated();
-      allow create, update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     // Drill Submissions
     match /drill_submissions/{submissionId} {
-      // Students can read their own submissions, admins can read all
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      
-      // Students can create their own submissions
-      allow create: if isAuthenticated() && isValidSubmission(request.resource.data) && 
-        (request.resource.data.userId == request.auth.uid || isAdmin());
-      
-      // Submissions are immutable for students
+      allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
-    }
-
-    // System Settings
-    match /system_settings/global {
-      allow read: if true;
-      allow write: if isAuthenticated();
-    }
-    
-    match /system_settings/secrets {
-      allow read, write: if isAuthenticated();
-    }
-    
-    match /system_settings/{settingId} {
-      // Fallback for any other documents in this collection
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
     }
 
     // Payments
@@ -366,20 +256,30 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /curriculums/{curriculumId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /curriculum/{curriculumId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // Question Papers (both naming conventions)
     match /question_papers/{paperId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     match /questionPapers/{paperId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     // Question Bank
     match /question_bank/{questionId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -391,7 +291,7 @@ service cloud.firestore {
     }
 
     match /engine_exams/{examId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -445,26 +345,26 @@ service cloud.firestore {
     // Points History (both naming conventions)
     match /points_history/{recordId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
 
     match /pointsHistory/{recordId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
 
     // Practice Results
     match /practice_results/{resultId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
 
     match /results/{resultId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
 
@@ -482,7 +382,7 @@ service cloud.firestore {
 
     // Sample Questions
     match /sampleQuestions/{questionId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -492,99 +392,95 @@ service cloud.firestore {
       allow write: if isAuthenticated();
     }
 
-    // Practice Results
-    match /practice_results/{resultId} {
-      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAdmin();
-    }
-
     // Payment Audit
     match /paymentAudit/{auditId} {
       allow read: if isAdmin();
-      allow create: if isAdmin();
+      allow create: if true;
       allow update, delete: if false;
     }
 
     // Feedback
     match /feedback/{feedbackId} {
       allow read: if isAdmin();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
 
     // Security Audit
     match /securityAudit/{auditId} {
       allow read: if isAdmin();
-      allow create: if true; // Allow logging security errors even if not auth
+      allow create: if true;
       allow update, delete: if false;
     }
 
     // Study Challenges
     match /challenges/{challengeId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     match /challengeDays/{dayId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     match /challengeEnrollments/{enrollmentId} {
       allow read: if isAuthenticated() && (resource.data.studentId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.studentId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (resource.data.studentId == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
 
     match /challengeProgress/{progressId} {
       allow read: if isAuthenticated() && (resource.data.studentId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.studentId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (resource.data.studentId == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
 
     // LMS Collections
     match /lms_hierarchy/{id} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
     match /lms_lessons/{id} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isTeacher();
     }
 
     match /lms_progress/{id} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isAdmin();
     }
 
     match /lms_bookmarks/{id} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     match /lms_notes/{id} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
     }
 
-    // ===============================================================
-    // Subscription Plans, Coupons, Payment Methods & Receipts
-    // ===============================================================
+    // Subscription Plans, Payment Plans, Coupons, Payment Methods & Receipts
     match /subscription_plans/{planId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
+    match /payment_plans/{planId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /coupons/{couponId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
 
@@ -601,13 +497,11 @@ service cloud.firestore {
 
     match /refund_requests/{refundId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated();
       allow update, delete: if isAdmin();
     }
 
-    // ===============================================================
     // Forum, Discussions & Moderation
-    // ===============================================================
     match /forum_categories/{categoryId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -633,9 +527,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ===============================================================
     // Announcements & Notifications
-    // ===============================================================
     match /announcements/{announcementId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -671,9 +563,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ===============================================================
     // Edulpha AI Collections
-    // ===============================================================
     match /ai_conversations/{id} {
       allow read, write: if isAuthenticated();
     }
@@ -699,7 +589,7 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
     match /ai_settings/{id} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow write: if isAdmin();
     }
     match /ai_usage_logs/{id} {
@@ -708,9 +598,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ===============================================================
     // Alumni Program Collections
-    // ===============================================================
     match /alumniProfiles/{profileId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -726,9 +614,7 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
-    // ===============================================================
     // Student Ambassador Program Collections
-    // ===============================================================
     match /ambassadorProfiles/{profileId} {
       allow read: if true;
       allow write: if isAdmin();

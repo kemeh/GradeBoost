@@ -29,7 +29,7 @@ export default function FileUpload({
   onDelete,
   accept = 'application/pdf,.pdf',
   maxSizeMB = 10,
-  folder = 'uploads',
+  folder = 'edulpha/uploads',
   initialUrl = '',
   label = 'Upload File',
   className

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Delete, RotateCcw, Calculator as CalcIcon } from 'lucide-react';
+import { evaluateMathExpression } from '../utils/mathParser';
 
 interface ScientificCalculatorProps {
   onClose: () => void;
@@ -28,23 +29,11 @@ export default function ScientificCalculator({ onClose }: ScientificCalculatorPr
 
   const handleCalculate = () => {
     try {
-      // Clean display expression for eval safety
-      let expr = display.replace(/×/g, '*').replace(/÷/g, '/').replace(/π/g, 'Math.PI').replace(/e/g, 'Math.E');
-      
-      // Functions replacement
-      expr = expr.replace(/sin\(([^)]+)\)/g, 'Math.sin($1 * Math.PI / 180)');
-      expr = expr.replace(/cos\(([^)]+)\)/g, 'Math.cos($1 * Math.PI / 180)');
-      expr = expr.replace(/tan\(([^)]+)\)/g, 'Math.tan($1 * Math.PI / 180)');
-      expr = expr.replace(/log\(([^)]+)\)/g, 'Math.log10($1)');
-      expr = expr.replace(/ln\(([^)]+)\)/g, 'Math.log($1)');
-      expr = expr.replace(/sqrt\(([^)]+)\)/g, 'Math.sqrt($1)');
-      expr = expr.replace(/\^/g, '**');
-
-      // Simple safe evaluation
-      // eslint-disable-next-line no-eval
-      const result = eval(expr);
-      if (typeof result === 'number' && !isNaN(result)) {
-        setDisplay(String(Number(result.toFixed(8))));
+      const result = evaluateMathExpression(display);
+      if (typeof result === 'number' && !isNaN(result) && isFinite(result)) {
+        // Format decimal places nicely
+        const formatted = Number.isInteger(result) ? String(result) : String(Number(result.toFixed(8)));
+        setDisplay(formatted);
       } else {
         setDisplay('Error');
       }
