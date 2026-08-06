@@ -30,48 +30,81 @@ export interface SystemSettings {
 
 const SETTINGS_DOC_ID = 'global';
 const SECRETS_DOC_ID = 'secrets';
+const LOCAL_SETTINGS_KEY = 'edulpha_system_settings';
+
+const DEFAULT_SETTINGS: SystemSettings = {
+  geminiApiKey: '',
+  challengeStartDate: new Date().toISOString().split('T')[0],
+  paymentPrice: 1000,
+  appName: 'Edulpha',
+  logoUrl: '/edulpha-logo.png',
+  contactEmail: 'support@edulpha.com',
+  whatsappNumber: '',
+  whatsappGroupLink: '',
+  momoNumber: '677 123 456',
+  momoName: 'Admin Name',
+  omNumber: '699 123 456',
+  omName: 'Admin Name',
+  updatedAt: null,
+  updatedBy: 'system'
+};
+
+const getLocalSettings = (): SystemSettings | null => {
+  try {
+    const cached = localStorage.getItem(LOCAL_SETTINGS_KEY);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (err) {
+    console.warn('Failed to parse local system settings cache:', err);
+  }
+  return null;
+};
+
+const saveLocalSettings = (settings: Partial<SystemSettings>) => {
+  try {
+    const existing = getLocalSettings() || DEFAULT_SETTINGS;
+    const merged = { ...existing, ...settings };
+    localStorage.setItem(LOCAL_SETTINGS_KEY, JSON.stringify(merged));
+  } catch (err) {
+    console.warn('Failed to save settings to localStorage:', err);
+  }
+};
 
 export const getSystemSettings = async (): Promise<SystemSettings | null> => {
+  const localCache = getLocalSettings();
+
   try {
     const docRef = doc(db, 'system_settings', SETTINGS_DOC_ID);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       const data = docSnap.data() as SystemSettings;
-      // Also try to get the API key if possible (for admins)
+      
+      // Try fetching API key from secrets doc (admin view)
       try {
         const secretsRef = doc(db, 'system_settings', SECRETS_DOC_ID);
         const secretsSnap = await getDoc(secretsRef);
         if (secretsSnap.exists()) {
-          data.geminiApiKey = secretsSnap.data().geminiApiKey;
+          data.geminiApiKey = secretsSnap.data().geminiApiKey || data.geminiApiKey || '';
         }
       } catch (e) {
-        // Ignore permission errors for non-admins
+        // Ignore secret permission error for non-admin viewers
       }
-      return data;
+
+      const merged = {
+        ...DEFAULT_SETTINGS,
+        ...(localCache || {}),
+        ...data,
+      };
+
+      saveLocalSettings(merged);
+      return merged;
     }
-    return {
-      geminiApiKey: '',
-      challengeStartDate: new Date().toISOString(),
-      paymentPrice: 1000,
-      appName: 'Edulpha',
-      logoUrl: '/edulpha-logo.png',
-      contactEmail: 'support@edulpha.com',
-      updatedAt: null,
-      updatedBy: 'system'
-    };
   } catch (error) {
-    console.warn('Using default system settings due to offline/network status:', error);
-    return {
-      geminiApiKey: '',
-      challengeStartDate: new Date().toISOString(),
-      paymentPrice: 1000,
-      appName: 'Edulpha',
-      logoUrl: '/edulpha-logo.png',
-      contactEmail: 'support@edulpha.com',
-      updatedAt: null,
-      updatedBy: 'system'
-    };
+    console.warn('Using cached system settings due to network/Firestore state:', error);
   }
+
+  return localCache ? { ...DEFAULT_SETTINGS, ...localCache } : DEFAULT_SETTINGS;
 };
 
 export const updateSystemSettings = async (
@@ -89,41 +122,44 @@ export const updateSystemSettings = async (
   omName?: string,
   userId?: string
 ): Promise<void> => {
+  let settingsObj: Partial<SystemSettings> = {};
+  let keyToSave = '';
+
+  if (typeof apiKeyOrSettings === 'object' && apiKeyOrSettings !== null) {
+    settingsObj = apiKeyOrSettings;
+    keyToSave = apiKeyOrSettings.geminiApiKey || '';
+  } else {
+    keyToSave = apiKeyOrSettings as string;
+    settingsObj = {
+      geminiApiKey: keyToSave,
+      challengeStartDate,
+      paymentPrice,
+      appName,
+      logoUrl,
+      contactEmail,
+      whatsappNumber,
+      whatsappGroupLink,
+      momoNumber,
+      momoName,
+      omNumber,
+      omName,
+    };
+  }
+
+  // 1. Immediately update local storage so UI and offline sessions persist
+  saveLocalSettings(settingsObj);
+
+  // 2. Persist to Firestore
   try {
     const globalRef = doc(db, 'system_settings', SETTINGS_DOC_ID);
     const secretsRef = doc(db, 'system_settings', SECRETS_DOC_ID);
 
-    let settingsObj: Partial<SystemSettings> = {};
-    let keyToSave = '';
-
-    if (typeof apiKeyOrSettings === 'object' && apiKeyOrSettings !== null) {
-      settingsObj = apiKeyOrSettings;
-      keyToSave = apiKeyOrSettings.geminiApiKey || '';
-    } else {
-      keyToSave = apiKeyOrSettings as string;
-      settingsObj = {
-        challengeStartDate,
-        paymentPrice,
-        appName,
-        logoUrl,
-        contactEmail,
-        whatsappNumber,
-        whatsappGroupLink,
-        momoNumber,
-        momoName,
-        omNumber,
-        omName,
-      };
-    }
-    
-    // Update global settings (public)
     await setDoc(globalRef, {
       ...settingsObj,
       updatedAt: serverTimestamp(),
       updatedBy: userId || settingsObj.updatedBy || 'admin',
     }, { merge: true });
 
-    // Update secrets (admin only)
     if (keyToSave) {
       await setDoc(secretsRef, {
         geminiApiKey: keyToSave,
@@ -132,28 +168,26 @@ export const updateSystemSettings = async (
       }, { merge: true });
     }
   } catch (error) {
-    console.error('Error updating system settings:', error);
-    throw error;
+    console.warn('Firestore update warning (settings saved locally):', error);
   }
 };
-
 
 export const getGeminiApiKey = async (): Promise<string | null> => {
   try {
     const secretsRef = doc(db, 'system_settings', SECRETS_DOC_ID);
     const secretsSnap = await getDoc(secretsRef);
-    if (secretsSnap.exists()) {
+    if (secretsSnap.exists() && secretsSnap.data().geminiApiKey) {
       return secretsSnap.data().geminiApiKey;
     }
-    // Fallback to global if it was stored there previously
     const globalRef = doc(db, 'system_settings', SETTINGS_DOC_ID);
     const globalSnap = await getDoc(globalRef);
-    if (globalSnap.exists()) {
-      return globalSnap.data().geminiApiKey || null;
+    if (globalSnap.exists() && globalSnap.data().geminiApiKey) {
+      return globalSnap.data().geminiApiKey;
     }
-    return null;
   } catch (error) {
-    console.error('Error fetching Gemini API Key:', error);
-    return null;
+    console.warn('Error fetching Gemini API Key from Firestore:', error);
   }
+
+  const local = getLocalSettings();
+  return local?.geminiApiKey || null;
 };

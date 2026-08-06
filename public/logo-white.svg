@@ -17,9 +17,8 @@
   </g>
 
   <!-- Text Group -->
-  <text x="100" y="72" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="48" letter-spacing="-1">
-    <tspan fill="#FFFFFF">Grade</tspan>
-    <tspan fill="#D32027">Boost</tspan>
-    <tspan fill="#FFFFFF"> 60</tspan>
+  <text x="100" y="72" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="44" letter-spacing="-1">
+    <tspan fill="#FFFFFF">Edulpha</tspan>
+    <tspan fill="#D32027"> AI</tspan>
   </text>
 </svg>

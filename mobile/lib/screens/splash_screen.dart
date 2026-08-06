@@ -47,9 +47,9 @@ class SplashScreen extends StatelessWidget {
                     color: Colors.white,
                   ),
                   children: [
-                    TextSpan(text: "GRADE"),
+                    TextSpan(text: "EDULPHA"),
                     TextSpan(
-                      text: "BOOST60",
+                      text: " AI",
                       style: TextStyle(color: Color(0xFF6366F1)),
                     ),
                   ],
