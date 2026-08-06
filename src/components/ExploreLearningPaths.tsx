@@ -400,11 +400,18 @@ export function ExploreLearningPaths() {
               Edulpha's MINESEC & Cameroon GCE board curriculum database is updated weekly with new past questions and AI models.
             </p>
           </div>
-          <Link to="/auth" className="shrink-0">
-            <Button className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-6 py-3 rounded-xl shadow-lg">
-              Search Full Syllabus Database
-            </Button>
-          </Link>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
+            <Link to="/curriculum">
+              <Button variant="outline" className="border-indigo-700 text-indigo-200 hover:bg-indigo-900/50 font-bold text-xs px-5 py-3 rounded-xl">
+                Learn More Syllabus
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs px-6 py-3 rounded-xl shadow-lg">
+                Search Full Syllabus Database
+              </Button>
+            </Link>
+          </div>
         </div>
 
       </div>

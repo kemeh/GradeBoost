@@ -63,6 +63,13 @@ export const LandingPartnersSection: React.FC = () => {
               ? 'Edulpha collabore avec les ministères de l\'éducation, les offices d\'examen du GCE, les géants des télécoms et les leaders technologiques pour offrir un apprentissage d\'excellence.'
               : 'Edulpha collaborates with education ministries, GCE examination boards, telecom leaders, and global AI infrastructure providers to guarantee official curriculum excellence.'}
           </p>
+          <div className="pt-2 flex justify-center">
+            <a href="/partners">
+              <button className="px-5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200 transition">
+                {language === 'fr' ? 'En savoir plus sur nos partenariats' : 'Learn More About Institutional Partners'} →
+              </button>
+            </a>
+          </div>
         </div>
 
         {/* Categories Bar */}

@@ -252,14 +252,20 @@ export const EdulphaAISection: React.FC = () => {
               </div>
 
               {/* Bottom Chat Input Bar */}
-              <div className="pt-3 border-t border-slate-900 flex items-center gap-2">
+              <div className="pt-3 border-t border-slate-900 flex flex-wrap items-center gap-2">
                 <input
                   type="text"
                   readOnly
                   value="Type your exam question or topic here..."
-                  className="flex-1 px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-500 outline-none cursor-pointer"
+                  className="flex-1 px-4 py-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-slate-500 outline-none cursor-pointer min-w-[200px]"
                   onClick={() => navigate('/auth')}
                 />
+                <button
+                  onClick={() => navigate('/edulpha-ai')}
+                  className="px-4 py-3 bg-indigo-950 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 rounded-xl text-xs font-bold transition shrink-0"
+                >
+                  Learn More AI
+                </button>
                 <button
                   onClick={() => navigate('/auth')}
                   className="p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition shrink-0"

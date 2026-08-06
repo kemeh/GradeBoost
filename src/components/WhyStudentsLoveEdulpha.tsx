@@ -163,6 +163,12 @@ export function WhyStudentsLoveEdulpha() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 shrink-0">
+            <Link to="/features">
+              <Button size="lg" variant="outline" className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold px-6 py-4 rounded-xl flex items-center gap-2">
+                <span>Learn More Features</span>
+                <ArrowRight size={16} />
+              </Button>
+            </Link>
             <Link to="/auth">
               <Button size="lg" className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-8 py-4 rounded-xl shadow-lg shadow-indigo-600/20 flex items-center gap-2">
                 <span>Start Free Revision</span>

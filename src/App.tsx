@@ -56,6 +56,25 @@ const AdminPracticalManager = lazy(() => import('./pages/AdminPracticalManager')
 const AlumniProgramPage = lazy(() => import('./pages/AlumniProgramPage'));
 const StudentAmbassadorPage = lazy(() => import('./pages/StudentAmbassadorPage'));
 
+// Dedicated Landing Section Pages
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const FeaturesPage = lazy(() => import('./pages/FeaturesPage'));
+const SubjectsPage = lazy(() => import('./pages/SubjectsPage'));
+const CurriculumPage = lazy(() => import('./pages/CurriculumPage'));
+const VirtualLabsPage = lazy(() => import('./pages/VirtualLabsPage'));
+const EdulphaAIPage = lazy(() => import('./pages/EdulphaAIPage'));
+const MockExamsPage = lazy(() => import('./pages/MockExamsPage'));
+const PricingPage = lazy(() => import('./pages/PricingPage'));
+const PartnersPage = lazy(() => import('./pages/PartnersPage'));
+const TeachersPage = lazy(() => import('./pages/TeachersPage'));
+const TestimonialsPage = lazy(() => import('./pages/TestimonialsPage'));
+const SuccessStoriesPage = lazy(() => import('./pages/SuccessStoriesPage'));
+const NewsBlogPage = lazy(() => import('./pages/NewsBlogPage'));
+const FAQsPage = lazy(() => import('./pages/FAQsPage'));
+const SupportContactPage = lazy(() => import('./pages/SupportContactPage'));
+const CareersPage = lazy(() => import('./pages/CareersPage'));
+const DownloadAppPage = lazy(() => import('./pages/DownloadAppPage'));
+
 const LoadingFallback = () => (
   <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">
     Loading...
@@ -114,6 +133,26 @@ export default function App() {
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/subjects" element={<SubjectsPage />} />
+              <Route path="/curriculum" element={<CurriculumPage />} />
+              <Route path="/virtual-labs" element={<VirtualLabsPage />} />
+              <Route path="/edulpha-ai" element={<EdulphaAIPage />} />
+              <Route path="/mock-exams" element={<MockExamsPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/partners" element={<PartnersPage />} />
+              <Route path="/teachers" element={<TeachersPage />} />
+              <Route path="/testimonials" element={<TestimonialsPage />} />
+              <Route path="/success-stories" element={<SuccessStoriesPage />} />
+              <Route path="/news" element={<NewsBlogPage />} />
+              <Route path="/blog" element={<NewsBlogPage />} />
+              <Route path="/faqs" element={<FAQsPage />} />
+              <Route path="/support" element={<SupportContactPage />} />
+              <Route path="/contact" element={<SupportContactPage />} />
+              <Route path="/careers" element={<CareersPage />} />
+              <Route path="/download-app" element={<DownloadAppPage />} />
+
               <Route path="/student-ambassadors" element={<StudentAmbassadorPage />} />
               <Route path="/alumni" element={<AlumniProgramPage />} />
               <Route path="/docs" element={<DocumentationHub />} />

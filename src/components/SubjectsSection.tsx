@@ -431,12 +431,20 @@ export const SubjectsSection: React.FC = () => {
               Edulpha covers over 45+ official MINESEC technical specialties including Auto Mechanics, Refrigeration, Secretarial, and Carpentry.
             </p>
           </div>
-          <button
-            onClick={() => navigate('/auth')}
-            className="px-6 py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs rounded-2xl uppercase tracking-wider shrink-0 shadow-lg shadow-emerald-400/20 transition-all"
-          >
-            View Complete Syllabus Catalog
-          </button>
+          <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
+            <button
+              onClick={() => navigate('/subjects')}
+              className="px-5 py-3 border border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-300 font-bold text-xs rounded-2xl tracking-wider transition-all"
+            >
+              Learn More Subjects
+            </button>
+            <button
+              onClick={() => navigate('/auth')}
+              className="px-6 py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs rounded-2xl uppercase tracking-wider shadow-lg shadow-emerald-400/20 transition-all"
+            >
+              View Complete Syllabus Catalog
+            </button>
+          </div>
         </div>
 
       </div>
