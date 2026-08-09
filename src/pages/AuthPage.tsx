@@ -292,29 +292,29 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative">
-      <div className="absolute top-6 right-6">
+    <div className="min-h-[100dvh] w-full bg-slate-50 flex flex-col items-center justify-center p-3 sm:p-4 md:p-6 relative overflow-x-hidden box-border">
+      <div className="absolute top-3 right-3 sm:top-6 sm:right-6 z-10">
         <LanguageSwitcher variant="compact" />
       </div>
 
-      <div className={`${!isLogin && !isForgot ? 'max-w-2xl' : 'max-w-md'} w-full space-y-8 transition-all`}>
+      <div className="w-full max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto space-y-4 sm:space-y-6 my-auto py-6 px-1 sm:px-0 box-border">
         {/* Top Header */}
-        <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2 mb-2">
+        <div className="text-center space-y-1.5 sm:space-y-2">
+          <Link to="/" className="inline-flex items-center gap-2 mb-1">
             <img 
               src={logoUrl} 
               alt={`${appName} Logo`} 
-              className="h-12 w-auto"
+              className="h-9 sm:h-12 w-auto max-w-full object-contain"
             />
           </Link>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-snug px-2">
             {isForgot 
               ? 'Reset Your Password' 
               : isLogin 
               ? 'Login to Edulpha' 
               : 'Create Edulpha Account'}
           </h1>
-          <p className="text-slate-500 font-medium text-xs md:text-sm">
+          <p className="text-slate-500 font-medium text-xs sm:text-sm max-w-sm mx-auto px-2">
             {isForgot 
               ? 'Choose phone SMS OTP recovery or email link.' 
               : isLogin 
@@ -331,47 +331,47 @@ export default function AuthPage() {
             lang={language as 'en' | 'fr'}
           />
         ) : (
-          <Card className="p-6 md:p-8 shadow-2xl border-slate-200 rounded-3xl">
+          <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-slate-200 rounded-2xl sm:rounded-3xl w-full max-w-full box-border overflow-hidden">
             {/* Method Tabs for Login */}
             {isLogin && !isForgot && (
-              <div className="mb-6 p-1 bg-slate-100 rounded-2xl grid grid-cols-2 gap-1 text-xs font-bold">
+              <div className="mb-4 sm:mb-6 p-1 bg-slate-100 rounded-xl sm:rounded-2xl grid grid-cols-2 gap-1 text-xs font-bold w-full box-border">
                 <button
                   type="button"
                   onClick={() => { setLoginMethod('phone_password'); setError(''); }}
-                  className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  className={`min-h-[48px] sm:min-h-[52px] py-2.5 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold ${
                     loginMethod.startsWith('phone')
-                      ? 'bg-white text-indigo-950 shadow-sm border border-slate-200'
+                      ? 'bg-white text-indigo-950 shadow-xs border border-slate-200'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  <Smartphone size={16} className="text-indigo-600" />
-                  <span>Phone Number</span>
+                  <Smartphone size={16} className="text-indigo-600 shrink-0" />
+                  <span className="truncate">Phone Number</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { setLoginMethod('email_password'); setError(''); }}
-                  className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  className={`min-h-[48px] sm:min-h-[52px] py-2.5 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold ${
                     loginMethod === 'email_password'
-                      ? 'bg-white text-indigo-950 shadow-sm border border-slate-200'
+                      ? 'bg-white text-indigo-950 shadow-xs border border-slate-200'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  <Mail size={16} className="text-slate-400" />
-                  <span>Email Login</span>
+                  <Mail size={16} className="text-slate-400 shrink-0" />
+                  <span className="truncate">Email Login</span>
                 </button>
               </div>
             )}
 
             {/* Sub-toggle for Phone Login (Password vs SMS OTP) */}
             {isLogin && !isForgot && loginMethod.startsWith('phone') && (
-              <div className="flex items-center justify-between mb-4 px-2 py-2 bg-indigo-50/60 rounded-xl border border-indigo-100">
-                <span className="text-[11px] font-bold text-indigo-950">Login Mode:</span>
-                <div className="flex gap-1 text-[11px] font-bold">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 p-2.5 bg-indigo-50/70 rounded-xl border border-indigo-100 w-full box-border">
+                <span className="text-[11px] font-bold text-indigo-950 shrink-0">Login Mode:</span>
+                <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto text-[11px] font-bold">
                   <button
                     type="button"
                     onClick={() => setLoginMethod('phone_password')}
-                    className={`px-3 py-1 rounded-lg transition-all ${
+                    className={`min-h-[42px] px-2.5 py-1.5 rounded-lg transition-all text-center leading-tight ${
                       loginMethod === 'phone_password' ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-700 hover:bg-indigo-100'
                     }`}
                   >
@@ -380,7 +380,7 @@ export default function AuthPage() {
                   <button
                     type="button"
                     onClick={() => setLoginMethod('phone_otp')}
-                    className={`px-3 py-1 rounded-lg transition-all ${
+                    className={`min-h-[42px] px-2.5 py-1.5 rounded-lg transition-all text-center leading-tight ${
                       loginMethod === 'phone_otp' ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-700 hover:bg-indigo-100'
                     }`}
                   >
@@ -392,46 +392,46 @@ export default function AuthPage() {
 
             {/* Recovery Method Tabs */}
             {isForgot && (
-              <div className="mb-6 p-1 bg-slate-100 rounded-2xl grid grid-cols-2 gap-1 text-xs font-bold">
+              <div className="mb-4 sm:mb-6 p-1 bg-slate-100 rounded-xl sm:rounded-2xl grid grid-cols-2 gap-1 text-xs font-bold w-full box-border">
                 <button
                   type="button"
                   onClick={() => { setRecoveryMethod('phone'); setError(''); }}
-                  className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  className={`min-h-[48px] sm:min-h-[52px] py-2.5 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold ${
                     recoveryMethod === 'phone'
-                      ? 'bg-white text-indigo-950 shadow-sm border border-slate-200'
+                      ? 'bg-white text-indigo-950 shadow-xs border border-slate-200'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  <Smartphone size={16} className="text-indigo-600" />
-                  <span>SMS OTP Code</span>
+                  <Smartphone size={16} className="text-indigo-600 shrink-0" />
+                  <span className="truncate">SMS OTP Code</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { setRecoveryMethod('email'); setError(''); }}
-                  className={`py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 ${
+                  className={`min-h-[48px] sm:min-h-[52px] py-2.5 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold ${
                     recoveryMethod === 'email'
-                      ? 'bg-white text-indigo-950 shadow-sm border border-slate-200'
+                      ? 'bg-white text-indigo-950 shadow-xs border border-slate-200'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  <Mail size={16} className="text-slate-400" />
-                  <span>Email Link</span>
+                  <Mail size={16} className="text-slate-400 shrink-0" />
+                  <span className="truncate">Email Link</span>
                 </button>
               </div>
             )}
 
-            <form onSubmit={isForgot ? handleRecovery : loginMethod === 'phone_otp' ? handleStartPasswordlessLogin : handlePasswordLogin} className="space-y-5">
+            <form onSubmit={isForgot ? handleRecovery : loginMethod === 'phone_otp' ? handleStartPasswordlessLogin : handlePasswordLogin} className="space-y-4 sm:space-y-5 w-full box-border">
               <AnimatePresence mode="wait">
                 {error && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="bg-rose-50 border border-rose-200 p-3.5 rounded-2xl flex items-start gap-3"
+                    className="bg-rose-50 border border-rose-200 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl flex items-start gap-2.5 sm:gap-3"
                   >
                     <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={18} />
-                    <p className="text-xs font-bold text-rose-700 leading-tight">{error}</p>
+                    <p className="text-xs font-bold text-rose-700 leading-tight break-words">{error}</p>
                   </motion.div>
                 )}
 
@@ -440,18 +440,18 @@ export default function AuthPage() {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="bg-emerald-50 border border-emerald-200 p-3.5 rounded-2xl flex items-start gap-3"
+                    className="bg-emerald-50 border border-emerald-200 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl flex items-start gap-2.5 sm:gap-3"
                   >
                     <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={18} />
-                    <p className="text-xs font-bold text-emerald-700 leading-tight">{success}</p>
+                    <p className="text-xs font-bold text-emerald-700 leading-tight break-words">{success}</p>
                   </motion.div>
                 )}
               </AnimatePresence>
 
               {/* PHONE INPUT FIELD */}
               {((isLogin && loginMethod.startsWith('phone')) || (isForgot && recoveryMethod === 'phone')) && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center justify-between ml-1">
+                <div className="space-y-1.5 w-full">
+                  <label className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center justify-between ml-0.5">
                     <span>Mobile Phone Number</span>
                     {phoneInput && (() => {
                       const carrier = detectCarrier(phoneInput);
@@ -462,12 +462,12 @@ export default function AuthPage() {
                       ) : null;
                     })()}
                   </label>
-                  <div className="relative">
-                    <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <div className="relative w-full">
+                    <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     <input
                       type="tel"
                       required
-                      className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-mono font-bold text-slate-900 text-sm"
+                      className="w-full pl-11 pr-3 py-3.5 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-mono font-bold text-slate-900 text-base sm:text-sm box-border"
                       placeholder="+237 670 00 00 00"
                       value={phoneInput}
                       onChange={e => setPhoneInput(e.target.value)}
@@ -478,14 +478,14 @@ export default function AuthPage() {
 
               {/* EMAIL INPUT FIELD */}
               {((isLogin && loginMethod === 'email_password') || (isForgot && recoveryMethod === 'email')) && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Email Address</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="space-y-1.5 w-full">
+                  <label className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider ml-0.5">Email Address</label>
+                  <div className="relative w-full">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     <input
                       type="email"
                       required
-                      className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-900 text-sm"
+                      className="w-full pl-11 pr-3 py-3.5 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-900 text-base sm:text-sm box-border"
                       placeholder="name@example.com"
                       value={emailInput}
                       onChange={e => setEmailInput(e.target.value)}
@@ -496,14 +496,14 @@ export default function AuthPage() {
 
               {/* PASSWORD FIELD (Only when not OTP login and not forgot password) */}
               {isLogin && !isForgot && loginMethod !== 'phone_otp' && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="space-y-1.5 w-full">
+                  <label className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider ml-0.5">Password</label>
+                  <div className="relative w-full">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
-                      className="w-full pl-12 pr-12 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-900 text-sm"
+                      className="w-full pl-11 pr-11 py-3.5 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-900 text-base sm:text-sm box-border"
                       placeholder="••••••••"
                       value={passwordInput}
                       onChange={e => setPasswordInput(e.target.value)}
@@ -511,14 +511,15 @@ export default function AuthPage() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-indigo-600 transition-colors rounded-lg"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
                   </div>
 
                   <div className="flex items-center justify-between pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <label className="flex items-center gap-2 cursor-pointer select-none py-1">
                       <input 
                         type="checkbox"
                         checked={rememberMe}
@@ -535,10 +536,10 @@ export default function AuthPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full min-h-[54px] sm:min-h-[56px] py-3.5 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 flex items-center justify-center gap-2 box-border active:scale-[0.99]"
               >
                 {loading ? (
-                  <RefreshCw size={16} className="animate-spin" />
+                  <RefreshCw size={18} className="animate-spin" />
                 ) : isForgot ? (
                   recoveryMethod === 'phone' ? 'Send SMS Recovery OTP 📲' : 'Send Email Reset Link 📧'
                 ) : loginMethod === 'phone_otp' ? (
@@ -549,7 +550,7 @@ export default function AuthPage() {
               </button>
 
               {/* BOTTOM FOOTER LINKS */}
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => {
@@ -557,7 +558,7 @@ export default function AuthPage() {
                     setError('');
                     setSuccess('');
                   }}
-                  className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1"
+                  className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1 py-1"
                 >
                   {isForgot ? <ArrowLeft size={14} /> : null}
                   <span>{isForgot ? 'Back to Login' : 'Forgot Password?'}</span>
@@ -571,7 +572,7 @@ export default function AuthPage() {
                     setError('');
                     setSuccess('');
                   }}
-                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors py-1"
                 >
                   Need an account? Register
                 </button>
@@ -580,7 +581,7 @@ export default function AuthPage() {
           </Card>
         )}
 
-        <p className="text-center text-[10px] font-black text-slate-400 uppercase tracking-widest">
+        <p className="text-center text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-widest px-2">
           Powered by Vertexon Technologies & Edulpha Ecosystem
         </p>
       </div>
@@ -593,7 +594,6 @@ export default function AuthPage() {
         onSuccess={otpReason === 'login' ? handleOtpLoginVerified : () => {
           setShowOtpModal(false);
           toast.success('SMS OTP Verified! Please set your new password.');
-          // Reset password step
         }}
         reason={otpReason}
         initialSimulatedOtp={initialSimulatedOtp}
