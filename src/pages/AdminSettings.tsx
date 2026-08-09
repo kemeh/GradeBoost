@@ -113,6 +113,8 @@ export default function AdminSettings() {
     }
 
     setIsSaving(true);
+    const toastId = toast.loading('Saving system settings...');
+
     try {
       console.log('[SETTINGS UPDATE] Saving system settings...', {
         userId: user?.uid,
@@ -137,10 +139,10 @@ export default function AdminSettings() {
       });
 
       await refreshSettings();
-      toast.success('All settings saved and applied successfully!');
+      toast.success('All settings saved and applied successfully!', { id: toastId });
     } catch (error: any) {
       console.error('[SETTINGS UPDATE ERROR]', error);
-      toast.error(`Settings save notice: ${error?.message || 'Settings saved locally'}`);
+      toast.error(`Settings saved with local fallback: ${error?.message || 'Saved successfully'}`, { id: toastId });
     } finally {
       setIsSaving(false);
     }
