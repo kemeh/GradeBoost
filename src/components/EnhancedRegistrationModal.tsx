@@ -264,21 +264,21 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 p-6 md:p-8 max-w-2xl w-full mx-auto space-y-6">
+    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-slate-200 p-4 sm:p-6 md:p-8 max-w-2xl w-full mx-auto space-y-4 sm:space-y-6 box-border overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3 sm:pb-4">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold mb-1">
-            <Sparkles className="w-3.5 h-3.5" /> Edulpha Onboarding Ecosystem
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full text-[11px] sm:text-xs font-bold mb-1">
+            <Sparkles className="w-3.5 h-3.5 shrink-0" /> Edulpha Onboarding Ecosystem
           </div>
-          <h2 className="text-2xl font-black text-slate-900">
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-tight">
             {lang === 'fr' ? 'Créer un compte Edulpha' : 'Create Edulpha Account'}
           </h2>
         </div>
         <button
           type="button"
           onClick={onSwitchToLogin}
-          className="text-xs font-bold text-blue-600 hover:text-blue-700"
+          className="text-xs font-bold text-blue-600 hover:text-blue-700 py-1"
         >
           {lang === 'fr' ? 'Déjà un compte ? Connexion' : 'Already have an account? Login'}
         </button>
@@ -287,38 +287,38 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
       {/* Account Type Selector (Only on step 1) */}
       {currentStep === 1 && (
         <div className="space-y-2">
-          <label className="text-xs font-black text-slate-400 uppercase tracking-widest">
+          <label className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-wider">
             {lang === 'fr' ? 'Type de Compte' : 'Select Account Type'}
           </label>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
             <button
               type="button"
               onClick={() => setAccountType('student')}
-              className={`p-4 rounded-2xl border-2 font-bold text-sm text-left flex items-center gap-3 transition ${
+              className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 font-bold text-sm text-left flex items-center gap-3 transition min-h-[56px] ${
                 accountType === 'student'
-                  ? 'border-blue-600 bg-blue-50/50 text-blue-900 shadow-sm'
+                  ? 'border-blue-600 bg-blue-50/50 text-blue-900 shadow-xs'
                   : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
               }`}
             >
-              <User className={`w-5 h-5 ${accountType === 'student' ? 'text-blue-600' : 'text-slate-400'}`} />
+              <User className={`w-5 h-5 shrink-0 ${accountType === 'student' ? 'text-blue-600' : 'text-slate-400'}`} />
               <div>
-                <div>{lang === 'fr' ? 'Étudiant / Élève' : 'Student Learner'}</div>
-                <div className="text-[11px] font-normal text-slate-500">GCE, BEPC, Baccalauréat</div>
+                <div className="text-xs sm:text-sm">{lang === 'fr' ? 'Étudiant / Élève' : 'Student Learner'}</div>
+                <div className="text-[10px] sm:text-[11px] font-normal text-slate-500">GCE, BEPC, Baccalauréat</div>
               </div>
             </button>
             <button
               type="button"
               onClick={() => setAccountType('teacher')}
-              className={`p-4 rounded-2xl border-2 font-bold text-sm text-left flex items-center gap-3 transition ${
+              className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 font-bold text-sm text-left flex items-center gap-3 transition min-h-[56px] ${
                 accountType === 'teacher'
-                  ? 'border-blue-600 bg-blue-50/50 text-blue-900 shadow-sm'
+                  ? 'border-blue-600 bg-blue-50/50 text-blue-900 shadow-xs'
                   : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
               }`}
             >
-              <Shield className={`w-5 h-5 ${accountType === 'teacher' ? 'text-blue-600' : 'text-slate-400'}`} />
+              <Shield className={`w-5 h-5 shrink-0 ${accountType === 'teacher' ? 'text-blue-600' : 'text-slate-400'}`} />
               <div>
-                <div>{lang === 'fr' ? 'Enseignant' : 'Teacher / Educator'}</div>
-                <div className="text-[11px] font-normal text-slate-500">LMS & Class Management</div>
+                <div className="text-xs sm:text-sm">{lang === 'fr' ? 'Enseignant' : 'Teacher / Educator'}</div>
+                <div className="text-[10px] sm:text-[11px] font-normal text-slate-500">LMS & Class Management</div>
               </div>
             </button>
           </div>
@@ -351,9 +351,9 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         
         {/* STUDENT STEP 1: Basic Information */}
         {accountType === 'student' && currentStep === 1 && (
-          <div className="space-y-4 animate-in fade-in">
-            <h3 className="font-bold text-base text-slate-900">1. Basic Personal Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3 sm:space-y-4 animate-in fade-in">
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">1. Basic Personal Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-600">First Name <span className="text-rose-500">*</span></label>
                 <input
@@ -362,7 +362,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   value={formData.firstName}
                   onChange={e => setFormData({ ...formData, firstName: e.target.value })}
                   placeholder="Kemeh"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none"
+                  className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none box-border"
                 />
               </div>
               <div className="space-y-1">
@@ -373,15 +373,15 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   value={formData.lastName}
                   onChange={e => setFormData({ ...formData, lastName: e.target.value })}
                   placeholder="Hilary"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none"
+                  className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none box-border"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-600 flex items-center justify-between">
-                  <span>Mobile Phone Number (Primary) <span className="text-rose-500">*</span></span>
+                  <span>Mobile Phone Number <span className="text-rose-500">*</span></span>
                   {formData.phone && (() => {
                     const c = detectCarrier(formData.phone);
                     return c.isValid ? (
@@ -391,15 +391,15 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                     ) : null;
                   })()}
                 </label>
-                <div className="relative">
-                  <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <div className="relative w-full">
+                  <Smartphone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                   <input
                     type="tel"
                     required
                     value={formData.phone}
                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+237 670 00 00 00"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold text-slate-900 focus:bg-white focus:border-blue-600 outline-none"
+                    className="w-full pl-10 pr-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-mono font-bold text-slate-900 focus:bg-white focus:border-blue-600 outline-none box-border"
                   />
                 </div>
               </div>
@@ -413,27 +413,28 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
                   placeholder="name@example.com (Optional)"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none"
+                  className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none box-border"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-600">Password</label>
-                <div className="relative">
+                <div className="relative w-full">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     value={formData.password}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                     placeholder="••••••••"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none pr-10"
+                    className="w-full pl-3.5 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none box-border"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-600 p-1"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
@@ -447,19 +448,19 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   value={formData.confirmPassword}
                   onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
                   placeholder="••••••••"
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none"
+                  className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none box-border"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
               <div className="space-y-1">
                 <label className="text-[11px] font-bold text-slate-600">Country</label>
                 <input
                   type="text"
                   value={formData.country}
                   onChange={e => setFormData({ ...formData, country: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold box-border"
                 />
               </div>
               <div className="space-y-1">
@@ -468,7 +469,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   type="text"
                   value={formData.region}
                   onChange={e => setFormData({ ...formData, region: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold box-border"
                 />
               </div>
               <div className="space-y-1">
@@ -477,7 +478,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   type="text"
                   value={formData.city}
                   onChange={e => setFormData({ ...formData, city: e.target.value })}
-                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold"
+                  className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold box-border"
                 />
               </div>
             </div>
@@ -491,37 +492,37 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
             
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-600">Select Curriculum System</label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, curriculum: 'cameroon_gce', educationLevel: 'Advanced Level' })}
-                  className={`p-4 rounded-2xl border-2 text-left font-bold transition ${
+                  className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 text-left font-bold transition min-h-[54px] ${
                     formData.curriculum === 'cameroon_gce'
                       ? 'border-blue-600 bg-blue-50 text-blue-900'
                       : 'border-slate-200 bg-white text-slate-600'
                   }`}
                 >
-                  <div className="text-sm">🇬🇧 English Curriculum</div>
-                  <div className="text-xs font-normal text-slate-500">Cameroon GCE (O & A Level)</div>
+                  <div className="text-xs sm:text-sm">🇬🇧 English Curriculum</div>
+                  <div className="text-[10px] sm:text-xs font-normal text-slate-500">Cameroon GCE (O & A Level)</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, curriculum: 'cameroon_francophone', educationLevel: 'Terminale' })}
-                  className={`p-4 rounded-2xl border-2 text-left font-bold transition ${
+                  className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border-2 text-left font-bold transition min-h-[54px] ${
                     formData.curriculum === 'cameroon_francophone'
                       ? 'border-blue-600 bg-blue-50 text-blue-900'
                       : 'border-slate-200 bg-white text-slate-600'
                   }`}
                 >
-                  <div className="text-sm">🇫🇷 Système Francophone</div>
-                  <div className="text-xs font-normal text-slate-500">BEPC, Seconde, Première, Terminale</div>
+                  <div className="text-xs sm:text-sm">🇫🇷 Système Francophone</div>
+                  <div className="text-[10px] sm:text-xs font-normal text-slate-500">BEPC, Seconde, Première, Terminale</div>
                 </button>
               </div>
             </div>
 
             <div className="space-y-2 pt-2">
               <label className="text-xs font-bold text-slate-600">Specific Education Level</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {formData.curriculum === 'cameroon_gce' ? (
                   <>
                     {['Ordinary Level', 'Advanced Level'].map(lvl => (
@@ -529,7 +530,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                         key={lvl}
                         type="button"
                         onClick={() => setFormData({ ...formData, educationLevel: lvl })}
-                        className={`p-3 rounded-xl border font-bold text-xs transition ${
+                        className={`p-3 rounded-xl border font-bold text-xs transition min-h-[44px] ${
                           formData.educationLevel === lvl
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-slate-50 text-slate-700 border-slate-200'
@@ -546,7 +547,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                         key={lvl}
                         type="button"
                         onClick={() => setFormData({ ...formData, educationLevel: lvl })}
-                        className={`p-3 rounded-xl border font-bold text-xs transition ${
+                        className={`p-3 rounded-xl border font-bold text-xs transition min-h-[44px] ${
                           formData.educationLevel === lvl
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-slate-50 text-slate-700 border-slate-200'
@@ -567,7 +568,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                 value={formData.school}
                 onChange={e => setFormData({ ...formData, school: e.target.value })}
                 placeholder="e.g. GBHS Yaoundé, Saker Baptist College..."
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none"
+                className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold focus:bg-white focus:border-blue-600 outline-none box-border"
               />
             </div>
           </div>
@@ -576,11 +577,11 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         {/* STUDENT STEP 3: Academic Details */}
         {accountType === 'student' && currentStep === 3 && (
           <div className="space-y-4 animate-in fade-in">
-            <h3 className="font-bold text-base text-slate-900">3. Academic Department & Subject Selection</h3>
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">3. Academic Department & Subject Selection</h3>
             
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-600">Department / Stream</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {['Science', 'Arts', 'Commercial', 'Technical', 'General Education'].map(dept => (
                   <button
                     key={dept}
@@ -595,7 +596,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                         selectedSubjects: dept === 'Commercial' ? [] : ['Mathematics', 'Physics', 'Computer Science']
                       });
                     }}
-                    className={`p-3 rounded-xl border font-bold text-xs transition text-center ${
+                    className={`p-2.5 sm:p-3 rounded-xl border font-bold text-xs transition text-center min-h-[44px] flex items-center justify-center ${
                       formData.department === dept
                         ? 'bg-blue-600 text-white border-blue-600'
                         : 'bg-slate-50 text-slate-700 border-slate-200'
@@ -611,7 +612,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
               <div className="space-y-3 pt-2 border-t border-slate-100">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-600">Commercial Level</label>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {[
                       { id: 'Intermediate level', name: 'Intermediate Level (TVE IL)' },
                       { id: 'Advance level', name: 'Advanced Level (TVEE)' }
@@ -629,7 +630,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                             selectedSubjects: []
                           });
                         }}
-                        className={`p-2.5 rounded-xl border text-xs font-bold transition text-center ${
+                        className={`p-2.5 rounded-xl border text-xs font-bold transition text-center min-h-[44px] flex items-center justify-center ${
                           formData.commercialLevel === lvl.id
                             ? 'bg-indigo-600 text-white border-indigo-600'
                             : 'bg-slate-50 text-slate-700 border-slate-200'
@@ -670,7 +671,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                         });
                       }
                     }}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none"
+                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none box-border"
                   >
                     <option value="">-- Select Specialty --</option>
                     {(formData.commercialLevel === 'Intermediate level' 
@@ -692,16 +693,16 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   if (!currentSpec) return null;
 
                   return (
-                    <div className="space-y-3 pt-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    <div className="space-y-3 pt-2 bg-slate-50 p-3 rounded-xl border border-slate-200 box-border overflow-hidden">
                       <div>
                         <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider block mb-1">
                           1. Professional Subjects (Compulsory - All 3)
                         </span>
                         <div className="space-y-1">
                           {currentSpec.professionalSubjects.map(sub => (
-                            <div key={sub} className="text-xs font-semibold bg-white p-2 rounded-lg border border-emerald-200 text-emerald-900 flex items-center justify-between">
-                              <span>{sub}</span>
-                              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">Compulsory</span>
+                            <div key={sub} className="text-xs font-semibold bg-white p-2 rounded-lg border border-emerald-200 text-emerald-900 flex items-center justify-between gap-1">
+                              <span className="truncate">{sub}</span>
+                              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold shrink-0">Compulsory</span>
                             </div>
                           ))}
                         </div>
@@ -720,7 +721,6 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                                 type="button"
                                 onClick={() => {
                                   if (isSelected) {
-                                    // Do not allow unchecking professional subjects
                                     if (currentSpec.professionalSubjects.includes(sub)) return;
                                     setFormData({
                                       ...formData,
@@ -737,19 +737,19 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                                     });
                                   }
                                 }}
-                                className={`p-2 rounded-lg border text-xs font-semibold text-left flex items-center justify-between transition ${
+                                className={`p-2 rounded-lg border text-xs font-semibold text-left flex items-center justify-between gap-1 transition ${
                                   isSelected ? 'bg-indigo-50 border-indigo-600 text-indigo-900' : 'bg-white border-slate-200 text-slate-700'
                                 }`}
                               >
-                                <span>{sub}</span>
-                                {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600" />}
+                                <span className="truncate">{sub}</span>
+                                {isSelected && <Check className="w-3.5 h-3.5 text-indigo-600 shrink-0" />}
                               </button>
                             );
                           })}
                         </div>
                       </div>
 
-                      <div className="text-[11px] font-bold text-slate-600 pt-1 flex items-center justify-between">
+                      <div className="text-[11px] font-bold text-slate-600 pt-1 flex flex-wrap items-center justify-between gap-1">
                         <span>Selected Subjects: <span className="text-blue-600">{formData.selectedSubjects.length}</span> (Rule: 6–8 total)</span>
                         {formData.selectedSubjects.length >= 6 && formData.selectedSubjects.length <= 8 ? (
                           <span className="text-emerald-600 flex items-center gap-1"><CheckCircle2 size={12} /> Valid Selection</span>
@@ -765,7 +765,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
               <>
                 <div className="space-y-2 pt-2">
                   <label className="text-xs font-bold text-slate-600">Select Your Main Subjects (Select multiple)</label>
-                  <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto p-1">
                     {[
                       'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Computer Science',
                       'English Language', 'French', 'Economics', 'Geography', 'History', 'Accounting', 'Mechanics'
@@ -776,12 +776,12 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                           key={subj}
                           type="button"
                           onClick={() => handleSubjectToggle(subj)}
-                          className={`p-2.5 rounded-xl border text-xs font-bold text-left flex items-center justify-between transition ${
+                          className={`p-2.5 rounded-xl border text-xs font-bold text-left flex items-center justify-between gap-1 transition ${
                             isSelected ? 'bg-blue-50 border-blue-600 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-600'
                           }`}
                         >
-                          <span>{subj}</span>
-                          {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                          <span className="truncate">{subj}</span>
+                          {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
                         </button>
                       );
                     })}
@@ -793,7 +793,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   <select
                     value={formData.targetExam}
                     onChange={e => setFormData({ ...formData, targetExam: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold outline-none"
+                    className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
                   >
                     <option value="GCE Advanced Level">GCE Advanced Level</option>
                     <option value="GCE Ordinary Level">GCE Ordinary Level</option>
@@ -810,7 +810,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         {/* STUDENT STEP 4: Learning Goals */}
         {accountType === 'student' && currentStep === 4 && (
           <div className="space-y-4 animate-in fade-in">
-            <h3 className="font-bold text-base text-slate-900">4. What are your main learning goals?</h3>
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">4. What are your main learning goals?</h3>
             <div className="grid grid-cols-1 gap-2.5">
               {[
                 'Prepare for exams (GCE / BEPC / BAC)',
@@ -826,12 +826,12 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                     key={goal}
                     type="button"
                     onClick={() => handleGoalToggle(goal)}
-                    className={`p-3.5 rounded-xl border text-xs font-bold text-left flex items-center justify-between transition ${
+                    className={`p-3 sm:p-3.5 rounded-xl border text-xs font-bold text-left flex items-center justify-between gap-2 transition ${
                       isSelected ? 'bg-blue-50 border-blue-600 text-blue-900' : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    <span>{goal}</span>
-                    {isSelected && <Check className="w-4 h-4 text-blue-600" />}
+                    <span className="leading-tight">{goal}</span>
+                    {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0" />}
                   </button>
                 );
               })}
@@ -842,15 +842,15 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         {/* STUDENT STEP 5: Learning Preferences */}
         {accountType === 'student' && currentStep === 5 && (
           <div className="space-y-4 animate-in fade-in">
-            <h3 className="font-bold text-base text-slate-900">5. Learning Preferences & Language</h3>
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">5. Learning Preferences & Language</h3>
             
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-600">Preferred Language</label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, preferredLanguage: 'en' })}
-                  className={`p-3 rounded-xl border font-bold text-xs transition ${
+                  className={`p-3 rounded-xl border font-bold text-xs transition min-h-[44px] ${
                     formData.preferredLanguage === 'en' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
@@ -859,7 +859,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                 <button
                   type="button"
                   onClick={() => setFormData({ ...formData, preferredLanguage: 'fr' })}
-                  className={`p-3 rounded-xl border font-bold text-xs transition ${
+                  className={`p-3 rounded-xl border font-bold text-xs transition min-h-[44px] ${
                     formData.preferredLanguage === 'fr' ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200'
                   }`}
                 >
@@ -870,13 +870,13 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
 
             <div className="space-y-2 pt-2">
               <label className="text-xs font-bold text-slate-600">Study Mode</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {['Online only', 'Offline downloads', 'Both (Recommended)'].map(mode => (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => setFormData({ ...formData, studyMode: mode })}
-                    className={`p-3 rounded-xl border font-bold text-xs transition text-center ${
+                    className={`p-3 rounded-xl border font-bold text-xs transition text-center min-h-[44px] ${
                       formData.studyMode === mode ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-50 text-slate-700 border-slate-200'
                     }`}
                   >
@@ -891,30 +891,30 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         {/* STUDENT STEP 6: Confirmation */}
         {accountType === 'student' && currentStep === 6 && (
           <div className="space-y-4 animate-in fade-in">
-            <h3 className="font-bold text-base text-slate-900">6. Account Summary & Confirmation</h3>
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3 text-xs">
-              <div className="flex justify-between border-b border-slate-200 pb-2">
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">6. Account Summary & Confirmation</h3>
+            <div className="p-3.5 sm:p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5 text-xs">
+              <div className="flex flex-wrap justify-between border-b border-slate-200 pb-2 gap-1">
                 <span className="text-slate-500">Full Name:</span>
                 <span className="font-bold text-slate-900">{formData.firstName} {formData.lastName}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
+              <div className="flex flex-wrap justify-between border-b border-slate-200 pb-2 gap-1">
                 <span className="text-slate-500">Email:</span>
-                <span className="font-bold text-slate-900">{formData.email}</span>
+                <span className="font-bold text-slate-900 truncate max-w-full">{formData.email || 'N/A'}</span>
               </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
+              <div className="flex flex-wrap justify-between border-b border-slate-200 pb-2 gap-1">
                 <span className="text-slate-500">Curriculum & Level:</span>
                 <span className="font-bold text-blue-600">{formData.educationLevel} ({formData.curriculum})</span>
               </div>
-              <div className="flex justify-between border-b border-slate-200 pb-2">
+              <div className="flex flex-wrap justify-between border-b border-slate-200 pb-2 gap-1">
                 <span className="text-slate-500">Selected Subjects:</span>
                 <span className="font-bold text-slate-900">{formData.selectedSubjects.join(', ')}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex flex-wrap justify-between gap-1">
                 <span className="text-slate-500">Target Exam:</span>
                 <span className="font-bold text-emerald-600">{formData.targetExam}</span>
               </div>
             </div>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-slate-500 leading-normal">
               By clicking "Complete Registration", you agree to Edulpha's terms of service and privacy policy. Your AI Tutor will be instantly personalized to your GCE / Baccalauréat profile.
             </p>
           </div>
@@ -922,16 +922,16 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
 
         {/* TEACHER FLOW (3 Steps) */}
         {accountType === 'teacher' && currentStep === 1 && (
-          <div className="space-y-4 animate-in fade-in">
-            <h3 className="font-bold text-base text-slate-900">1. Teacher Professional Details</h3>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3 sm:space-y-4 animate-in fade-in">
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">1. Teacher Professional Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <input
                 type="text"
                 placeholder="First Name"
                 required
                 value={formData.firstName}
                 onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"
+                className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
               />
               <input
                 type="text"
@@ -939,7 +939,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                 required
                 value={formData.lastName}
                 onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"
+                className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
               />
             </div>
             <input
@@ -948,16 +948,16 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
               required
               value={formData.email}
               onChange={e => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"
+              className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
             />
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <input
                 type="password"
                 placeholder="Password"
                 required
                 value={formData.password}
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"
+                className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
               />
               <input
                 type="password"
@@ -965,27 +965,27 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                 required
                 value={formData.confirmPassword}
                 onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
-                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"
+                className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
               />
             </div>
           </div>
         )}
 
         {accountType === 'teacher' && currentStep === 2 && (
-          <div className="space-y-4 animate-in fade-in">
-            <h3 className="font-bold text-base text-slate-900">2. Institution & Teaching Experience</h3>
+          <div className="space-y-3 sm:space-y-4 animate-in fade-in">
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">2. Institution & Teaching Experience</h3>
             <input
               type="text"
               placeholder="School / Institution Name"
               required
               value={formData.institutionName}
               onChange={e => setFormData({ ...formData, institutionName: e.target.value })}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"
+              className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
             />
             <select
               value={formData.teachingLevel}
               onChange={e => setFormData({ ...formData, teachingLevel: e.target.value })}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"
+              className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
             >
               <option value="Secondary High School (A-Level / Terminale)">Secondary High School (A-Level / Terminale)</option>
               <option value="Middle School (O-Level / BEPC)">Middle School (O-Level / BEPC)</option>
@@ -996,14 +996,14 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
               placeholder="Subjects Taught (comma separated)"
               value={formData.subjectsTaught.join(', ')}
               onChange={e => setFormData({ ...formData, subjectsTaught: e.target.value.split(',').map(s => s.trim()) })}
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold"
+              className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm font-semibold outline-none box-border"
             />
           </div>
         )}
 
         {accountType === 'teacher' && currentStep === 3 && (
           <div className="space-y-4 animate-in fade-in">
-            <h3 className="font-bold text-base text-slate-900">3. Verification & Confirmation</h3>
+            <h3 className="font-bold text-sm sm:text-base text-slate-900">3. Verification & Confirmation</h3>
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-blue-900 text-xs space-y-2">
               <p className="font-bold">Teacher Verification Notice:</p>
               <p>Teacher accounts receive instant access to LMS Studio, class analytics, and exam question builder. Administrator verification will be confirmed via email.</p>
@@ -1012,12 +1012,12 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center pt-4 border-t border-slate-100">
+        <div className="flex justify-between items-center gap-2 pt-4 border-t border-slate-100">
           {currentStep > 1 ? (
             <button
               type="button"
               onClick={handlePrev}
-              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs flex items-center gap-2 transition"
+              className="px-4 sm:px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 transition min-h-[48px]"
             >
               <ArrowLeft size={16} /> Back
             </button>
@@ -1029,7 +1029,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
             <button
               type="button"
               onClick={handleNext}
-              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-md transition"
+              className="px-5 sm:px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-md transition min-h-[48px]"
             >
               Next Step <ArrowRight size={16} />
             </button>
@@ -1037,7 +1037,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-md transition"
+              className="px-5 sm:px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center gap-1.5 sm:gap-2 shadow-md transition min-h-[48px]"
             >
               {loading ? 'Creating Account...' : 'Complete Registration 🚀'}
             </button>

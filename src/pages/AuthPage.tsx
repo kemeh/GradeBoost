@@ -334,30 +334,30 @@ export default function AuthPage() {
           <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-slate-200 rounded-2xl sm:rounded-3xl w-full max-w-full box-border overflow-hidden">
             {/* Method Tabs for Login */}
             {isLogin && !isForgot && (
-              <div className="mb-4 sm:mb-6 p-1 bg-slate-100 rounded-xl sm:rounded-2xl grid grid-cols-2 gap-1 text-xs font-bold w-full box-border">
+              <div className="mb-5 p-1 bg-slate-100/80 rounded-2xl grid grid-cols-2 gap-1 text-xs font-bold w-full box-border">
                 <button
                   type="button"
                   onClick={() => { setLoginMethod('phone_password'); setError(''); }}
-                  className={`min-h-[48px] sm:min-h-[52px] py-2.5 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold ${
+                  className={`min-h-[48px] sm:min-h-[52px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-bold ${
                     loginMethod.startsWith('phone')
-                      ? 'bg-white text-indigo-950 shadow-xs border border-slate-200'
+                      ? 'bg-white text-indigo-950 shadow-sm border border-slate-200/80'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  <Smartphone size={16} className="text-indigo-600 shrink-0" />
+                  <Smartphone size={18} className="text-indigo-600 shrink-0" />
                   <span className="truncate">Phone Number</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => { setLoginMethod('email_password'); setError(''); }}
-                  className={`min-h-[48px] sm:min-h-[52px] py-2.5 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold ${
+                  className={`min-h-[48px] sm:min-h-[52px] py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 text-xs sm:text-sm font-bold ${
                     loginMethod === 'email_password'
-                      ? 'bg-white text-indigo-950 shadow-xs border border-slate-200'
+                      ? 'bg-white text-indigo-950 shadow-sm border border-slate-200/80'
                       : 'text-slate-500 hover:text-slate-900'
                   }`}
                 >
-                  <Mail size={16} className="text-slate-400 shrink-0" />
+                  <Mail size={18} className="text-slate-400 shrink-0" />
                   <span className="truncate">Email Login</span>
                 </button>
               </div>
@@ -365,26 +365,37 @@ export default function AuthPage() {
 
             {/* Sub-toggle for Phone Login (Password vs SMS OTP) */}
             {isLogin && !isForgot && loginMethod.startsWith('phone') && (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 p-2.5 bg-indigo-50/70 rounded-xl border border-indigo-100 w-full box-border">
-                <span className="text-[11px] font-bold text-indigo-950 shrink-0">Login Mode:</span>
-                <div className="grid grid-cols-2 gap-1.5 w-full sm:w-auto text-[11px] font-bold">
+              <div className="space-y-1.5 mb-5 w-full">
+                <div className="flex items-center gap-1 text-[11px] font-bold text-slate-600 ml-0.5">
+                  <span>Login Mode</span>
+                  <div className="inline-flex items-center text-slate-400 hover:text-slate-600" title="Choose password or SMS OTP verification">
+                    <span className="w-3.5 h-3.5 rounded-full border border-slate-400 text-[9px] flex items-center justify-center font-serif italic">i</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 p-1 bg-slate-100/60 rounded-2xl border border-slate-200/60 w-full box-border">
                   <button
                     type="button"
                     onClick={() => setLoginMethod('phone_password')}
-                    className={`min-h-[42px] px-2.5 py-1.5 rounded-lg transition-all text-center leading-tight ${
-                      loginMethod === 'phone_password' ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-700 hover:bg-indigo-100'
+                    className={`min-h-[48px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs font-bold text-left leading-tight ${
+                      loginMethod === 'phone_password' 
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' 
+                        : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50'
                     }`}
                   >
-                    Phone + Password
+                    <Lock size={16} className={`shrink-0 ${loginMethod === 'phone_password' ? 'text-white' : 'text-slate-400'}`} />
+                    <span className="text-[11px] sm:text-xs">Phone + Password</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setLoginMethod('phone_otp')}
-                    className={`min-h-[42px] px-2.5 py-1.5 rounded-lg transition-all text-center leading-tight ${
-                      loginMethod === 'phone_otp' ? 'bg-indigo-600 text-white shadow-xs' : 'text-indigo-700 hover:bg-indigo-100'
+                    className={`min-h-[48px] py-2 px-2.5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs font-bold text-left leading-tight ${
+                      loginMethod === 'phone_otp' 
+                        ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' 
+                        : 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-200/50'
                     }`}
                   >
-                    Passwordless OTP 📲
+                    <ShieldCheck size={16} className={`shrink-0 ${loginMethod === 'phone_otp' ? 'text-white' : 'text-slate-400'}`} />
+                    <span className="text-[11px] sm:text-xs">Passwordless OTP</span>
                   </button>
                 </div>
               </div>
