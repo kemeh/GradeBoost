@@ -137,21 +137,21 @@ export default function StudentPracticalLab() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex w-full max-w-full overflow-x-hidden">
       <Sidebar />
 
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl mx-auto">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto min-w-0 w-full">
         {/* Top Hub Banner */}
-        <div className="bg-gradient-to-r from-blue-900/60 via-slate-900 to-amber-900/40 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-2xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-          <div className="space-y-2 relative z-10">
+        <div className="bg-gradient-to-r from-blue-900/60 via-slate-900 to-amber-900/40 p-4 sm:p-6 md:p-8 rounded-2xl border border-slate-800 shadow-2xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 relative overflow-hidden">
+          <div className="space-y-2 relative z-10 min-w-0">
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold uppercase tracking-wider">
-              <FlaskConical className="w-4 h-4 text-amber-400" />
-              <span>Edulpha Virtual Practical Lab</span>
+              <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="truncate">Edulpha Virtual Practical Lab</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-extrabold text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight break-words">
               Science, Technical & Computer Practical Center
             </h1>
-            <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
               Interactive multi-language code execution sandboxes, virtual biology microscopy, chemistry titration, physics electricity & mechanics simulators.
             </p>
           </div>

@@ -132,34 +132,34 @@ export default function LandingPage() {
       <Navbar />
 
       {/* 2. Hero Section (Coursera-Inspired Full-Width & Search Driven) */}
-      <section className="pt-20 pb-24 px-6 relative overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white">
+      <section className="pt-12 sm:pt-20 pb-16 sm:pb-24 px-4 sm:px-6 relative overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white">
         
         {/* Animated Background Lights */}
-        <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto space-y-16 relative z-10">
+        <div className="max-w-7xl mx-auto space-y-12 sm:space-y-16 relative z-10">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
             
             {/* Left Main Hero Copy */}
-            <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
+            <div className="lg:col-span-7 space-y-6 sm:space-y-8 text-center lg:text-left">
               
               <motion.div 
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] sm:text-xs font-bold uppercase tracking-wider"
               >
-                <Sparkles size={14} className="text-amber-400" />
-                <span>Africa's Leading Educational Platform</span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <Sparkles size={14} className="text-amber-400 shrink-0" />
+                <span className="truncate">Africa's Premier Learning Platform</span>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               </motion.div>
 
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.08]"
+                className="text-3xl sm:text-5xl lg:text-7xl font-black tracking-tight leading-[1.1]"
               >
                 Learn. Practice. <br />
                 <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
@@ -171,7 +171,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-slate-300 text-base sm:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+                className="text-slate-300 text-sm sm:text-lg lg:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed"
               >
                 Master General Education, Technical Specialties, Commercial Studies, and TVEE Intermediate & Advanced levels with official MINESEC & GCE Board past papers, step-by-step Edulpha AI solvers, and offline mobile access.
               </motion.p>
@@ -181,21 +181,23 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="space-y-3 relative max-w-xl mx-auto lg:mx-0"
+                className="space-y-3 relative max-w-xl mx-auto lg:mx-0 w-full"
               >
-                <div className="relative bg-white p-2 rounded-2xl shadow-2xl flex items-center border-2 border-slate-200 focus-within:border-emerald-500 transition-colors">
-                  <Search size={20} className="text-slate-400 ml-3 shrink-0" />
-                  <input
-                    type="text"
-                    value={heroSearch}
-                    onChange={(e) => handleHeroSearchChange(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleExecuteSearch(heroSearch)}
-                    placeholder="What do you want to learn today? (e.g. Physics, Electrical, Accounting...)"
-                    className="w-full px-3 py-2 text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none bg-transparent"
-                  />
+                <div className="relative bg-white p-1.5 sm:p-2 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-2 border-slate-200 focus-within:border-emerald-500 transition-colors">
+                  <div className="flex items-center flex-1 px-2">
+                    <Search size={18} className="text-slate-400 shrink-0" />
+                    <input
+                      type="text"
+                      value={heroSearch}
+                      onChange={(e) => handleHeroSearchChange(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleExecuteSearch(heroSearch)}
+                      placeholder="What do you want to learn today?"
+                      className="w-full px-2 py-2 text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none bg-transparent"
+                    />
+                  </div>
                   <button
                     onClick={() => handleExecuteSearch(heroSearch)}
-                    className="px-5 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shrink-0 transition shadow-md flex items-center gap-1.5"
+                    className="px-4 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shrink-0 transition shadow-md flex items-center justify-center gap-1.5"
                   >
                     <span>Search</span>
                     <ArrowRight size={14} />

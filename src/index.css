@@ -17,6 +17,31 @@
   --shadow-medium: 0 10px 30px -5px rgba(0, 0, 0, 0.1);
 }
 
+*, ::before, ::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+*, ::before, ::after {
+  box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+img, video, canvas, svg, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
 @layer base {
   body {
     @apply font-sans text-slate-900 bg-slate-50 overflow-x-hidden;
@@ -30,33 +55,43 @@
   
   input, select, textarea, button {
     @apply text-base sm:text-sm;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95;
+    @apply bg-linear-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold px-6 py-3 rounded-xl transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-2 active:scale-95 min-h-[44px];
   }
   
   .card {
-    @apply bg-white rounded-3xl p-8 border border-slate-100 shadow-soft hover:shadow-medium transition-all duration-300;
+    @apply bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-100 shadow-soft hover:shadow-medium transition-all duration-300 max-w-full box-border overflow-hidden;
   }
   
   .glass {
     @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-soft;
   }
+
+  .table-responsive-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 .prose h2 {
-  @apply text-2xl font-bold text-slate-800 mt-8 mb-4;
+  @apply text-xl sm:text-2xl font-bold text-slate-800 mt-6 sm:mt-8 mb-3 sm:mb-4;
 }
 
 .prose p {
-  @apply text-slate-600 leading-relaxed mb-4;
+  @apply text-slate-600 leading-relaxed mb-4 text-sm sm:text-base;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
@@ -66,3 +101,4 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-slate-200 rounded-full hover:bg-slate-300;
 }
+

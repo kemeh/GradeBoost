@@ -643,33 +643,34 @@ export default function StudentDashboard() {
   const overallProgressPercent = Math.min(100, Math.round((completedLessonsCount / totalLessonsCount) * 100));
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
 
-      <main className="flex-1 lg:pl-72 p-4 md:p-8 space-y-6 max-w-7xl mx-auto">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* TOP HERO HEADER */}
-        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-3xl p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
             <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
                   <GraduationCap size={14} /> Student Dashboard
                 </span>
-                <span className="text-xs text-indigo-300 font-medium">GCE Target 2026</span>
+                <span className="text-[11px] sm:text-xs text-indigo-300 font-medium">GCE Target 2026</span>
               </div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight break-words">
                 Welcome back, {user?.name || user?.email?.split('@')[0] || 'Scholar'} 👋
               </h1>
-              <p className="text-indigo-200 text-xs md:text-sm max-w-xl">
+              <p className="text-indigo-200 text-xs md:text-sm max-w-xl leading-relaxed">
                 Master your GCE subjects with lessons, past papers, mock exams, personal notes, study plans, and your 24/7 AI tutor.
               </p>
             </div>
 
             {/* Overall Progress Widget */}
-            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 flex items-center gap-4 min-w-[220px]">
-              <div className="relative w-14 h-14 flex items-center justify-center">
-                <svg className="w-14 h-14 -rotate-90">
-                  <circle cx="28" cy="28" r="22" stroke="rgba(255,255,255,0.2)" strokeWidth="5" fill="none" />
+            <div className="bg-white/10 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-white/10 flex items-center gap-3 sm:gap-4 w-full sm:w-auto min-w-0">
+              <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0 flex items-center justify-center">
+                <svg className="w-12 h-12 sm:w-14 sm:h-14 -rotate-90">
+                  <circle cx="28" cy="28" r="20" className="sm:hidden" stroke="rgba(255,255,255,0.2)" strokeWidth="4" fill="none" />
+                  <circle cx="28" cy="28" r="22" className="hidden sm:block" stroke="rgba(255,255,255,0.2)" strokeWidth="5" fill="none" />
                   <circle 
                     cx="28" cy="28" r="22" 
                     stroke="#818cf8" strokeWidth="5" fill="none"
@@ -678,11 +679,11 @@ export default function StudentDashboard() {
                     strokeLinecap="round"
                   />
                 </svg>
-                <span className="absolute text-xs font-black text-white">{overallProgressPercent}%</span>
+                <span className="absolute text-[11px] sm:text-xs font-black text-white">{overallProgressPercent}%</span>
               </div>
-              <div className="space-y-0.5">
-                <span className="text-xs font-bold text-indigo-200 uppercase tracking-wider">Overall Mastery</span>
-                <p className="text-sm font-extrabold text-white">{completedLessonsCount} / {lessons.length} Lessons</p>
+              <div className="space-y-0.5 min-w-0">
+                <span className="text-[10px] sm:text-xs font-bold text-indigo-200 uppercase tracking-wider block truncate">Overall Mastery</span>
+                <p className="text-xs sm:text-sm font-extrabold text-white truncate">{completedLessonsCount} / {lessons.length} Lessons</p>
                 <p className="text-[10px] text-indigo-300">Keep up the momentum!</p>
               </div>
             </div>
@@ -756,47 +757,47 @@ export default function StudentDashboard() {
 
         {/* TAB 1: OVERVIEW DASHBOARD */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             {/* Quick Stats Banner */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card className="p-5 space-y-2 border-indigo-100 bg-indigo-50/30">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Lessons Done</span>
-                <p className="text-2xl font-black text-indigo-900">{completedLessonsCount} / {lessons.length}</p>
-                <p className="text-[10px] text-indigo-600 font-bold">{overallProgressPercent}% Complete</p>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-indigo-100 bg-indigo-50/30 min-w-0">
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate block">Lessons Done</span>
+                <p className="text-lg sm:text-2xl font-black text-indigo-900 truncate">{completedLessonsCount} / {lessons.length}</p>
+                <p className="text-[10px] text-indigo-600 font-bold truncate">{overallProgressPercent}% Complete</p>
               </Card>
 
-              <Card className="p-5 space-y-2 border-slate-200">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Practice Drills</span>
-                <p className="text-2xl font-black text-slate-900">{practiceScore} Completed</p>
-                <p className="text-[10px] text-emerald-600 font-bold">+150 XP Earned</p>
+              <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-slate-200 min-w-0">
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate block">Practice Drills</span>
+                <p className="text-lg sm:text-2xl font-black text-slate-900 truncate">{practiceScore} Completed</p>
+                <p className="text-[10px] text-emerald-600 font-bold truncate">+150 XP Earned</p>
               </Card>
 
-              <Card className="p-5 space-y-2 border-slate-200">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Daily Streak</span>
-                <p className="text-2xl font-black text-amber-600 flex items-center gap-1.5">
-                  <Zap size={20} fill="currentColor" /> 7 Days
+              <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-slate-200 min-w-0">
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate block">Daily Streak</span>
+                <p className="text-lg sm:text-2xl font-black text-amber-600 flex items-center gap-1 sm:gap-1.5 truncate">
+                  <Zap size={18} className="shrink-0" fill="currentColor" /> 7 Days
                 </p>
-                <p className="text-[10px] text-slate-500 font-medium">Active learner streak</p>
+                <p className="text-[10px] text-slate-500 font-medium truncate">Active streak</p>
               </Card>
 
-              <Card className="p-5 space-y-2 border-slate-200">
-                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Saved Notes</span>
-                <p className="text-2xl font-black text-slate-900">{personalNotes.length}</p>
-                <p className="text-[10px] text-slate-500 font-medium">Personal revision notes</p>
+              <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-slate-200 min-w-0">
+                <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate block">Saved Notes</span>
+                <p className="text-lg sm:text-2xl font-black text-slate-900 truncate">{personalNotes.length}</p>
+                <p className="text-[10px] text-slate-500 font-medium truncate">Personal notes</p>
               </Card>
             </div>
 
             {/* Virtual Practical Lab Promo Banner */}
-            <Card className="p-6 bg-gradient-to-r from-blue-950 via-slate-900 to-amber-950/70 text-white rounded-3xl border border-amber-500/30 space-y-3 relative overflow-hidden shadow-xl">
-              <div className="flex items-center justify-between">
-                <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles size={14} className="text-amber-400" /> New Module
+            <Card className="p-4 sm:p-6 bg-gradient-to-r from-blue-950 via-slate-900 to-amber-950/70 text-white rounded-2xl sm:rounded-3xl border border-amber-500/30 space-y-3 relative overflow-hidden shadow-xl min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] sm:text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles size={13} className="text-amber-400 shrink-0" /> New Module
                 </span>
-                <span className="text-xs text-amber-300 font-bold font-mono">GCE Practical Examinations</span>
+                <span className="text-[11px] sm:text-xs text-amber-300 font-bold font-mono">GCE Practical Examinations</span>
               </div>
 
               <div className="space-y-1">
-                <h3 className="text-xl font-black text-white flex items-center gap-2">
+                <h3 className="text-base sm:text-xl font-black text-white flex items-center gap-2 break-words">
                   Edulpha Virtual Practical Lab
                 </h3>
                 <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
@@ -804,14 +805,14 @@ export default function StudentDashboard() {
                 </p>
               </div>
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
                 <Button 
                   onClick={() => navigate('/practicals')} 
-                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs gap-2 rounded-xl uppercase tracking-wider shadow-lg"
+                  className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs gap-2 rounded-xl uppercase tracking-wider shadow-lg w-full sm:w-auto"
                 >
-                  Enter Virtual Practical Lab <ArrowRight size={14} />
+                  <span className="truncate">Enter Virtual Practical Lab</span> <ArrowRight size={14} className="shrink-0" />
                 </Button>
-                <span className="text-[11px] text-amber-300/80 font-mono hidden sm:inline">
+                <span className="text-[11px] text-amber-300/80 font-mono hidden md:inline">
                   Automated Test Cases + AI Socratic Tutor
                 </span>
               </div>
@@ -819,32 +820,32 @@ export default function StudentDashboard() {
 
             {/* Continue Learning Widget */}
             {lessons.length > 0 && (
-              <Card className="p-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-3xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1">
-                    <PlayCircle size={14} /> Resume Next Module
+              <Card className="p-4 sm:p-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white rounded-2xl sm:rounded-3xl space-y-4 min-w-0">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-300 text-[10px] sm:text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1">
+                    <PlayCircle size={14} className="shrink-0" /> Resume Next Module
                   </span>
                   <span className="text-xs text-indigo-300 font-medium">{lessons[0].estimatedMinutes || 30} mins remaining</span>
                 </div>
 
                 <div className="space-y-1">
                   <Badge variant="indigo">{lessons[0].subject}</Badge>
-                  <h3 className="text-xl font-bold">{lessons[0].title}</h3>
-                  <p className="text-xs text-indigo-200 line-clamp-2">{lessons[0].summary}</p>
+                  <h3 className="text-base sm:text-xl font-bold break-words">{lessons[0].title}</h3>
+                  <p className="text-xs text-indigo-200 line-clamp-2 leading-relaxed">{lessons[0].summary}</p>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-2">
                   <Button 
                     onClick={() => {
                       setSelectedLesson(lessons[0]);
                       setActiveTab('lessons');
                     }} 
-                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs gap-2 rounded-xl"
+                    className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs gap-2 rounded-xl w-full sm:w-auto"
                   >
-                    Start Reading Lesson <ArrowRight size={14} />
+                    Start Reading Lesson <ArrowRight size={14} className="shrink-0" />
                   </Button>
-                  <Button onClick={() => setActiveTab('ai_tutor')} variant="ghost" className="text-indigo-300 text-xs gap-1.5 hover:text-white">
-                    <Bot size={15} /> Ask AI Tutor about this
+                  <Button onClick={() => setActiveTab('ai_tutor')} variant="ghost" className="text-indigo-300 text-xs gap-1.5 hover:text-white justify-center">
+                    <Bot size={15} className="shrink-0" /> Ask AI Tutor about this
                   </Button>
                 </div>
               </Card>

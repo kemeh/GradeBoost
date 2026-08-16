@@ -29,20 +29,20 @@ export default function LandingPricingSection() {
   };
 
   return (
-    <section id="pricing" className="py-24 px-6 bg-white relative overflow-hidden">
-      <div className="max-w-7xl mx-auto space-y-16">
+    <section id="pricing" className="py-16 sm:py-24 px-4 sm:px-6 bg-white relative overflow-hidden">
+      <div className="max-w-7xl mx-auto space-y-12 sm:space-y-16">
         {/* Section Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-wider">
             <Tag size={14} className="text-emerald-600" />
             {language === 'fr' ? 'Tarification Transparente' : 'Transparent & Affordable Pricing'}
           </div>
-          <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
             {language === 'fr' 
               ? 'Choisissez le Pass qui Correspond à Vos Ambitions' 
               : 'Invest in Your Academic Excellence'}
           </h2>
-          <p className="text-slate-500 font-medium text-base sm:text-lg">
+          <p className="text-slate-500 font-medium text-sm sm:text-base md:text-lg">
             {language === 'fr'
               ? 'Accédez à toutes les épreuves, examens blancs, corrections détaillées et au tuteur IA 24/7.'
               : 'Unlock complete past paper solutions, full mock exams, step-by-step answers, and unlimited AI tutoring.'}
@@ -58,21 +58,21 @@ export default function LandingPricingSection() {
           </div>
         ) : plans.length === 0 ? (
           /* Empty / No Plans Placeholder */
-          <Card className="max-w-2xl mx-auto p-12 text-center space-y-4 border border-dashed border-slate-300 rounded-3xl shadow-xs bg-slate-50/50">
+          <Card className="max-w-2xl mx-auto p-6 sm:p-12 text-center space-y-4 border border-dashed border-slate-300 rounded-3xl shadow-xs bg-slate-50/50">
             <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 mx-auto">
               <Sparkles size={28} />
             </div>
-            <h3 className="text-xl font-black text-slate-900">
+            <h3 className="text-lg sm:text-xl font-black text-slate-900">
               {language === 'fr' ? 'Tarification Bientôt Disponible' : 'Pricing Will Be Available Soon'}
             </h3>
-            <p className="text-slate-600 font-medium text-sm leading-relaxed max-w-md mx-auto">
+            <p className="text-slate-600 font-medium text-xs sm:text-sm leading-relaxed max-w-md mx-auto">
               {language === 'fr'
                 ? 'Nos formules d\'abonnement sont en cours de mise à jour. Veuillez revenir très bientôt ou contacter notre équipe d\'assistance.'
                 : 'Our payment plans are currently being updated by the administration. Check back shortly or contact our support team.'}
             </p>
             <div className="pt-2">
               <Link to="/auth">
-                <Button className="rounded-2xl font-bold px-6 py-2.5">
+                <Button className="rounded-2xl font-bold px-6 py-2.5 text-xs sm:text-sm">
                   {language === 'fr' ? 'Créer un Compte Gratuit' : 'Create Free Student Account'}
                 </Button>
               </Link>
@@ -80,7 +80,7 @@ export default function LandingPricingSection() {
           </Card>
         ) : (
           /* Dynamic Pricing Grid */
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 items-stretch">
             {plans.map((plan) => {
               const isRecommended = Boolean(plan.isRecommended || plan.isDefault);
               const featuresList = language === 'fr' && plan.featuresFr?.length ? plan.featuresFr : plan.features;
@@ -97,7 +97,7 @@ export default function LandingPricingSection() {
                 >
                   <Card
                     className={cn(
-                      'p-8 border rounded-[2.5rem] flex flex-col justify-between h-full transition-all relative overflow-hidden group',
+                      'p-5 sm:p-8 border rounded-3xl sm:rounded-[2.5rem] flex flex-col justify-between h-full transition-all relative overflow-hidden group',
                       isRecommended
                         ? 'border-indigo-600 shadow-2xl ring-2 ring-indigo-500/20 bg-gradient-to-b from-indigo-50/40 via-white to-white md:-translate-y-2'
                         : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xl'
