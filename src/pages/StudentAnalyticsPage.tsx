@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Sidebar from '../components/Sidebar';
 import {
   ResponsiveContainer,
   LineChart,
@@ -35,8 +36,11 @@ export const StudentAnalyticsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 space-y-6">
-      {/* Header */}
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
+      <Sidebar />
+
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+        {/* Header */}
       <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-purple-800 text-white p-6 md:p-8 rounded-3xl shadow-lg relative overflow-hidden">
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-semibold text-blue-200 border border-white/20">
@@ -181,6 +185,7 @@ export const StudentAnalyticsPage: React.FC = () => {
           </div>
         </div>
       </div>
+      </main>
     </div>
   );
 };

@@ -35,9 +35,9 @@ function DailyDrill() {
 
   if (questions.length === 0) {
     return (
-      <div className="flex min-h-screen bg-slate-50">
+      <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
         <Sidebar />
-        <main className="flex-1 lg:ml-72 pt-24 lg:pt-12 p-6 lg:p-12">
+        <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
           <div className="max-w-4xl mx-auto flex flex-col items-center justify-center h-[60vh] text-center space-y-6">
             <div className="w-24 h-24 bg-red-50 text-red-600 rounded-full flex items-center justify-center">
               <Sparkles size={48} />
@@ -59,9 +59,9 @@ function DailyDrill() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 lg:ml-72 pt-24 lg:pt-12 p-6 lg:p-12">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
         <div className="max-w-4xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">

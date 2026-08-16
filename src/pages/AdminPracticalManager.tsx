@@ -183,10 +183,10 @@ export default function AdminPracticalManager() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex">
+    <div className="flex min-h-screen bg-slate-950 text-slate-100 font-sans w-full max-w-full overflow-x-hidden">
       <Sidebar />
 
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-7xl mx-auto">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
         {/* Top Admin Header */}
         <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-2xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div>

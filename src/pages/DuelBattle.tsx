@@ -332,9 +332,9 @@ export default function DuelBattle() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8 lg:p-12">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-5xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
         <div className="max-w-5xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex items-center justify-between">

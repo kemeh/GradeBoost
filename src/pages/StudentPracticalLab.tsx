@@ -140,7 +140,7 @@ export default function StudentPracticalLab() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex w-full max-w-full overflow-x-hidden">
       <Sidebar />
 
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto min-w-0 w-full">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto min-w-0 w-full pb-28 sm:pb-8">
         {/* Top Hub Banner */}
         <div className="bg-gradient-to-r from-blue-900/60 via-slate-900 to-amber-900/40 p-4 sm:p-6 md:p-8 rounded-2xl border border-slate-800 shadow-2xl mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6 relative overflow-hidden">
           <div className="space-y-2 relative z-10 min-w-0">

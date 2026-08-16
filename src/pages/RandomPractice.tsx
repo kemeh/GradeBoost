@@ -130,7 +130,7 @@ export default function RandomPractice() {
     const percentage = (score / questions.length) * 100;
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col">
-        <header className="h-20 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-50">
+        <header className="h-20 bg-white border-b border-slate-100 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-50">
           <div className="flex items-center gap-6">
             <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
               <LayoutDashboard size={20} />
@@ -269,7 +269,7 @@ export default function RandomPractice() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="h-20 bg-white border-b border-slate-100 px-8 flex items-center justify-between sticky top-0 z-50">
+      <header className="h-20 bg-white border-b border-slate-100 px-4 sm:px-8 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-6">
           <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
             <LayoutDashboard size={20} />

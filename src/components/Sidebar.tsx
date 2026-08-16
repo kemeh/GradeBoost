@@ -108,34 +108,43 @@ export default function Sidebar({ className }: SidebarProps) {
       {/* Mobile Menu Toggle */}
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-6 right-6 z-50 p-3 bg-white rounded-2xl border border-slate-100 shadow-lg text-slate-600 active:scale-95 transition-all"
+        aria-label="Toggle Navigation Menu"
+        className="lg:hidden fixed top-3 right-3 sm:top-4 sm:right-4 z-50 p-2.5 sm:p-3 bg-white/95 border border-slate-200 shadow-md rounded-2xl text-slate-700 hover:text-indigo-600 active:scale-95 transition-all backdrop-blur-md"
       >
-        {isOpen ? <X size={24} /> : <Menu size={24} />}
+        {isOpen ? <X size={22} /> : <Menu size={22} />}
       </button>
 
       {/* Overlay */}
       {isOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
       <aside className={cn(
-        "fixed top-0 left-0 h-full bg-white border-r border-slate-100 flex flex-col p-8 z-40 transition-all duration-300 ease-in-out",
-        "w-72",
+        "fixed top-0 left-0 h-full bg-white border-r border-slate-100 flex flex-col p-5 sm:p-8 z-50 lg:z-30 transition-transform duration-300 ease-in-out w-72 max-w-[85vw] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(1.25rem+env(safe-area-inset-top,0px))]",
         isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0",
         className
       )}>
-        {/* Branding */}
-        <div className="flex flex-col gap-1 mb-12">
-          <img 
-            src={logoUrl} 
-            alt={`${appName} Logo`} 
-            className="h-10 w-auto object-contain object-left"
-          />
-          <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1">by Vertexon Technologies</span>
+        {/* Branding & Mobile Close */}
+        <div className="flex items-center justify-between gap-2 mb-8 sm:mb-10 shrink-0">
+          <div className="flex flex-col gap-1 min-w-0">
+            <img 
+              src={logoUrl} 
+              alt={`${appName} Logo`} 
+              className="h-8 sm:h-10 w-auto object-contain object-left shrink-0"
+            />
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1 truncate">by Vertexon Technologies</span>
+          </div>
+          <button 
+            onClick={() => setIsOpen(false)}
+            aria-label="Close sidebar"
+            className="lg:hidden p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* Navigation */}

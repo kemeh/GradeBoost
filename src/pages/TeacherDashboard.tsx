@@ -563,32 +563,32 @@ export default function TeacherDashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
 
-      <main className="flex-1 lg:pl-72 p-6 md:p-10 space-y-8 max-w-7xl mx-auto">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
         {/* Header Banner */}
-        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 text-white shadow-xl relative overflow-hidden">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
             <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <span className="px-3 py-1 bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 text-xs font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
                   <UserCheck size={14} /> Teacher Portal
                 </span>
-                <span className="text-xs text-indigo-300 font-medium">Academic Management Console</span>
+                <span className="text-[11px] sm:text-xs text-indigo-300 font-medium">Academic Management Console</span>
               </div>
-              <h1 className="text-3xl font-black tracking-tight text-white">
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white break-words">
                 Teacher Command Center
               </h1>
-              <p className="text-indigo-200 text-sm max-w-xl">
+              <p className="text-indigo-200 text-xs md:text-sm max-w-xl leading-relaxed">
                 Create & deliver lessons, manage videos, assignments, quizzes, mock exams, marking schemes, and monitor student academic growth.
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <Button 
                 onClick={() => setActiveModal('lesson')}
-                className="bg-white text-indigo-900 hover:bg-indigo-50 font-black shadow-lg rounded-2xl flex items-center gap-2"
+                className="bg-white text-indigo-900 hover:bg-indigo-50 font-black shadow-lg rounded-2xl flex items-center justify-center gap-2 w-full sm:w-auto"
               >
                 <Plus size={18} /> Create Lesson
               </Button>

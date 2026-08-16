@@ -17,7 +17,7 @@ export const PaymentReceiptModal: React.FC<PaymentReceiptModalProps> = ({ receip
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full border border-slate-200 overflow-hidden my-8">
+      <div className="bg-white rounded-3xl shadow-2xl max-w-xl w-full border border-slate-200 overflow-hidden my-8 max-h-[calc(100dvh-2rem)] overflow-y-auto">
         {/* Top Header bar */}
         <div className="bg-slate-900 text-white p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">

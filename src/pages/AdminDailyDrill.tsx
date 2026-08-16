@@ -482,9 +482,9 @@ export default function AdminDailyDrill() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
         <div className="max-w-7xl mx-auto">
           <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
             <div className="flex items-center gap-6">

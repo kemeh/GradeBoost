@@ -446,46 +446,46 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
 
       {/* Main Content */}
-      <main className="flex-1 lg:ml-72 p-6 md:p-12 pt-24 lg:pt-12">
-        <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
-          <div className="flex items-center gap-6">
-            <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6 sm:mb-8">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors shrink-0">
               <LayoutDashboard size={20} />
             </button>
             <div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Admin Dashboard</h1>
-              <p className="text-slate-500 font-medium">Manage the platform content and monitor student performance.</p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight break-words">Admin Dashboard</h1>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">Manage the platform content and monitor student performance.</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={() => navigate('/admin/lms')} variant="outline" className="border-indigo-200 text-indigo-600 font-bold hover:bg-indigo-50">
-              <BookOpen className="mr-2" size={18} /> LMS Content Studio
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <Button onClick={() => navigate('/admin/lms')} variant="outline" className="border-indigo-200 text-indigo-600 font-bold hover:bg-indigo-50 text-xs py-2 px-3 flex-1 sm:flex-initial justify-center">
+              <BookOpen className="mr-1.5" size={16} /> LMS Studio
             </Button>
-            <Button onClick={() => setShowUpload(true)} className="group">
-              <Plus className="mr-2" size={20} /> Upload New Paper
+            <Button onClick={() => setShowUpload(true)} className="text-xs py-2 px-3 flex-1 sm:flex-initial justify-center">
+              <Plus className="mr-1.5" size={16} /> Upload Paper
             </Button>
           </div>
         </header>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {[
             { label: 'Total Papers', value: papers.length, icon: FileText, color: 'text-indigo-600', bg: 'bg-indigo-50' },
             { label: 'Total Students', value: users.length, icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50' },
             { label: 'Avg Readiness', value: '68%', icon: BarChart3, color: 'text-amber-600', bg: 'bg-amber-50' },
             { label: 'Security Status', value: 'Active', icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
           ].map((stat, i) => (
-            <Card key={i} className="p-8 flex items-center gap-6">
-              <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center", stat.bg, stat.color)}>
-                <stat.icon size={28} />
+            <Card key={i} className="p-4 sm:p-6 flex items-center gap-3 sm:gap-4 min-w-0">
+              <div className={cn("w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center shrink-0", stat.bg, stat.color)}>
+                <stat.icon size={20} className="sm:w-6 sm:h-6" />
               </div>
-              <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                <p className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</p>
+              <div className="min-w-0">
+                <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest truncate">{stat.label}</p>
+                <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight truncate">{stat.value}</p>
               </div>
             </Card>
           ))}

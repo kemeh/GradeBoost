@@ -46,7 +46,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose, t
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-xl max-h-[calc(100dvh-2rem)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Send Feedback</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">

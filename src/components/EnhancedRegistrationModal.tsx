@@ -264,7 +264,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-slate-200 p-4 sm:p-6 md:p-8 max-w-2xl w-full mx-auto space-y-4 sm:space-y-6 box-border overflow-hidden">
+    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl sm:shadow-2xl border border-slate-200 p-4 sm:p-6 md:p-8 max-w-2xl w-full mx-auto space-y-4 sm:space-y-6 box-border overflow-y-auto max-h-[calc(100dvh-2rem)]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3 sm:pb-4">
         <div>

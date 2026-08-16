@@ -325,22 +325,22 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
       
-      <main className="flex-1 lg:ml-72 p-4 md:p-8 pt-24 lg:pt-12">
-        <div className="max-w-4xl mx-auto">
-          <header className="mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors" title="Go to Dashboard">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors shrink-0" title="Go to Dashboard">
                 <LayoutDashboard size={20} />
               </button>
               <div>
-                <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-3">
-                  <Settings className="w-8 h-8 text-indigo-600" />
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2 sm:gap-3 break-words">
+                  <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600 shrink-0" />
                   System Settings
                 </h1>
-                <p className="text-slate-500 font-medium">Manage global application configuration and API keys.</p>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium">Manage global application configuration and API keys.</p>
               </div>
             </div>
           </header>

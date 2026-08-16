@@ -80,10 +80,10 @@ export default function Leaderboard() {
   const userRank = leaderboard.findIndex(entry => entry.userId === user?.uid) + 1;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
       
-      <main className="flex-1 lg:ml-72 pt-24 lg:pt-12 p-6 lg:p-12">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
         <div className="max-w-4xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">

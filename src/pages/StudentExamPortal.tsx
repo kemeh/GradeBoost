@@ -50,10 +50,10 @@ export default function StudentExamPortal() {
   );
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
       <Sidebar />
 
-      <main className="flex-1 p-6 lg:p-10 max-w-7xl mx-auto overflow-y-auto">
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
         {/* Header Hero */}
         <div className="bg-gradient-to-r from-indigo-900 via-indigo-850 to-purple-900 rounded-3xl p-8 text-white shadow-xl mb-8 relative overflow-hidden">
           <div className="relative z-10 max-w-2xl space-y-3">

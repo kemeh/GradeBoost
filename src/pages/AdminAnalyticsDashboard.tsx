@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Sidebar from '../components/Sidebar';
 import {
   BarChart,
   Bar,
@@ -122,7 +123,10 @@ export const AdminAnalyticsDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 space-y-8">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
+      <Sidebar />
+
+      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
         <div>
@@ -677,6 +681,7 @@ export const AdminAnalyticsDashboard: React.FC = () => {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 };
