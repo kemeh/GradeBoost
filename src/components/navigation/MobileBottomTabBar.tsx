@@ -72,7 +72,7 @@ export default function MobileBottomTabBar({ onOpenSearch }: MobileBottomTabBarP
   ];
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 border-t border-slate-200/90 backdrop-blur-md px-3 py-1.5 shadow-xl flex items-center justify-around">
+    <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 border-t border-slate-200/90 dark:border-slate-800 backdrop-blur-md px-1 py-1.5 shadow-2xl grid grid-cols-5 items-center pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] box-border">
       {TABS.map((tab) => {
         const Icon = tab.icon;
         return (
@@ -80,22 +80,24 @@ export default function MobileBottomTabBar({ onOpenSearch }: MobileBottomTabBarP
             key={tab.id}
             onClick={tab.action}
             className={cn(
-              "flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all text-[10px] font-bold gap-1",
-              tab.isActive ? "text-indigo-600 font-black" : "text-slate-500 hover:text-slate-900",
-              tab.highlight && !tab.isActive && "text-amber-600"
+              "flex flex-col items-center justify-center py-1 px-0.5 rounded-xl transition-all text-[10px] leading-none font-bold gap-1 min-w-0 w-full truncate border-none outline-none",
+              tab.isActive ? "text-indigo-600 dark:text-indigo-400 font-black" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white",
+              tab.highlight && !tab.isActive && "text-amber-600 dark:text-amber-400"
             )}
           >
             <div className={cn(
-              "p-1 rounded-xl transition-transform",
-              tab.highlight && "bg-amber-50 text-amber-600 ring-1 ring-amber-300/40",
-              tab.isActive && !tab.highlight && "bg-indigo-50 text-indigo-600"
+              "p-1 rounded-xl transition-transform shrink-0 flex items-center justify-center",
+              tab.highlight && "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 ring-1 ring-amber-300/40",
+              tab.isActive && !tab.highlight && "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
             )}>
               <Icon size={18} />
             </div>
-            <span>{language === 'fr' ? tab.labelFr : tab.labelEn}</span>
+            <span className="truncate w-full text-center tracking-tight text-[9px] sm:text-[10px]">
+              {language === 'fr' ? tab.labelFr : tab.labelEn}
+            </span>
           </button>
         );
       })}
-    </div>
+    </nav>
   );
 }

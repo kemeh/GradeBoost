@@ -15,7 +15,7 @@ dotenv.config();
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: process.env.FIREBASE_PROJECT_ID || "gradeboost-df887", 
+    projectId: process.env.FIREBASE_PROJECT_ID || "edulpha-app", 
   });
 }
 
@@ -610,7 +610,7 @@ Return ONLY valid JSON matching this structure:
       "type": "lesson",
       "title": "Title here",
       "subject": "${userSubject || 'Computer Science'}",
-      "reason": "Why this will boost student grade",
+      "reason": "Why this will improve student performance",
       "priority": "high"
     }
   ]
@@ -697,7 +697,7 @@ Return ONLY valid JSON matching this structure:
       const couponsSnap = await db.collection("coupons").where("code", "==", cleanCode).get();
 
       if (couponsSnap.empty) {
-        if (cleanCode === 'EDULPHABONUS' || cleanCode === 'GB60BONUS' || cleanCode === 'STUDENT50') {
+        if (cleanCode === 'EDULPHABONUS' || cleanCode === 'EDULPHA20' || cleanCode === 'STUDENT50') {
           return res.json({
             valid: true,
             discountPercent: 20,

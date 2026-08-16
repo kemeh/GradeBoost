@@ -13,7 +13,7 @@ export default function AdminPlatformSettingsView() {
   const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
   const [paymentPrice, setPaymentPrice] = useState(1000);
   const [appName, setAppName] = useState('Edulpha');
-  const [logoUrl, setLogoUrl] = useState('/logo.svg');
+  const [logoUrl, setLogoUrl] = useState('/edulpha-logo.png');
   const [contactEmail, setContactEmail] = useState('support@edulpha.com');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [whatsappGroupLink, setWhatsappGroupLink] = useState('');
@@ -38,7 +38,7 @@ export default function AdminPlatformSettingsView() {
       setChallengeStartDate(settings.challengeStartDate || DEFAULT_CHALLENGE_START_DATE);
       setPaymentPrice(settings.paymentPrice || 1000);
       setAppName(settings.appName || 'Edulpha');
-      setLogoUrl(settings.logoUrl || '/logo.svg');
+      setLogoUrl(settings.logoUrl || '/edulpha-logo.png');
       setContactEmail(settings.contactEmail || 'support@edulpha.com');
       setWhatsappNumber(settings.whatsappNumber || '');
       setWhatsappGroupLink(settings.whatsappGroupLink || '');

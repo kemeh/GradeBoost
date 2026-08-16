@@ -457,7 +457,7 @@ export const validateCouponCode = async (code: string, planId: string): Promise<
 
     if (snap.empty) {
       // Check built-in demo promo code
-      if (cleanCode === 'EDULPHABONUS' || cleanCode === 'GB60BONUS' || cleanCode === 'STUDENT50') {
+      if (cleanCode === 'EDULPHABONUS' || cleanCode === 'EDULPHA20' || cleanCode === 'STUDENT50') {
         return {
           valid: true,
           coupon: {

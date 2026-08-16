@@ -66,7 +66,7 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
   const sortedSocial = [...(config.socialLinks || [])].filter(l => l.enabled).sort((a, b) => a.order - b.order);
 
   return (
-    <footer className={`${isLight ? 'bg-slate-50 text-slate-900 border-t border-slate-200' : 'bg-slate-950 text-white border-t border-slate-800'} py-16 px-6 relative overflow-hidden ${className}`}>
+    <footer className={`${isLight ? 'bg-slate-50 text-slate-900 border-t border-slate-200' : 'bg-slate-950 text-white border-t border-slate-800'} pt-12 sm:pt-16 pb-28 sm:pb-16 px-4 sm:px-6 relative overflow-hidden ${className}`}>
       
       {/* Background Accent Gradients */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/5 blur-3xl rounded-full pointer-events-none" />
@@ -76,7 +76,7 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
         
         {/* Newsletter Banner */}
         {config.newsletter?.enabled && (
-          <div className={`p-8 md:p-10 rounded-3xl ${isLight ? 'bg-gradient-to-r from-indigo-900 to-slate-900 text-white' : 'bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/20'} shadow-xl flex flex-col lg:flex-row items-center justify-between gap-6`}>
+          <div className={`p-6 sm:p-8 md:p-10 rounded-3xl ${isLight ? 'bg-gradient-to-r from-indigo-900 to-slate-900 text-white' : 'bg-gradient-to-r from-indigo-950 via-slate-900 to-purple-950 border border-indigo-500/20'} shadow-xl flex flex-col lg:flex-row items-center justify-between gap-6`}>
             <div className="space-y-2 max-w-2xl text-center lg:text-left">
               <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white flex items-center justify-center lg:justify-start gap-2">
                 <span>{config.newsletter.heading}</span>
@@ -86,7 +86,7 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
               </p>
             </div>
             
-            <form onSubmit={handleNewsletterSubmit} className="w-full lg:w-auto flex flex-col sm:flex-row gap-3 min-w-[320px]">
+            <form onSubmit={handleNewsletterSubmit} className="w-full lg:w-auto flex flex-col sm:flex-row gap-3 max-w-full min-w-0">
               <input
                 type="email"
                 value={newsletterEmail}

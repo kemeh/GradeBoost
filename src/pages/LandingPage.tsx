@@ -116,39 +116,27 @@ export default function LandingPage() {
         keywords="Edulpha, Coursera Africa, Cameroon GCE, GCE O Level, GCE A Level, Baccalauréat, MINESEC, TVEE Technical, AI Tutor, Past Papers, Exam Revision, Cameroon Education"
       />
       
-      {/* 0. Coursera-Style Top Announcement Banner */}
-      <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-950 text-white py-2.5 px-4 text-center text-xs font-bold border-b border-indigo-900/40 flex items-center justify-center gap-2">
-        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase border border-emerald-500/30">
-          🇨🇲 Cameroon & Africa #1
-        </span>
-        <span>Empowering Students across General, Technical, Commercial & TVEE Sub-systems</span>
-        <a href="#subjects" className="underline text-indigo-300 hover:text-white flex items-center gap-1 hidden sm:inline-flex">
-          <span>Explore Subjects</span>
-          <ArrowRight size={12} />
-        </a>
-      </div>
-
       {/* 1. Coursera & Duolingo-Inspired Redesigned Navigation Bar */}
       <Navbar />
 
       {/* 2. Hero Section (Coursera-Inspired Full-Width & Search Driven) */}
-      <section className="pt-12 sm:pt-20 pb-16 sm:pb-24 px-4 sm:px-6 relative overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white">
+      <section className="pt-8 sm:pt-16 pb-12 sm:pb-24 px-3 sm:px-6 relative overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white w-full max-w-full box-border">
         
         {/* Animated Background Lights */}
-        <div className="absolute top-0 left-1/4 w-[300px] sm:w-[600px] h-[300px] sm:h-[600px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-[250px] sm:w-[500px] h-[250px] sm:h-[500px] bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 left-1/4 w-[280px] sm:w-[600px] h-[280px] sm:h-[600px] bg-indigo-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-[220px] sm:w-[500px] h-[220px] sm:h-[500px] bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto space-y-12 sm:space-y-16 relative z-10">
+        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-16 relative z-10 w-full max-w-full box-border">
           
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full max-w-full">
             
             {/* Left Main Hero Copy */}
-            <div className="lg:col-span-7 space-y-6 sm:space-y-8 text-center lg:text-left">
+            <div className="lg:col-span-7 space-y-5 sm:space-y-8 text-center lg:text-left w-full max-w-full box-border">
               
               <motion.div 
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] sm:text-xs font-bold uppercase tracking-wider"
+                className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider max-w-full"
               >
                 <Sparkles size={14} className="text-amber-400 shrink-0" />
                 <span className="truncate">Africa's Premier Learning Platform</span>
@@ -159,9 +147,9 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-3xl sm:text-5xl lg:text-7xl font-black tracking-tight leading-[1.1]"
+                className="text-[clamp(1.75rem,7vw,4.5rem)] font-black tracking-tight leading-[1.08] break-words"
               >
-                Learn. Practice. <br />
+                Learn. Practice. <br className="hidden sm:inline" />
                 <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
                   Succeed.
                 </span>
@@ -171,7 +159,7 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-slate-300 text-sm sm:text-lg lg:text-xl font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+                className="text-slate-300 text-[clamp(0.875rem,3.5vw,1.25rem)] font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed break-words"
               >
                 Master General Education, Technical Specialties, Commercial Studies, and TVEE Intermediate & Advanced levels with official MINESEC & GCE Board past papers, step-by-step Edulpha AI solvers, and offline mobile access.
               </motion.p>
@@ -181,10 +169,10 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="space-y-3 relative max-w-xl mx-auto lg:mx-0 w-full"
+                className="space-y-3 relative max-w-[650px] mx-auto lg:mx-0 w-full box-border"
               >
-                <div className="relative bg-white p-1.5 sm:p-2 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-2 border-slate-200 focus-within:border-emerald-500 transition-colors">
-                  <div className="flex items-center flex-1 px-2">
+                <div className="relative bg-white p-1.5 sm:p-2 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-2 border-slate-200 focus-within:border-emerald-500 transition-colors w-full box-border">
+                  <div className="flex items-center flex-1 px-2 min-w-0">
                     <Search size={18} className="text-slate-400 shrink-0" />
                     <input
                       type="text"
@@ -192,15 +180,15 @@ export default function LandingPage() {
                       onChange={(e) => handleHeroSearchChange(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleExecuteSearch(heroSearch)}
                       placeholder="What do you want to learn today?"
-                      className="w-full px-2 py-2 text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none bg-transparent"
+                      className="w-full px-2 py-2 text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none bg-transparent min-w-0"
                     />
                   </div>
                   <button
                     onClick={() => handleExecuteSearch(heroSearch)}
-                    className="px-4 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shrink-0 transition shadow-md flex items-center justify-center gap-1.5"
+                    className="w-full sm:w-auto px-4 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shrink-0 transition shadow-md flex items-center justify-center gap-1.5 min-w-0"
                   >
                     <span>Search</span>
-                    <ArrowRight size={14} />
+                    <ArrowRight size={14} className="shrink-0" />
                   </button>
                 </div>
 
@@ -211,7 +199,7 @@ export default function LandingPage() {
                       initial={{ opacity: 0, y: -5 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
-                      className="absolute top-full left-0 w-full mt-1 bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-2xl z-30 space-y-1"
+                      className="absolute top-full left-0 w-full mt-1 bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-2xl z-30 space-y-1 max-w-full"
                     >
                       {filteredHeroSuggestions.map((sug, i) => (
                         <div
@@ -223,8 +211,8 @@ export default function LandingPage() {
                           }}
                           className="p-2.5 rounded-xl hover:bg-slate-800 text-xs font-bold text-slate-200 cursor-pointer flex items-center justify-between"
                         >
-                          <span>{sug}</span>
-                          <span className="text-[10px] text-emerald-400 font-bold">Explore →</span>
+                          <span className="truncate">{sug}</span>
+                          <span className="text-[10px] text-emerald-400 font-bold shrink-0">Explore →</span>
                         </div>
                       ))}
                     </motion.div>
@@ -232,15 +220,15 @@ export default function LandingPage() {
                 </AnimatePresence>
 
                 {/* Popular Tags */}
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 text-[11px] font-bold text-slate-400">
-                  <span className="text-slate-500">Popular:</span>
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold text-slate-400 max-w-full">
+                  <span className="text-slate-500 shrink-0">Popular:</span>
                   {[
                     'Mathematics', 'Physics', 'Electrical Tech', 'Accounting', 'Computer Science', 'French'
                   ].map((tag) => (
                     <button
                       key={tag}
                       onClick={() => handleExecuteSearch(tag)}
-                      className="px-2.5 py-1 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-400 transition"
+                      className="px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-lg bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-400 transition text-[10px] sm:text-[11px]"
                     >
                       {tag}
                     </button>
@@ -253,91 +241,91 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4 }}
-                className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2"
+                className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 pt-2 w-full max-w-full"
               >
-                <Link to="/auth" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 text-sm font-black px-8 py-6 rounded-2xl flex items-center justify-center gap-2">
-                    <span>Start Learning Free</span>
-                    <ArrowRight size={18} />
+                <Link to="/auth" className="w-full sm:w-auto min-w-0 max-w-full">
+                  <Button size="lg" className="w-full sm:w-auto max-w-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 text-xs sm:text-sm font-black px-5 sm:px-8 py-3.5 sm:py-5 rounded-2xl flex items-center justify-center gap-2">
+                    <span className="truncate">Start Learning Free</span>
+                    <ArrowRight size={18} className="shrink-0" />
                   </Button>
                 </Link>
 
-                <a href="#mobile-app" className="w-full sm:w-auto">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 text-sm font-bold px-8 py-6 rounded-2xl flex items-center justify-center gap-2">
-                    <Download size={18} />
-                    <span>Download Mobile App (APK)</span>
+                <a href="#mobile-app" className="w-full sm:w-auto min-w-0 max-w-full">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto max-w-full border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 text-xs sm:text-sm font-bold px-5 sm:px-8 py-3.5 sm:py-5 rounded-2xl flex items-center justify-center gap-2">
+                    <Download size={18} className="shrink-0" />
+                    <span className="truncate">Download Mobile App (APK)</span>
                   </Button>
                 </a>
               </motion.div>
 
               {/* Trust Badges */}
-              <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs font-bold text-slate-400">
-                <span className="flex items-center gap-1.5"><CheckCircle2 size={16} className="text-emerald-400" /> Official MINESEC Syllabus</span>
-                <span className="flex items-center gap-1.5"><ShieldCheck size={16} className="text-indigo-400" /> Bilingual EN & FR</span>
-                <span className="flex items-center gap-1.5"><Smartphone size={16} className="text-amber-400" /> 100% Offline Capability</span>
+              <div className="pt-2 sm:pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-6 text-[11px] sm:text-xs font-bold text-slate-400 max-w-full">
+                <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-400 shrink-0" /> Official MINESEC Syllabus</span>
+                <span className="flex items-center gap-1.5"><ShieldCheck size={15} className="text-indigo-400 shrink-0" /> Bilingual EN & FR</span>
+                <span className="flex items-center gap-1.5"><Smartphone size={15} className="text-amber-400 shrink-0" /> 100% Offline Capability</span>
               </div>
 
             </div>
 
-            {/* Right Student Visual Card */}
+            {/* Right Student Visual Card / Hero Graphic */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="lg:col-span-5 relative"
+              className="lg:col-span-5 relative w-full max-w-full flex justify-center"
             >
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-6 relative overflow-hidden w-full max-w-[320px] xs:max-w-[380px] sm:max-w-[440px] lg:max-w-none mx-auto group hover:border-emerald-500/40 transition-all box-border">
                 
                 {/* Header Badge */}
-                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                  <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3 sm:pb-4 gap-2">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                     <img 
                       src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
                       alt="Student Avatar"
-                      className="w-10 h-10 rounded-full object-cover ring-2 ring-emerald-500"
+                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-emerald-500 shrink-0"
                     />
-                    <div>
-                      <h4 className="text-sm font-black text-white">Amina Nguema</h4>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase">GBHS Douala • GCE A-Level Candidate</p>
+                    <div className="min-w-0">
+                      <h4 className="text-xs sm:text-sm font-black text-white truncate">Amina Nguema</h4>
+                      <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase truncate">GBHS Douala • GCE A-Level</p>
                     </div>
                   </div>
-                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-black uppercase">
+                  <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[9px] sm:text-[10px] font-black uppercase shrink-0">
                     Grade A Target
                   </span>
                 </div>
 
                 {/* Simulated Practice Session */}
-                <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-                    <span>Physics Paper 2 • 2025 Mock</span>
-                    <span className="text-amber-400 flex items-center gap-1"><Clock size={12} /> 12m remaining</span>
+                <div className="space-y-2.5 sm:space-y-3 bg-slate-950 p-3 sm:p-4 rounded-2xl border border-slate-800">
+                  <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-slate-400 gap-2">
+                    <span className="truncate">Physics Paper 2 • 2025 Mock</span>
+                    <span className="text-amber-400 flex items-center gap-1 shrink-0"><Clock size={12} /> 12m</span>
                   </div>
 
-                  <p className="text-xs font-bold text-white leading-relaxed">
+                  <p className="text-[11px] sm:text-xs font-bold text-white leading-relaxed">
                     Q3: Determine the electric field strength E at a distance of 0.5m from a point charge of 4μC in vacuum.
                   </p>
 
-                  <div className="p-3 bg-slate-900 rounded-xl text-xs text-slate-300 font-mono space-y-1 border border-slate-800">
+                  <div className="p-2.5 sm:p-3 bg-slate-900 rounded-xl text-[10px] sm:text-xs text-slate-300 font-mono space-y-1 border border-slate-800 overflow-x-auto">
                     <span className="text-indigo-400 font-bold">▶ Edulpha AI Resolution:</span>
                     <div>E = k · |q| / r²</div>
                     <div>E = (8.99 × 10⁹ N·m²/C²) × (4 × 10⁻⁶ C) / (0.5m)²</div>
-                    <div className="text-emerald-400 font-bold pt-1">Result: E = 1.44 × 10⁵ N/C</div>
+                    <div className="text-emerald-400 font-bold pt-0.5">Result: E = 1.44 × 10⁵ N/C</div>
                   </div>
                 </div>
 
                 {/* Live Stats Row */}
-                <div className="grid grid-cols-3 gap-3 text-center">
-                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="block text-lg font-black text-emerald-400">98%</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
+                <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
+                  <div className="p-2 sm:p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="block text-base sm:text-lg font-black text-emerald-400">98%</span>
+                    <span className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="block text-lg font-black text-indigo-400">14 Days</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Streak</span>
+                  <div className="p-2 sm:p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="block text-base sm:text-lg font-black text-indigo-400">14 Days</span>
+                    <span className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase">Streak</span>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="block text-lg font-black text-amber-400">1,450+</span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Questions Solved</span>
+                  <div className="p-2 sm:p-3 rounded-xl bg-slate-950 border border-slate-800">
+                    <span className="block text-base sm:text-lg font-black text-amber-400">1,450+</span>
+                    <span className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase">Questions</span>
                   </div>
                 </div>
 
