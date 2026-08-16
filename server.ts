@@ -3,6 +3,7 @@ import compression from "compression";
 import helmet from "helmet";
 import { createServer } from "http";
 import path from "path";
+import fs from "fs";
 import axios from "axios";
 import dotenv from "dotenv";
 import admin from "firebase-admin";
@@ -81,14 +82,34 @@ async function startServer() {
 
   const PORT = 3000;
 
-  app.use(express.json({ limit: "10mb" }));
+  // Local uploads storage directory
+  const uploadsDir = path.join(process.cwd(), 'uploads');
+  if (!fs.existsSync(uploadsDir)) {
+    try {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    } catch (e) {
+      console.warn("Could not create uploads directory:", e);
+    }
+  }
+
+  // Serve uploads statically with caching
+  app.use('/uploads', express.static(uploadsDir, {
+    maxAge: '30d',
+    etag: true,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=2592000, immutable');
+    }
+  }));
+
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
   app.use("/api/", apiLimiter);
   app.use("/api/auth/", authLimiter);
   app.use("/api/ai/", aiLimiter);
   app.use("/api/payment/", paymentLimiter);
 
   // ===============================================================
-  // High-Reliability File & Logo Upload Endpoint
+  // High-Reliability File & Logo Upload Endpoint (Up to 50MB)
   // ===============================================================
   app.post("/api/upload", async (req, res) => {
     try {
@@ -100,23 +121,24 @@ async function startServer() {
       }
 
       const safeName = (fileName || `file_${Date.now()}`).replace(/[^a-zA-Z0-9._-]/g, "_");
-      const storagePath = `${folder}/${Date.now()}_${safeName}`;
+      const timestamp = Date.now();
+      const storagePath = `${folder}/${timestamp}_${safeName}`;
       console.log(`[Server Upload API] Processing file: ${safeName} (${fileType || 'unknown type'}), Target path: ${storagePath}`);
+
+      const base64Content = fileData.includes(",") ? fileData.split(",")[1] : fileData;
+      const buffer = Buffer.from(base64Content, "base64");
 
       // 1. Try Firebase Admin Storage if STORAGE_BUCKET is configured
       if (process.env.STORAGE_BUCKET) {
         try {
           const bucketName = process.env.STORAGE_BUCKET;
           const bucket = admin.storage().bucket(bucketName);
-          
-          const base64Content = fileData.includes(",") ? fileData.split(",")[1] : fileData;
-          const buffer = Buffer.from(base64Content, "base64");
           const fileRef = bucket.file(storagePath);
 
           await fileRef.save(buffer, {
             metadata: {
-              contentType: fileType || "image/png",
-              metadata: { uploadedVia: "EdulphaServerAPI" }
+              contentType: fileType || "application/octet-stream",
+              metadata: { uploadedVia: "EdulphaServerAPI", originalName: safeName }
             },
             public: true,
           });
@@ -131,18 +153,41 @@ async function startServer() {
             provider: "firebase-admin"
           });
         } catch (storageErr: any) {
-          console.warn("[Server Upload API Storage Warning] Storage bucket save failed, using Firestore asset storage:", storageErr?.message || storageErr);
+          console.warn("[Server Upload API Storage Warning] Storage bucket save failed, using local disk/Firestore asset storage:", storageErr?.message || storageErr);
         }
       }
 
-      // 2. Fallback: Save asset metadata & data URL in Firestore system_uploads collection
-      const uploadId = `up_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+      // 2. Secondary Strategy: Save to server local disk storage
+      try {
+        const targetSubDir = path.join(uploadsDir, folder);
+        if (!fs.existsSync(targetSubDir)) {
+          fs.mkdirSync(targetSubDir, { recursive: true });
+        }
+        const diskFilePath = path.join(targetSubDir, `${timestamp}_${safeName}`);
+        fs.writeFileSync(diskFilePath, buffer);
+        const localUrl = `/uploads/${folder}/${timestamp}_${safeName}`;
+        console.log(`[Server Upload API Success] File saved to local disk: ${localUrl}`);
+
+        return res.json({
+          success: true,
+          url: localUrl,
+          fileName: safeName,
+          size: buffer.length,
+          provider: "server-disk"
+        });
+      } catch (diskErr: any) {
+        console.warn("[Server Upload API Disk Warning] Disk write failed, attempting Firestore indexing:", diskErr?.message || diskErr);
+      }
+
+      // 3. Fallback: Save asset metadata in Firestore system_uploads collection
+      const uploadId = `up_${timestamp}_${crypto.randomBytes(4).toString("hex")}`;
       const uploadDoc = {
         id: uploadId,
         fileName: safeName,
-        fileType: fileType || "image/png",
+        fileType: fileType || "application/octet-stream",
         folder,
-        dataUrl: fileData.length < 3 * 1024 * 1024 ? fileData : null,
+        size: buffer.length,
+        dataUrl: buffer.length < 2 * 1024 * 1024 ? fileData : null,
         createdAt: FieldValue.serverTimestamp(),
       };
 

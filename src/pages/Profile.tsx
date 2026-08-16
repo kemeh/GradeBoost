@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen, LayoutDashboard, ShieldCheck, KeyRound, RefreshCw, History } from 'lucide-react';
+import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen, LayoutDashboard, ShieldCheck, KeyRound, RefreshCw, History, Sparkles, GraduationCap } from 'lucide-react';
 import { ACHIEVEMENTS } from '../services/gamificationService';
 import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -17,6 +17,7 @@ import Sidebar from '../components/Sidebar';
 import FileUpload from '../components/FileUpload';
 import { toast } from 'react-hot-toast';
 import { fetchAuditLogs, AuditLogEntry } from '../services/auditService';
+import AlumniAmbassadorSection from '../components/profile/AlumniAmbassadorSection';
 
 import { DEFAULT_GCE_SUBJECTS, getPapersForSubjectName } from '../data/defaultSubjects';
 
@@ -382,6 +383,11 @@ export default function Profile() {
                 </form>
               </Card>
 
+              {/* Alumni & Ambassador Programs Section */}
+              <div id="alumni-ambassador-section">
+                <AlumniAmbassadorSection userProfile={formData} />
+              </div>
+
               {/* Payment History Section */}
               <Card className="p-8 lg:p-12">
                 <div className="space-y-6">
@@ -610,13 +616,21 @@ export default function Profile() {
                 <h3 className="text-lg font-black text-slate-900">Quick Actions</h3>
                 <div className="space-y-3">
                   {[
-                    { label: 'View Progress', icon: TrendingUp, path: '/dashboard' },
-                    { label: 'Practice History', icon: ChevronRight, path: '/practice' },
+                    { label: 'View Progress', icon: TrendingUp, onClick: () => navigate('/dashboard') },
+                    { label: 'Practice History', icon: ChevronRight, onClick: () => navigate('/practice') },
+                    { 
+                      label: 'Ambassador & Alumni', 
+                      icon: Sparkles, 
+                      onClick: () => {
+                        const el = document.getElementById('alumni-ambassador-section');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      } 
+                    },
                   ].map((action, i) => (
                     <button 
                       key={i}
-                      onClick={() => navigate(action.path)}
-                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-indigo-50 group transition-all"
+                      onClick={action.onClick}
+                      className="w-full flex items-center justify-between p-4 rounded-2xl bg-slate-50 hover:bg-indigo-50 group transition-all text-left"
                     >
                       <div className="flex items-center gap-3">
                         <action.icon size={18} className="text-slate-400 group-hover:text-indigo-600" />

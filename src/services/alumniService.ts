@@ -350,4 +350,52 @@ export class AlumniService {
     const docRef = doc(db, 'alumniApplications', id);
     await deleteDoc(docRef);
   }
+
+  // --- USER LOOKUPS ---
+  static async getUserAlumniApplication(email: string): Promise<AlumniApplication | null> {
+    if (!email) return null;
+    const cleanEmail = email.toLowerCase().trim();
+    try {
+      const q = query(
+        collection(db, 'alumniApplications'),
+        where('email', '==', cleanEmail)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        return { id: docSnap.id, ...docSnap.data() } as AlumniApplication;
+      }
+
+      // Also search case-insensitive / local storage fallback
+      const allApps = await this.getApplications();
+      const match = allApps.find(a => a.email && a.email.toLowerCase().trim() === cleanEmail);
+      if (match) return match;
+    } catch (err) {
+      console.warn('Error finding user alumni application:', err);
+    }
+    return null;
+  }
+
+  static async getUserAlumniProfile(email: string): Promise<AlumniProfile | null> {
+    if (!email) return null;
+    const cleanEmail = email.toLowerCase().trim();
+    try {
+      const q = query(
+        collection(db, 'alumniProfiles'),
+        where('email', '==', cleanEmail)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const docSnap = snap.docs[0];
+        return { id: docSnap.id, ...docSnap.data() } as AlumniProfile;
+      }
+
+      const allProfiles = await this.getAllAlumniProfiles();
+      const match = allProfiles.find(p => p.email && p.email.toLowerCase().trim() === cleanEmail);
+      if (match) return match;
+    } catch (err) {
+      console.warn('Error finding user alumni profile:', err);
+    }
+    return null;
+  }
 }

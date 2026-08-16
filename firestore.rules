@@ -598,6 +598,60 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Practical Labs & Simulators
+    match /practicals/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+    match /practical_attempts/{id} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // Extended Curriculum & Academic Hierarchy Collections
+    match /curricula/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /education_levels/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /departments/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /specialties/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /educationCategories/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Documents & Central Question Bank Collections
+    match /documents/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isTeacher();
+    }
+    match /questions/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /pricing_history/{id} {
+      allow read, write: if isAdmin();
+    }
+    match /system_uploads/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+    match /certificates/{id} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
     // Alumni Program Collections
     match /alumniProfiles/{profileId} {
       allow read: if true;

@@ -1,15 +1,16 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { LanguageProvider } from './contexts/LanguageContext';
+import { lazyWithRetry as lazy } from './utils/lazyWithRetry';
 
 // Eagerly loaded components (critical path)
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 
-// Lazy loaded components (load balanced)
+// Lazy loaded components (load balanced with automated retry recovery)
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Practice = lazy(() => import('./pages/Practice'));
 const PracticeSession = lazy(() => import('./pages/PracticeSession'));

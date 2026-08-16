@@ -1,15 +1,24 @@
-import React, { useState, useCallback, useEffect, useId } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useId } from 'react';
 import { 
   Upload, X, CheckCircle2, AlertCircle, 
-  Loader2, FileText, RefreshCw, Trash2 
+  Loader2, FileText, RefreshCw, Trash2,
+  FileSpreadsheet, FileCode, FileVideo, FileAudio,
+  FileImage, Eye, Download, ShieldCheck
 } from 'lucide-react';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, deleteObject } from 'firebase/storage';
 import { storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Button, Progress, cn } from './ui';
+import { Button, Progress, Badge, cn } from './ui';
 import { toast } from 'react-hot-toast';
+import { 
+  uploadFilePipeline, 
+  formatBytes, 
+  validateFile, 
+  UploadProgressInfo, 
+  UploadResult 
+} from '../utils/uploadPipeline';
 
-interface FileUploadProps {
+export interface FileUploadProps {
   onUploadComplete: (url: string, fileName: string, fileSize: string) => void;
   onUploadStart?: () => void;
   onUploadError?: (error: string) => void;
@@ -19,7 +28,10 @@ interface FileUploadProps {
   folder?: string;
   initialUrl?: string;
   label?: string;
+  description?: string;
+  adminOnly?: boolean;
   className?: string;
+  compact?: boolean;
 }
 
 export default function FileUpload({
@@ -27,81 +39,187 @@ export default function FileUpload({
   onUploadStart,
   onUploadError,
   onDelete,
-  accept = 'application/pdf,.pdf',
-  maxSizeMB = 10,
+  accept = 'application/pdf,.pdf,image/*,.png,.jpg,.jpeg,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt',
+  maxSizeMB = 50,
   folder = 'edulpha/uploads',
   initialUrl = '',
-  label = 'Upload File',
-  className
+  label = 'Upload Educational File',
+  description,
+  adminOnly = false,
+  className,
+  compact = false
 }: FileUploadProps) {
-  const { isAdmin, user: profile } = useAuth();
+  const { isAdmin } = useAuth();
   const inputId = useId();
-  const [file, setFile] = useState<File | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [progressInfo, setProgressInfo] = useState<UploadProgressInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [downloadUrl, setDownloadUrl] = useState(initialUrl);
+  const [fileUrl, setFileUrl] = useState<string>(initialUrl || '');
+  const [fileNameDisplay, setFileNameDisplay] = useState<string>('');
+  const [fileSizeDisplay, setFileSizeDisplay] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
-  const isMounted = React.useRef(true);
+
+  const isMountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    isMounted.current = true;
+    isMountedRef.current = true;
     return () => {
-      isMounted.current = false;
+      isMountedRef.current = false;
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
   }, []);
 
-  const handleFile = (selectedFile: File) => {
-    console.log('Selected file:', selectedFile.name, selectedFile.type, selectedFile.size);
-    
-    if (!auth.currentUser) {
-      toast.error('You must be logged in to upload files.');
-      return;
+  useEffect(() => {
+    if (initialUrl && !fileUrl) {
+      setFileUrl(initialUrl);
+      const urlParts = initialUrl.split('/');
+      const rawName = urlParts[urlParts.length - 1]?.split('?')[0] || 'Uploaded File';
+      setFileNameDisplay(decodeURIComponent(rawName));
     }
+  }, [initialUrl]);
 
-    if (!isAdmin) {
-      toast.error('Only admins can upload files.');
-      return;
-    }
-
-    if (maxSizeMB && selectedFile.size > maxSizeMB * 1024 * 1024) {
-      toast.error(`File size must be less than ${maxSizeMB}MB`);
-      return;
-    }
-
-    // Check if file type is accepted
-    const isAccepted = accept === '*' || 
-      accept.split(',').some(type => {
-        const trimmedType = type.trim();
-        if (trimmedType.startsWith('.')) {
-          return selectedFile.name.toLowerCase().endsWith(trimmedType.toLowerCase());
-        }
-        // Be more lenient with PDF mime types
-        if (trimmedType === 'application/pdf' && selectedFile.name.toLowerCase().endsWith('.pdf')) {
-          return true;
-        }
-        return selectedFile.type.match(new RegExp(trimmedType.replace('*', '.*')));
-      });
-
-    if (!isAccepted) {
-      toast.error(`Invalid file type. Please upload ${accept}`);
-      return;
-    }
-
-    setFile(selectedFile);
-    setError(null);
-    startUpload(selectedFile);
+  const getFileIcon = (mimeOrName: string) => {
+    const lower = mimeOrName.toLowerCase();
+    if (lower.includes('pdf')) return <FileText className="text-rose-500" size={24} />;
+    if (lower.includes('image') || lower.match(/\.(png|jpg|jpeg|webp|gif|svg)$/)) return <FileImage className="text-indigo-500" size={24} />;
+    if (lower.includes('sheet') || lower.includes('excel') || lower.match(/\.(xls|xlsx|csv)$/)) return <FileSpreadsheet className="text-emerald-500" size={24} />;
+    if (lower.includes('video') || lower.match(/\.(mp4|webm|mov|mkv)$/)) return <FileVideo className="text-purple-500" size={24} />;
+    if (lower.includes('audio') || lower.match(/\.(mp3|wav|ogg)$/)) return <FileAudio className="text-amber-500" size={24} />;
+    if (lower.match(/\.(js|ts|tsx|jsx|py|java|c|cpp|html|css|json)$/)) return <FileCode className="text-blue-500" size={24} />;
+    return <FileText className="text-slate-500" size={24} />;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('handleFileChange triggered');
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      console.log('File selected:', selectedFile.name);
-      handleFile(selectedFile);
-    } else {
-      console.log('No file selected');
+  const startUpload = useCallback(async (fileToUpload: File) => {
+    if (!auth.currentUser) {
+      const msg = 'Please sign in to upload files.';
+      setError(msg);
+      toast.error(msg);
+      return;
     }
+
+    if (adminOnly && !isAdmin) {
+      const msg = 'Administrator privileges required for this upload.';
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    const validation = validateFile(fileToUpload, { maxSizeMB, accept });
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid file');
+      toast.error(validation.error || 'Invalid file');
+      return;
+    }
+
+    // Initialize state
+    setError(null);
+    setUploading(true);
+    setProgressInfo({
+      progress: 0,
+      bytesTransferred: 0,
+      totalBytes: fileToUpload.size,
+      speedBps: 0,
+      formattedProgress: `0 B / ${formatBytes(fileToUpload.size)}`,
+      stage: 'preparing'
+    });
+
+    if (onUploadStart) onUploadStart();
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      const result: UploadResult = await uploadFilePipeline(fileToUpload, {
+        folder,
+        maxSizeMB,
+        accept,
+        optimizeImages: true,
+        signal: controller.signal,
+        onProgress: (info) => {
+          if (isMountedRef.current) {
+            setProgressInfo(info);
+          }
+        }
+      });
+
+      if (!isMountedRef.current) return;
+
+      setFileUrl(result.url);
+      setFileNameDisplay(result.fileName);
+      setFileSizeDisplay(result.fileSize);
+      setUploading(false);
+      setProgressInfo(null);
+
+      onUploadComplete(result.url, result.fileName, result.fileSize);
+      toast.success('Upload completed successfully!');
+    } catch (err: any) {
+      if (!isMountedRef.current) return;
+      if (controller.signal.aborted) {
+        toast('Upload cancelled.');
+      } else {
+        const errorMsg = err.message || 'Upload failed. Please check connection.';
+        setError(errorMsg);
+        if (onUploadError) onUploadError(errorMsg);
+        toast.error(errorMsg);
+      }
+      setUploading(false);
+    } finally {
+      abortControllerRef.current = null;
+    }
+  }, [folder, maxSizeMB, accept, adminOnly, isAdmin, onUploadStart, onUploadComplete, onUploadError]);
+
+  const handleFile = (file: File) => {
+    setSelectedFile(file);
+    startUpload(file);
+  };
+
+  const handleCancelUpload = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    setUploading(false);
+    setProgressInfo(null);
+    setSelectedFile(null);
+  };
+
+  const handleRetry = () => {
+    if (selectedFile) {
+      startUpload(selectedFile);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (fileUrl && fileUrl.includes('firebasestorage.googleapis.com')) {
+      try {
+        const fileRef = ref(storage, fileUrl);
+        await deleteObject(fileRef);
+      } catch (err) {
+        console.warn('Storage delete exception (handled):', err);
+      }
+    }
+
+    setFileUrl('');
+    setSelectedFile(null);
+    setFileNameDisplay('');
+    setFileSizeDisplay('');
+    setError(null);
+    setProgressInfo(null);
+
+    if (onDelete) onDelete();
+    onUploadComplete('', '', '');
+    toast.success('File removed.');
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleFile(file);
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -116,204 +234,35 @@ export default function FileUpload({
     setIsDragging(false);
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    console.log('handleDrop triggered');
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-
-    const droppedFile = e.dataTransfer.files?.[0];
-    if (droppedFile) {
-      console.log('File dropped:', droppedFile.name);
-      handleFile(droppedFile);
-    } else {
-      console.log('No file dropped');
-    }
-  };
-
-  const startUpload = useCallback(async (fileToUpload: File) => {
-    console.log('--- STARTING FILE UPLOAD ---');
-    console.log('File:', fileToUpload.name, 'Size:', (fileToUpload.size / 1024 / 1024).toFixed(2), 'MB');
-    
-    if (!auth.currentUser) {
-      const msg = 'User not authenticated. Upload aborted.';
-      console.error(msg);
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    if (!isAdmin) {
-      const msg = 'Only admins can upload files.';
-      console.error(msg);
-      setError(msg);
-      toast.error(msg);
-      return;
-    }
-
-    setUploading(true);
-    setProgress(15);
-    setError(null);
-    if (onUploadStart) onUploadStart();
-
-    let uploadSuccess = false;
-
-    // Helper: Convert File to Data URL
-    const fileToDataURL = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    };
-
-    try {
-      const storagePath = `${folder}/${Date.now()}_${fileToUpload.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-      console.log('Target Storage path:', storagePath);
-
-      // Tier 1: Client Firebase Storage Upload with 6-second Timeout
-      try {
-        const storageRef = ref(storage, storagePath);
-        const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
-
-        const clientUploadPromise = new Promise<string>((resolve, reject) => {
-          uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-              if (!isMounted.current) return;
-              const transferred = snapshot.bytesTransferred || 0;
-              const total = snapshot.totalBytes || 1;
-              const prog = 15 + (transferred / total) * 75;
-              console.log('Firebase progress:', Math.round(prog) + '%');
-              setProgress(Math.round(prog));
-            },
-            (err) => reject(err),
-            async () => {
-              try {
-                const url = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(url);
-              } catch (urlErr) {
-                reject(urlErr);
-              }
-            }
-          );
-        });
-
-        const timeoutPromise = new Promise<string>((_, reject) => {
-          setTimeout(() => {
-            try { uploadTask.cancel(); } catch (e) {}
-            reject(new Error('Firebase Storage timeout (6s threshold). Using Server Upload API.'));
-          }, 6000);
-        });
-
-        const firebaseUrl = await Promise.race([clientUploadPromise, timeoutPromise]);
-        if (isMounted.current) {
-          const sizeStr = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
-          setDownloadUrl(firebaseUrl);
-          setUploading(false);
-          setProgress(100);
-          onUploadComplete(firebaseUrl, fileToUpload.name, sizeStr);
-          toast.success('Upload complete!');
-          uploadSuccess = true;
-        }
-      } catch (tier1Err: any) {
-        console.warn('Firebase Storage client upload stalled/failed, attempting Server Upload API:', tier1Err.message || tier1Err);
-      }
-
-      if (uploadSuccess || !isMounted.current) return;
-
-      // Tier 2: Server API Upload (/api/upload)
-      try {
-        console.log('Attempting Server Upload API (/api/upload)...');
-        const dataUrl = await fileToDataURL(fileToUpload);
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            fileData: dataUrl,
-            fileName: fileToUpload.name,
-            fileType: fileToUpload.type,
-            folder,
-          }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data.url && isMounted.current) {
-            const sizeStr = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
-            setDownloadUrl(data.url);
-            setUploading(false);
-            setProgress(100);
-            onUploadComplete(data.url, fileToUpload.name, sizeStr);
-            toast.success('Upload complete!');
-            uploadSuccess = true;
-          }
-        }
-      } catch (tier2Err: any) {
-        console.warn('Server Upload API failed, using Data URL fallback:', tier2Err.message || tier2Err);
-      }
-
-      if (uploadSuccess || !isMounted.current) return;
-
-      // Tier 3: Client Data URL Fallback
-      const fallbackUrl = await fileToDataURL(fileToUpload);
-      if (isMounted.current) {
-        const sizeStr = (fileToUpload.size / (1024 * 1024)).toFixed(2) + ' MB';
-        setDownloadUrl(fallbackUrl);
-        setUploading(false);
-        setProgress(100);
-        onUploadComplete(fallbackUrl, fileToUpload.name, sizeStr);
-        toast.success('Upload complete!');
-      }
-    } catch (err: any) {
-      if (!isMounted.current) return;
-      console.error('--- UPLOAD ERROR ---', err);
-      const errorMessage = `Upload failed: ${err.message || 'Unknown error'}`;
-      setError(errorMessage);
-      setUploading(false);
-      if (onUploadError) onUploadError(errorMessage);
-      toast.error(errorMessage);
-    }
-  }, [folder, onUploadComplete, onUploadStart, onUploadError, isAdmin]);
-
-  const handleRetry = () => {
-    if (file) {
-      startUpload(file);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!downloadUrl) return;
-    
-    try {
-      // If it's a firebase storage URL, try to delete it
-      if (downloadUrl?.includes('firebasestorage.googleapis.com')) {
-        const fileRef = ref(storage, downloadUrl);
-        await deleteObject(fileRef);
-      }
-    } catch (err) {
-      console.error('Error deleting file:', err);
-      // Even if storage delete fails, we clear local state
-    }
-
-    setDownloadUrl('');
-    setFile(null);
-    setProgress(0);
-    if (onDelete) onDelete();
-    toast.success('File removed');
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
-      {!downloadUrl && !uploading && (
+    <div className={cn('w-full space-y-3 font-sans', className)}>
+      {/* Header Info */}
+      {(label || description) && (
+        <div className="flex items-center justify-between">
+          <div>
+            {label && <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">{label}</label>}
+            {description && <p className="text-[11px] text-slate-500 font-medium mt-0.5">{description}</p>}
+          </div>
+          <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+            Max {maxSizeMB} MB
+          </span>
+        </div>
+      )}
+
+      {/* Upload Zone (Idle State) */}
+      {!fileUrl && !uploading && (
         <div className="relative">
           <input
+            id={inputId}
             type="file"
             accept={accept}
-            onChange={handleFileChange}
+            onChange={handleInputChange}
             className="hidden"
-            id={inputId}
           />
           <label
             htmlFor={inputId}
@@ -321,108 +270,156 @@ export default function FileUpload({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={cn(
-              "flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-[2rem] bg-slate-50/50 cursor-pointer transition-all group",
-              isDragging 
-                ? "border-indigo-600 bg-indigo-50/50 scale-[1.02]" 
-                : "border-slate-200 hover:bg-slate-50 hover:border-indigo-600"
+              'flex flex-col items-center justify-center w-full border-2 border-dashed rounded-2xl cursor-pointer transition-all group select-none',
+              compact ? 'p-4' : 'p-6 sm:p-8',
+              isDragging
+                ? 'border-indigo-600 bg-indigo-50/50 scale-[1.01]'
+                : 'border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 hover:border-indigo-400'
             )}
           >
             <div className={cn(
-              "w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm mb-4 transition-transform",
-              isDragging ? "scale-110 text-indigo-600" : "group-hover:scale-110"
+              'bg-white rounded-2xl flex items-center justify-center shadow-xs mb-3 transition-transform group-hover:scale-110',
+              compact ? 'w-10 h-10' : 'w-12 h-12',
+              isDragging ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'
             )}>
-              <Upload className={cn(isDragging ? "text-indigo-600" : "text-slate-400 group-hover:text-indigo-600")} size={24} />
+              <Upload size={compact ? 20 : 24} />
             </div>
-            <span className={cn(
-              "text-sm font-black uppercase tracking-widest transition-colors",
-              isDragging ? "text-indigo-600" : "text-slate-900"
-            )}>
-              {isDragging ? 'Drop to Upload' : label}
-            </span>
-            <span className="text-xs font-medium text-slate-400 mt-1">Max size: {maxSizeMB}MB</span>
+            <div className="text-center space-y-1">
+              <p className="text-xs sm:text-sm font-black text-slate-800 uppercase tracking-wider">
+                {isDragging ? 'Drop File Here to Upload' : 'Click or Drag & Drop File'}
+              </p>
+              <p className="text-[11px] text-slate-400 font-medium">
+                Supports PDF, Images, Word, Excel, Code & Video (up to {maxSizeMB} MB)
+              </p>
+            </div>
           </label>
         </div>
       )}
 
+      {/* Uploading / Progress State */}
       {uploading && (
-        <div className="p-6 bg-white border border-slate-100 rounded-[2rem] shadow-sm space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-                <Loader2 className="text-indigo-600 animate-spin" size={20} />
+        <div className="p-4 bg-white border border-indigo-100 rounded-2xl shadow-xs space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
+                <Loader2 className="animate-spin" size={20} />
               </div>
-              <div>
-                <p className="text-sm font-bold text-slate-900 truncate max-w-[200px]">{file?.name}</p>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Uploading...</p>
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-slate-900 truncate">
+                  {selectedFile?.name || 'Processing file...'}
+                </p>
+                <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider">
+                  {progressInfo?.formattedProgress || 'Uploading...'}
+                </p>
               </div>
             </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleCancelUpload}
+              className="text-xs text-rose-600 hover:bg-rose-50 border-rose-200 rounded-xl shrink-0"
+            >
+              <X size={14} className="mr-1" /> Cancel
+            </Button>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
-              <span>Progress</span>
-              <span>{Math.round(progress)}%</span>
+
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-[10px] font-bold text-slate-500">
+              <span>{progressInfo?.stage === 'compressing' ? 'Optimizing Image...' : 'Uploading'}</span>
+              <span>{progressInfo?.progress || 0}%</span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress value={progressInfo?.progress || 5} className="h-2 bg-slate-100" />
           </div>
         </div>
       )}
 
+      {/* Error Alert with Retry */}
       {error && !uploading && (
-        <div className="p-6 bg-rose-50 border border-rose-100 rounded-[2rem] space-y-4">
-          <div className="flex items-center gap-3 text-rose-600">
-            <AlertCircle size={20} />
-            <p className="text-sm font-bold">{error}</p>
+        <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl space-y-2 text-rose-700">
+          <div className="flex items-start gap-2.5">
+            <AlertCircle size={18} className="shrink-0 mt-0.5 text-rose-600" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold text-rose-900">{error}</p>
+              <p className="text-[11px] text-rose-600 mt-0.5">Please check network or file format and retry.</p>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <Button 
-              variant="outline" 
-              size="sm" 
+          <div className="flex items-center gap-2 pt-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
               onClick={handleRetry}
-              className="bg-white border-rose-200 text-rose-600 hover:bg-rose-100"
+              className="bg-white border-rose-200 text-rose-700 hover:bg-rose-100 text-xs rounded-xl font-bold"
             >
-              <RefreshCw className="mr-2" size={14} /> Retry
+              <RefreshCw size={12} className="mr-1.5" /> Retry Upload
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => { setError(null); setFile(null); }}
-              className="text-slate-500"
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => { setError(null); setSelectedFile(null); }}
+              className="text-xs text-slate-600 hover:bg-rose-100/50 rounded-xl"
             >
-              Cancel
+              Dismiss
             </Button>
           </div>
         </div>
       )}
 
-      {downloadUrl && !uploading && (
-        <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2rem] flex items-center justify-between group">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm">
-              <FileText size={24} />
+      {/* Completed Active File Card */}
+      {fileUrl && !uploading && (
+        <div className="p-4 bg-white border border-slate-200 rounded-2xl flex items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-12 h-12 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-center shrink-0">
+              {getFileIcon(fileNameDisplay || fileUrl)}
             </div>
-            <div>
-              <p className="text-sm font-bold text-slate-900 truncate max-w-[200px]">
-                {file?.name || 'File Uploaded'}
-              </p>
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-emerald-600" size={12} />
-                <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Ready to save</span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 text-emerald-600 mb-0.5">
+                <CheckCircle2 size={14} />
+                <span className="text-[10px] font-black uppercase tracking-wider">Ready / Saved</span>
               </div>
+              <p className="text-xs font-bold text-slate-900 truncate max-w-[200px] sm:max-w-xs md:max-w-sm">
+                {fileNameDisplay || 'Educational Resource File'}
+              </p>
+              {fileSizeDisplay && (
+                <p className="text-[10px] font-medium text-slate-400">{fileSizeDisplay}</p>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <a 
-              href={downloadUrl} 
-              target="_blank" 
+
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={fileUrl}
+              target="_blank"
               rel="noopener noreferrer"
-              className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+              className="p-2 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+              title="Open / View file"
             >
-              <Upload className="rotate-180" size={18} />
+              <Eye size={18} />
             </a>
-            <button 
+
+            <label
+              htmlFor={inputId}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition-colors flex items-center gap-1.5"
+            >
+              <RefreshCw size={12} />
+              <span className="hidden sm:inline">Replace</span>
+            </label>
+            <input
+              id={inputId}
+              type="file"
+              accept={accept}
+              onChange={handleInputChange}
+              className="hidden"
+            />
+
+            <button
               type="button"
               onClick={handleDelete}
-              className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors"
+              title="Delete file"
             >
               <Trash2 size={18} />
             </button>

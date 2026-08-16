@@ -358,3 +358,39 @@ export async function deleteAmbassadorGalleryItem(itemId: string): Promise<void>
     console.warn('Failed deleting gallery item from Firestore:', err);
   }
 }
+
+// User Lookups
+export async function getUserAmbassadorApplication(email?: string, name?: string): Promise<AmbassadorApplication | null> {
+  if (!email && !name) return null;
+  const cleanEmail = email?.toLowerCase().trim();
+  const cleanName = name?.toLowerCase().trim();
+
+  try {
+    const apps = await getAmbassadorApplications();
+    const match = apps.find(a => 
+      (cleanEmail && a.email && a.email.toLowerCase().trim() === cleanEmail) ||
+      (cleanName && a.fullName && a.fullName.toLowerCase().trim() === cleanName)
+    );
+    if (match) return match;
+  } catch (err) {
+    console.warn('Error fetching user ambassador application:', err);
+  }
+  return null;
+}
+
+export async function getUserAmbassadorProfile(email?: string, name?: string): Promise<AmbassadorProfile | null> {
+  if (!email && !name) return null;
+  const cleanName = name?.toLowerCase().trim();
+
+  try {
+    const profiles = await getAmbassadorProfiles();
+    const match = profiles.find(p => 
+      (cleanName && p.name && p.name.toLowerCase().trim() === cleanName)
+    );
+    if (match) return match;
+  } catch (err) {
+    console.warn('Error fetching user ambassador profile:', err);
+  }
+  return null;
+}
+

@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { ForumCurriculum, ForumDiscussionType, ForumDiscussion, ForumAttachment } from '../../types';
 import { createDiscussion } from '../../services/forumService';
+import { uploadFilePipeline } from '../../utils/uploadPipeline';
 import toast from 'react-hot-toast';
 
 interface CreateDiscussionModalProps {
@@ -70,24 +71,42 @@ export default function CreateDiscussionModal({
     setMathFormula(prev => prev ? `${prev} ${snippet}` : snippet);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
     const file = files[0];
     const fileType = file.name.endsWith('.pdf') ? 'pdf' 
-      : file.name.endsWith('.png') || file.name.endsWith('.jpg') ? 'image'
+      : file.name.endsWith('.png') || file.name.endsWith('.jpg') || file.name.endsWith('.jpeg') || file.name.endsWith('.webp') ? 'image'
       : file.name.endsWith('.doc') || file.name.endsWith('.docx') ? 'doc'
       : 'code';
 
-    const newAttachment: ForumAttachment = {
-      id: `att-${Date.now()}`,
-      name: file.name,
-      url: URL.createObjectURL(file),
-      type: fileType,
-      size: `${(file.size / 1024).toFixed(1)} KB`
-    };
-    setAttachments([...attachments, newAttachment]);
-    toast.success(isFr ? 'Fichier joint avec succès!' : 'Attachment added!');
+    setUploadingAttachment(true);
+    const toastId = toast.loading(isFr ? 'Téléversement de la pièce jointe...' : 'Uploading attachment...');
+
+    try {
+      const uploadResult = await uploadFilePipeline(file, {
+        folder: 'edulpha/forum_attachments',
+        maxSizeMB: 25
+      });
+
+      const newAttachment: ForumAttachment = {
+        id: `att-${Date.now()}`,
+        name: file.name,
+        url: uploadResult.url,
+        type: fileType,
+        size: uploadResult.fileSize
+      };
+
+      setAttachments(prev => [...prev, newAttachment]);
+      toast.success(isFr ? 'Fichier joint avec succès!' : 'Attachment added!', { id: toastId });
+    } catch (err: any) {
+      toast.error(err.message || 'Upload failed', { id: toastId });
+    } finally {
+      setUploadingAttachment(false);
+      e.target.value = '';
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -489,7 +508,7 @@ export default function CreateDiscussionModal({
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || uploadingAttachment}
               className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-bold text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
             >
               {isSubmitting ? (

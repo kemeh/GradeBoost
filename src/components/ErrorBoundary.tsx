@@ -41,16 +41,21 @@ class ErrorBoundary extends React.Component<Props, State> {
     if (this.state.hasError) {
       let errorMessage = 'An unexpected error occurred. Please try again later.';
       
-      try {
-        // Check if it's a Firestore error JSON string
-        const parsed = JSON.parse(this.state.error?.message || '');
-        if (parsed.error && parsed.operationType) {
-          errorMessage = `Database error: ${parsed.error}. Operation: ${parsed.operationType}`;
-        }
-      } catch (e) {
-        // Not a JSON error, use original message if available
-        if (this.state.error?.message) {
-          errorMessage = this.state.error.message;
+      const rawMessage = this.state.error?.message || '';
+      if (rawMessage.includes('dynamically imported module') || rawMessage.includes('Failed to fetch')) {
+        errorMessage = 'A newer version of this page is available. Please click refresh to load the latest update.';
+      } else {
+        try {
+          // Check if it's a Firestore error JSON string
+          const parsed = JSON.parse(rawMessage);
+          if (parsed.error && parsed.operationType) {
+            errorMessage = `Database error: ${parsed.error}. Operation: ${parsed.operationType}`;
+          }
+        } catch (e) {
+          // Not a JSON error, use original message if available
+          if (rawMessage) {
+            errorMessage = rawMessage;
+          }
         }
       }
 
