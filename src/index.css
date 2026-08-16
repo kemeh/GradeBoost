@@ -19,6 +19,8 @@
 
 *, ::before, ::after {
   box-sizing: border-box;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 html,
@@ -31,10 +33,11 @@ body,
   padding: 0;
 }
 
-*, ::before, ::after {
-  box-sizing: border-box;
-  overflow-wrap: break-word;
-  word-break: break-word;
+/* Ensure bottom space on mobile screens so fixed bottom tab bar does not cover content */
+@media (max-width: 639px) {
+  body {
+    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 img, video, canvas, svg, iframe {

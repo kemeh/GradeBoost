@@ -1440,56 +1440,121 @@ export default function StudentDashboard() {
 
         {/* TAB 16: EDULPHA AI STUDIO */}
         {activeTab === 'ai_tutor' && (
-          <div className="space-y-6 max-w-6xl mx-auto">
-            {/* AI Studio Navigation Sub-Bar */}
-            <div className="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-indigo-600 text-white rounded-xl">
-                  <Sparkles size={20} />
+          <div className="space-y-6 max-w-6xl mx-auto min-w-0 w-full">
+            {/* AI Studio Navigation Sub-Bar & Feature Selector */}
+            <div className="bg-white p-4 sm:p-5 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-sm space-y-4 min-w-0">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-600 text-white rounded-xl shrink-0 shadow-sm">
+                  <Sparkles size={22} />
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm">Edulpha AI Studio</h3>
-                  <p className="text-[11px] text-slate-500">Cameroon GCE Personalized Intelligent Learning Assistant</p>
+                <div className="min-w-0">
+                  <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">Edulpha AI Studio</h3>
+                  <p className="text-xs text-slate-500 font-medium">Cameroon GCE Personalized Intelligent Learning Assistant</p>
                 </div>
               </div>
 
-              {/* Sub-Tab Selector */}
-              <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs font-semibold overflow-x-auto">
+              {/* Responsive Feature Cards Grid (1 column on mobile, 2 on tablet, 3 on desktop) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 w-full pt-1">
                 <button
                   onClick={() => setAiSubTab('chat')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${aiSubTab === 'chat' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 min-w-0 w-full ${
+                    aiSubTab === 'chat' 
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md font-bold' 
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
                 >
-                  <Bot size={15} /> 24/7 AI Tutor
+                  <div className={`p-2.5 rounded-xl shrink-0 ${aiSubTab === 'chat' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                    <Bot size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-bold block truncate">24/7 AI Tutor</span>
+                    <span className={`text-[11px] block truncate font-medium ${aiSubTab === 'chat' ? 'text-indigo-100' : 'text-slate-500'}`}>Personalized learning help</span>
+                  </div>
                 </button>
+
                 <button
                   onClick={() => setAiSubTab('quiz')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${aiSubTab === 'quiz' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 min-w-0 w-full ${
+                    aiSubTab === 'quiz' 
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md font-bold' 
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
                 >
-                  <BookOpen size={15} /> AI Quiz Generator
+                  <div className={`p-2.5 rounded-xl shrink-0 ${aiSubTab === 'quiz' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                    <BookOpen size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-bold block truncate">AI Quiz Generator</span>
+                    <span className={`text-[11px] block truncate font-medium ${aiSubTab === 'quiz' ? 'text-indigo-100' : 'text-slate-500'}`}>Generate personalized quizzes</span>
+                  </div>
                 </button>
+
                 <button
                   onClick={() => setAiSubTab('planner')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${aiSubTab === 'planner' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 min-w-0 w-full ${
+                    aiSubTab === 'planner' 
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md font-bold' 
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
                 >
-                  <Calendar size={15} /> AI Study Planner
+                  <div className={`p-2.5 rounded-xl shrink-0 ${aiSubTab === 'planner' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                    <Calendar size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-bold block truncate">AI Study Planner</span>
+                    <span className={`text-[11px] block truncate font-medium ${aiSubTab === 'planner' ? 'text-indigo-100' : 'text-slate-500'}`}>Personalized study schedules</span>
+                  </div>
                 </button>
+
                 <button
                   onClick={() => setAiSubTab('code')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${aiSubTab === 'code' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 min-w-0 w-full ${
+                    aiSubTab === 'code' 
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md font-bold' 
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
                 >
-                  <Zap size={15} /> Programming Assistant
+                  <div className={`p-2.5 rounded-xl shrink-0 ${aiSubTab === 'code' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                    <Zap size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-bold block truncate">AI Programming Assistant</span>
+                    <span className={`text-[11px] block truncate font-medium ${aiSubTab === 'code' ? 'text-indigo-100' : 'text-slate-500'}`}>Coding and programming help</span>
+                  </div>
                 </button>
+
                 <button
                   onClick={() => setAiSubTab('summarizer')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${aiSubTab === 'summarizer' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 min-w-0 w-full ${
+                    aiSubTab === 'summarizer' 
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md font-bold' 
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
                 >
-                  <FileText size={15} /> Lesson Summarizer
+                  <div className={`p-2.5 rounded-xl shrink-0 ${aiSubTab === 'summarizer' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                    <FileText size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-bold block truncate">Lesson Summarizer</span>
+                    <span className={`text-[11px] block truncate font-medium ${aiSubTab === 'summarizer' ? 'text-indigo-100' : 'text-slate-500'}`}>Summarize lessons quickly</span>
+                  </div>
                 </button>
+
                 <button
                   onClick={() => setAiSubTab('weakness')}
-                  className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${aiSubTab === 'weakness' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-600 hover:text-slate-900'}`}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 min-w-0 w-full ${
+                    aiSubTab === 'weakness' 
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md font-bold' 
+                      : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100 hover:border-slate-300'
+                  }`}
                 >
-                  <Target size={15} /> Weakness & Insights
+                  <div className={`p-2.5 rounded-xl shrink-0 ${aiSubTab === 'weakness' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                    <Target size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <span className="text-xs sm:text-sm font-bold block truncate">Weaknesses & Insights</span>
+                    <span className={`text-[11px] block truncate font-medium ${aiSubTab === 'weakness' ? 'text-indigo-100' : 'text-slate-500'}`}>Identify learning gaps</span>
+                  </div>
                 </button>
               </div>
             </div>
