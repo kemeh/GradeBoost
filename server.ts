@@ -27,6 +27,7 @@ const apiLimiter = rateLimit({
   max: 200,
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 const authLimiter = rateLimit({
@@ -35,6 +36,7 @@ const authLimiter = rateLimit({
   message: { error: "Too many authentication attempts. Please try again later for security." },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 const aiLimiter = rateLimit({
@@ -43,6 +45,7 @@ const aiLimiter = rateLimit({
   message: { error: "Rate limit reached for AI services. Please wait a moment." },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 const paymentLimiter = rateLimit({
@@ -51,12 +54,16 @@ const paymentLimiter = rateLimit({
   message: { error: "Too many payment attempts, please try again later" },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 // ... (keep existing helper functions)
 
 async function startServer() {
   const app = express();
+  
+  // Enable Trust Proxy for Express behind reverse proxy / Cloud Run
+  app.set("trust proxy", 1);
   
   // Security Headers (Helmet)
   app.use(helmet({
@@ -96,34 +103,36 @@ async function startServer() {
       const storagePath = `${folder}/${Date.now()}_${safeName}`;
       console.log(`[Server Upload API] Processing file: ${safeName} (${fileType || 'unknown type'}), Target path: ${storagePath}`);
 
-      // 1. Try Firebase Admin Storage if bucket is available
-      try {
-        const bucketName = process.env.STORAGE_BUCKET || "gradeboost-df887.appspot.com";
-        const bucket = admin.storage().bucket(bucketName);
-        
-        const base64Content = fileData.includes(",") ? fileData.split(",")[1] : fileData;
-        const buffer = Buffer.from(base64Content, "base64");
-        const fileRef = bucket.file(storagePath);
+      // 1. Try Firebase Admin Storage if STORAGE_BUCKET is configured
+      if (process.env.STORAGE_BUCKET) {
+        try {
+          const bucketName = process.env.STORAGE_BUCKET;
+          const bucket = admin.storage().bucket(bucketName);
+          
+          const base64Content = fileData.includes(",") ? fileData.split(",")[1] : fileData;
+          const buffer = Buffer.from(base64Content, "base64");
+          const fileRef = bucket.file(storagePath);
 
-        await fileRef.save(buffer, {
-          metadata: {
-            contentType: fileType || "image/png",
-            metadata: { uploadedVia: "EdulphaServerAPI" }
-          },
-          public: true,
-        });
+          await fileRef.save(buffer, {
+            metadata: {
+              contentType: fileType || "image/png",
+              metadata: { uploadedVia: "EdulphaServerAPI" }
+            },
+            public: true,
+          });
 
-        const publicUrl = `https://storage.googleapis.com/${bucketName}/${storagePath}`;
-        console.log(`[Server Upload API Success] File uploaded to Firebase Admin Storage: ${publicUrl}`);
-        return res.json({
-          success: true,
-          url: publicUrl,
-          fileName: safeName,
-          size: buffer.length,
-          provider: "firebase-admin"
-        });
-      } catch (storageErr: any) {
-        console.warn("[Server Upload API Storage Warning] Storage bucket save failed, using Firestore asset storage:", storageErr.message);
+          const publicUrl = `https://storage.googleapis.com/${bucketName}/${storagePath}`;
+          console.log(`[Server Upload API Success] File uploaded to Firebase Admin Storage: ${publicUrl}`);
+          return res.json({
+            success: true,
+            url: publicUrl,
+            fileName: safeName,
+            size: buffer.length,
+            provider: "firebase-admin"
+          });
+        } catch (storageErr: any) {
+          console.warn("[Server Upload API Storage Warning] Storage bucket save failed, using Firestore asset storage:", storageErr?.message || storageErr);
+        }
       }
 
       // 2. Fallback: Save asset metadata & data URL in Firestore system_uploads collection
