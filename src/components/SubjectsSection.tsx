@@ -6,10 +6,12 @@ import {
   BookOpen, Sparkles, CheckCircle2, Search, ArrowRight, Award, Layers, Flame
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export interface SubjectItem {
   id: string;
   name: string;
+  nameFr?: string;
   category: 'general-en' | 'general-fr' | 'technical' | 'commercial';
   icon: any;
   level: string;
@@ -18,6 +20,7 @@ export interface SubjectItem {
   hasMockExams: boolean;
   difficulty: 'O-Level / BEPC' | 'A-Level / Bac' | 'TVEE Intermediate' | 'TVEE Advanced';
   description: string;
+  descriptionFr?: string;
   bgGradient: string;
   textColor: string;
   badgeBg: string;
@@ -27,6 +30,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'math',
     name: 'Mathematics',
+    nameFr: 'Mathématiques',
     category: 'general-en',
     icon: Calculator,
     level: 'O-Level & A-Level',
@@ -35,6 +39,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'O-Level / BEPC',
     description: 'Algebra, Geometry, Calculus, Statistics, and Mechanics aligned with GCE Board syllabus.',
+    descriptionFr: 'Algèbre, Géométrie, Calcul, Statistique et Mécanique conformes au programme officiel.',
     bgGradient: 'from-blue-600 to-indigo-700',
     textColor: 'text-blue-600',
     badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -42,6 +47,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'comp-sci',
     name: 'Computer Science',
+    nameFr: 'Informatique & Algorithmique',
     category: 'general-en',
     icon: Monitor,
     level: 'O-Level & A-Level',
@@ -50,6 +56,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'A-Level / Bac',
     description: 'Algorithms, Data Structures, Python Programming, System Analysis, and Database Management.',
+    descriptionFr: 'Algorithmique, Structures de données, Programmation, Analyse système et Bases de données.',
     bgGradient: 'from-indigo-600 to-purple-700',
     textColor: 'text-indigo-600',
     badgeBg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
@@ -57,6 +64,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'physics',
     name: 'Physics',
+    nameFr: 'Physique & Électricité',
     category: 'general-en',
     icon: Atom,
     level: 'O-Level & A-Level',
@@ -65,6 +73,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'A-Level / Bac',
     description: 'Mechanics, Electricity, Quantum Physics, Waves, Thermal Physics, and Practical Physics.',
+    descriptionFr: 'Mécanique, Électricité, Physique quantique, Ondes, Thermodynamique et Travaux pratiques.',
     bgGradient: 'from-violet-600 to-purple-800',
     textColor: 'text-violet-600',
     badgeBg: 'bg-violet-50 text-violet-700 border-violet-200',
@@ -72,6 +81,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'chemistry',
     name: 'Chemistry',
+    nameFr: 'Chimie Organique & Minérale',
     category: 'general-en',
     icon: FlaskConical,
     level: 'O-Level & A-Level',
@@ -80,6 +90,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'A-Level / Bac',
     description: 'Physical, Organic, and Inorganic Chemistry with step-by-step chemical reaction solvers.',
+    descriptionFr: 'Chimie physique, organique et minérale avec résolveur de réactions chimiques.',
     bgGradient: 'from-emerald-600 to-teal-700',
     textColor: 'text-emerald-600',
     badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -87,6 +98,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'biology',
     name: 'Biology',
+    nameFr: 'Biologie & SVTEEHB',
     category: 'general-en',
     icon: Dna,
     level: 'O-Level & A-Level',
@@ -95,6 +107,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'O-Level / BEPC',
     description: 'Cellular Biology, Genetics, Ecology, Human Anatomy, Physiology, and Plant Systems.',
+    descriptionFr: 'Biologie cellulaire, Génétique, Écologie, Anatomie humaine, Physiologie et Botanique.',
     bgGradient: 'from-teal-600 to-emerald-800',
     textColor: 'text-teal-600',
     badgeBg: 'bg-teal-50 text-teal-700 border-teal-200',
@@ -102,6 +115,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'economics',
     name: 'Economics',
+    nameFr: 'Économie Générale',
     category: 'general-en',
     icon: LineChart,
     level: 'O-Level & A-Level',
@@ -110,6 +124,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'A-Level / Bac',
     description: 'Microeconomics, Macroeconomics, International Trade, Monetary Policy, and Development Economics.',
+    descriptionFr: 'Microéconomie, Macroéconomie, Commerce international, Politique monétaire et Développement.',
     bgGradient: 'from-amber-600 to-orange-700',
     textColor: 'text-amber-600',
     badgeBg: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -117,6 +132,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'accounting',
     name: 'Financial Accounting',
+    nameFr: 'Comptabilité Financière',
     category: 'commercial',
     icon: Receipt,
     level: 'Intermediate & Advanced',
@@ -125,6 +141,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'TVEE Advanced',
     description: 'Double-entry bookkeeping, Balance Sheets, Ledger postings, Trial balances, and Auditing.',
+    descriptionFr: 'Comptabilité en partie double, Bilan, Grand-livre, Balance et Audit comptable.',
     bgGradient: 'from-emerald-700 to-cyan-800',
     textColor: 'text-emerald-700',
     badgeBg: 'bg-emerald-50 text-emerald-800 border-emerald-200',
@@ -132,6 +149,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'marketing',
     name: 'Marketing & Sales',
+    nameFr: 'Marketing & Action Commerciale',
     category: 'commercial',
     icon: Megaphone,
     level: 'Intermediate & Advanced',
@@ -140,6 +158,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'TVEE Intermediate',
     description: 'Market research, Consumer behavior, Brand management, Digital marketing, and Distribution channels.',
+    descriptionFr: 'Études de marché, Comportement du consommateur, Gestion de marque et Marketing digital.',
     bgGradient: 'from-orange-600 to-red-600',
     textColor: 'text-orange-600',
     badgeBg: 'bg-orange-50 text-orange-700 border-orange-200',
@@ -147,6 +166,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'office-admin',
     name: 'Office Administration',
+    nameFr: 'Bureautique & Secrétariat',
     category: 'commercial',
     icon: Building2,
     level: 'Intermediate Level',
@@ -155,6 +175,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'TVEE Intermediate',
     description: 'Executive secretarial procedures, Records management, Business correspondence, and Office ethics.',
+    descriptionFr: 'Procédures de secrétariat de direction, Gestion des archives, Courrier administratif et Éthique.',
     bgGradient: 'from-blue-700 to-slate-800',
     textColor: 'text-blue-700',
     badgeBg: 'bg-blue-50 text-blue-800 border-blue-200',
@@ -162,6 +183,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'elec-tech',
     name: 'Electrical Technology',
+    nameFr: 'Électrotechnique & Automatismes',
     category: 'technical',
     icon: Zap,
     level: 'TVEE Intermediate & Advanced',
@@ -170,6 +192,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'TVEE Advanced',
     description: 'Electrical circuits, AC/DC motors, Transformers, Wiring schematics, and Industrial Automation.',
+    descriptionFr: 'Circuits électriques, Moteurs AC/DC, Transformateurs, Schémas et Automatisme industriel.',
     bgGradient: 'from-yellow-600 to-amber-700',
     textColor: 'text-amber-600',
     badgeBg: 'bg-amber-50 text-amber-800 border-amber-200',
@@ -177,6 +200,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'building-const',
     name: 'Building Construction',
+    nameFr: 'Bâtiment & Génie Civil',
     category: 'technical',
     icon: Home,
     level: 'TVEE Intermediate & Advanced',
@@ -185,6 +209,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'TVEE Intermediate',
     description: 'Civil engineering drawings, Masonry, Structural design, Concrete technology, and Site surveying.',
+    descriptionFr: 'Dessin de bâtiment, Maçonnerie, Calcul de structures, Technologie du béton et Topographie.',
     bgGradient: 'from-stone-600 to-amber-800',
     textColor: 'text-stone-600',
     badgeBg: 'bg-stone-100 text-stone-800 border-stone-200',
@@ -192,6 +217,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'soft-dev',
     name: 'Software Development',
+    nameFr: 'Génie Logiciel & Programmation',
     category: 'technical',
     icon: Code,
     level: 'TVEE Advanced Level',
@@ -200,6 +226,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'TVEE Advanced',
     description: 'Web development (HTML/CSS/JS/React), Mobile app logic, REST APIs, and Software engineering concepts.',
+    descriptionFr: 'Développement Web (HTML/CSS/JS/React), Applications mobiles, APIs REST et Génie logiciel.',
     bgGradient: 'from-indigo-700 to-blue-900',
     textColor: 'text-indigo-700',
     badgeBg: 'bg-indigo-50 text-indigo-800 border-indigo-200',
@@ -207,6 +234,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'networking',
     name: 'Computer Networking',
+    nameFr: 'Réseaux & Sécurité Informatique',
     category: 'technical',
     icon: Network,
     level: 'TVEE Advanced Level',
@@ -215,6 +243,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'TVEE Advanced',
     description: 'TCP/IP, Routing & Switching, Network Security, Subnetting, and Hardware maintenance.',
+    descriptionFr: 'TCP/IP, Routage & Commutation, Sécurité réseau, Adressage IP et Maintenance matérielle.',
     bgGradient: 'from-cyan-600 to-blue-700',
     textColor: 'text-cyan-600',
     badgeBg: 'bg-cyan-50 text-cyan-700 border-cyan-200',
@@ -222,6 +251,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'french-fr',
     name: 'Langue Française & Littérature',
+    nameFr: 'Langue Française & Littérature',
     category: 'general-fr',
     icon: Globe,
     level: 'BEPC, Probatoire & Baccalauréat',
@@ -230,6 +260,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'A-Level / Bac',
     description: 'Explication de texte, Dissertation littéraire, Grammaire, Conjugaison, et Analyse stylistique.',
+    descriptionFr: 'Explication de texte, Dissertation littéraire, Grammaire, Conjugaison et Analyse stylistique.',
     bgGradient: 'from-rose-600 to-red-700',
     textColor: 'text-rose-600',
     badgeBg: 'bg-rose-50 text-rose-700 border-rose-200',
@@ -237,6 +268,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'english-lang',
     name: 'English Language & Literature',
+    nameFr: 'Langue & Littérature Anglaise',
     category: 'general-en',
     icon: Languages,
     level: 'O-Level & A-Level',
@@ -245,6 +277,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'O-Level / BEPC',
     description: 'Grammar mechanics, Reading comprehension, Essay writing techniques, and Literary analysis.',
+    descriptionFr: 'Règles de grammaire, Compréhension de texte, Techniques de rédaction et Analyse littéraire.',
     bgGradient: 'from-blue-600 to-indigo-800',
     textColor: 'text-blue-600',
     badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
@@ -252,6 +285,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'history',
     name: 'History & Citizenship',
+    nameFr: 'Histoire & Éducation à la Citoyenneté',
     category: 'general-en',
     icon: Landmark,
     level: 'O-Level & A-Level',
@@ -260,6 +294,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'O-Level / BEPC',
     description: 'Cameroon History, Pan-African Movements, World Wars, United Nations, and Civic Duty.',
+    descriptionFr: 'Histoire du Cameroun, Mouvements Panafricains, Guerres mondiales et Éducation citoyenne.',
     bgGradient: 'from-purple-600 to-indigo-700',
     textColor: 'text-purple-600',
     badgeBg: 'bg-purple-50 text-purple-700 border-purple-200',
@@ -267,6 +302,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
   {
     id: 'geography',
     name: 'Geography & Environment',
+    nameFr: 'Géographie & Environnement',
     category: 'general-en',
     icon: Compass,
     level: 'O-Level & A-Level',
@@ -275,6 +311,7 @@ const ALL_SUBJECTS: SubjectItem[] = [
     hasMockExams: true,
     difficulty: 'O-Level / BEPC',
     description: 'Physical Geography, Map Work, Geomorphology, Economic Geography, and Climate Science.',
+    descriptionFr: 'Géographie physique, Cartographie, Géomorphologie, Géographie économique et Climatologie.',
     bgGradient: 'from-emerald-600 to-green-700',
     textColor: 'text-emerald-600',
     badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -285,11 +322,15 @@ export const SubjectsSection: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'general-en' | 'general-fr' | 'technical' | 'commercial'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const isFr = language === 'fr';
 
   const filteredSubjects = ALL_SUBJECTS.filter((subj) => {
     const matchesTab = activeTab === 'all' || subj.category === activeTab;
-    const matchesSearch = subj.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          subj.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const subjName = isFr && subj.nameFr ? subj.nameFr : subj.name;
+    const subjDesc = isFr && subj.descriptionFr ? subj.descriptionFr : subj.description;
+    const matchesSearch = subjName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          subjDesc.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
 
@@ -305,13 +346,17 @@ export const SubjectsSection: React.FC = () => {
         <div className="text-center space-y-4 max-w-3xl mx-auto">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
             <BookOpen size={14} />
-            Comprehensive Subject Directory
+            {isFr ? 'Répertoire Complet des Matières' : 'Comprehensive Subject Directory'}
           </div>
           <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
-            Explore 45+ Subjects Across General, Technical & TVEE Fields
+            {isFr
+              ? 'Explorez Plus de 45 Matières Générales, Techniques & TVEE'
+              : 'Explore 45+ Subjects Across General, Technical & TVEE Fields'}
           </h2>
           <p className="text-slate-300 text-base sm:text-lg font-medium">
-            Every subject includes structured topic breakdowns, 15,000+ official MINESEC & GCE past questions, instant step-by-step Edulpha AI guidance, and timed mock exam simulators.
+            {isFr
+              ? 'Chaque matière contient des cours détaillés, plus de 15 000 sujets d’examens MINESEC & GCE Board, un tutorat IA étape par étape et des simulations d’examens.'
+              : 'Every subject includes structured topic breakdowns, 15,000+ official MINESEC & GCE past questions, instant step-by-step Edulpha AI guidance, and timed mock exam simulators.'}
           </p>
         </div>
 
@@ -321,11 +366,11 @@ export const SubjectsSection: React.FC = () => {
           {/* Tabs */}
           <div className="flex flex-wrap items-center justify-center gap-1.5 w-full lg:w-auto">
             {[
-              { id: 'all', label: 'All Subjects' },
-              { id: 'general-en', label: 'General (Anglophone GCE)' },
-              { id: 'general-fr', label: 'Général (Francophone BEPC/BAC)' },
-              { id: 'technical', label: 'Technical & Industrial' },
-              { id: 'commercial', label: 'Commercial & Business' },
+              { id: 'all', label: isFr ? 'Toutes les Matières' : 'All Subjects' },
+              { id: 'general-en', label: isFr ? 'Général (GCE Anglophone)' : 'General (Anglophone GCE)' },
+              { id: 'general-fr', label: isFr ? 'Général (Francophone BEPC/BAC)' : 'Général (Francophone BEPC/BAC)' },
+              { id: 'technical', label: isFr ? 'Technique & Industriel' : 'Technical & Industrial' },
+              { id: 'commercial', label: isFr ? 'Commercial & Gestion' : 'Commercial & Business' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -348,7 +393,7 @@ export const SubjectsSection: React.FC = () => {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search subject or keyword..."
+              placeholder={isFr ? 'Rechercher une matière ou un mot-clé...' : 'Search subject or keyword...'}
               className="w-full pl-11 pr-4 py-2.5 bg-slate-900 border border-slate-800 rounded-2xl text-xs font-medium text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
             />
           </div>
@@ -360,6 +405,9 @@ export const SubjectsSection: React.FC = () => {
           <AnimatePresence mode="popLayout">
             {filteredSubjects.map((subj) => {
               const IconComponent = subj.icon;
+              const subjName = isFr && subj.nameFr ? subj.nameFr : subj.name;
+              const subjDesc = isFr && subj.descriptionFr ? subj.descriptionFr : subj.description;
+
               return (
                 <motion.div
                   key={subj.id}
@@ -384,21 +432,21 @@ export const SubjectsSection: React.FC = () => {
                     {/* Title & Desc */}
                     <div>
                       <h3 className="text-lg font-black text-white group-hover:text-emerald-400 transition-colors">
-                        {subj.name}
+                        {subjName}
                       </h3>
                       <p className="text-xs text-slate-400 mt-1 font-medium line-clamp-2 leading-relaxed">
-                        {subj.description}
+                        {subjDesc}
                       </p>
                     </div>
 
                     {/* Stats List */}
                     <div className="pt-3 border-t border-slate-900 grid grid-cols-2 gap-2 text-xs">
                       <div className="bg-slate-900/60 p-2 rounded-xl text-center">
-                        <span className="block text-slate-400 text-[10px] font-bold uppercase">Lessons</span>
+                        <span className="block text-slate-400 text-[10px] font-bold uppercase">{isFr ? 'Cours' : 'Lessons'}</span>
                         <span className="font-black text-white">{subj.lessonsCount}+ Modules</span>
                       </div>
                       <div className="bg-slate-900/60 p-2 rounded-xl text-center">
-                        <span className="block text-slate-400 text-[10px] font-bold uppercase">Questions</span>
+                        <span className="block text-slate-400 text-[10px] font-bold uppercase">{isFr ? 'Épreuves' : 'Questions'}</span>
                         <span className="font-black text-emerald-400">{subj.questionsCount}+ Qs</span>
                       </div>
                     </div>
@@ -407,13 +455,13 @@ export const SubjectsSection: React.FC = () => {
                   {/* CTA Action */}
                   <div className="pt-5 mt-4 border-t border-slate-900 flex items-center justify-between">
                     <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                      <CheckCircle2 size={13} className="text-emerald-400" /> Mock Exams Ready
+                      <CheckCircle2 size={13} className="text-emerald-400" /> {isFr ? 'Examens Blancs Prêts' : 'Mock Exams Ready'}
                     </span>
                     <button
                       onClick={() => navigate('/auth')}
                       className="px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 border border-emerald-500/30 rounded-xl text-xs font-black transition-all flex items-center gap-1 group-hover:px-4"
                     >
-                      <span>Explore</span>
+                      <span>{isFr ? 'Explorer' : 'Explore'}</span>
                       <ArrowRight size={13} />
                     </button>
                   </div>
@@ -426,9 +474,13 @@ export const SubjectsSection: React.FC = () => {
         {/* Bottom Banner */}
         <div className="p-8 rounded-3xl bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border border-emerald-500/20 text-center flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-left space-y-1">
-            <h4 className="text-lg font-black text-white">Can't find your specific technical or vocational specialty?</h4>
+            <h4 className="text-lg font-black text-white">
+              {isFr ? 'Vous ne trouvez pas votre spécialité technique ou professionnelle ?' : 'Can\'t find your specific technical or vocational specialty?'}
+            </h4>
             <p className="text-xs text-slate-300">
-              Edulpha covers over 45+ official MINESEC technical specialties including Auto Mechanics, Refrigeration, Secretarial, and Carpentry.
+              {isFr
+                ? 'Edulpha couvre plus de 45 spécialités officielles du MINESEC, notamment la mécanique auto, le froid, la bureautique et la menuiserie.'
+                : 'Edulpha covers over 45+ official MINESEC technical specialties including Auto Mechanics, Refrigeration, Secretarial, and Carpentry.'}
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 shrink-0">
@@ -436,13 +488,13 @@ export const SubjectsSection: React.FC = () => {
               onClick={() => navigate('/subjects')}
               className="px-5 py-3 border border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-300 font-bold text-xs rounded-2xl tracking-wider transition-all"
             >
-              Learn More Subjects
+              {isFr ? 'Découvrir nos matières' : 'Learn More Subjects'}
             </button>
             <button
               onClick={() => navigate('/auth')}
               className="px-6 py-3 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs rounded-2xl uppercase tracking-wider shadow-lg shadow-emerald-400/20 transition-all"
             >
-              View Complete Syllabus Catalog
+              {isFr ? 'Voir le catalogue complet' : 'View Complete Syllabus Catalog'}
             </button>
           </div>
         </div>

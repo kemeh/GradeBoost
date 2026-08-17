@@ -67,8 +67,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (fUser) {
         setLoading(true);
-        // Refresh token in the background
-        fUser.getIdToken(true).catch(console.error);
+        // Refresh token in the background with cached fallback
+        fUser.getIdToken(false).then(() => {
+          return fUser.getIdToken(true);
+        }).catch(error => {
+          console.warn("AuthContext (getIdToken) Error:", error);
+          // Silently recover if network request fails in iframe/offline
+        });
         
         const userRef = doc(db, 'users', fUser.uid);
         
@@ -172,6 +177,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         }, (error) => {
+          console.error("AuthContext Firestore Error:", error);
+          if ((error as any).code === 'auth/network-request-failed') {
+            toast.error('Network connection issue. If this persists, please open the app in a new tab.');
+          }
           try {
             handleFirestoreError(error, OperationType.GET, `users/${fUser.uid}`);
           } catch (e) {
@@ -258,7 +267,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!auth.currentUser) return null;
     try {
       return await auth.currentUser.getIdToken(true);
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === 'auth/network-request-failed') {
+        try {
+          return await auth.currentUser.getIdToken(false);
+        } catch (cacheErr) {
+          console.warn('Failed to retrieve cached ID token:', cacheErr);
+        }
+      }
       console.error('Failed to refresh session token:', err);
       return null;
     }

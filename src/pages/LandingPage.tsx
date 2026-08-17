@@ -139,7 +139,9 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider max-w-full"
               >
                 <Sparkles size={14} className="text-amber-400 shrink-0" />
-                <span className="truncate">Africa's Premier Learning Platform</span>
+                <span className="truncate">
+                  {language === 'fr' ? 'Premier Écosystème d\'Apprentissage en Afrique' : 'Africa\'s Premier Learning Platform'}
+                </span>
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               </motion.div>
 
@@ -149,10 +151,21 @@ export default function LandingPage() {
                 transition={{ delay: 0.1 }}
                 className="text-[clamp(1.75rem,7vw,4.5rem)] font-black tracking-tight leading-[1.08] break-words"
               >
-                Learn. Practice. <br className="hidden sm:inline" />
-                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
-                  Succeed.
-                </span>
+                {language === 'fr' ? (
+                  <>
+                    Apprenez. Pratiquez. <br className="hidden sm:inline" />
+                    <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                      Réussissez.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Learn. Practice. <br className="hidden sm:inline" />
+                    <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                      Succeed.
+                    </span>
+                  </>
+                )}
               </motion.h1>
 
               <motion.p 
@@ -161,7 +174,9 @@ export default function LandingPage() {
                 transition={{ delay: 0.2 }}
                 className="text-slate-300 text-[clamp(0.875rem,3.5vw,1.25rem)] font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed break-words"
               >
-                Master General Education, Technical Specialties, Commercial Studies, and TVEE Intermediate & Advanced levels with official MINESEC & GCE Board past papers, step-by-step Edulpha AI solvers, and offline mobile access.
+                {language === 'fr'
+                  ? 'Maîtrisez l\'enseignement général, les spécialités techniques, commerciales et les niveaux TVEE avec les épreuves officielles MINESEC & GCE Board, les résolveurs IA Edulpha et l\'accès mobile hors-ligne.'
+                  : 'Master General Education, Technical Specialties, Commercial Studies, and TVEE Intermediate & Advanced levels with official MINESEC & GCE Board past papers, step-by-step Edulpha AI solvers, and offline mobile access.'}
               </motion.p>
 
               {/* Coursera-Inspired Interactive Search Bar */}
@@ -179,7 +194,7 @@ export default function LandingPage() {
                       value={heroSearch}
                       onChange={(e) => handleHeroSearchChange(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleExecuteSearch(heroSearch)}
-                      placeholder="What do you want to learn today?"
+                      placeholder={language === 'fr' ? 'Qu’aimeriez-vous apprendre aujourd’hui ?' : 'What do you want to learn today?'}
                       className="w-full px-2 py-2 text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none bg-transparent min-w-0"
                     />
                   </div>
@@ -187,7 +202,7 @@ export default function LandingPage() {
                     onClick={() => handleExecuteSearch(heroSearch)}
                     className="w-full sm:w-auto px-4 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs rounded-xl uppercase tracking-wider shrink-0 transition shadow-md flex items-center justify-center gap-1.5 min-w-0"
                   >
-                    <span>Search</span>
+                    <span>{language === 'fr' ? 'Rechercher' : 'Search'}</span>
                     <ArrowRight size={14} className="shrink-0" />
                   </button>
                 </div>
@@ -212,7 +227,9 @@ export default function LandingPage() {
                           className="p-2.5 rounded-xl hover:bg-slate-800 text-xs font-bold text-slate-200 cursor-pointer flex items-center justify-between"
                         >
                           <span className="truncate">{sug}</span>
-                          <span className="text-[10px] text-emerald-400 font-bold shrink-0">Explore →</span>
+                          <span className="text-[10px] text-emerald-400 font-bold shrink-0">
+                            {language === 'fr' ? 'Explorer →' : 'Explore →'}
+                          </span>
                         </div>
                       ))}
                     </motion.div>
@@ -221,10 +238,11 @@ export default function LandingPage() {
 
                 {/* Popular Tags */}
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold text-slate-400 max-w-full">
-                  <span className="text-slate-500 shrink-0">Popular:</span>
-                  {[
-                    'Mathematics', 'Physics', 'Electrical Tech', 'Accounting', 'Computer Science', 'French'
-                  ].map((tag) => (
+                  <span className="text-slate-500 shrink-0">{language === 'fr' ? 'Populaires :' : 'Popular:'}</span>
+                  {(language === 'fr' 
+                    ? ['Mathématiques', 'Physique', 'Électrotechnique', 'Comptabilité', 'Informatique', 'Français']
+                    : ['Mathematics', 'Physics', 'Electrical Tech', 'Accounting', 'Computer Science', 'French']
+                  ).map((tag) => (
                     <button
                       key={tag}
                       onClick={() => handleExecuteSearch(tag)}
@@ -245,7 +263,7 @@ export default function LandingPage() {
               >
                 <Link to="/auth" className="w-full sm:w-auto min-w-0 max-w-full">
                   <Button size="lg" className="w-full sm:w-auto max-w-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 text-xs sm:text-sm font-black px-5 sm:px-8 py-3.5 sm:py-5 rounded-2xl flex items-center justify-center gap-2">
-                    <span className="truncate">Start Learning Free</span>
+                    <span className="truncate">{language === 'fr' ? 'Commencer Gratuitement' : 'Start Learning Free'}</span>
                     <ArrowRight size={18} className="shrink-0" />
                   </Button>
                 </Link>
@@ -253,16 +271,16 @@ export default function LandingPage() {
                 <a href="#mobile-app" className="w-full sm:w-auto min-w-0 max-w-full">
                   <Button size="lg" variant="outline" className="w-full sm:w-auto max-w-full border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 text-xs sm:text-sm font-bold px-5 sm:px-8 py-3.5 sm:py-5 rounded-2xl flex items-center justify-center gap-2">
                     <Download size={18} className="shrink-0" />
-                    <span className="truncate">Download Mobile App (APK)</span>
+                    <span className="truncate">{language === 'fr' ? 'Télécharger l\'App Mobile (APK)' : 'Download Mobile App (APK)'}</span>
                   </Button>
                 </a>
               </motion.div>
 
               {/* Trust Badges */}
               <div className="pt-2 sm:pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-6 text-[11px] sm:text-xs font-bold text-slate-400 max-w-full">
-                <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-400 shrink-0" /> Official MINESEC Syllabus</span>
-                <span className="flex items-center gap-1.5"><ShieldCheck size={15} className="text-indigo-400 shrink-0" /> Bilingual EN & FR</span>
-                <span className="flex items-center gap-1.5"><Smartphone size={15} className="text-amber-400 shrink-0" /> 100% Offline Capability</span>
+                <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-400 shrink-0" /> {language === 'fr' ? 'Programme Officiel MINESEC' : 'Official MINESEC Syllabus'}</span>
+                <span className="flex items-center gap-1.5"><ShieldCheck size={15} className="text-indigo-400 shrink-0" /> {language === 'fr' ? 'Bilingue Anglais & Français' : 'Bilingual EN & FR'}</span>
+                <span className="flex items-center gap-1.5"><Smartphone size={15} className="text-amber-400 shrink-0" /> {language === 'fr' ? '100% Fonctionnel Hors-Ligne' : '100% Offline Capability'}</span>
               </div>
 
             </div>
@@ -338,10 +356,10 @@ export default function LandingPage() {
           <div className="pt-8 border-t border-slate-800/80">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
               {[
-                { value: stats ? stats.studentsCount.toLocaleString() : '0', label: 'Active Registered Students' },
-                { value: stats ? (stats.subjectsCount > 0 ? `${stats.subjectsCount}+` : '0') : '0', label: 'Subjects & Specialties' },
-                { value: stats ? (stats.questionsCount > 0 ? `${stats.questionsCount.toLocaleString()}+` : '0') : '0', label: 'Past Questions & Drills' },
-                { value: stats ? (stats.partnersCount > 0 ? `${stats.partnersCount}` : '0') : '0', label: 'Verified Partner Institutions' },
+                { value: stats ? stats.studentsCount.toLocaleString() : '0', label: language === 'fr' ? 'Élèves Inscris Actifs' : 'Active Registered Students' },
+                { value: stats ? (stats.subjectsCount > 0 ? `${stats.subjectsCount}+` : '0') : '0', label: language === 'fr' ? 'Matières & Spécialités' : 'Subjects & Specialties' },
+                { value: stats ? (stats.questionsCount > 0 ? `${stats.questionsCount.toLocaleString()}+` : '0') : '0', label: language === 'fr' ? 'Sujets & Épreuves Corrigées' : 'Past Questions & Drills' },
+                { value: stats ? (stats.partnersCount > 0 ? `${stats.partnersCount}` : '0') : '0', label: language === 'fr' ? 'Établissements Partenaires' : 'Verified Partner Institutions' },
               ].map((stat, i) => (
                 <div key={i} className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800/80 space-y-1">
                   <div className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">{stat.value}</div>
@@ -382,13 +400,17 @@ export default function LandingPage() {
           <div className="text-center space-y-4 max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold uppercase tracking-wider">
               <Star size={14} className="text-amber-500 fill-amber-500" />
-              Verified Success Stories
+              {language === 'fr' ? 'Témoignages Vérifiés' : 'Verified Success Stories'}
             </div>
             <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
-              Loved by Students, Teachers & School Leaders Across Cameroon
+              {language === 'fr' 
+                ? 'Adopté par les Élèves, Enseignants & Chefs d\'Établissement au Cameroun' 
+                : 'Loved by Students, Teachers & School Leaders Across Cameroon'}
             </h2>
             <p className="text-slate-500 font-medium text-base sm:text-lg">
-              See how Edulpha is raising national exam pass rates in GCE Ordinary & Advanced Level, BEPC, Probatoire, and TVEE Technical certifications.
+              {language === 'fr'
+                ? 'Découvrez comment Edulpha améliore le taux de réussite aux examens du GCE, BEPC, Probatoire, Baccalauréat et TVEE.'
+                : 'See how Edulpha is raising national exam pass rates in GCE Ordinary & Advanced Level, BEPC, Probatoire, and TVEE Technical certifications.'}
             </p>
           </div>
 
@@ -449,11 +471,15 @@ export default function LandingPage() {
           <div className="text-center space-y-4">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider">
               <HelpCircle size={14} />
-              Frequently Asked Questions
+              {language === 'fr' ? 'Questions Fréquentes' : 'Frequently Asked Questions'}
             </div>
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">Everything You Need to Know</h2>
+            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight">
+              {language === 'fr' ? 'Tout Ce Que Vous Devez Savoir' : 'Everything You Need to Know'}
+            </h2>
             <p className="text-slate-500 font-medium text-base sm:text-lg">
-              Got questions about Edulpha, GCE past papers, or offline Android access? We've got answers.
+              {language === 'fr' 
+                ? 'Des questions sur Edulpha, les épreuves ou l\'accès Android hors-ligne ? Nous avons les réponses.'
+                : 'Got questions about Edulpha, GCE past papers, or offline Android access? We\'ve got answers.'}
             </p>
           </div>
 
@@ -485,31 +511,44 @@ export default function LandingPage() {
           
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider relative z-10">
             <Sparkles size={14} />
-            Start Your Journey Today
+            {language === 'fr' ? 'Commencez Votre Parcours Dès Aujourd\'hui' : 'Start Your Journey Today'}
           </div>
 
           <h2 className="text-3xl md:text-6xl font-black tracking-tight leading-tight relative z-10">
-            Transform Your Academic Career <br />
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
-              With Africa's Premier Learning Hub
-            </span>
+            {language === 'fr' ? (
+              <>
+                Transformez Votre Carrière Académique <br />
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                  Avec le Premier Pôle d'Apprentissage d'Afrique
+                </span>
+              </>
+            ) : (
+              <>
+                Transform Your Academic Career <br />
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                  With Africa's Premier Learning Hub
+                </span>
+              </>
+            )}
           </h2>
 
           <p className="text-slate-300 text-base md:text-xl max-w-2xl mx-auto font-medium relative z-10 leading-relaxed">
-            Join over 50,000 students and educators mastering GCE O/A Levels, BEPC, Baccalauréat, and TVEE Technical specialties.
+            {language === 'fr'
+              ? 'Rejoignez plus de 50 000 élèves et enseignants qui maîtrisent le GCE, le BEPC, le Baccalauréat et les spécialités techniques.'
+              : 'Join over 50,000 students and educators mastering GCE O/A Levels, BEPC, Baccalauréat, and TVEE Technical specialties.'}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10 pt-4">
             <Link to="/auth">
               <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-black text-sm px-8 py-6 rounded-2xl shadow-xl shadow-emerald-400/20 transition-all">
-                Create Free Account
+                {language === 'fr' ? 'Créer un Compte Gratuit' : 'Create Free Account'}
               </Button>
             </Link>
             
             <a href="#mobile-app">
               <Button size="lg" variant="outline" className="w-full sm:w-auto border-slate-700 text-white hover:bg-slate-800 text-sm font-bold px-8 py-6 rounded-2xl flex items-center justify-center gap-2">
                 <Download size={18} />
-                <span>Get Mobile App</span>
+                <span>{language === 'fr' ? 'Obtenir l\'App Mobile' : 'Get Mobile App'}</span>
               </Button>
             </a>
           </div>

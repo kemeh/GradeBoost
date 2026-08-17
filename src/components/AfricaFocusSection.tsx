@@ -5,33 +5,44 @@ import {
   MapPin, Users, Heart, ArrowRight, Zap, Layers, Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const AfricaFocusSection: React.FC = () => {
   const navigate = useNavigate();
+  const { language } = useLanguage();
+  const isFr = language === 'fr';
 
   const milestones = [
     {
-      title: 'Cameroon MINESEC Aligned',
-      desc: '100% official past papers & mock exams for GCE Board O/A Levels and Francophone BEPC, Probatoire, and Baccalauréat.',
-      badge: 'Official Standards',
+      title: isFr ? 'Conforme au Programme MINESEC' : 'Cameroon MINESEC Aligned',
+      desc: isFr
+        ? '100% épreuves officielles et examens blancs pour le GCE Board (O/A Levels) et les examens francophones (BEPC, Probatoire, Baccalauréat).'
+        : '100% official past papers & mock exams for GCE Board O/A Levels and Francophone BEPC, Probatoire, and Baccalauréat.',
+      badge: isFr ? 'Normes Officielles' : 'Official Standards',
       color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
     },
     {
-      title: 'TVEE & Technical First',
-      desc: 'Pioneering digital education for Technical, Vocational, Commercial, and Industrial specialties across Cameroon.',
-      badge: 'Vocational Mastery',
+      title: isFr ? 'Priorité au TVEE & Technique' : 'TVEE & Technical First',
+      desc: isFr
+        ? 'Pionnier de l’éducation numérique pour les spécialités techniques, professionnelles, commerciales et industrielles au Cameroun.'
+        : 'Pioneering digital education for Technical, Vocational, Commercial, and Industrial specialties across Cameroon.',
+      badge: isFr ? 'Maîtrise Pro' : 'Vocational Mastery',
       color: 'bg-amber-500/10 text-amber-400 border-amber-500/20'
     },
     {
-      title: 'Offline Connectivity Engine',
-      desc: 'Download study packages once and practice anywhere without active mobile data or Wi-Fi connectivity.',
-      badge: 'Zero Data Revision',
+      title: isFr ? 'Moteur de Connexion Hors-Ligne' : 'Offline Connectivity Engine',
+      desc: isFr
+        ? 'Téléchargez vos packages de cours une fois et révisez partout sans données mobiles ou Wi-Fi.'
+        : 'Download study packages once and practice anywhere without active mobile data or Wi-Fi connectivity.',
+      badge: isFr ? 'Révision Sans Données' : 'Zero Data Revision',
       color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20'
     },
     {
-      title: 'Pan-African Expansion',
-      desc: 'Building Africa’s next-generation educational infrastructure starting in Cameroon and reaching West & Central Africa.',
-      badge: 'Pan-African Vision',
+      title: isFr ? 'Expansion Pan-Africaine' : 'Pan-African Expansion',
+      desc: isFr
+        ? 'Construction de l’infrastructure éducative africaine de nouvelle génération, en commençant par le Cameroun.'
+        : 'Building Africa’s next-generation educational infrastructure starting in Cameroon and reaching West & Central Africa.',
+      badge: isFr ? 'Vision Pan-Africaine' : 'Pan-African Vision',
       color: 'bg-purple-500/10 text-purple-400 border-purple-500/20'
     }
   ];
@@ -49,32 +60,45 @@ export const AfricaFocusSection: React.FC = () => {
           <div className="lg:col-span-7 space-y-6">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
               <Globe size={14} />
-              Cameroon & Pan-African Mission
+              {isFr ? 'Mission Camerounaise & Pan-Africaine' : 'Cameroon & Pan-African Mission'}
             </div>
 
             <h2 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight">
-              Built for Cameroon. <br />
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
-                Designed for Africa.
-              </span>
+              {isFr ? (
+                <>
+                  Conçu pour le Cameroun. <br />
+                  <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                    Pensé pour l'Afrique.
+                  </span>
+                </>
+              ) : (
+                <>
+                  Built for Cameroon. <br />
+                  <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                    Designed for Africa.
+                  </span>
+                </>
+              )}
             </h2>
 
             <p className="text-slate-300 text-base sm:text-lg font-medium leading-relaxed">
-              Edulpha is purpose-built to eliminate educational disparities in Cameroon and across Africa. By bridging the Anglophone GCE system and Francophone Sub-system with technical, commercial, and TVEE qualifications, we provide every student with equal access to world-class learning.
+              {isFr
+                ? 'Edulpha est conçu pour éliminer les disparités éducatives au Cameroun et en Afrique. En associant le système anglophone GCE et le sous-système francophone aux qualifications techniques, commerciales et TVEE, nous offrons à chaque élève un accès égalitaire à une éducation de qualité.'
+                : 'Edulpha is purpose-built to eliminate educational disparities in Cameroon and across Africa. By bridging the Anglophone GCE system and Francophone Sub-system with technical, commercial, and TVEE qualifications, we provide every student with equal access to world-class learning.'}
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-4">
               <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
-                <span className="block text-2xl font-black text-emerald-400">2 Sub-systems</span>
-                <span className="text-xs font-bold text-slate-400">English & French</span>
+                <span className="block text-2xl font-black text-emerald-400">{isFr ? '2 Sous-systèmes' : '2 Sub-systems'}</span>
+                <span className="text-xs font-bold text-slate-400">{isFr ? 'Anglais & Français' : 'English & French'}</span>
               </div>
               <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-center">
-                <span className="block text-2xl font-black text-amber-400">10 Regions</span>
-                <span className="text-xs font-bold text-slate-400">Cameroon Coverage</span>
+                <span className="block text-2xl font-black text-amber-400">{isFr ? '10 Régions' : '10 Regions'}</span>
+                <span className="text-xs font-bold text-slate-400">{isFr ? 'Couverture Cameroun' : 'Cameroon Coverage'}</span>
               </div>
               <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-center col-span-2 sm:col-span-1">
-                <span className="block text-2xl font-black text-indigo-400">100% Offline</span>
-                <span className="text-xs font-bold text-slate-400">Android Capability</span>
+                <span className="block text-2xl font-black text-indigo-400">100% {isFr ? 'Hors-Ligne' : 'Offline'}</span>
+                <span className="text-xs font-bold text-slate-400">{isFr ? 'Fonctionnalité Android' : 'Android Capability'}</span>
               </div>
             </div>
 
@@ -83,7 +107,7 @@ export const AfricaFocusSection: React.FC = () => {
                 onClick={() => navigate('/auth')}
                 className="px-6 py-3.5 bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 font-black text-xs rounded-2xl uppercase tracking-wider flex items-center gap-2 shadow-lg shadow-emerald-400/20 hover:scale-105 transition-all"
               >
-                <span>Join Africa's Premier Learning Hub</span>
+                <span>{isFr ? 'Rejoindre le Pôle d\'Apprentissage' : 'Join Africa\'s Premier Learning Hub'}</span>
                 <ArrowRight size={16} />
               </button>
             </div>
@@ -98,8 +122,12 @@ export const AfricaFocusSection: React.FC = () => {
                     <MapPin size={24} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-white">Cameroon Nationwide Reach</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Douala, Yaoundé, Bamenda, Buea, Garoua, Bafoussam & all 10 regions.</p>
+                    <h4 className="text-lg font-black text-white">
+                      {isFr ? 'Présence sur tout le Territoire National' : 'Cameroon Nationwide Reach'}
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Douala, Yaoundé, Bamenda, Buea, Garoua, Bafoussam & {isFr ? 'les 10 régions' : 'all 10 regions'}.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -110,8 +138,12 @@ export const AfricaFocusSection: React.FC = () => {
                     <Users size={24} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-white">Empowering 50,000+ Students</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Secondary, TVEE, and university candidates excelling in national exams.</p>
+                    <h4 className="text-lg font-black text-white">
+                      {isFr ? 'Plus de 50 000 Élèves Accompagnés' : 'Empowering 50,000+ Students'}
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {isFr ? 'Candidats aux examens secondaires, techniques et universitaires.' : 'Secondary, TVEE, and university candidates excelling in national exams.'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -122,8 +154,12 @@ export const AfricaFocusSection: React.FC = () => {
                     <Smartphone size={24} />
                   </div>
                   <div>
-                    <h4 className="text-lg font-black text-white">Low-Bandwidth Mobile Engineering</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Optimized for low-RAM Android phones and offline study without data.</p>
+                    <h4 className="text-lg font-black text-white">
+                      {isFr ? 'Optimisé pour Mobile & Faible Bande Passante' : 'Low-Bandwidth Mobile Engineering'}
+                    </h4>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {isFr ? 'Conçu pour smartphones Android à faible RAM et révision hors-ligne.' : 'Optimized for low-RAM Android phones and offline study without data.'}
+                    </p>
                   </div>
                 </div>
               </div>

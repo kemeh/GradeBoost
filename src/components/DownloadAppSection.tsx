@@ -4,8 +4,12 @@ import {
   Download, QrCode, Smartphone, WifiOff, CheckCircle2, Star, ShieldCheck, 
   Sparkles, Play, Globe, ExternalLink, ArrowRight
 } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const DownloadAppSection: React.FC = () => {
+  const { language } = useLanguage();
+  const isFr = language === 'fr';
+
   return (
     <section id="mobile-app" className="py-24 px-6 bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-white relative overflow-hidden">
       {/* Background Decor */}
@@ -18,18 +22,31 @@ export const DownloadAppSection: React.FC = () => {
         <div className="lg:col-span-7 space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider">
             <Smartphone size={14} />
-            Mobile App Experience
+            {isFr ? 'Expérience Application Mobile' : 'Mobile App Experience'}
           </div>
 
           <h2 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight">
-            Learn Anytime, Anywhere <br />
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
-              100% Offline Capability
-            </span>
+            {isFr ? (
+              <>
+                Apprenez Partout & Toujours <br />
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                  100% Fonctionnel Hors-Ligne
+                </span>
+              </>
+            ) : (
+              <>
+                Learn Anytime, Anywhere <br />
+                <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
+                  100% Offline Capability
+                </span>
+              </>
+            )}
           </h2>
 
           <p className="text-slate-300 text-base sm:text-lg font-medium leading-relaxed">
-            Download the Edulpha Android APK to practice past questions, read offline lessons, and run AI revision drills without needing active internet or expensive mobile data bundles.
+            {isFr
+              ? 'Téléchargez l’APK Android d’Edulpha pour réviser les épreuves d’examens, lire vos cours hors-ligne et utiliser le tuteur IA sans consommer de données mobiles.'
+              : 'Download the Edulpha Android APK to practice past questions, read offline lessons, and run AI revision drills without needing active internet or expensive mobile data bundles.'}
           </p>
 
           {/* Feature Badges */}
@@ -37,32 +54,32 @@ export const DownloadAppSection: React.FC = () => {
             <div className="flex items-start gap-3 p-4 bg-slate-950/70 border border-slate-800 rounded-2xl">
               <WifiOff size={20} className="text-emerald-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-bold text-white">Zero Data Required</h4>
-                <p className="text-xs text-slate-400">Access thousands of past questions and solutions offline.</p>
+                <h4 className="text-sm font-bold text-white">{isFr ? 'Zéro Donnée Requis' : 'Zero Data Required'}</h4>
+                <p className="text-xs text-slate-400">{isFr ? 'Accédez à des milliers d’épreuves et corrigés hors-ligne.' : 'Access thousands of past questions and solutions offline.'}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-slate-950/70 border border-slate-800 rounded-2xl">
               <Sparkles size={20} className="text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-bold text-white">Offline AI Solvers</h4>
-                <p className="text-xs text-slate-400">Cached step-by-step math and science problem breakdowns.</p>
+                <h4 className="text-sm font-bold text-white">{isFr ? 'Résolveurs IA Hors-Ligne' : 'Offline AI Solvers'}</h4>
+                <p className="text-xs text-slate-400">{isFr ? 'Démonstrations mathématiques et scientifiques enregistrées.' : 'Cached step-by-step math and science problem breakdowns.'}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-slate-950/70 border border-slate-800 rounded-2xl">
               <ShieldCheck size={20} className="text-indigo-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-bold text-white">AES-256 Secure</h4>
-                <p className="text-xs text-slate-400">Safe offline progress syncing when back online.</p>
+                <h4 className="text-sm font-bold text-white">{isFr ? 'Sécurisé AES-256' : 'AES-256 Secure'}</h4>
+                <p className="text-xs text-slate-400">{isFr ? 'Synchronisation sécurisée dès le retour de la connexion.' : 'Safe offline progress syncing when back online.'}</p>
               </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-slate-950/70 border border-slate-800 rounded-2xl">
               <Star size={20} className="text-yellow-400 shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-sm font-bold text-white">Instant Diagnostics</h4>
-                <p className="text-xs text-slate-400">Automatic score calculations & weak topic alerts.</p>
+                <h4 className="text-sm font-bold text-white">{isFr ? 'Diagnostic Instantané' : 'Instant Diagnostics'}</h4>
+                <p className="text-xs text-slate-400">{isFr ? 'Calcul automatique des notes et repérage des points faibles.' : 'Automatic score calculations & weak topic alerts.'}</p>
               </div>
             </div>
           </div>
@@ -77,7 +94,7 @@ export const DownloadAppSection: React.FC = () => {
               className="px-8 py-4 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-black text-xs rounded-2xl uppercase tracking-wider flex items-center justify-center gap-3 shadow-xl shadow-emerald-400/20 hover:scale-105 transition-all"
             >
               <Download size={18} />
-              <span>Download Direct Android APK</span>
+              <span>{isFr ? 'Télécharger l\'APK Android Direct' : 'Download Direct Android APK'}</span>
             </a>
 
             {/* Google Play (Coming Soon) */}
@@ -85,7 +102,7 @@ export const DownloadAppSection: React.FC = () => {
               <Play size={20} className="text-slate-500" />
               <div className="text-left">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Google Play</span>
-                <span className="text-xs font-bold text-slate-300">Coming Soon</span>
+                <span className="text-xs font-bold text-slate-300">{isFr ? 'Bientôt Disponible' : 'Coming Soon'}</span>
               </div>
             </div>
 
@@ -94,7 +111,7 @@ export const DownloadAppSection: React.FC = () => {
               <Smartphone size={20} className="text-slate-500" />
               <div className="text-left">
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Apple App Store</span>
-                <span className="text-xs font-bold text-slate-300">Coming Soon</span>
+                <span className="text-xs font-bold text-slate-300">{isFr ? 'Bientôt Disponible' : 'Coming Soon'}</span>
               </div>
             </div>
 
@@ -107,7 +124,7 @@ export const DownloadAppSection: React.FC = () => {
           
           <div className="bg-slate-950 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 max-w-sm text-center relative">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 bg-emerald-400 text-slate-950 font-black text-[10px] rounded-full uppercase tracking-wider shadow-md">
-              Scan to Install on Mobile
+              {isFr ? 'Scannez pour Installer' : 'Scan to Install on Mobile'}
             </div>
 
             {/* QR Code Container */}
@@ -122,13 +139,13 @@ export const DownloadAppSection: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <h4 className="text-base font-bold text-white">Scan with Phone Camera</h4>
-              <p className="text-xs text-slate-400">Instant download link for Android devices (v6.0+ supported)</p>
+              <h4 className="text-base font-bold text-white">{isFr ? 'Scannez avec votre téléphone' : 'Scan with Phone Camera'}</h4>
+              <p className="text-xs text-slate-400">{isFr ? 'Lien de téléchargement direct pour appareils Android (v6.0+)' : 'Instant download link for Android devices (v6.0+ supported)'}</p>
             </div>
 
             <div className="pt-2 border-t border-slate-900 flex items-center justify-center gap-4 text-xs font-bold text-emerald-400">
-              <span className="flex items-center gap-1"><CheckCircle2 size={14} /> 100% Free APK</span>
-              <span className="flex items-center gap-1"><CheckCircle2 size={14} /> No Ads</span>
+              <span className="flex items-center gap-1"><CheckCircle2 size={14} /> {isFr ? 'APK 100% Gratuit' : '100% Free APK'}</span>
+              <span className="flex items-center gap-1"><CheckCircle2 size={14} /> {isFr ? 'Sans Publicité' : 'No Ads'}</span>
             </div>
           </div>
 
