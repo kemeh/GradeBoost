@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { db } from '../firebase';
 import { 
   collection, query, where, getDocs, onSnapshot, 
@@ -31,6 +32,7 @@ import { AIWeaknessAnalyzer } from '../components/EdulphaAI/AIWeaknessAnalyzer';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -653,15 +655,15 @@ export default function StudentDashboard() {
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <span className="px-2.5 py-1 bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 text-[11px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1.5">
-                  <GraduationCap size={14} /> Student Dashboard
+                  <GraduationCap size={14} /> {t('nav.dashboard', 'Student Dashboard')}
                 </span>
-                <span className="text-[11px] sm:text-xs text-indigo-300 font-medium">GCE Target 2026</span>
+                <span className="text-[11px] sm:text-xs text-indigo-300 font-medium">{t('dashboard.targetYear', 'GCE Target 2026')}</span>
               </div>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight break-words">
-                Welcome back, {user?.name || user?.email?.split('@')[0] || 'Scholar'} 👋
+                {t('dashboard.welcomeBack', 'Welcome back')}, {user?.name || user?.email?.split('@')[0] || 'Scholar'} 👋
               </h1>
               <p className="text-indigo-200 text-xs md:text-sm max-w-xl leading-relaxed">
-                Master your GCE subjects with lessons, past papers, mock exams, personal notes, study plans, and your 24/7 AI tutor.
+                {t('dashboard.heroSubtitle', 'Master your GCE subjects with lessons, past papers, mock exams, personal notes, study plans, and your 24/7 AI tutor.')}
               </p>
             </div>
 
@@ -682,9 +684,9 @@ export default function StudentDashboard() {
                 <span className="absolute text-[11px] sm:text-xs font-black text-white">{overallProgressPercent}%</span>
               </div>
               <div className="space-y-0.5 min-w-0">
-                <span className="text-[10px] sm:text-xs font-bold text-indigo-200 uppercase tracking-wider block truncate">Overall Mastery</span>
-                <p className="text-xs sm:text-sm font-extrabold text-white truncate">{completedLessonsCount} / {lessons.length} Lessons</p>
-                <p className="text-[10px] text-indigo-300">Keep up the momentum!</p>
+                <span className="text-[10px] sm:text-xs font-bold text-indigo-200 uppercase tracking-wider block truncate">{t('lms.overallMastery', 'Overall Mastery')}</span>
+                <p className="text-xs sm:text-sm font-extrabold text-white truncate">{completedLessonsCount} / {lessons.length} {t('lms.lessons', 'Lessons')}</p>
+                <p className="text-[10px] text-indigo-300">{t('dashboard.keepMomentum', 'Keep up the momentum!')}</p>
               </div>
             </div>
           </div>
@@ -693,22 +695,22 @@ export default function StudentDashboard() {
         {/* 15 NAVIGATION TABS */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 custom-scrollbar">
           {[
-            { id: 'overview', label: 'Overview', icon: LayoutGridIcon },
-            { id: 'my_courses', label: 'My Courses', icon: BookOpen },
-            { id: 'continue_learning', label: 'Continue Learning', icon: PlayCircle },
-            { id: 'study_plans', label: 'Study Plans', icon: Calendar },
-            { id: 'lessons', label: 'Lessons', icon: Layers },
-            { id: 'videos', label: 'Videos', icon: Video },
-            { id: 'notes', label: 'My Notes', icon: Edit3 },
-            { id: 'downloads', label: 'Downloads', icon: Download },
-            { id: 'practice', label: 'Practice Questions', icon: CheckCircle2 },
-            { id: 'mock_exams', label: 'Mock Exams', icon: Award },
-            { id: 'past_questions', label: 'Past Questions', icon: FileText },
-            { id: 'progress', label: 'Analytics & Progress', icon: BarChart2 },
-            { id: 'achievements', label: 'Achievements', icon: Trophy },
-            { id: 'certificates', label: 'Certificates', icon: FileCheck },
-            { id: 'forum', label: 'Discussion Forum', icon: MessageSquare },
-            { id: 'ai_tutor', label: '24/7 AI Tutor', icon: Bot }
+            { id: 'overview', label: t('dashboard.tabOverview', 'Overview'), icon: LayoutGridIcon },
+            { id: 'my_courses', label: t('dashboard.tabCourses', 'My Courses'), icon: BookOpen },
+            { id: 'continue_learning', label: t('dashboard.tabContinue', 'Continue Learning'), icon: PlayCircle },
+            { id: 'study_plans', label: t('dashboard.tabStudyPlans', 'Study Plans'), icon: Calendar },
+            { id: 'lessons', label: t('lms.lessons', 'Lessons'), icon: Layers },
+            { id: 'videos', label: t('lms.videoLectures', 'Videos'), icon: Video },
+            { id: 'notes', label: t('lms.notes', 'My Notes'), icon: Edit3 },
+            { id: 'downloads', label: t('lms.downloads', 'Downloads'), icon: Download },
+            { id: 'practice', label: t('nav.practice', 'Practice Questions'), icon: CheckCircle2 },
+            { id: 'mock_exams', label: t('exam.mockExams', 'Mock Exams'), icon: Award },
+            { id: 'past_questions', label: t('nav.pastQuestions', 'Past Questions'), icon: FileText },
+            { id: 'progress', label: t('nav.analytics', 'Analytics & Progress'), icon: BarChart2 },
+            { id: 'achievements', label: t('dashboard.tabAchievements', 'Achievements'), icon: Trophy },
+            { id: 'certificates', label: t('dashboard.tabCertificates', 'Certificates'), icon: FileCheck },
+            { id: 'forum', label: t('sidebar.forum', 'Discussion Forum'), icon: MessageSquare },
+            { id: 'ai_tutor', label: t('nav.aiTutor', '24/7 AI Tutor'), icon: Bot }
           ].map(tab => (
             <button
               key={tab.id}
@@ -732,7 +734,7 @@ export default function StudentDashboard() {
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               type="text"
-              placeholder="Search topics, lessons, past papers, notes..."
+              placeholder={t('search.placeholder', 'Search topics, lessons, past papers, notes...')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 text-xs font-semibold rounded-xl bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
@@ -746,7 +748,7 @@ export default function StudentDashboard() {
               onChange={e => setSelectedSubject(e.target.value)}
               className="bg-slate-50 border border-slate-200 text-xs font-bold rounded-xl px-3 py-2 text-slate-700 focus:outline-none w-full sm:w-auto"
             >
-              <option value="All">All Subjects</option>
+              <option value="All">{t('common.all', 'All Subjects')}</option>
               <option value="Computer Science">Computer Science</option>
               <option value="ICT">ICT</option>
               <option value="Mathematics">Mathematics</option>

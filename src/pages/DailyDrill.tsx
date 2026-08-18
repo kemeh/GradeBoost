@@ -5,9 +5,11 @@ import { fetchDailyDrill } from "../services/dailyDrillService";
 import Sidebar from "../components/Sidebar";
 import { Button, Badge } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 function DailyDrill() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -43,14 +45,13 @@ function DailyDrill() {
               <Sparkles size={48} />
             </div>
             <div className="space-y-2">
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight">No Drill Found</h2>
+              <h2 className="text-3xl font-black text-slate-900 tracking-tight">{t('drill.noDrill', 'No Drill Found')}</h2>
               <p className="text-slate-500 font-medium max-w-md">
-                We couldn't find a daily drill for <span className="text-indigo-600 font-bold">{user?.subject}</span> today. 
-                Please check back later or try a different subject.
+                {t('drill.noDrillDesc', 'We could not find a daily drill for this subject today. Please check back later.')}
               </p>
             </div>
             <Button onClick={() => navigate('/dashboard')} className="px-8">
-              Back to Dashboard
+              {t('common.backToDashboard', 'Back to Dashboard')}
             </Button>
           </div>
         </main>
@@ -71,13 +72,13 @@ function DailyDrill() {
                 size="icon" 
                 onClick={() => navigate('/dashboard')}
                 className="rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all shrink-0"
-                title="Go to Dashboard"
+                title={t('common.backToDashboard', 'Go to Dashboard')}
               >
                 <LayoutDashboard size={20} />
               </Button>
               <div>
-                <h1 className="text-4xl font-black text-slate-900 tracking-tight">Daily Drill</h1>
-                <p className="text-slate-500 font-medium">Test your knowledge with today's questions.</p>
+                <h1 className="text-4xl font-black text-slate-900 tracking-tight">{t('drill.title', 'Daily Drill')}</h1>
+                <p className="text-slate-500 font-medium">{t('drill.subtitle', 'Test your knowledge with today\'s questions.')}</p>
               </div>
             </div>
             <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 border-indigo-100 px-4 py-2 w-fit">
@@ -129,7 +130,7 @@ function DailyDrill() {
                     </div>
                     {q.explanation && (
                       <div className="mt-4 p-3 bg-green-50 text-green-800 rounded-lg text-sm italic">
-                        <strong>Explanation:</strong> {q.explanation}
+                        <strong>{t('questions.markingGuide', 'Explanation')}:</strong> {q.explanation}
                       </div>
                     )}
                   </div>

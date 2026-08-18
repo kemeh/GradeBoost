@@ -70,10 +70,10 @@ export default function Sidebar({ className }: SidebarProps) {
   ];
 
   const adminLinks = [
-    { icon: Database, label: '🧹 System Data Management', path: '/admin?tab=system-data' },
-    { icon: History, label: '📜 Admin Audit Log', path: '/admin?tab=audit-log' },
-    { icon: Sparkles, label: '🎒 Student Ambassador Admin', path: '/admin?tab=ambassadors' },
-    { icon: Award, label: '🎓 Alumni Management', path: '/admin?tab=alumni' },
+    { icon: Database, label: `🧹 ${t('sidebar.systemData', 'System Data Management')}`, path: '/admin?tab=system-data' },
+    { icon: History, label: `📜 ${t('sidebar.auditLog', 'Admin Audit Log')}`, path: '/admin?tab=audit-log' },
+    { icon: Sparkles, label: `🎒 ${t('sidebar.ambassadorAdmin', 'Student Ambassador Admin')}`, path: '/admin?tab=ambassadors' },
+    { icon: Award, label: `🎓 ${t('sidebar.alumniAdmin', 'Alumni Management')}`, path: '/admin?tab=alumni' },
     { icon: ShieldCheck, label: t('sidebar.usersSystemAdmin', 'Users & System Admin'), path: '/admin' },
     { icon: FlaskConical, label: `🔬 ${t('sidebar.practicalStudio', 'Practical Studio')}`, path: '/admin/practicals' },
     { icon: Smartphone, label: `📱 ${t('sidebar.mobileApp', 'Edulpha Mobile App')}`, path: '/mobile-app' },
@@ -170,7 +170,7 @@ export default function Sidebar({ className }: SidebarProps) {
             className="flex w-full items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
           >
             <MessageSquare size={20} />
-            Send Feedback
+            {t('sidebar.feedback', 'Send Feedback')}
           </button>
         </nav>
 
@@ -186,12 +186,12 @@ export default function Sidebar({ className }: SidebarProps) {
 
           <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
             <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-              Developed by Vertexon Technologies to empower students with academic excellence.
+              {t('sidebar.devCredit', 'Developed by Vertexon Technologies to empower students with academic excellence.')}
             </p>
             <div className="flex flex-col gap-2 text-[10px] font-bold text-slate-500">
-              {contactEmail && <a href={`mailto:${contactEmail}`} className="hover:text-indigo-600 transition-colors">Email Support</a>}
-              {whatsappNumber && <a href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">WhatsApp Support</a>}
-              {whatsappGroupLink && <a href={whatsappGroupLink} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">Join WhatsApp Group</a>}
+              {contactEmail && <a href={`mailto:${contactEmail}`} className="hover:text-indigo-600 transition-colors">{t('footer.emailSupport', 'Email Support')}</a>}
+              {whatsappNumber && <a href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">{t('footer.whatsappSupport', 'WhatsApp Support')}</a>}
+              {whatsappGroupLink && <a href={whatsappGroupLink} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">{t('footer.joinWhatsappGroup', 'Join WhatsApp Group')}</a>}
             </div>
           </div>
           

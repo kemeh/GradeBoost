@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { QuestionPaper, PaperType, SubjectModel } from '../types';
@@ -16,6 +17,7 @@ import { getPapersForSubjectName } from '../data/defaultSubjects';
 
 export default function Practice() {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,13 +83,13 @@ export default function Practice() {
               size="icon" 
               onClick={() => navigate('/dashboard')}
               className="rounded-xl border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
-              title="Go to Dashboard"
+              title={t('common.backToDashboard', 'Go to Dashboard')}
             >
               <LayoutDashboard size={20} />
             </Button>
             <div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Practice Papers</h1>
-              <p className="text-slate-500 font-medium">Browse and practice real GCE A-Level papers for {user.subject}.</p>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">{t('nav.practice', 'Practice Papers')}</h1>
+              <p className="text-slate-500 font-medium">{t('practice.subtitle', 'Browse and practice real GCE A-Level papers')} ({user.subject})</p>
             </div>
           </div>
           <div className="flex items-center gap-4 w-full md:w-auto">
@@ -95,7 +97,7 @@ export default function Practice() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
               <input 
                 type="text" 
-                placeholder="Search papers..." 
+                placeholder={t('search.placeholder', 'Search papers...')} 
                 className="w-full pl-12 pr-4 py-3 bg-white border border-slate-100 rounded-2xl focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-900"
               />
             </div>
@@ -115,7 +117,7 @@ export default function Practice() {
                   : "bg-white text-slate-400 border border-slate-100 hover:border-slate-300"
               )}
             >
-              {f}
+              {f === 'All' ? t('common.all', 'All') : f}
             </button>
           ))}
         </div>
@@ -146,7 +148,7 @@ export default function Practice() {
                   </h3>
                   <div className="flex items-center gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest">
                     <span className="flex items-center gap-1"><Calendar size={12} /> {paper.year}</span>
-                    <span className="flex items-center gap-1"><Clock size={12} /> 3 Hours</span>
+                    <span className="flex items-center gap-1"><Clock size={12} /> 3 {t('lms.hours', 'Hours')}</span>
                   </div>
                 </div>
 
@@ -157,7 +159,7 @@ export default function Practice() {
                 {user.paymentStatus === 'paid' ? (
                   <Link to={`/practice/${paper.id}`} className="mt-auto">
                     <Button className="w-full group/btn">
-                      Start Practice <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
+                      {t('practice.startPractice', 'Start Practice')} <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
                     </Button>
                   </Link>
                 ) : (
@@ -165,7 +167,7 @@ export default function Practice() {
                     className="w-full group/btn bg-slate-100 text-slate-400 border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-100 transition-all"
                     onClick={() => navigate('/payment')}
                   >
-                    <Lock className="mr-2" size={16} /> Unlock Paper <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
+                    <Lock className="mr-2" size={16} /> {t('common.upgradeToPro', 'Unlock Paper')} <ArrowRight className="ml-2 group-hover/btn:translate-x-1 transition-transform" size={16} />
                   </Button>
                 )}
               </Card>
@@ -177,10 +179,10 @@ export default function Practice() {
               <FileText size={40} />
             </div>
             <div>
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">No papers found</h3>
-              <p className="text-slate-500 font-medium">Try adjusting your filters or check back later.</p>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">{t('common.noRecordsFound', 'No papers found')}</h3>
+              <p className="text-slate-500 font-medium">{t('common.tryAdjustingFilters', 'Try adjusting your filters or check back later.')}</p>
             </div>
-            <Button variant="outline" onClick={() => setFilter('All')}>Clear Filters</Button>
+            <Button variant="outline" onClick={() => setFilter('All')}>{t('common.clearFilters', 'Clear Filters')}</Button>
           </div>
         )}
       </main>

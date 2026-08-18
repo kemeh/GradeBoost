@@ -9,6 +9,7 @@ import {
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   PracticalActivity, 
   PracticalAttempt, 
@@ -31,6 +32,7 @@ import { toast } from 'react-hot-toast';
 
 export default function StudentPracticalLab() {
   const { user } = useAuth();
+  const { t, language } = useLanguage();
   const navigate = useNavigate();
   const { id: paramId } = useParams<{ id?: string }>();
 
@@ -146,13 +148,13 @@ export default function StudentPracticalLab() {
           <div className="space-y-2 relative z-10 min-w-0">
             <div className="inline-flex items-center space-x-2 px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold uppercase tracking-wider">
               <FlaskConical className="w-4 h-4 text-amber-400 shrink-0" />
-              <span className="truncate">Edulpha Virtual Practical Lab</span>
+              <span className="truncate">{t('practicals.title', 'Edulpha Virtual Practical Lab')}</span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white tracking-tight break-words">
-              Science, Technical & Computer Practical Center
+              {t('practicals.title', 'Science, Technical & Computer Practical Center')}
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Interactive multi-language code execution sandboxes, virtual biology microscopy, chemistry titration, physics electricity & mechanics simulators.
+              {t('practicals.subtitle', 'Interactive multi-language code execution sandboxes, virtual biology microscopy, chemistry titration, physics electricity & mechanics simulators.')}
             </p>
           </div>
 
@@ -166,7 +168,7 @@ export default function StudentPracticalLab() {
               }`}
             >
               <FlaskConical className="w-4 h-4" />
-              <span>Explore Labs</span>
+              <span>{t('practicals.startLab', 'Explore Labs')}</span>
             </button>
 
             {activePractical && (
@@ -179,7 +181,7 @@ export default function StudentPracticalLab() {
                 }`}
               >
                 <Code2 className="w-4 h-4" />
-                <span>Active Session</span>
+                <span>{t('practicals.procedure', 'Active Session')}</span>
               </button>
             )}
 
@@ -192,7 +194,7 @@ export default function StudentPracticalLab() {
               }`}
             >
               <FileText className="w-4 h-4" />
-              <span>My Reports & Scores ({userAttempts.length})</span>
+              <span>{t('practicals.observations', 'My Reports & Scores')} ({userAttempts.length})</span>
             </button>
           </div>
         </div>
@@ -208,7 +210,7 @@ export default function StudentPracticalLab() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search practicals by title or topic..."
+                  placeholder={t('search.placeholder', 'Search practicals by title or topic...')}
                   className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-white outline-none focus:border-amber-500"
                 />
               </div>
@@ -225,7 +227,7 @@ export default function StudentPracticalLab() {
                         : 'bg-slate-950 text-slate-400 hover:bg-slate-800 border border-slate-800'
                     }`}
                   >
-                    {subj}
+                    {subj === 'All' ? t('common.all', 'All') : subj}
                   </button>
                 ))}
               </div>

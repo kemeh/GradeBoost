@@ -5,6 +5,7 @@ import {
   Mail, Phone, MapPin, Clock, ShieldCheck, CheckCircle2, ArrowRight, FileText
 } from 'lucide-react';
 import { getFooterConfig, FooterConfig, DEFAULT_FOOTER_CONFIG } from '../services/footerService';
+import { useLanguage } from '../contexts/LanguageContext';
 import { toast } from 'react-hot-toast';
 
 interface DynamicFooterProps {
@@ -18,6 +19,7 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
   className = '',
   theme = 'dark'
 }) => {
+  const { t } = useLanguage();
   const [config, setConfig] = useState<FooterConfig>(overrideConfig || DEFAULT_FOOTER_CONFIG);
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [subscribing, setSubscribing] = useState(false);
@@ -33,14 +35,14 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
   const handleNewsletterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsletterEmail || !newsletterEmail.includes('@')) {
-      toast.error('Please enter a valid email address.');
+      toast.error(t('footer.invalidEmail', 'Please enter a valid email address.'));
       return;
     }
     setSubscribing(true);
     setTimeout(() => {
       setSubscribing(false);
       setNewsletterEmail('');
-      toast.success('Thank you! You are now subscribed to Edulpha updates.');
+      toast.success(t('footer.subscribedSuccess', 'Thank you! You are now subscribed to Edulpha updates.'));
     }, 600);
   };
 
@@ -150,7 +152,7 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
 
           {/* Column 2: Quick / Platform Links */}
           <div className="space-y-3">
-            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">Platform Navigation</h4>
+            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">{t('footer.platformNav', 'Platform Navigation')}</h4>
             <ul className={`space-y-2 text-xs font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               {sortedQuickLinks.map((link) => (
                 <li key={link.id}>
@@ -170,7 +172,7 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
 
           {/* Column 3: Legal Documents */}
           <div className="space-y-3">
-            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">Legal & Governance</h4>
+            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">{t('footer.legalGovernance', 'Legal & Governance')}</h4>
             <ul className={`space-y-2 text-xs font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               {sortedLegalDocs.map((docItem) => (
                 <li key={docItem.id}>
@@ -190,7 +192,7 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
 
           {/* Column 4: Resources */}
           <div className="space-y-3">
-            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">Resources & Manuals</h4>
+            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">{t('footer.resourcesManuals', 'Resources & Manuals')}</h4>
             <ul className={`space-y-2 text-xs font-bold ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               {sortedResources.map((res) => (
                 <li key={res.id}>
@@ -211,7 +213,7 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
 
           {/* Column 5: Contact Information */}
           <div className="space-y-3">
-            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">Contact & Offices</h4>
+            <h4 className="font-black text-xs text-indigo-400 uppercase tracking-widest">{t('footer.contactOffices', 'Contact & Offices')}</h4>
             <div className={`space-y-3 text-xs font-medium ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
               {config.contactInfo?.email && (
                 <div className="flex items-start gap-2.5">
@@ -254,12 +256,12 @@ export const DynamicFooter: React.FC<DynamicFooterProps> = ({
           <div className="flex flex-wrap items-center gap-6">
             {config.brand.showEncryptedBadge && (
               <span className="flex items-center gap-1.5">
-                <ShieldCheck size={16} className="text-emerald-400" /> AES-256 Encrypted Platform
+                <ShieldCheck size={16} className="text-emerald-400" /> {t('footer.encryptedBadge', 'AES-256 Encrypted Platform')}
               </span>
             )}
             {config.brand.showBilingualBadge && (
               <span className="flex items-center gap-1.5">
-                <Globe size={16} className="text-indigo-400" /> Bilingual Support (EN/FR)
+                <Globe size={16} className="text-indigo-400" /> {t('footer.bilingualBadge', 'Bilingual Support (EN/FR)')}
               </span>
             )}
           </div>
