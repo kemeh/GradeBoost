@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  collection, addDoc, serverTimestamp, doc, setDoc, getDocs, query, where 
+  collection, getDocs, query, where 
 } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
@@ -13,9 +13,15 @@ import {
   X, Upload, FileText, CheckCircle2, AlertCircle, 
   Sparkles, Calendar, BookOpen, Layers, Check, HelpCircle,
   Hash, Clock, Award, ShieldCheck, ChevronDown, ListChecks,
-  Eye, RefreshCw, FileCheck
+  Eye, RefreshCw, FileCheck, Loader2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { 
+  publishQuestionPaper, 
+  PublishStageStatus, 
+  PUBLISH_STAGES, 
+  PublishStage 
+} from '../../services/questionPaperService';
 
 export interface DynamicQuestionPaperUploadModalProps {
   isOpen: boolean;
@@ -83,9 +89,13 @@ export default function DynamicQuestionPaperUploadModal({
   const [markingSchemeUrl, setMarkingSchemeUrl] = useState<string>('');
   const [includeMarkingScheme, setIncludeMarkingScheme] = useState<boolean>(false);
 
-  // Submitting
+  // Submitting & Progress State
   const [submitting, setSubmitting] = useState<boolean>(false);
+  const [publishStatus, setPublishStatus] = useState<PublishStageStatus | null>(null);
+  const [isTakingTooLong, setIsTakingTooLong] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const isSubmittingRef = useRef<boolean>(false);
+  const slowTimerRef = useRef<any>(null);
 
   // Fetch subjects if not passed or empty
   useEffect(() => {
@@ -293,6 +303,12 @@ export default function DynamicQuestionPaperUploadModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setIsTakingTooLong(false);
+
+    // Double-click protection
+    if (isSubmittingRef.current || submitting) {
+      return;
+    }
 
     if (!user) {
       setErrorMsg('You must be signed in to upload question papers.');
@@ -325,7 +341,15 @@ export default function DynamicQuestionPaperUploadModal({
       return;
     }
 
+    isSubmittingRef.current = true;
     setSubmitting(true);
+    setPublishStatus({ stage: 'validating', ...PUBLISH_STAGES.validating });
+
+    // Slow connection warning timer (10s)
+    if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
+    slowTimerRef.current = setTimeout(() => {
+      setIsTakingTooLong(true);
+    }, 8000);
 
     try {
       // Build clean structured correctAnswers record
@@ -333,20 +357,21 @@ export default function DynamicQuestionPaperUploadModal({
       if (requiresAnswerKey) {
         Object.entries(answersGrid).forEach(([k, v]) => {
           if (k && v) {
-            finalCorrectAnswers[k] = v.toUpperCase();
+            finalCorrectAnswers[k.trim()] = v.toUpperCase();
           }
         });
       }
 
-      const paperData: Omit<QuestionPaper, 'id'> = {
+      // Delegate to high-performance batch publisher service
+      const publishedPaper = await publishQuestionPaper({
         title: title.trim() || `${year} ${selectedSubjectName} - ${effectivePaperType}`,
         year: Number(year),
         subject: selectedSubjectName,
         paperType: effectivePaperType,
         description: description.trim() || `${selectedSubjectName} past examination paper for ${year} (${session}).`,
         pdfUrl: pdfUrl,
-        createdAt: new Date().toISOString(),
-        uploadedBy: user.uid,
+        fileName: pdfFileName,
+        fileSize: pdfFileSize,
         curriculumId: currentSubjectObj?.curriculumId || 'cameroon_gce',
         curriculumName: currentSubjectObj?.curriculumName || (currentSubjectObj?.level === 'Advance level' ? 'GCE Advanced Level' : 'GCE Ordinary Level'),
         level: currentSubjectObj?.level || 'Ordinary level',
@@ -355,50 +380,35 @@ export default function DynamicQuestionPaperUploadModal({
         durationMinutes: Number(durationMinutes) || 120,
         instructions: instructions.trim(),
         paperCode: currentSubjectObj?.code || '',
-        fileSize: pdfFileSize,
-        fileName: pdfFileName,
         requiresAnswerKey: requiresAnswerKey,
-        ...(requiresAnswerKey && Object.keys(finalCorrectAnswers).length > 0 ? { correctAnswers: finalCorrectAnswers } : {}),
-        ...(includeMarkingScheme && markingSchemeUrl ? { markingSchemeUrl } : {})
-      };
-
-      // 1. Primary write to Firestore `questionPapers`
-      const docRef = await addDoc(collection(db, 'questionPapers'), {
-        ...paperData,
-        serverTimestamp: serverTimestamp()
+        correctAnswers: finalCorrectAnswers,
+        markingSchemeUrl: includeMarkingScheme ? markingSchemeUrl : undefined
+      }, user.uid, (status) => {
+        setPublishStatus(status);
       });
 
-      // 2. Synchronize to `question_papers` collection for legacy/subsystem interoperability
-      try {
-        await setDoc(doc(db, 'question_papers', docRef.id), {
-          ...paperData,
-          id: docRef.id,
-          serverTimestamp: serverTimestamp()
-        });
-      } catch (syncErr) {
-        console.warn('Sync to question_papers collection bypassed:', syncErr);
-      }
-
-      const createdPaper: QuestionPaper = {
-        id: docRef.id,
-        ...paperData
-      };
-
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
       toast.success('Question paper successfully published to Edulpha repository!');
+      
       if (onPaperSaved) {
-        onPaperSaved(createdPaper);
+        onPaperSaved(publishedPaper);
       }
 
       // Reset modal state
       onClose();
       resetForm();
     } catch (err: any) {
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
       console.error('Failed to publish question paper:', err);
-      const msg = err.message || 'An error occurred while saving paper.';
+      const msg = err.message || 'An error occurred while publishing paper.';
       setErrorMsg(msg);
       toast.error(msg);
     } finally {
+      isSubmittingRef.current = false;
       setSubmitting(false);
+      setPublishStatus(null);
+      setIsTakingTooLong(false);
+      if (slowTimerRef.current) clearTimeout(slowTimerRef.current);
     }
   };
 
@@ -415,6 +425,8 @@ export default function DynamicQuestionPaperUploadModal({
     setDescription('');
     setInstructions('');
     setErrorMsg('');
+    setPublishStatus(null);
+    setIsTakingTooLong(false);
   };
 
   if (!isOpen) return null;
@@ -990,8 +1002,85 @@ export default function DynamicQuestionPaperUploadModal({
               </div>
             </div>
 
+            {/* Publishing Progress Status Card */}
+            <AnimatePresence>
+              {submitting && publishStatus && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="p-4 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="animate-spin text-indigo-600" size={16} />
+                      <span className="text-xs font-bold text-indigo-950">
+                        {publishStatus.label}
+                      </span>
+                    </div>
+                    <span className="text-xs font-black text-indigo-700">
+                      {publishStatus.percent}%
+                    </span>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-indigo-200/60 rounded-full h-2 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-indigo-600 to-indigo-500 h-2 rounded-full transition-all duration-300 ease-out"
+                      style={{ width: `${publishStatus.percent}%` }}
+                    />
+                  </div>
+
+                  {/* Stages Checklist */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+                    <div className={cn(
+                      "flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-lg transition-colors",
+                      publishStatus.percent >= 20 ? "bg-emerald-100/80 text-emerald-800" : "text-slate-400 bg-slate-100"
+                    )}>
+                      {publishStatus.percent >= 20 ? <CheckCircle2 size={12} className="text-emerald-600" /> : <div className="w-2.5 h-2.5 rounded-full border border-slate-300" />}
+                      <span>1. Validating</span>
+                    </div>
+
+                    <div className={cn(
+                      "flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-lg transition-colors",
+                      publishStatus.percent >= 55 ? "bg-emerald-100/80 text-emerald-800" : "text-slate-400 bg-slate-100"
+                    )}>
+                      {publishStatus.percent >= 55 ? <CheckCircle2 size={12} className="text-emerald-600" /> : <div className="w-2.5 h-2.5 rounded-full border border-slate-300" />}
+                      <span>2. Repository</span>
+                    </div>
+
+                    <div className={cn(
+                      "flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-lg transition-colors",
+                      publishStatus.percent >= 85 ? "bg-emerald-100/80 text-emerald-800" : "text-slate-400 bg-slate-100"
+                    )}>
+                      {publishStatus.percent >= 85 ? <CheckCircle2 size={12} className="text-emerald-600" /> : <div className="w-2.5 h-2.5 rounded-full border border-slate-300" />}
+                      <span>3. Indexing</span>
+                    </div>
+
+                    <div className={cn(
+                      "flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-lg transition-colors",
+                      publishStatus.percent >= 95 ? "bg-emerald-100/80 text-emerald-800" : "text-slate-400 bg-slate-100"
+                    )}>
+                      {publishStatus.percent >= 95 ? <CheckCircle2 size={12} className="text-emerald-600" /> : <div className="w-2.5 h-2.5 rounded-full border border-slate-300" />}
+                      <span>4. Finalizing</span>
+                    </div>
+                  </div>
+
+                  {/* Delayed network fallback */}
+                  {isTakingTooLong && (
+                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-900">
+                      <div className="flex items-center gap-1.5">
+                        <AlertCircle size={14} className="text-amber-600 shrink-0" />
+                        <span>Publishing is taking longer than expected due to network latency. Please wait...</span>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             {/* Live Paper Preview Card */}
-            {pdfUrl && (
+            {pdfUrl && !submitting && (
               <div className="p-4 bg-emerald-50/60 border border-emerald-100 rounded-2xl flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -1000,7 +1089,7 @@ export default function DynamicQuestionPaperUploadModal({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-emerald-900">{title}</span>
-                      <Badge variant="success" className="text-[9px] py-0">Ready</Badge>
+                      <Badge variant="success" className="text-[9px] py-0">Ready to Publish</Badge>
                     </div>
                     <p className="text-[11px] text-emerald-700">
                       {selectedSubjectName} • {isCustomPaperType ? customPaperTypeName : selectedPaperType} • {year} • {totalMarks} Marks • {durationMinutes} mins
@@ -1014,7 +1103,7 @@ export default function DynamicQuestionPaperUploadModal({
                   rel="noopener noreferrer"
                   className="px-3 py-1.5 bg-white hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200 transition-colors flex items-center gap-1.5 shrink-0"
                 >
-                  <Eye size={14} /> Preview
+                  <Eye size={14} /> Preview PDF
                 </a>
               </div>
             )}
@@ -1033,12 +1122,17 @@ export default function DynamicQuestionPaperUploadModal({
               <Button
                 type="submit"
                 disabled={submitting || !pdfUrl || !selectedSubjectName}
-                className="rounded-xl px-6 py-2.5 text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white shadow-md disabled:opacity-50"
+                className={cn(
+                  "rounded-xl px-6 py-2.5 text-xs font-black transition-all shadow-md",
+                  submitting 
+                    ? "bg-indigo-400 text-white cursor-not-allowed"
+                    : "bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-indigo-500/25"
+                )}
               >
                 {submitting ? (
                   <div className="flex items-center gap-2">
-                    <RefreshCw className="animate-spin" size={14} />
-                    <span>Publishing Paper...</span>
+                    <Loader2 className="animate-spin" size={14} />
+                    <span>Publishing... {publishStatus ? `${publishStatus.percent}%` : ''}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5">

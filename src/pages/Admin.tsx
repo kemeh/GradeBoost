@@ -39,6 +39,11 @@ import { AdminAmbassadorManagement } from '../components/admin/AdminAmbassadorMa
 import { AdminSystemDataManagement } from '../components/admin/AdminSystemDataManagement';
 import { AdminAuditLog } from '../components/admin/AdminAuditLog';
 import DynamicQuestionPaperUploadModal from '../components/admin/DynamicQuestionPaperUploadModal';
+import { 
+  publishQuestionPaper, 
+  fetchQuestionPapersFast, 
+  deleteQuestionPaperFast 
+} from '../services/questionPaperService';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -176,12 +181,11 @@ export default function Admin() {
     return map;
   }, [users]);
 
-  const fetchPapers = async () => {
+  const fetchPapers = async (force = false) => {
     try {
       setError('');
-      const q = query(collection(db, 'questionPapers'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      setPapers(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as QuestionPaper)));
+      const papersData = await fetchQuestionPapersFast(force);
+      setPapers(papersData);
     } catch (err) {
       console.error("Error fetching papers:", err);
       setError('Failed to load question papers. Please refresh.');
@@ -319,8 +323,7 @@ export default function Admin() {
         });
       }
 
-      const path = 'questionPapers';
-      await addDoc(collection(db, path), {
+      await publishQuestionPaper({
         title: formData.title,
         year: formData.year,
         subject: formData.subject,
@@ -328,9 +331,7 @@ export default function Admin() {
         description: formData.description,
         correctAnswers,
         pdfUrl: formData.pdfUrl,
-        createdAt: serverTimestamp(),
-        uploadedBy: user.uid,
-      });
+      }, user.uid);
 
       setShowUpload(false);
       setFormData({
@@ -342,7 +343,7 @@ export default function Admin() {
         correctAnswersRaw: '',
         pdfUrl: '',
       });
-      fetchPapers();
+      fetchPapers(true);
       toast.success('Paper saved successfully!');
     } catch (err: any) {
       console.error("Save paper error:", err);
@@ -357,8 +358,9 @@ export default function Admin() {
     if (!window.confirm('Are you sure you want to delete this paper?')) return;
     try {
       setError('');
-      await deleteDoc(doc(db, 'questionPapers', id));
-      fetchPapers();
+      await deleteQuestionPaperFast(id);
+      fetchPapers(true);
+      toast.success('Paper deleted successfully.');
     } catch (err) {
       console.error("Error deleting paper:", err);
       setError('Failed to delete paper.');

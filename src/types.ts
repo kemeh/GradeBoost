@@ -267,6 +267,9 @@ export interface QuestionPaper {
   fileSize?: string;
   fileName?: string;
   requiresAnswerKey?: boolean;
+  updatedAt?: string;
+  isPublished?: boolean;
+  status?: 'draft' | 'processing' | 'published' | 'archived';
 }
 
 export interface ExamResult {

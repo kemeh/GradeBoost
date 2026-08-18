@@ -7,6 +7,7 @@ import { FileText, BookOpen, Calendar, Plus, Trash2, ExternalLink, X, Upload, Ch
 import { toast } from 'react-hot-toast';
 import FileUpload from '../FileUpload';
 import DynamicQuestionPaperUploadModal from './DynamicQuestionPaperUploadModal';
+import { publishQuestionPaper, fetchQuestionPapersFast } from '../../services/questionPaperService';
 
 export default function AdminContentCurriculum() {
   const [activeTab, setActiveTab] = useState<'papers' | 'lessons' | 'study_plans'>('papers');
@@ -126,7 +127,7 @@ export default function AdminContentCurriculum() {
         });
       }
 
-      await addDoc(collection(db, 'question_papers'), {
+      await publishQuestionPaper({
         title: paperForm.title,
         year: Number(paperForm.year),
         subject: paperForm.subject,
@@ -134,9 +135,7 @@ export default function AdminContentCurriculum() {
         description: paperForm.description,
         pdfUrl: paperForm.pdfUrl,
         correctAnswers,
-        createdAt: new Date().toISOString(),
-        uploadedBy: 'Admin',
-      });
+      }, 'Admin');
 
       toast.success('Question paper created successfully!');
       setShowPaperModal(false);
