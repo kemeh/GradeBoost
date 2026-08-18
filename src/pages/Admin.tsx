@@ -38,6 +38,7 @@ import { AdminAlumniManagement } from '../components/admin/AdminAlumniManagement
 import { AdminAmbassadorManagement } from '../components/admin/AdminAmbassadorManagement';
 import { AdminSystemDataManagement } from '../components/admin/AdminSystemDataManagement';
 import { AdminAuditLog } from '../components/admin/AdminAuditLog';
+import DynamicQuestionPaperUploadModal from '../components/admin/DynamicQuestionPaperUploadModal';
 
 export default function Admin() {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -1173,122 +1174,16 @@ export default function Admin() {
           </div>
         )}
 
-        {/* Upload Modal */}
-        {showUpload && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-            <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !uploading && setShowUpload(false)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="relative w-full max-w-lg"
-            >
-              <Card className="p-8 shadow-2xl">
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight mb-8">Upload Question Paper</h2>
-                <form onSubmit={handleSavePaper} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Title</label>
-                    <input 
-                      type="text" 
-                      required
-                      className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all"
-                      placeholder="e.g. June 2023 Paper 1"
-                      value={formData.title}
-                      onChange={e => setFormData({ ...formData, title: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Subject</label>
-                      <select 
-                        className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
-                        value={formData.subject}
-                        onChange={e => setFormData({ ...formData, subject: e.target.value as Subject })}
-                      >
-                        {subjects.map(s => (
-                          <option key={s.id} value={s.name}>{s.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Paper Type</label>
-                      <select 
-                        className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
-                        value={formData.paperType}
-                        onChange={e => setFormData({ ...formData, paperType: e.target.value as PaperType })}
-                      >
-                        <option value="Paper 1">Paper 1</option>
-                        <option value="Paper 2">Paper 2</option>
-                        <option value="Paper 3">Paper 3</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Year</label>
-                    <input 
-                      type="number" 
-                      required
-                      className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none"
-                      value={formData.year}
-                      onChange={e => setFormData({ ...formData, year: parseInt(e.target.value) })}
-                    />
-                  </div>
-
-                  {formData.paperType === 'Paper 1' && (
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Correct Answers (Paper 1 Only)</label>
-                      <textarea 
-                        className="w-full px-6 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 outline-none h-24 resize-none"
-                        placeholder="Format: 1:A, 2:B, 3:C..."
-                        value={formData.correctAnswersRaw}
-                        onChange={e => setFormData({ ...formData, correctAnswersRaw: e.target.value })}
-                      />
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Example: 1:A, 2:B, 3:C</p>
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">PDF File</label>
-                    <FileUpload
-                      onUploadStart={() => setUploading(true)}
-                      onUploadComplete={(url) => {
-                        setFormData(prev => ({ ...prev, pdfUrl: url }));
-                        setUploading(false);
-                      }}
-                      onUploadError={() => setUploading(false)}
-                      onDelete={() => setFormData(prev => ({ ...prev, pdfUrl: '' }))}
-                      initialUrl={formData.pdfUrl}
-                      folder="papers"
-                      label="Upload Question Paper"
-                      maxSizeMB={50}
-                    />
-                  </div>
-
-                  <div className="flex gap-4 pt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      className="flex-1" 
-                      onClick={() => setShowUpload(false)}
-                      disabled={uploading}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" className="flex-1" disabled={uploading || !formData.pdfUrl}>
-                      {uploading ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="animate-spin" size={18} />
-                          <span>Saving...</span>
-                        </div>
-                      ) : 'Save Paper'}
-                    </Button>
-                  </div>
-                </form>
-              </Card>
-            </motion.div>
-          </div>
-        )}
+        {/* Dynamic Question Paper Upload Modal */}
+        <DynamicQuestionPaperUploadModal
+          isOpen={showUpload}
+          onClose={() => setShowUpload(false)}
+          onPaperSaved={(newPaper) => {
+            setPapers(prev => [newPaper, ...prev]);
+            fetchPapers();
+          }}
+          initialSubjects={subjects}
+        />
       </main>
     </div>
   );

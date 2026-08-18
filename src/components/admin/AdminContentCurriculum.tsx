@@ -6,6 +6,7 @@ import { Card, Button, Badge, cn } from '../ui';
 import { FileText, BookOpen, Calendar, Plus, Trash2, ExternalLink, X, Upload, CheckCircle2, Loader2, Sparkles, Layers } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import FileUpload from '../FileUpload';
+import DynamicQuestionPaperUploadModal from './DynamicQuestionPaperUploadModal';
 
 export default function AdminContentCurriculum() {
   const [activeTab, setActiveTab] = useState<'papers' | 'lessons' | 'study_plans'>('papers');
@@ -417,92 +418,15 @@ export default function AdminContentCurriculum() {
         </div>
       )}
 
-      {/* Modal: Paper */}
-      {showPaperModal && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <Card className="max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-lg font-black text-slate-900">Upload GCE Question Paper</h3>
-              <button onClick={() => setShowPaperModal(false)}><X size={18} className="text-slate-400" /></button>
-            </div>
-            <form onSubmit={handleCreatePaper} className="space-y-4">
-              <div>
-                <label className="text-xs font-bold text-slate-600">Paper Title</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="e.g. June 2024 Biology Paper 1" 
-                  className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold mt-1 outline-none"
-                  value={paperForm.title}
-                  onChange={e => setPaperForm({...paperForm, title: e.target.value})}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs font-bold text-slate-600">Subject</label>
-                  <input 
-                    type="text" 
-                    required
-                    className="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold mt-1 outline-none"
-                    value={paperForm.subject}
-                    onChange={e => setPaperForm({...paperForm, subject: e.target.value as any})}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-600">Paper Type</label>
-                  <select 
-                    className="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold mt-1 outline-none"
-                    value={paperForm.paperType}
-                    onChange={e => setPaperForm({...paperForm, paperType: e.target.value as any})}
-                  >
-                    <option value="Paper 1">Paper 1 (MCQ)</option>
-                    <option value="Paper 2">Paper 2 (Structured)</option>
-                    <option value="Paper 3">Paper 3 (Practical)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-600">Year</label>
-                  <input 
-                    type="number" 
-                    required
-                    className="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold mt-1 outline-none"
-                    value={paperForm.year}
-                    onChange={e => setPaperForm({...paperForm, year: Number(e.target.value)})}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-600">Question Paper PDF Document</label>
-                <div className="mt-1">
-                  <FileUpload
-                    onUploadComplete={(url) => setPaperForm({...paperForm, pdfUrl: url})}
-                    accept="application/pdf"
-                    label="Upload PDF File"
-                  />
-                </div>
-                {paperForm.pdfUrl && (
-                  <p className="text-xs font-bold text-emerald-600 mt-2 flex items-center gap-1">
-                    <CheckCircle2 size={14} /> PDF Attached Successfully
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label className="text-xs font-bold text-slate-600">Correct Answer Keys (Comma Separated)</label>
-                <textarea 
-                  placeholder="e.g. A, B, C, D, A, C..." 
-                  className="w-full p-2.5 bg-slate-50 border rounded-xl text-xs font-bold mt-1 outline-none"
-                  value={paperForm.correctAnswersRaw}
-                  onChange={e => setPaperForm({...paperForm, correctAnswersRaw: e.target.value})}
-                />
-              </div>
-
-              <Button type="submit" className="w-full rounded-xl">Save Question Paper</Button>
-            </form>
-          </Card>
-        </div>
-      )}
+      {/* Dynamic Question Paper Upload Modal */}
+      <DynamicQuestionPaperUploadModal
+        isOpen={showPaperModal}
+        onClose={() => setShowPaperModal(false)}
+        onPaperSaved={(newPaper) => {
+          setPapers(prev => [newPaper, ...prev]);
+          fetchCurriculumData();
+        }}
+      />
 
       {/* Modal: Lesson */}
       {showLessonModal && (

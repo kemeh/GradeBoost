@@ -8,10 +8,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Use memoryLocalCache to prevent QuotaExceededError in browser iframe storage
+// and enable experimentalAutoDetectLongPolling to ensure reliable backend connectivity in iframes/sandboxes
 export const db = initializeFirestore(
   app,
   {
-    localCache: memoryLocalCache()
+    localCache: memoryLocalCache(),
+    experimentalAutoDetectLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId
 );

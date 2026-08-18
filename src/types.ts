@@ -254,6 +254,19 @@ export interface QuestionPaper {
   createdAt: string;
   uploadedBy: string;
   correctAnswers?: Record<string, string>; // e.g., { "1": "A", "2": "B" }
+  curriculumId?: string;
+  curriculumName?: string;
+  level?: string;
+  session?: string;
+  markingSchemeUrl?: string;
+  solutionUrl?: string;
+  totalMarks?: number;
+  durationMinutes?: number;
+  instructions?: string;
+  paperCode?: string;
+  fileSize?: string;
+  fileName?: string;
+  requiresAnswerKey?: boolean;
 }
 
 export interface ExamResult {

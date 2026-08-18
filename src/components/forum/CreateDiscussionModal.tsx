@@ -267,7 +267,7 @@ export default function CreateDiscussionModal({
           </div>
 
           {/* Academic Scope (Level, Subject, Paper, Topic) */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             <div>
               <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
                 {isFr ? 'Niveau / Classe' : 'Education Level'}

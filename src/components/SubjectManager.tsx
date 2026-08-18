@@ -345,8 +345,8 @@ export default function SubjectManager() {
 
             <div className="space-y-3">
               {formData.papers.map((paper, idx) => (
-                <div key={idx} className="flex flex-col md:flex-row items-start md:items-center gap-3 p-4 bg-white rounded-2xl border border-slate-200">
-                  <div className="w-24">
+                <div key={idx} className="flex flex-col md:flex-row items-stretch md:items-center gap-3 p-4 bg-white rounded-2xl border border-slate-200">
+                  <div className="w-full md:w-28">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase">Paper ID</label>
                     <input
                       type="text"
@@ -356,7 +356,7 @@ export default function SubjectManager() {
                       className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold"
                     />
                   </div>
-                  <div className="flex-1">
+                  <div className="w-full flex-1">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase">Paper Title</label>
                     <input
                       type="text"
@@ -366,7 +366,7 @@ export default function SubjectManager() {
                       className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold"
                     />
                   </div>
-                  <div className="w-32">
+                  <div className="w-full md:w-32">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase">Type</label>
                     <select
                       value={paper.type}
@@ -380,7 +380,7 @@ export default function SubjectManager() {
                       <option value="Essay">Essay</option>
                     </select>
                   </div>
-                  <div className="w-24">
+                  <div className="w-full md:w-28">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase">Total Marks</label>
                     <input
                       type="number"
@@ -389,7 +389,7 @@ export default function SubjectManager() {
                       className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold"
                     />
                   </div>
-                  <div className="w-28">
+                  <div className="w-full md:w-32">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase">Duration (mins)</label>
                     <input
                       type="number"
@@ -398,15 +398,17 @@ export default function SubjectManager() {
                       className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold"
                     />
                   </div>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRemovePaper(idx)}
-                    className="mt-4 md:mt-0 p-2 text-slate-400 hover:text-rose-600 hover:border-rose-200"
-                  >
-                    <Trash2 size={16} />
-                  </Button>
+                  <div className="self-end md:self-center mt-2 md:mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleRemovePaper(idx)}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:border-rose-200"
+                    >
+                      <Trash2 size={16} />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

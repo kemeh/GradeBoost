@@ -252,21 +252,21 @@ export default function AdminPaperGenerator() {
 
             <div className="space-y-6">
               {paperData.questions.map((q, qIdx) => (
-                <Card key={q.id} className="p-8 space-y-6 relative group">
+                <Card key={q.id} className="p-4 sm:p-8 space-y-6 relative group">
                   <button 
                     onClick={() => handleRemoveQuestion(q.id)}
-                    className="absolute top-6 right-6 p-2 text-slate-300 hover:text-rose-600 transition-colors"
+                    className="absolute top-4 sm:top-6 right-4 sm:right-6 p-2 text-slate-300 hover:text-rose-600 transition-colors"
                   >
                     <Trash2 size={20} />
                   </button>
 
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-lg">
+                  <div className="flex items-start sm:items-center gap-3 sm:gap-4 pr-8 sm:pr-0">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center font-black text-base sm:text-lg shrink-0">
                       {q.id}
                     </div>
                     <div className="flex-1">
                       <textarea 
-                        className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-600 outline-none resize-none"
+                        className="w-full px-3.5 sm:px-4 py-2.5 sm:py-3 bg-slate-50 border-none rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-600 outline-none resize-none text-sm"
                         value={q.text}
                         onChange={e => {
                           const newQs = [...paperData.questions];
@@ -278,7 +278,7 @@ export default function AdminPaperGenerator() {
                     </div>
                   </div>
 
-                  <div className="pl-14 space-y-4">
+                  <div className="pl-0 sm:pl-14 space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Sub-parts</h3>
                       <button 
@@ -290,13 +290,16 @@ export default function AdminPaperGenerator() {
                     </div>
 
                     {q.subparts.map((sub, sIdx) => (
-                      <div key={sIdx} className="flex items-start gap-4 bg-slate-50 p-4 rounded-2xl group/sub">
-                        <input 
-                          type="text"
-                          className="w-12 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center outline-none"
-                          value={sub.label}
-                          onChange={e => handleUpdateSubpart(q.id, sIdx, 'label', e.target.value)}
-                        />
+                      <div key={sIdx} className="flex flex-col sm:flex-row items-stretch sm:items-start gap-3 sm:gap-4 bg-slate-50 p-3.5 sm:p-4 rounded-2xl group/sub">
+                        <div className="flex items-center gap-2 sm:w-auto">
+                          <input 
+                            type="text"
+                            className="w-12 px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center outline-none"
+                            value={sub.label}
+                            onChange={e => handleUpdateSubpart(q.id, sIdx, 'label', e.target.value)}
+                          />
+                          <span className="sm:hidden text-xs font-bold text-slate-400">Label</span>
+                        </div>
                         <div className="flex-1">
                           <textarea 
                             className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium outline-none focus:border-indigo-600 resize-none"
@@ -305,23 +308,25 @@ export default function AdminPaperGenerator() {
                             rows={2}
                           />
                         </div>
-                        <div className="w-24">
-                          <div className="flex items-center gap-2">
-                            <input 
-                              type="number"
-                              className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center outline-none"
-                              value={sub.marks}
-                              onChange={e => handleUpdateSubpart(q.id, sIdx, 'marks', parseInt(e.target.value))}
-                            />
-                            <span className="text-[10px] font-black text-slate-400 uppercase">Marks</span>
+                        <div className="flex items-center justify-between sm:justify-start gap-2">
+                          <div className="w-24">
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="number"
+                                className="w-full px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center outline-none"
+                                value={sub.marks}
+                                onChange={e => handleUpdateSubpart(q.id, sIdx, 'marks', parseInt(e.target.value))}
+                              />
+                              <span className="text-[10px] font-black text-slate-400 uppercase">Marks</span>
+                            </div>
                           </div>
+                          <button 
+                            onClick={() => handleRemoveSubpart(q.id, sIdx)}
+                            className="p-1 text-slate-300 hover:text-rose-600 sm:opacity-0 group-hover/sub:opacity-100 transition-all"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
-                        <button 
-                          onClick={() => handleRemoveSubpart(q.id, sIdx)}
-                          className="p-1 text-slate-300 hover:text-rose-600 opacity-0 group-hover/sub:opacity-100 transition-all"
-                        >
-                          <Trash2 size={14} />
-                        </button>
                       </div>
                     ))}
 

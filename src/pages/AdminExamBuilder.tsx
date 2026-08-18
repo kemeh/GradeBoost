@@ -249,7 +249,7 @@ export default function AdminExamBuilder() {
                 <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
                   <h3 className="text-xs font-bold uppercase text-slate-700 tracking-wider">Exam Parameters & Security Settings</h3>
                   
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-600 mb-1">Duration (Mins)</label>
                       <input
@@ -295,7 +295,7 @@ export default function AdminExamBuilder() {
 
                 {/* Auto Question Selection Rules */}
                 <div className="p-4 bg-purple-50/60 border border-purple-200 rounded-2xl space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <h3 className="text-xs font-bold text-purple-900 uppercase flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-purple-600" /> Auto Question Selection Rule Generator
                     </h3>
@@ -307,7 +307,7 @@ export default function AdminExamBuilder() {
                       Run Auto Selection
                     </button>
                   </div>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs font-bold text-purple-800 mb-1">Easy Count</label>
                       <input

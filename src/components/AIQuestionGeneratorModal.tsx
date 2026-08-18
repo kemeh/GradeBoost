@@ -148,7 +148,7 @@ export default function AIQuestionGeneratorModal({
             Generate curriculum-aligned Cameroon GCE questions automatically using Gemini AI models.
           </p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Academic Level</label>
               <select
@@ -185,7 +185,7 @@ export default function AIQuestionGeneratorModal({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Question Type</label>
               <select
