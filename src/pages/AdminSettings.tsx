@@ -128,6 +128,7 @@ export default function AdminSettings() {
         paymentPrice, 
         appName: appName.trim(),
         logoUrl: logoUrl.trim(),
+        platformLogoUrl: logoUrl.trim(),
         contactEmail: contactEmail.trim(),
         whatsappNumber: whatsappNumber.trim(),
         whatsappGroupLink: whatsappGroupLink.trim(),

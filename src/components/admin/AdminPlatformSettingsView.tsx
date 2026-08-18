@@ -6,8 +6,10 @@ import { toast } from 'react-hot-toast';
 import { GoogleGenAI } from '@google/genai';
 import { DEFAULT_CHALLENGE_START_DATE } from '../../utils/challenge';
 import AdminBrandingLogosView from './AdminBrandingLogosView';
+import { useSettings } from '../../contexts/SettingsContext';
 
 export default function AdminPlatformSettingsView() {
+  const { refreshSettings } = useSettings();
   const [activeTab, setActiveTab] = useState<'branding' | 'general'>('branding');
   const [apiKey, setApiKey] = useState('');
   const [challengeStartDate, setChallengeStartDate] = useState(DEFAULT_CHALLENGE_START_DATE);
@@ -38,7 +40,7 @@ export default function AdminPlatformSettingsView() {
       setChallengeStartDate(settings.challengeStartDate || DEFAULT_CHALLENGE_START_DATE);
       setPaymentPrice(settings.paymentPrice || 1000);
       setAppName(settings.appName || 'Edulpha');
-      setLogoUrl(settings.logoUrl || '/edulpha-logo.png');
+      setLogoUrl(settings.logoUrl || settings.platformLogoUrl || '/edulpha-logo.png');
       setContactEmail(settings.contactEmail || 'support@edulpha.com');
       setWhatsappNumber(settings.whatsappNumber || '');
       setWhatsappGroupLink(settings.whatsappGroupLink || '');
@@ -60,6 +62,7 @@ export default function AdminPlatformSettingsView() {
         paymentPrice,
         appName,
         logoUrl,
+        platformLogoUrl: logoUrl,
         contactEmail,
         whatsappNumber,
         whatsappGroupLink,
@@ -68,6 +71,7 @@ export default function AdminPlatformSettingsView() {
         omNumber,
         omName,
       });
+      await refreshSettings();
       toast.success('Platform system settings saved!');
     } catch (err) {
       toast.error('Failed to save platform settings');

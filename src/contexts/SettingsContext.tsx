@@ -44,6 +44,21 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     fetchSettings();
+
+    const handleSettingsUpdated = (e: any) => {
+      const updated = e.detail;
+      if (updated) {
+        setSettings((prev) => ({
+          ...(prev || {} as SystemSettings),
+          ...updated,
+        }));
+      }
+    };
+
+    window.addEventListener('edulpha_settings_updated', handleSettingsUpdated);
+    return () => {
+      window.removeEventListener('edulpha_settings_updated', handleSettingsUpdated);
+    };
   }, []);
 
   const value = {
