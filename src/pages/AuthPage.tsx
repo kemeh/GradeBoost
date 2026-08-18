@@ -137,12 +137,15 @@ export default function AuthPage() {
         return;
       }
 
-      await setAuthRememberMe(rememberMe);
-
       try {
-        const userCredential = await signInWithEmailAndPassword(auth, targetEmail, passwordInput);
-        await clearFailedAttempts(targetEmail);
-        await logAuditEvent({
+        const [userCredential] = await Promise.all([
+          signInWithEmailAndPassword(auth, targetEmail, passwordInput),
+          setAuthRememberMe(rememberMe)
+        ]);
+
+        // Run non-blocking audit & security cleanup in the background
+        void clearFailedAttempts(targetEmail);
+        void logAuditEvent({
           userId: userCredential.user.uid,
           userEmail: targetEmail,
           action: 'LOGIN_SUCCESS',

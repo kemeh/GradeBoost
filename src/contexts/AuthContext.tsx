@@ -44,10 +44,22 @@ const AuthContext = createContext<AuthContextType>({
 
 export const useAuth = () => useContext(AuthContext);
 
+const AUTH_CACHE_KEY = 'edulpha_auth_user_cache';
+
+const getInitialCachedUser = (): UserProfile | null => {
+  try {
+    const cached = localStorage.getItem(AUTH_CACHE_KEY);
+    if (cached) return JSON.parse(cached);
+  } catch (e) {
+    // Ignore parse error
+  }
+  return null;
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(getInitialCachedUser);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(!getInitialCachedUser());
   const lastActivityRef = useRef(Date.now());
 
   const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
@@ -66,15 +78,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (fUser) {
-        setLoading(true);
-        // Refresh token in the background with cached fallback
-        fUser.getIdToken(false).then(() => {
-          return fUser.getIdToken(true);
-        }).catch(error => {
-          console.warn("AuthContext (getIdToken) Error:", error);
-          // Silently recover if network request fails in iframe/offline
-        });
-        
         const userRef = doc(db, 'users', fUser.uid);
         
         unsubDoc = onSnapshot(userRef, async (docSnap) => {
@@ -85,32 +88,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Handle suspended or deleted account
             if (profile.status === 'suspended' || profile.status === 'deleted' || (profile as any).deleted) {
               toast.error(profile.status === 'deleted' || (profile as any).deleted ? 'Your account has been deleted by an administrator.' : 'Your account has been suspended by an Administrator.');
-              await logAuditEvent({
+              void logAuditEvent({
                 userId: fUser.uid,
                 userEmail: fUser.email || undefined,
                 action: 'LOGOUT',
                 details: `Forced logout due to account ${profile.status || 'deletion'}.`,
               });
               await auth.signOut();
+              try { localStorage.removeItem(AUTH_CACHE_KEY); } catch (e) {}
               setUser(null);
               setLoading(false);
               return;
             }
 
+            try {
+              localStorage.setItem(AUTH_CACHE_KEY, JSON.stringify(profile));
+            } catch (e) {}
+
             setUser(profile);
             setLoading(false);
 
-            // Update last active date once per session, NOT on every snapshot to avoid infinite re-trigger loop
+            // Update last active date once per session in the background
             if (!hasUpdatedLoginTime) {
               hasUpdatedLoginTime = true;
-              try {
-                await updateDoc(userRef, {
-                  lastLoginAt: serverTimestamp(),
-                  lastActiveDate: serverTimestamp(),
-                });
-              } catch (err) {
-                // Non-critical background update ignore
-              }
+              void updateDoc(userRef, {
+                lastLoginAt: serverTimestamp(),
+                lastActiveDate: serverTimestamp(),
+              }).catch(() => {});
             }
           } else {
             // Check if user is in deletedUsers collection before auto-creating profile
@@ -129,13 +133,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (isDeletedAccount) {
               toast.error('Your account has been deleted or disabled by an administrator.');
-              await logAuditEvent({
+              void logAuditEvent({
                 userId: fUser.uid,
                 userEmail: fUser.email || undefined,
                 action: 'LOGOUT',
                 details: 'Blocked authentication for deleted user account.',
               });
               await auth.signOut();
+              try { localStorage.removeItem(AUTH_CACHE_KEY); } catch (e) {}
               setUser(null);
               setLoading(false);
               return;
@@ -164,7 +169,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               await setDoc(userRef, newProfileData);
               console.log("User profile auto-created for UID:", fUser.uid);
 
-              await logAuditEvent({
+              void logAuditEvent({
                 userId: fUser.uid,
                 userEmail: fUser.email || undefined,
                 action: 'REGISTER_SUCCESS',
@@ -181,6 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if ((error as any).code === 'auth/network-request-failed') {
             toast.error('Network connection issue. If this persists, please open the app in a new tab.');
           }
+          setLoading(false);
           try {
             handleFirestoreError(error, OperationType.GET, `users/${fUser.uid}`);
           } catch (e) {
@@ -281,8 +287,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    try {
+      localStorage.removeItem(AUTH_CACHE_KEY);
+    } catch (e) {}
     if (auth.currentUser) {
-      await logAuditEvent({
+      void logAuditEvent({
         userId: auth.currentUser.uid,
         userEmail: auth.currentUser.email || undefined,
         action: 'LOGOUT',
@@ -290,6 +299,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
     await auth.signOut();
+    setUser(null);
   };
 
   const refreshUserProfile = async () => {

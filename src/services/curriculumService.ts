@@ -260,18 +260,65 @@ export const INITIAL_FRENCH_SUBJECTS: Omit<SubjectModel, 'id'>[] = [
   }
 ];
 
+// In-memory + sessionStorage cache with 5-minute TTL
+const memoryCache: Record<string, { data: any; expiry: number }> = {};
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function getCached<T>(key: string): T | null {
+  const mem = memoryCache[key];
+  const now = Date.now();
+  if (mem && mem.expiry > now) {
+    return mem.data as T;
+  }
+  try {
+    const raw = sessionStorage.getItem(`edulpha_cache_${key}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed.expiry > now) {
+        memoryCache[key] = parsed;
+        return parsed.data as T;
+      }
+    }
+  } catch (e) {}
+  return null;
+}
+
+function setCached<T>(key: string, data: T): void {
+  const entry = { data, expiry: Date.now() + CACHE_TTL_MS };
+  memoryCache[key] = entry;
+  try {
+    sessionStorage.setItem(`edulpha_cache_${key}`, JSON.stringify(entry));
+  } catch (e) {}
+}
+
+export function clearCurriculumCache(): void {
+  for (const k in memoryCache) delete memoryCache[k];
+  try {
+    const keys = Object.keys(sessionStorage);
+    for (const k of keys) {
+      if (k.startsWith('edulpha_cache_')) sessionStorage.removeItem(k);
+    }
+  } catch (e) {}
+}
+
 // ===============================================================
 // CURRICULUM CRUD OPERATIONS
 // ===============================================================
 
 export const fetchCurricula = async (): Promise<Curriculum[]> => {
+  const cached = getCached<Curriculum[]>('curricula_all');
+  if (cached) return cached;
+
   try {
     const snap = await getDocs(collection(db, 'curricula'));
     if (snap.empty) {
+      setCached('curricula_all', INITIAL_CURRICULA);
       return INITIAL_CURRICULA;
     }
     const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Curriculum));
-    return list.sort((a, b) => (a.order || 0) - (b.order || 0));
+    const sorted = list.sort((a, b) => (a.order || 0) - (b.order || 0));
+    setCached('curricula_all', sorted);
+    return sorted;
   } catch (err) {
     console.warn("Using initial curricula due to network/db state:", err);
     return INITIAL_CURRICULA;
@@ -279,6 +326,7 @@ export const fetchCurricula = async (): Promise<Curriculum[]> => {
 };
 
 export const saveCurriculum = async (curriculum: Curriculum): Promise<void> => {
+  clearCurriculumCache();
   const ref = doc(db, 'curricula', curriculum.id);
   await setDoc(ref, {
     ...curriculum,
@@ -287,6 +335,7 @@ export const saveCurriculum = async (curriculum: Curriculum): Promise<void> => {
 };
 
 export const deleteCurriculum = async (id: string): Promise<void> => {
+  clearCurriculumCache();
   await deleteDoc(doc(db, 'curricula', id));
 };
 
@@ -295,6 +344,10 @@ export const deleteCurriculum = async (id: string): Promise<void> => {
 // ===============================================================
 
 export const fetchEducationLevels = async (curriculumId?: string): Promise<EducationLevel[]> => {
+  const cacheKey = `levels_${curriculumId || 'all'}`;
+  const cached = getCached<EducationLevel[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     let q = query(collection(db, 'education_levels'));
     if (curriculumId) {
@@ -302,22 +355,22 @@ export const fetchEducationLevels = async (curriculumId?: string): Promise<Educa
     }
     const snap = await getDocs(q);
     if (snap.empty) {
-      if (curriculumId) {
-        return INITIAL_EDUCATION_LEVELS.filter(l => l.curriculumId === curriculumId);
-      }
-      return INITIAL_EDUCATION_LEVELS;
+      const fallback = curriculumId ? INITIAL_EDUCATION_LEVELS.filter(l => l.curriculumId === curriculumId) : INITIAL_EDUCATION_LEVELS;
+      setCached(cacheKey, fallback);
+      return fallback;
     }
     const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as EducationLevel));
-    return list.sort((a, b) => (a.order || 0) - (b.order || 0));
+    const sorted = list.sort((a, b) => (a.order || 0) - (b.order || 0));
+    setCached(cacheKey, sorted);
+    return sorted;
   } catch (err) {
-    if (curriculumId) {
-      return INITIAL_EDUCATION_LEVELS.filter(l => l.curriculumId === curriculumId);
-    }
-    return INITIAL_EDUCATION_LEVELS;
+    const fallback = curriculumId ? INITIAL_EDUCATION_LEVELS.filter(l => l.curriculumId === curriculumId) : INITIAL_EDUCATION_LEVELS;
+    return fallback;
   }
 };
 
 export const saveEducationLevel = async (level: EducationLevel): Promise<void> => {
+  clearCurriculumCache();
   const ref = doc(db, 'education_levels', level.id);
   await setDoc(ref, {
     ...level,
@@ -326,6 +379,7 @@ export const saveEducationLevel = async (level: EducationLevel): Promise<void> =
 };
 
 export const deleteEducationLevel = async (id: string): Promise<void> => {
+  clearCurriculumCache();
   await deleteDoc(doc(db, 'education_levels', id));
 };
 
@@ -334,6 +388,10 @@ export const deleteEducationLevel = async (id: string): Promise<void> => {
 // ===============================================================
 
 export const fetchDepartments = async (curriculumId?: string): Promise<Department[]> => {
+  const cacheKey = `departments_${curriculumId || 'all'}`;
+  const cached = getCached<Department[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     let q = query(collection(db, 'departments'));
     if (curriculumId) {
@@ -341,21 +399,21 @@ export const fetchDepartments = async (curriculumId?: string): Promise<Departmen
     }
     const snap = await getDocs(q);
     if (snap.empty) {
-      if (curriculumId) {
-        return INITIAL_DEPARTMENTS.filter(d => d.curriculumId === curriculumId);
-      }
-      return INITIAL_DEPARTMENTS;
+      const fallback = curriculumId ? INITIAL_DEPARTMENTS.filter(d => d.curriculumId === curriculumId) : INITIAL_DEPARTMENTS;
+      setCached(cacheKey, fallback);
+      return fallback;
     }
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Department));
+    const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as Department));
+    setCached(cacheKey, list);
+    return list;
   } catch (err) {
-    if (curriculumId) {
-      return INITIAL_DEPARTMENTS.filter(d => d.curriculumId === curriculumId);
-    }
-    return INITIAL_DEPARTMENTS;
+    const fallback = curriculumId ? INITIAL_DEPARTMENTS.filter(d => d.curriculumId === curriculumId) : INITIAL_DEPARTMENTS;
+    return fallback;
   }
 };
 
 export const saveDepartment = async (dept: Department): Promise<void> => {
+  clearCurriculumCache();
   const ref = doc(db, 'departments', dept.id);
   await setDoc(ref, {
     ...dept,
@@ -364,6 +422,7 @@ export const saveDepartment = async (dept: Department): Promise<void> => {
 };
 
 export const deleteDepartment = async (id: string): Promise<void> => {
+  clearCurriculumCache();
   await deleteDoc(doc(db, 'departments', id));
 };
 
@@ -372,6 +431,10 @@ export const deleteDepartment = async (id: string): Promise<void> => {
 // ===============================================================
 
 export const fetchSubjectsByCurriculum = async (curriculumId?: string, levelId?: string): Promise<SubjectModel[]> => {
+  const cacheKey = `subjects_${curriculumId || 'all'}_${levelId || 'all'}`;
+  const cached = getCached<SubjectModel[]>(cacheKey);
+  if (cached) return cached;
+
   try {
     let q = query(collection(db, 'subjects'));
     if (curriculumId) {
@@ -381,9 +444,12 @@ export const fetchSubjectsByCurriculum = async (curriculumId?: string, levelId?:
     const dbSubjects = snap.docs.map(d => ({ id: d.id, ...d.data() } as SubjectModel));
 
     if (dbSubjects.length === 0 && curriculumId === 'cameroon_francophone') {
-      return INITIAL_FRENCH_SUBJECTS.map((s, idx) => ({ id: `fr_subj_${idx}`, ...s }));
+      const fallback = INITIAL_FRENCH_SUBJECTS.map((s, idx) => ({ id: `fr_subj_${idx}`, ...s }));
+      setCached(cacheKey, fallback);
+      return fallback;
     }
 
+    setCached(cacheKey, dbSubjects);
     return dbSubjects;
   } catch (err) {
     console.warn("Error fetching subjects by curriculum:", err);

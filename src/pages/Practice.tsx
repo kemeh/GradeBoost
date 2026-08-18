@@ -14,6 +14,7 @@ import { Button, Card, Badge, cn } from '../components/ui';
 import { QuestionPaper, PaperType, SubjectModel } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { getPapersForSubjectName } from '../data/defaultSubjects';
+import { fetchSubjectsByCurriculum } from '../services/curriculumService';
 
 export default function Practice() {
   const { user } = useAuth();
@@ -29,19 +30,20 @@ export default function Practice() {
       if (!user) return;
       const path = 'questionPapers';
       try {
-        // Fetch all active subjects to resolve dynamic paper tabs
-        const subSnap = await getDocs(query(collection(db, 'subjects'), where('isActive', '==', true)));
-        const allSubs = subSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })) as SubjectModel[];
-        
-        const matched = getPapersForSubjectName(user.subject, user.level, allSubs);
-        setSubjectPapers(matched.map(p => ({ id: p.id, name: p.name })));
-
         const q = query(
           collection(db, path),
           where('subject', '==', user.subject),
           orderBy('year', 'desc')
         );
-        const querySnapshot = await getDocs(q);
+
+        const [allSubs, querySnapshot] = await Promise.all([
+          fetchSubjectsByCurriculum(),
+          getDocs(q)
+        ]);
+        
+        const matched = getPapersForSubjectName(user.subject, user.level, allSubs);
+        setSubjectPapers(matched.map(p => ({ id: p.id, name: p.name })));
+
         const papersData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as QuestionPaper));
         setPapers(papersData);
       } catch (error) {

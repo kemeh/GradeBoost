@@ -130,41 +130,14 @@ export default function Dashboard() {
 
         if (matchingDrill) {
           const drillData = { id: matchingDrill.id, ...matchingDrill.data() } as DailyDrill;
-          console.log("Found matching drill:", drillData);
           setTodayDrill(drillData);
         } else {
-          console.log(`No drill found for Day ${currentDayNum} and Subject "${user.subject}"`);
-          
-          // Debug: Check what drills DO exist for today
-          try {
-            if (!drillSnapshot.empty) {
-              const availableSubjects = drillSnapshot.docs.map(d => d.data().subject);
-              console.log(`Drills ARE available for Day ${currentDayNum} for these subjects:`, availableSubjects);
-            } else {
-              console.log(`Absolutely NO drills found for Day ${currentDayNum} for ANY subject.`);
-              
-              // Check if there are ANY drills at all
-              const allDrillsQ = query(collection(db, 'daily_drills'), limit(100));
-              const allDrillsSnap = await getDocs(allDrillsQ);
-              if (!allDrillsSnap.empty) {
-                const allDrills = allDrillsSnap.docs.map(d => ({ day: d.data().day, subject: d.data().subject }));
-                console.log("ALL drills in DB (first 100):", allDrills);
-              } else {
-                console.log("The daily_drills collection is EMPTY.");
-              }
-            }
-          } catch (debugErr) {
-            console.error("Debug query failed:", debugErr);
-          }
-          
           setTodayDrill(null);
-          
-          // Fallback: Try the new Daily Drill service (random 10 questions)
-          console.log("Attempting fallback to random 10 questions...");
-          const fbQuestions = await fetchDailyDrill(user.subject.trim(), "Paper 1");
-          if (fbQuestions.length > 0) {
-            console.log("Found fallback questions:", fbQuestions.length);
-            setFallbackQuestions(fbQuestions);
+          if (user.subject) {
+            const fbQuestions = await fetchDailyDrill(user.subject.trim(), "Paper 1");
+            if (fbQuestions && fbQuestions.length > 0) {
+              setFallbackQuestions(fbQuestions);
+            }
           }
         }
       } catch (err) {

@@ -101,16 +101,24 @@ export default function Admin() {
 
   useEffect(() => {
     if (isAdmin) {
-      fetchSubjects();
-      fetchPapers();
-      fetchUsers();
-      fetchManualRequests();
-      fetchSampleQuestions();
-      fetchDuels();
-      fetchDuelLeaderboard();
-      fetchSettings();
+      loadAllAdminData();
     }
   }, [isAdmin]);
+
+  const loadAllAdminData = async () => {
+    setLoading(true);
+    await Promise.allSettled([
+      fetchSubjects(),
+      fetchPapers(),
+      fetchUsers(),
+      fetchManualRequests(),
+      fetchSampleQuestions(),
+      fetchDuels(),
+      fetchDuelLeaderboard(),
+      fetchSettings()
+    ]);
+    setLoading(false);
+  };
 
   const fetchSubjects = async () => {
     try {
@@ -134,7 +142,7 @@ export default function Admin() {
 
   const fetchDuels = async () => {
     try {
-      const q = query(collection(db, 'duels'), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'duels'), orderBy('createdAt', 'desc'), limit(50));
       const querySnapshot = await getDocs(q);
       setDuels(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (err) {
@@ -155,7 +163,7 @@ export default function Admin() {
 
   const fetchSampleQuestions = async () => {
     try {
-      const q = query(collection(db, 'sampleQuestions'), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'sampleQuestions'), orderBy('createdAt', 'desc'), limit(50));
       const querySnapshot = await getDocs(q);
       setSampleQuestions(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SampleQuestion)));
     } catch (err) {
@@ -165,7 +173,7 @@ export default function Admin() {
 
   const fetchManualRequests = async () => {
     try {
-      const q = query(collection(db, 'payments'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'));
+      const q = query(collection(db, 'payments'), where('status', '==', 'pending'), orderBy('createdAt', 'desc'), limit(50));
       const querySnapshot = await getDocs(q);
       setManualRequests(querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     } catch (err) {

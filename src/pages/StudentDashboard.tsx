@@ -159,8 +159,18 @@ export default function StudentDashboard() {
   ]);
 
   useEffect(() => {
-    loadStudentData();
-  }, [user]);
+    let unsubs: (() => void)[] = [];
+    const run = async () => {
+      const cleanup = await loadStudentData();
+      if (typeof cleanup === 'function') {
+        unsubs.push(cleanup);
+      }
+    };
+    run();
+    return () => {
+      unsubs.forEach(fn => fn());
+    };
+  }, [user?.uid]);
 
   // Handle URL search params tab switching if provided
   useEffect(() => {
