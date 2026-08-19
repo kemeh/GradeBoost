@@ -119,7 +119,7 @@ export default function LandingPage() {
       {/* 1. Coursera & Duolingo-Inspired Redesigned Navigation Bar */}
       <Navbar />
 
-      {/* 2. Hero Section (Coursera-Inspired Full-Width & Search Driven) */}
+      {/* 2. Hero Section (Complete Educational Offering: GCE, TVEE, HND, BTS) */}
       <section className="pt-8 sm:pt-16 pb-12 sm:pb-24 px-3 sm:px-6 relative overflow-hidden bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-950 text-white w-full max-w-full box-border">
         
         {/* Animated Background Lights */}
@@ -131,60 +131,141 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full max-w-full">
             
             {/* Left Main Hero Copy */}
-            <div className="lg:col-span-7 space-y-5 sm:space-y-8 text-center lg:text-left w-full max-w-full box-border">
+            <div className="lg:col-span-7 space-y-5 sm:space-y-7 text-center lg:text-left w-full max-w-full box-border">
               
+              {/* Eyebrow / Small Badge */}
               <motion.div 
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-bold uppercase tracking-wider max-w-full"
+                className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm font-black uppercase tracking-wider max-w-full shadow-sm"
               >
-                <Sparkles size={14} className="text-amber-400 shrink-0" />
+                <Sparkles size={14} className="text-amber-400 shrink-0 animate-pulse" />
                 <span className="truncate">
-                  {language === 'fr' ? 'Premier Écosystème d\'Apprentissage en Afrique' : 'Africa\'s Premier Learning Platform'}
+                  {t('hero.eyebrow')}
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping shrink-0" />
               </motion.div>
 
+              {/* Main Headline (Primary h1) */}
               <motion.h1 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-[clamp(1.75rem,7vw,4.5rem)] font-black tracking-tight leading-[1.08] break-words"
+                className="text-[clamp(1.85rem,5.5vw,3.75rem)] font-black tracking-tight leading-[1.12] text-white break-words"
               >
-                {language === 'fr' ? (
-                  <>
-                    Apprenez. Pratiquez. <br className="hidden sm:inline" />
-                    <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
-                      Réussissez.
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Learn. Practice. <br className="hidden sm:inline" />
-                    <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-300 bg-clip-text text-transparent">
-                      Succeed.
-                    </span>
-                  </>
-                )}
+                {t('hero.mainHeadline')}
               </motion.h1>
 
+              {/* HND / BTS & Qualification Ladder Prominence */}
+              <motion.div 
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.12 }}
+                className="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold"
+              >
+                <span className="px-2.5 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-emerald-300 flex items-center gap-1.5">
+                  <BookOpen size={13} className="text-emerald-400" /> GCE O & A Level
+                </span>
+                <span className="px-2.5 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-teal-300 flex items-center gap-1.5">
+                  <Wrench size={13} className="text-teal-400" /> TVEE Technical
+                </span>
+                <span className="px-2.5 py-1 bg-indigo-950/90 border border-indigo-500/60 rounded-lg text-indigo-200 font-extrabold flex items-center gap-1.5 shadow-md">
+                  <GraduationCap size={14} className="text-amber-400" /> HND <span className="text-[9px] text-indigo-300 font-normal hidden xs:inline">(Higher National Diploma)</span>
+                </span>
+                <span className="px-2.5 py-1 bg-purple-950/90 border border-purple-500/60 rounded-lg text-purple-200 font-extrabold flex items-center gap-1.5 shadow-md">
+                  <Award size={14} className="text-amber-400" /> BTS <span className="text-[9px] text-purple-300 font-normal hidden xs:inline">(Brevet de Technicien Supérieur)</span>
+                </span>
+                <span className="px-2.5 py-1 bg-slate-900 border border-slate-700/80 rounded-lg text-blue-300 flex items-center gap-1.5">
+                  <Building2 size={13} className="text-blue-400" /> University
+                </span>
+              </motion.div>
+
+              {/* Supporting Headline */}
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="text-emerald-300 font-bold text-[clamp(0.95rem,2.2vw,1.25rem)] max-w-2xl mx-auto lg:mx-0 leading-snug break-words"
+              >
+                {t('hero.supportingHeadline')}
+              </motion.p>
+
+              {/* Description */}
               <motion.p 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-slate-300 text-[clamp(0.875rem,3.5vw,1.25rem)] font-medium max-w-2xl mx-auto lg:mx-0 leading-relaxed break-words"
+                className="text-slate-300 text-[clamp(0.85rem,1.8vw,1.05rem)] font-normal max-w-2xl mx-auto lg:mx-0 leading-relaxed break-words"
               >
-                {language === 'fr'
-                  ? 'Maîtrisez l\'enseignement général, les spécialités techniques, commerciales et les niveaux TVEE avec les épreuves officielles MINESEC & GCE Board, les résolveurs IA Edulpha et l\'accès mobile hors-ligne.'
-                  : 'Master General Education, Technical Specialties, Commercial Studies, and TVEE Intermediate & Advanced levels with official MINESEC & GCE Board past papers, step-by-step Edulpha AI solvers, and offline mobile access.'}
+                {t('hero.description')}
               </motion.p>
 
-              {/* Coursera-Inspired Interactive Search Bar */}
+              {/* Feature Highlight Chips */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1"
+              >
+                {[
+                  t('hero.chips.pastPapers'),
+                  t('hero.chips.aiSolutions'),
+                  t('hero.chips.hndBts'),
+                  t('hero.chips.technical'),
+                  t('hero.chips.commercial'),
+                  t('hero.chips.offline'),
+                  t('hero.chips.bilingual')
+                ].map((chip, idx) => (
+                  <span 
+                    key={idx}
+                    className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-800 text-slate-200 text-xs font-semibold shadow-sm hover:border-emerald-500/40 transition whitespace-nowrap"
+                  >
+                    {chip}
+                  </span>
+                ))}
+              </motion.div>
+
+              {/* Primary & Secondary Call to Action Buttons */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="space-y-3 relative max-w-[650px] mx-auto lg:mx-0 w-full box-border"
+                className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3.5 pt-2 w-full max-w-full"
+              >
+                <Link to="/auth" className="w-full sm:w-auto min-w-0 max-w-full">
+                  <Button size="lg" className="w-full sm:w-auto max-w-full bg-gradient-to-r from-emerald-500 via-teal-600 to-indigo-600 hover:from-emerald-400 hover:to-indigo-500 text-white font-black text-sm px-7 py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20">
+                    <span className="truncate">{t('hero.btn.startFree')}</span>
+                    <ArrowRight size={18} className="shrink-0" />
+                  </Button>
+                </Link>
+
+                <a href="#subjects" className="w-full sm:w-auto min-w-0 max-w-full">
+                  <Button size="lg" variant="outline" className="w-full sm:w-auto max-w-full border-slate-700 hover:border-emerald-500/50 bg-slate-900/60 text-slate-200 hover:text-emerald-400 text-sm font-bold px-7 py-4 rounded-2xl flex items-center justify-center gap-2">
+                    <BookOpen size={18} className="shrink-0 text-amber-400" />
+                    <span className="truncate">{t('hero.btn.exploreCourses')}</span>
+                  </Button>
+                </a>
+              </motion.div>
+
+              {/* Trust & Value Indicator Row */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.35 }}
+                className="pt-2 text-xs font-semibold text-slate-400 flex flex-wrap items-center justify-center lg:justify-start gap-2"
+              >
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                  {t('hero.trust.row')}
+                </span>
+              </motion.div>
+
+              {/* Interactive Search Bar */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="space-y-3 relative max-w-[650px] mx-auto lg:mx-0 w-full box-border pt-2"
               >
                 <div className="relative bg-white p-1.5 sm:p-2 rounded-2xl shadow-2xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2 border-2 border-slate-200 focus-within:border-emerald-500 transition-colors w-full box-border">
                   <div className="flex items-center flex-1 px-2 min-w-0">
@@ -194,7 +275,7 @@ export default function LandingPage() {
                       value={heroSearch}
                       onChange={(e) => handleHeroSearchChange(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleExecuteSearch(heroSearch)}
-                      placeholder={language === 'fr' ? 'Qu’aimeriez-vous apprendre aujourd’hui ?' : 'What do you want to learn today?'}
+                      placeholder={language === 'fr' ? 'Recherchez GCE, TVEE, HND ou BTS...' : 'Search GCE, TVEE, HND or BTS...'}
                       className="w-full px-2 py-2 text-xs sm:text-sm font-semibold text-slate-900 placeholder-slate-400 outline-none bg-transparent min-w-0"
                     />
                   </div>
@@ -240,8 +321,8 @@ export default function LandingPage() {
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1.5 sm:gap-2 text-[10px] sm:text-[11px] font-bold text-slate-400 max-w-full">
                   <span className="text-slate-500 shrink-0">{language === 'fr' ? 'Populaires :' : 'Popular:'}</span>
                   {(language === 'fr' 
-                    ? ['Mathématiques', 'Physique', 'Électrotechnique', 'Comptabilité', 'Informatique', 'Français']
-                    : ['Mathematics', 'Physics', 'Electrical Tech', 'Accounting', 'Computer Science', 'French']
+                    ? ['GCE A-Level', 'HND Genie Logiciel', 'BTS Comptabilité', 'TVEE Électrotechnique', 'Baccalauréat']
+                    : ['GCE A-Level', 'HND Software Eng', 'BTS Accounting', 'TVEE Electrical', 'Physics']
                   ).map((tag) => (
                     <button
                       key={tag}
@@ -254,96 +335,86 @@ export default function LandingPage() {
                 </div>
               </motion.div>
 
-              {/* Action Buttons */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.4 }}
-                className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 pt-2 w-full max-w-full"
-              >
-                <Link to="/auth" className="w-full sm:w-auto min-w-0 max-w-full">
-                  <Button size="lg" className="w-full sm:w-auto max-w-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-xl shadow-indigo-600/30 text-xs sm:text-sm font-black px-5 sm:px-8 py-3.5 sm:py-5 rounded-2xl flex items-center justify-center gap-2">
-                    <span className="truncate">{language === 'fr' ? 'Commencer Gratuitement' : 'Start Learning Free'}</span>
-                    <ArrowRight size={18} className="shrink-0" />
-                  </Button>
-                </Link>
-
-                <a href="#mobile-app" className="w-full sm:w-auto min-w-0 max-w-full">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto max-w-full border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10 text-xs sm:text-sm font-bold px-5 sm:px-8 py-3.5 sm:py-5 rounded-2xl flex items-center justify-center gap-2">
-                    <Download size={18} className="shrink-0" />
-                    <span className="truncate">{language === 'fr' ? 'Télécharger l\'App Mobile (APK)' : 'Download Mobile App (APK)'}</span>
-                  </Button>
-                </a>
-              </motion.div>
-
-              {/* Trust Badges */}
-              <div className="pt-2 sm:pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-6 text-[11px] sm:text-xs font-bold text-slate-400 max-w-full">
-                <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-400 shrink-0" /> {language === 'fr' ? 'Programme Officiel MINESEC' : 'Official MINESEC Syllabus'}</span>
-                <span className="flex items-center gap-1.5"><ShieldCheck size={15} className="text-indigo-400 shrink-0" /> {language === 'fr' ? 'Bilingue Anglais & Français' : 'Bilingual EN & FR'}</span>
-                <span className="flex items-center gap-1.5"><Smartphone size={15} className="text-amber-400 shrink-0" /> {language === 'fr' ? '100% Fonctionnel Hors-Ligne' : '100% Offline Capability'}</span>
-              </div>
-
             </div>
 
-            {/* Right Student Visual Card / Hero Graphic */}
+            {/* Right Educational Pathway & Live AI Resolution Visual Card */}
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
               className="lg:col-span-5 relative w-full max-w-full flex justify-center"
             >
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-6 relative overflow-hidden w-full max-w-[320px] xs:max-w-[380px] sm:max-w-[440px] lg:max-w-none mx-auto group hover:border-emerald-500/40 transition-all box-border">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 relative overflow-hidden w-full max-w-[340px] xs:max-w-[400px] sm:max-w-[460px] lg:max-w-none mx-auto group hover:border-emerald-500/40 transition-all box-border">
                 
-                {/* Header Badge */}
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3 sm:pb-4 gap-2">
-                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <img 
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80" 
-                      alt="Student Avatar"
-                      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-emerald-500 shrink-0"
-                    />
-                    <div className="min-w-0">
-                      <h4 className="text-xs sm:text-sm font-black text-white truncate">Amina Nguema</h4>
-                      <p className="text-[9px] sm:text-[10px] text-slate-400 font-bold uppercase truncate">GBHS Douala • GCE A-Level</p>
+                {/* Visual Header: Cameroon Educational Ladder */}
+                <div className="border-b border-slate-800 pb-3 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-extrabold text-slate-200">
+                    <span className="flex items-center gap-1.5 text-emerald-400">
+                      <Compass size={16} /> Complete Learning Ladder
+                    </span>
+                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full uppercase font-black">
+                      MINESEC & MINESUP
+                    </span>
+                  </div>
+
+                  {/* Educational Stepper Pathway */}
+                  <div className="grid grid-cols-4 gap-1 pt-1 text-center text-[9px] font-bold">
+                    <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-emerald-400">
+                      <div>GCE / BACC</div>
+                      <div className="text-[8px] text-slate-400 font-normal">Secondary</div>
+                    </div>
+                    <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-teal-400">
+                      <div>TVEE</div>
+                      <div className="text-[8px] text-slate-400 font-normal">Technical</div>
+                    </div>
+                    <div className="p-1.5 rounded-lg bg-indigo-950 border border-indigo-500/50 text-indigo-300 ring-1 ring-amber-400/40">
+                      <div className="font-black text-amber-400">HND & BTS</div>
+                      <div className="text-[8px] text-indigo-300 font-normal">Higher Prof</div>
+                    </div>
+                    <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-blue-400">
+                      <div>UNIVERSITY</div>
+                      <div className="text-[8px] text-slate-400 font-normal">Degree +</div>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[9px] sm:text-[10px] font-black uppercase shrink-0">
-                    Grade A Target
-                  </span>
                 </div>
 
-                {/* Simulated Practice Session */}
-                <div className="space-y-2.5 sm:space-y-3 bg-slate-950 p-3 sm:p-4 rounded-2xl border border-slate-800">
+                {/* Simulated Edulpha AI Resolution Card */}
+                <div className="space-y-2.5 sm:space-y-3 bg-slate-950 p-3.5 sm:p-4 rounded-2xl border border-slate-800">
                   <div className="flex items-center justify-between text-[11px] sm:text-xs font-bold text-slate-400 gap-2">
-                    <span className="truncate">Physics Paper 2 • 2025 Mock</span>
-                    <span className="text-amber-400 flex items-center gap-1 shrink-0"><Clock size={12} /> 12m</span>
+                    <span className="truncate text-indigo-300 font-extrabold flex items-center gap-1">
+                      <GraduationCap size={14} className="text-amber-400 shrink-0" />
+                      HND / BTS Software Engineering
+                    </span>
+                    <span className="text-emerald-400 flex items-center gap-1 shrink-0 text-[10px] bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                      <Sparkles size={11} /> AI Solved
+                    </span>
                   </div>
 
                   <p className="text-[11px] sm:text-xs font-bold text-white leading-relaxed">
-                    Q3: Determine the electric field strength E at a distance of 0.5m from a point charge of 4μC in vacuum.
+                    Q: Calculate the time complexity of Dijkstra&apos;s Shortest Path algorithm using a Priority Queue / Binary Heap.
                   </p>
 
                   <div className="p-2.5 sm:p-3 bg-slate-900 rounded-xl text-[10px] sm:text-xs text-slate-300 font-mono space-y-1 border border-slate-800 overflow-x-auto">
-                    <span className="text-indigo-400 font-bold">▶ Edulpha AI Resolution:</span>
-                    <div>E = k · |q| / r²</div>
-                    <div>E = (8.99 × 10⁹ N·m²/C²) × (4 × 10⁻⁶ C) / (0.5m)²</div>
-                    <div className="text-emerald-400 font-bold pt-0.5">Result: E = 1.44 × 10⁵ N/C</div>
+                    <span className="text-amber-400 font-bold flex items-center gap-1">
+                      <Cpu size={12} /> Step-by-Step Resolution:
+                    </span>
+                    <div>1. Heap extraction for V vertices: O(V log V)</div>
+                    <div>2. Edge relaxation for E edges: O(E log V)</div>
+                    <div className="text-emerald-400 font-bold pt-1 border-t border-slate-800 mt-1">
+                      Total Time Complexity = O((V + E) log V)
+                    </div>
                   </div>
                 </div>
 
-                {/* Live Stats Row */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
-                  <div className="p-2 sm:p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="block text-base sm:text-lg font-black text-emerald-400">98%</span>
-                    <span className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase">Accuracy</span>
+                {/* Qualification Badges Footer */}
+                <div className="grid grid-cols-2 gap-2 text-center text-[10px] font-bold">
+                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-1.5 text-slate-300">
+                    <Award size={13} className="text-amber-400 shrink-0" />
+                    <span>HND (Higher National Diploma)</span>
                   </div>
-                  <div className="p-2 sm:p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="block text-base sm:text-lg font-black text-indigo-400">14 Days</span>
-                    <span className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase">Streak</span>
-                  </div>
-                  <div className="p-2 sm:p-3 rounded-xl bg-slate-950 border border-slate-800">
-                    <span className="block text-base sm:text-lg font-black text-amber-400">1,450+</span>
-                    <span className="text-[8px] sm:text-[10px] font-bold text-slate-400 uppercase">Questions</span>
+                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-1.5 text-slate-300">
+                    <ShieldCheck size={13} className="text-indigo-400 shrink-0" />
+                    <span>BTS (Brevet Technicien Supérieur)</span>
                   </div>
                 </div>
 

@@ -13,12 +13,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Use memoryLocalCache to prevent QuotaExceededError in browser iframe storage
-// and force long polling to ensure reliable backend connectivity in restricted environments
+// and enable auto-detect long polling for reliable backend connectivity across all network environments
 export const db = initializeFirestore(
   app,
   {
     localCache: memoryLocalCache(),
-    experimentalForceLongPolling: true,
+    experimentalAutoDetectLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId || '(default)'
 );
@@ -26,17 +26,25 @@ export const db = initializeFirestore(
 // Validate connection to Firestore on boot as per firebase-skill guidelines
 const testConnection = async () => {
   try {
-    // Attempting to fetch a non-existent document from server to verify connectivity
-    await getDocFromServer(doc(db, '_internal_', 'connection_test')).catch(() => {});
-    console.log('Firestore connectivity check initiated');
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      console.warn("Firestore appears to be offline. Verify project configuration.");
+    // Attempting to fetch a document from server to verify connectivity
+    await getDocFromServer(doc(db, '_internal_', 'connection_test'));
+    console.log('Firestore connectivity check succeeded');
+  } catch (error: any) {
+    if (error?.code === 'unavailable' || (error instanceof Error && error.message.includes('offline'))) {
+      console.warn("Firestore connectivity check: Backend temporarily unavailable or offline. Client will retry automatically.");
+    } else {
+      // Ignore document non-existence or permission errors for internal test doc
+      console.log('Firestore connection established');
     }
   }
 };
 
-testConnection();
+// Defer connection check to allow transport layer initialization
+if (typeof window !== 'undefined') {
+  setTimeout(testConnection, 1000);
+} else {
+  testConnection();
+}
 
 export const storage = getStorage(app, firebaseConfig.storageBucket);
 
