@@ -5,7 +5,6 @@ import { auth, db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { Button, cn } from '../components/ui';
 import { Mail, RefreshCw, LogOut, CheckCircle, AlertCircle } from 'lucide-react';
-import { motion } from 'motion/react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const VerifyEmail: React.FC = () => {
@@ -78,11 +77,7 @@ const VerifyEmail: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center"
-      >
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
         <div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <Mail className="w-8 h-8 text-indigo-600" />
         </div>
@@ -163,7 +158,7 @@ const VerifyEmail: React.FC = () => {
         <p className="mt-8 text-xs text-slate-400">
           Can't find the email? Check your spam folder or try resending.
         </p>
-      </motion.div>
+      </div>
     </div>
   );
 };

@@ -3,7 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Search, Bell, Sparkles, ChevronDown, Menu, X, 
-  User, LayoutDashboard, LogOut, Sun, Moon, HelpCircle, BookOpen, MessageSquare, Trophy, Zap
+  User, LayoutDashboard, LogOut, Sun, Moon, HelpCircle, BookOpen, MessageSquare, Trophy, Zap,
+  Award, Briefcase, GraduationCap, Layers
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -24,10 +25,30 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isResourcesOpen, setIsResourcesOpen] = useState(false);
+  const [isCoursesOpen, setIsCoursesOpen] = useState(false);
+  const [isMobileCoursesOpen, setIsMobileCoursesOpen] = useState(false);
+  const [hndProgrammes, setHndProgrammes] = useState<any[]>([]);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   const userMenuRef = useRef<HTMLDivElement>(null);
   const resourcesMenuRef = useRef<HTMLDivElement>(null);
+  const coursesMenuRef = useRef<HTMLDivElement>(null);
+
+  // Load HND programmes dynamically for Courses menu
+  useEffect(() => {
+    async function loadHndProgrammes() {
+      try {
+        const { getHNDProgrammes } = await import('../../services/hndService');
+        const progs = await getHNDProgrammes();
+        if (progs && progs.length > 0) {
+          setHndProgrammes(progs);
+        }
+      } catch (err) {
+        console.warn('Failed to load HND programmes for Navbar:', err);
+      }
+    }
+    loadHndProgrammes();
+  }, []);
 
   // Scroll detection
   useEffect(() => {
@@ -46,6 +67,9 @@ export default function Navbar() {
       }
       if (resourcesMenuRef.current && !resourcesMenuRef.current.contains(e.target as Node)) {
         setIsResourcesOpen(false);
+      }
+      if (coursesMenuRef.current && !coursesMenuRef.current.contains(e.target as Node)) {
+        setIsCoursesOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -86,7 +110,7 @@ export default function Navbar() {
   // Defined top-level nav elements
   const primaryNavItems = [
     { labelEn: 'Home', labelFr: 'Accueil', href: '/' },
-    { labelEn: 'Courses', labelFr: 'Matières', href: '/subjects' },
+    // Courses is custom rendered
     { labelEn: 'GCE', labelFr: 'GCE', href: '/curriculum' },
     { labelEn: 'HND / BTS', labelFr: 'HND / BTS', href: '/hnd-bts' },
     { labelEn: 'University', labelFr: 'Université', href: '/lms' },
@@ -129,7 +153,179 @@ export default function Navbar() {
 
           {/* Desktop Central Navigation Menu Items */}
           <div className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs font-black text-slate-700 dark:text-slate-300">
-            {primaryNavItems.map((item) => (
+            {/* Home Link */}
+            <Link
+              to="/"
+              className={cn(
+                "px-3 py-2 rounded-xl transition-all font-bold outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500",
+                location.pathname === '/'
+                  ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold"
+                  : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
+              )}
+            >
+              {language === 'fr' ? 'Accueil' : 'Home'}
+            </Link>
+
+            {/* Courses Dropdown / Mega-Menu Trigger */}
+            <div className="relative" ref={coursesMenuRef}>
+              <button
+                onClick={() => {
+                  setIsCoursesOpen(!isCoursesOpen);
+                  setIsResourcesOpen(false);
+                }}
+                className={cn(
+                  "px-3 py-2 rounded-xl transition-all font-bold flex items-center gap-1 hover:bg-slate-100 dark:hover:bg-slate-800 outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500",
+                  (isCoursesOpen || location.pathname === '/subjects' || location.pathname === '/lms' && !location.search.includes('qualification') || location.search.includes('qualification=')) && "bg-slate-100 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400"
+                )}
+                aria-expanded={isCoursesOpen}
+                aria-haspopup="true"
+              >
+                <span>{language === 'fr' ? 'Matières' : 'Courses'}</span>
+                <ChevronDown size={14} className={cn("transition-transform duration-200 opacity-60", isCoursesOpen && "rotate-180")} />
+              </button>
+
+              <AnimatePresence>
+                {isCoursesOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-1/2 -translate-x-[200px] mt-1.5 w-[750px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl shadow-2xl z-50 grid grid-cols-3 gap-6 text-left"
+                  >
+                    {/* Column 1: Academic Categories */}
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                        <Layers size={12} className="text-indigo-600" />
+                        {language === 'fr' ? 'Qualifications Académiques' : 'Academic Systems'}
+                      </h4>
+                      <div className="flex flex-col gap-1">
+                        <Link
+                          to="/lms"
+                          onClick={() => setIsCoursesOpen(false)}
+                          className="flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 font-bold transition-colors"
+                        >
+                          <span>{language === 'fr' ? 'Toutes les Matières' : 'All Courses'}</span>
+                          <span className="text-[9px] px-1.5 py-0.5 bg-indigo-50 text-indigo-700 rounded font-black">LMS</span>
+                        </Link>
+                        <Link
+                          to="/lms?qualification=GCE"
+                          onClick={() => setIsCoursesOpen(false)}
+                          className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-750 dark:text-slate-350 hover:text-indigo-600 font-bold flex flex-col gap-0.5 transition-colors"
+                        >
+                          <span className="flex items-center justify-between">
+                            <span>GCE Courses</span>
+                            <span className="text-[9px] text-slate-400">National</span>
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-medium">General Certificate of Education (O/A Levels)</span>
+                        </Link>
+                        <Link
+                          to="/lms?qualification=BTS"
+                          onClick={() => setIsCoursesOpen(false)}
+                          className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-750 dark:text-slate-350 hover:text-indigo-600 font-bold flex flex-col gap-0.5 transition-colors"
+                        >
+                          <span className="flex items-center justify-between">
+                            <span>BTS Courses</span>
+                            <span className="text-[9px] text-slate-400">Brevet</span>
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-medium">Brevet de Technicien Supérieur (French System)</span>
+                        </Link>
+                        <Link
+                          to="/lms?qualification=University"
+                          onClick={() => setIsCoursesOpen(false)}
+                          className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-750 dark:text-slate-350 hover:text-indigo-600 font-bold flex flex-col gap-0.5 transition-colors"
+                        >
+                          <span className="flex items-center justify-between">
+                            <span>University Courses</span>
+                            <span className="text-[9px] text-slate-400">BSc/Licence</span>
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-medium">Undergraduate degrees & licensed paths</span>
+                        </Link>
+                        <Link
+                          to="/lms?qualification=Professional"
+                          onClick={() => setIsCoursesOpen(false)}
+                          className="p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-750 dark:text-slate-350 hover:text-indigo-600 font-bold flex flex-col gap-0.5 transition-colors"
+                        >
+                          <span className="flex items-center justify-between">
+                            <span>Professional Courses</span>
+                            <span className="text-[9px] text-slate-400">Specialized</span>
+                          </span>
+                          <span className="text-[9px] text-slate-400 font-medium font-bold">Certified corporate vocational pathways</span>
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Column 2: HND Programmes (Part 1) */}
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                        <GraduationCap size={12} className="text-indigo-600" />
+                        HND SPECIALTIES (A-M)
+                      </h4>
+                      <div className="flex flex-col gap-1">
+                        {[
+                          { name: 'Computer Engineering', id: 'prog_hnd_ce' },
+                          { name: 'Software Engineering', id: 'prog_hnd_swe' },
+                          { name: 'Information Technology', id: 'prog_hnd_it' },
+                          { name: 'Accounting', id: 'prog_hnd_acc' },
+                          { name: 'Banking & Finance', id: 'prog_hnd_bnf' },
+                          { name: 'Business Management', id: 'prog_hnd_bm' },
+                          { name: 'Marketing', id: 'prog_hnd_mkt' },
+                        ].map((prog) => {
+                          const matchedProg = hndProgrammes.find(p => p.name.toLowerCase().includes(prog.name.toLowerCase()) || p.id === prog.id);
+                          const finalId = matchedProg ? matchedProg.id : prog.id;
+                          return (
+                            <Link
+                              key={prog.name}
+                              to={`/lms?qualification=HND&programmeId=${finalId}`}
+                              onClick={() => setIsCoursesOpen(false)}
+                              className="px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors"
+                            >
+                              HND {prog.name}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Column 3: HND Programmes (Part 2) */}
+                    <div className="space-y-4">
+                      <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-wider flex items-center gap-1.5">
+                        <GraduationCap size={12} className="text-indigo-600" />
+                        HND SPECIALTIES (N-Z)
+                      </h4>
+                      <div className="flex flex-col gap-1">
+                        {[
+                          { name: 'Electrical Engineering', id: 'prog_hnd_eps' },
+                          { name: 'Electronics', id: 'prog_hnd_elc' },
+                          { name: 'Civil Engineering', id: 'prog_hnd_civil' },
+                          { name: 'Mechanical Engineering', id: 'prog_hnd_mech' },
+                          { name: 'Agriculture', id: 'prog_hnd_agric' },
+                          { name: 'French Education', id: 'prog_hnd_fedu' },
+                          { name: 'English Education', id: 'prog_hnd_eedu' },
+                          { name: 'Other HND Programmes', id: 'other' }
+                        ].map((prog) => {
+                          const matchedProg = hndProgrammes.find(p => p.name.toLowerCase().includes(prog.name.toLowerCase()) || p.id === prog.id);
+                          const finalId = matchedProg ? matchedProg.id : prog.id;
+                          return (
+                            <Link
+                              key={prog.name}
+                              to={`/lms?qualification=HND&programmeId=${finalId}`}
+                              onClick={() => setIsCoursesOpen(false)}
+                              className="px-2 py-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-indigo-600 transition-colors"
+                            >
+                              {prog.name.startsWith('Other') ? prog.name : `HND ${prog.name}`}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Remaining primaryNavItems (GCE, HND/BTS, University) */}
+            {primaryNavItems.slice(1).map((item) => (
               <Link
                 key={item.href}
                 to={item.href}
@@ -339,9 +535,116 @@ export default function Navbar() {
               transition={{ duration: 0.2 }}
               className="md:hidden border-t border-slate-150 dark:border-slate-800 bg-white dark:bg-slate-900/95 backdrop-blur-md absolute top-full left-0 w-full shadow-lg max-h-[calc(100vh-80px)] overflow-y-auto"
             >
-              <div className="p-4 space-y-1.5">
-                {/* Standard items */}
-                {primaryNavItems.map((item) => (
+              <div className="p-4 space-y-1.5 text-left">
+                {/* Home Link */}
+                <Link
+                  to="/"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={cn(
+                    "block p-3 rounded-xl text-xs font-black uppercase transition-all",
+                    location.pathname === '/'
+                      ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400"
+                      : "text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                  )}
+                >
+                  {language === 'fr' ? 'Accueil' : 'Home'}
+                </Link>
+
+                {/* Courses Accordion */}
+                <div className="space-y-1">
+                  <button
+                    onClick={() => setIsMobileCoursesOpen(!isMobileCoursesOpen)}
+                    className="w-full flex items-center justify-between p-3 rounded-xl text-xs font-black uppercase text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-all"
+                  >
+                    <span>{language === 'fr' ? 'Matières' : 'Courses'}</span>
+                    <ChevronDown size={14} className={cn("transition-transform", isMobileCoursesOpen && "rotate-180")} />
+                  </button>
+
+                  <AnimatePresence>
+                    {isMobileCoursesOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="pl-4 space-y-1 overflow-hidden"
+                      >
+                        <Link
+                          to="/lms"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block p-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-600"
+                        >
+                          • All Courses
+                        </Link>
+                        <Link
+                          to="/lms?qualification=GCE"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block p-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-600"
+                        >
+                          • GCE Courses
+                        </Link>
+                        <Link
+                          to="/lms?qualification=BTS"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block p-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-600"
+                        >
+                          • BTS Courses
+                        </Link>
+                        <Link
+                          to="/lms?qualification=University"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block p-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-600"
+                        >
+                          • University Courses
+                        </Link>
+                        <Link
+                          to="/lms?qualification=Professional"
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="block p-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-indigo-600"
+                        >
+                          • Professional Courses
+                        </Link>
+                        <div className="pt-1">
+                          <p className="px-2 text-[10px] font-black uppercase text-slate-400 tracking-wider">HND Specialties</p>
+                          <div className="grid grid-cols-2 gap-1 py-1 pl-2">
+                            {[
+                              { name: 'Computer Eng.', id: 'prog_hnd_ce' },
+                              { name: 'Software Eng.', id: 'prog_hnd_swe' },
+                              { name: 'Info Tech.', id: 'prog_hnd_it' },
+                              { name: 'Accounting', id: 'prog_hnd_acc' },
+                              { name: 'Banking & Fin.', id: 'prog_hnd_bnf' },
+                              { name: 'Business Mgmt.', id: 'prog_hnd_bm' },
+                              { name: 'Marketing', id: 'prog_hnd_mkt' },
+                              { name: 'Electrical Eng.', id: 'prog_hnd_eps' },
+                              { name: 'Electronics', id: 'prog_hnd_elc' },
+                              { name: 'Civil Eng.', id: 'prog_hnd_civil' },
+                              { name: 'Mechanical Eng.', id: 'prog_hnd_mech' },
+                              { name: 'Agriculture', id: 'prog_hnd_agric' },
+                              { name: 'French Ed.', id: 'prog_hnd_fedu' },
+                              { name: 'English Ed.', id: 'prog_hnd_eedu' },
+                              { name: 'Other HND', id: 'other' }
+                            ].map((prog) => {
+                              const matchedProg = hndProgrammes.find(p => p.name.toLowerCase().includes(prog.name.toLowerCase().replace('.', '')) || p.id === prog.id);
+                              const finalId = matchedProg ? matchedProg.id : prog.id;
+                              return (
+                                <Link
+                                  key={prog.name}
+                                  to={`/lms?qualification=HND&programmeId=${finalId}`}
+                                  onClick={() => setIsMobileMenuOpen(false)}
+                                  className="p-1.5 bg-slate-50 dark:bg-slate-800 rounded text-[10px] font-semibold text-slate-600 dark:text-slate-400 truncate hover:text-indigo-600"
+                                >
+                                  {prog.name}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                {/* Remaining Items */}
+                {primaryNavItems.slice(1).map((item) => (
                   <Link
                     key={item.href}
                     to={item.href}

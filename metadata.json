@@ -1,6 +1,6 @@
 {
   "name": "Edulpha",
-  "description": "Edulpha - Bilingual AI-powered educational mobile & web ecosystem for Cameroon GCE (Ordinary & Advanced Level), BEPC, and Baccalauréat.",
+  "description": "Edulpha - Bilingual AI-powered educational ecosystem for Cameroon GCE, BEPC, Baccalauréat, and Higher National Diploma (HND/BTS) curricula.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

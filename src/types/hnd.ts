@@ -102,7 +102,7 @@ export interface HNDLearningMaterial {
   semester: HNDSemester;
   title: string;
   titleFr?: string;
-  type: 'Lecture Notes' | 'Slides / PDF' | 'Study Guide' | 'Revision Sheet' | 'Practical Manual' | 'Tutorial & Lab' | 'Past Solution';
+  type: 'Lecture Notes' | 'Slides / PDF' | 'Study Guide' | 'Revision Sheet' | 'Practical Manual' | 'Tutorial & Lab' | 'Past Solution' | 'Syllabus' | 'Past Exams' | 'Assignment' | 'Reference Book' | 'Other';
   fileUrl: string;
   fileSize?: string;
   fileName?: string;

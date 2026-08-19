@@ -25,6 +25,7 @@ const AdminSettings = lazy(() => import('./pages/AdminSettings'));
 const AdminPaperGenerator = lazy(() => import('./pages/AdminPaperGenerator'));
 const DailyDrillSession = lazy(() => import('./pages/DailyDrillSession'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const VerifyPhone = lazy(() => import('./pages/VerifyPhone'));
 const DuelBattle = lazy(() => import('./pages/DuelBattle'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const DailyDrill = lazy(() => import('./pages/DailyDrill'));
@@ -86,21 +87,31 @@ const LoadingFallback = () => (
 );
 
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading, isEmailVerified } = useAuth();
+  const { user, loading, isAccountVerified } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Loading...</div>;
   
   if (!user) return <Navigate to="/auth" />;
-  if (!isEmailVerified) return <Navigate to="/verify-email" />;
+  if (!isAccountVerified) {
+    if (user?.verificationMethod === 'phone') {
+      return <Navigate to="/verify-phone" />;
+    }
+    return <Navigate to="/verify-email" />;
+  }
   
   return <>{children}</>;
 };
 
 const PaymentGatedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading, isAdmin, isTeacher, isEmailVerified } = useAuth();
+  const { user, loading, isAdmin, isTeacher, isAccountVerified } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center font-black text-slate-400 uppercase tracking-widest">Loading...</div>;
   
   if (!user) return <Navigate to="/auth" />;
-  if (!isEmailVerified) return <Navigate to="/verify-email" />;
+  if (!isAccountVerified) {
+    if (user?.verificationMethod === 'phone') {
+      return <Navigate to="/verify-phone" />;
+    }
+    return <Navigate to="/verify-email" />;
+  }
   
   // Admins & Teachers always have full access
   if (isAdmin || isTeacher) return <>{children}</>;
@@ -183,6 +194,7 @@ export default function App() {
 
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/verify-phone" element={<VerifyPhone />} />
               <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
               
               <Route path="/dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />

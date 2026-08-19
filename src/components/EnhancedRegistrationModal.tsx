@@ -4,6 +4,7 @@ import {
   CheckCircle2, ArrowRight, ArrowLeft, Shield, Award, Globe, Check, Eye, EyeOff, AlertCircle, Smartphone, GraduationCap,
   Search, Compass, Plus, ChevronDown
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../firebase';
@@ -28,6 +29,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
   onSwitchToLogin,
   lang = 'en'
 }) => {
+  const navigate = useNavigate();
   const [accountType, setAccountType] = useState<'student' | 'teacher'>('student');
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -77,9 +79,12 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
     // Education Info
     curriculum: 'cameroon_gce' as 'cameroon_gce' | 'cameroon_francophone' | 'hnd' | 'both',
     educationLevel: 'Advanced Level' as string, // e.g., 'Ordinary Level', 'Advanced Level', 'Troisième (BEPC)', 'Seconde', 'Première', 'Terminale', 'HND Level 1', 'HND Level 2'
+    level: 'Advanced Level' as string,
+    levelName: 'Advanced Level' as string,
     
     // Academic Details
     department: 'Science' as string, // Science, Arts, Commercial, Technical, General, or HND Department
+    departmentName: 'Science' as string,
     commercialSpecialtyId: '' as string,
     commercialSpecialtyName: '' as string,
     commercialSpecialtyCode: '' as string,
@@ -147,8 +152,8 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
     setCurrentStep(prev => Math.min(prev + 1, totalSteps));
   };
 
-  const handleStartPhoneVerification = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleStartPhoneVerification = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     setError('');
     
     const formattedPhone = formatPhoneNumber(formData.phone);
@@ -173,6 +178,50 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
       setError(err.message || 'Failed to dispatch verification SMS code');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRegisterDirectly = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const authEmail = formData.email.trim();
+      
+      // 1. Authenticate user
+      const { user } = await createUserWithEmailAndPassword(auth, authEmail, formData.password);
+      
+      // 2. Send verification email
+      try {
+        await sendEmailVerification(user);
+      } catch (err) {
+        console.error("Failed to send verification email:", err);
+      }
+
+      // 3. Complete profile creation
+      await finishAccountCreation(user, 'email', false);
+      
+      onSuccess();
+      navigate('/verify-email');
+      toast.success(lang === 'fr' ? 'Compte créé ! Veuillez vérifier votre e-mail.' : 'Account created! Please verify your email.');
+    } catch (err: any) {
+      console.error("Registration Error:", err);
+      setError(err.message || "Failed to create account");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmitFinal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (formData.email.trim()) {
+      // Rule: Has Email (or Email + Phone) -> Verify Email
+      await handleRegisterDirectly();
+    } else {
+      // Rule: No Email -> Verify Phone
+      await handleStartPhoneVerification();
     }
   };
 
@@ -201,170 +250,144 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
     });
   };
 
+  const finishAccountCreation = async (firebaseUser: any, method: 'email' | 'phone', phoneVerified: boolean) => {
+    const formattedPhone = formatPhoneNumber(formData.phone);
+    const carrier = detectCarrier(formattedPhone);
+    const authEmail = firebaseUser.email;
+    const profileCompletion = accountType === 'student' ? 100 : 90;
+
+    const userPayload: any = {
+      uid: firebaseUser.uid,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      name: `${formData.firstName} ${formData.lastName}`,
+      email: authEmail,
+      userProvidedEmail: formData.email.trim() || null,
+      phone: formattedPhone,
+      phoneVerified: phoneVerified,
+      phoneProvider: carrier.carrier,
+      verificationMethod: method,
+      country: formData.country,
+      region: formData.region,
+      city: formData.city,
+      school: formData.school || formData.institutionName || 'Edulpha Academy',
+      role: accountType,
+      curriculumId: formData.curriculum,
+      curriculumName: formData.curriculum === 'cameroon_gce' 
+        ? 'Cameroon GCE (English)' 
+        : formData.curriculum === 'cameroon_francophone' 
+          ? 'Système Francophone (MINESEC)' 
+          : formData.curriculum === 'hnd'
+            ? 'Higher National Diploma (HND)'
+            : 'Bilingual',
+      educationLevelId: formData.level,
+      level: formData.curriculum === 'hnd' 
+        ? formData.hndLevel 
+        : (formData.department === 'Commercial' ? formData.commercialLevel : 'Advanced Level'),
+      academicLevel: (formData.curriculum === 'hnd' ? 'HND_BTS' : (formData.educationLevel === 'Ordinary Level' ? 'O Level' : 'A Level')) as any,
+      departmentId: formData.department,
+      departmentName: formData.departmentName || (formData.curriculum === 'hnd' ? (formData.hndProgrammeName || 'Higher National Diploma') : formData.department),
+      commercialSpecialtyId: formData.commercialSpecialtyId || '',
+      commercialSpecialtyName: formData.commercialSpecialtyName || '',
+      commercialSpecialtyCode: formData.commercialSpecialtyCode || '',
+      selectedSubjects: formData.selectedSubjects,
+      subject: formData.selectedSubjects[0] || (formData.curriculum === 'hnd' ? formData.hndProgrammeName : 'General Studies'),
+      targetExam: formData.curriculum === 'hnd' ? `HND National Exam (${formData.hndProgrammeName})` : formData.targetExam,
+      goals: formData.goals,
+      preferredLanguage: formData.preferredLanguage,
+      studyMode: formData.studyMode,
+      learningStyle: formData.learningStyle,
+      profileCompletion,
+      status: 'active',
+      isPaid: false,
+      paymentStatus: 'unpaid',
+      points: 50, // Welcome points
+      streak: 1,
+      badges: ['welcome_badge'],
+      createdAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp(),
+      verificationSentAt: serverTimestamp(),
+    };
+
+    // HND Specific Fields
+    if (formData.curriculum === 'hnd') {
+      userPayload.hndSchoolId = formData.hndSchoolId;
+      userPayload.hndSchoolName = formData.hndSchoolName;
+      userPayload.hndDepartmentId = formData.hndDepartmentId;
+      userPayload.hndProgrammeId = formData.hndProgrammeId;
+      userPayload.hndProgrammeName = formData.hndProgrammeName;
+      userPayload.hndProgrammeCode = formData.commercialSpecialtyCode || 'HND';
+      userPayload.hndLevel = formData.hndLevel;
+      userPayload.hndSemester = formData.hndSemester;
+      
+      const hndEnrolledCourses = DEFAULT_HND_COURSES.filter(
+        c => c.programmeId === formData.hndProgrammeId && c.level === formData.hndLevel && c.semester === formData.hndSemester
+      );
+      userPayload.hndEnrolledCourseIds = hndEnrolledCourses.map(c => c.id);
+      userPayload.hndEnrolledCourseCodes = hndEnrolledCourses.map(c => c.code);
+      userPayload.hndEnrolledCourseNames = hndEnrolledCourses.map(c => c.name);
+    }
+
+    await setDoc(doc(db, 'users', firebaseUser.uid), userPayload);
+    
+    // Write HND Enrollment if needed
+    if (formData.curriculum === 'hnd') {
+      const hndEnrolledCourses = DEFAULT_HND_COURSES.filter(
+        c => c.programmeId === formData.hndProgrammeId && c.level === formData.hndLevel && c.semester === formData.hndSemester
+      );
+      const enrollmentDocRef = doc(db, 'hnd_enrollments', `${firebaseUser.uid}_${formData.hndLevel.replace(/\s+/g, '_')}_${formData.hndSemester.replace(/\s+/g, '_')}`);
+      await setDoc(enrollmentDocRef, {
+        studentId: firebaseUser.uid,
+        studentName: userPayload.name,
+        studentEmail: authEmail,
+        schoolId: formData.hndSchoolId,
+        schoolName: formData.hndSchoolName,
+        departmentId: formData.hndDepartmentId,
+        departmentName: formData.department,
+        programmeId: formData.hndProgrammeId,
+        programmeName: formData.hndProgrammeName,
+        programmeCode: formData.commercialSpecialtyCode || 'HND',
+        level: formData.hndLevel,
+        semester: formData.hndSemester,
+        enrolledCourseIds: hndEnrolledCourses.map(c => c.id),
+        enrolledCourseCodes: hndEnrolledCourses.map(c => c.code),
+        enrolledCourseNames: hndEnrolledCourses.map(c => c.name),
+        status: 'active',
+        enrolledAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    // Log Audit
+    void logAuditEvent({
+      userId: firebaseUser.uid,
+      userEmail: authEmail,
+      action: 'REGISTER_SUCCESS',
+      details: `User registered via ${method} verification. Role: ${accountType}`,
+    });
+  };
+
   const handleOtpVerifiedCompleteRegistration = async () => {
     setShowOtpModal(false);
     setLoading(true);
 
     try {
       const formattedPhone = formatPhoneNumber(formData.phone);
-      const carrier = detectCarrier(formattedPhone);
-      
-      // Use provided email or fallback to virtual email
-      const authEmail = formData.email.trim() ? formData.email.trim() : phoneToVirtualEmail(formattedPhone);
+      // Use fallback to virtual email for phone-only
+      const authEmail = phoneToVirtualEmail(formattedPhone);
 
-      // 1. Authenticate user first
+      // 1. Authenticate user
       const { user } = await createUserWithEmailAndPassword(auth, authEmail, formData.password);
       
-      if (formData.email.trim()) {
-        try {
-          await sendEmailVerification(user);
-        } catch (err) {
-          console.error("Failed to send verification email:", err);
-        }
-      }
-
-      const profileCompletion = accountType === 'student' ? 100 : 90;
-
-      const userPayload = {
-        uid: user.uid,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        name: `${formData.firstName} ${formData.lastName}`,
-        email: authEmail,
-        userProvidedEmail: formData.email.trim() || null,
-        phone: formattedPhone,
-        phoneVerified: true,
-        phoneProvider: carrier.carrier,
-        country: formData.country,
-        region: formData.region,
-        city: formData.city,
-        school: formData.school || formData.institutionName || 'Edulpha Academy',
-        role: accountType,
-        curriculumId: formData.curriculum,
-        curriculumName: formData.curriculum === 'cameroon_gce' 
-          ? 'Cameroon GCE (English)' 
-          : formData.curriculum === 'cameroon_francophone' 
-            ? 'Système Francophone (MINESEC)' 
-            : formData.curriculum === 'hnd'
-              ? 'Higher National Diploma (HND)'
-              : 'Bilingual',
-        educationLevel: formData.educationLevel,
-        academicLevel: (formData.curriculum === 'hnd' ? 'HND_BTS' : (formData.educationLevel === 'Ordinary Level' ? 'O Level' : 'A Level')) as any,
-        department: formData.curriculum === 'hnd' ? (formData.hndProgrammeName || 'Higher National Diploma') : formData.department,
-        commercialSpecialtyId: formData.commercialSpecialtyId || '',
-        commercialSpecialtyName: formData.commercialSpecialtyName || '',
-        commercialSpecialtyCode: formData.commercialSpecialtyCode || '',
-        // HND-Specific profile fields
-        ...(formData.curriculum === 'hnd' && {
-          hndSchoolId: formData.hndSchoolId,
-          hndSchoolName: formData.hndSchoolName,
-          hndDepartmentId: formData.hndDepartmentId,
-          hndProgrammeId: formData.hndProgrammeId,
-          hndProgrammeName: formData.hndProgrammeName,
-          hndProgrammeCode: formData.commercialSpecialtyCode || 'HND',
-          programme: formData.hndProgrammeName,
-          student_id: formData.studentId || '',
-          studentId: formData.studentId || '',
-          institution: formData.hndSchoolName || formData.school || '',
-          institutionName: formData.hndSchoolName || formData.school || '',
-          academic_year: formData.academicYear || '2025/2026',
-          academicYear: formData.academicYear || '2025/2026',
-          hndLevel: formData.hndLevel,
-          hndSemester: formData.hndSemester,
-          hndEnrolledCourseIds: DEFAULT_HND_COURSES
-            .filter(c => c.programmeId === formData.hndProgrammeId && c.level === formData.hndLevel && c.semester === formData.hndSemester)
-            .map(c => c.id),
-          hndEnrolledCourseCodes: DEFAULT_HND_COURSES
-            .filter(c => c.programmeId === formData.hndProgrammeId && c.level === formData.hndLevel && c.semester === formData.hndSemester)
-            .map(c => c.code),
-          hndEnrolledCourseNames: DEFAULT_HND_COURSES
-            .filter(c => c.programmeId === formData.hndProgrammeId && c.level === formData.hndLevel && c.semester === formData.hndSemester)
-            .map(c => c.name),
-        }),
-        level: formData.curriculum === 'hnd' 
-          ? formData.hndLevel 
-          : (formData.department === 'Commercial' ? formData.commercialLevel : 'Advanced Level'),
-        subjects: formData.selectedSubjects,
-        subject: formData.selectedSubjects[0] || (formData.curriculum === 'hnd' ? formData.hndProgrammeName : 'General Studies'),
-        targetExam: formData.curriculum === 'hnd' ? `HND National Exam (${formData.hndProgrammeName})` : formData.targetExam,
-        goals: formData.goals,
-        preferredLanguage: formData.preferredLanguage,
-        studyMode: formData.studyMode,
-        learningStyle: formData.learningStyle,
-        profileCompletion,
-        status: 'active',
-        isPaid: false,
-        paymentStatus: 'unpaid',
-        points: 50, // Welcome bonus points
-        streak: 1,
-        badges: ['welcome_badge'],
-        createdAt: serverTimestamp(),
-      };
-
-      // 2. Log API Insert details for debugging and audit
-      console.log('[REGISTRATION AUDIT INSERT]', {
-        authUserId: auth.currentUser?.uid || user.uid,
-        table: 'users',
-        documentId: user.uid,
-        payloadSummary: {
-          name: userPayload.name,
-          email: userPayload.email,
-          role: userPayload.role,
-          phone: userPayload.phone,
-        },
-        timestamp: new Date().toISOString()
-      });
-
-      // 3. Insert profile into Firestore after Auth succeeds
-      await setDoc(doc(db, 'users', user.uid), userPayload);
-
-      // 4. If HND student, also write the initial enrollment audit record
-      if (formData.curriculum === 'hnd') {
-        const hndEnrolledCourses = DEFAULT_HND_COURSES.filter(
-          c => c.programmeId === formData.hndProgrammeId && c.level === formData.hndLevel && c.semester === formData.hndSemester
-        );
-        const enrollmentDocRef = doc(db, 'hnd_enrollments', `${user.uid}_${formData.hndLevel.replace(/\s+/g, '_')}_${formData.hndSemester.replace(/\s+/g, '_')}`);
-        await setDoc(enrollmentDocRef, {
-          studentId: user.uid,
-          studentName: userPayload.name,
-          studentEmail: authEmail,
-          schoolId: formData.hndSchoolId,
-          schoolName: formData.hndSchoolName,
-          departmentId: formData.hndDepartmentId,
-          departmentName: formData.department,
-          programmeId: formData.hndProgrammeId,
-          programmeName: formData.hndProgrammeName,
-          programmeCode: formData.commercialSpecialtyCode || 'HND',
-          level: formData.hndLevel,
-          semester: formData.hndSemester,
-          enrolledCourseIds: hndEnrolledCourses.map(c => c.id),
-          enrolledCourseCodes: hndEnrolledCourses.map(c => c.code),
-          enrolledCourseNames: hndEnrolledCourses.map(c => c.name),
-          status: 'active',
-          enrolledAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      await logAuditEvent({
-        userId: user.uid,
-        userEmail: authEmail,
-        action: 'REGISTER_SUCCESS',
-        details: `Successfully registered new ${accountType} account via phone ${formattedPhone} (${carrier.carrier}).`,
-      });
-
-      toast.success(lang === 'fr' ? 'Compte Edulpha créé et téléphone vérifié avec succès !' : 'Edulpha account created and phone verified successfully!');
+      // 2. Complete profile creation (phone is already verified by OTP)
+      await finishAccountCreation(user, 'phone', true);
+      
       onSuccess();
+      navigate('/dashboard');
+      toast.success(lang === 'fr' ? 'Compte vérifié et créé !' : 'Account verified and created!');
     } catch (err: any) {
-      console.error('[REGISTRATION API FAILURE]', {
-        authUserId: auth.currentUser?.uid,
-        table: 'users',
-        error: err?.message || err,
-        code: err?.code,
-        fullErrorObject: err
-      });
-      const debugErrorMsg = `Registration Error (${err.code || 'permission-denied'}): ${err.message || 'Firestore access denied'}`;
-      setError(debugErrorMsg);
+      console.error("OTP Registration Error:", err);
+      setError(err.message || "Failed to complete registration after OTP");
     } finally {
       setLoading(false);
     }
@@ -490,7 +513,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
       )}
 
       {/* FORM WIZARD */}
-      <form onSubmit={currentStep === totalSteps ? handleStartPhoneVerification : (e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
+      <form onSubmit={currentStep === totalSteps ? handleSubmitFinal : (e) => { e.preventDefault(); handleNext(); }} className="space-y-6">
         
         {/* STUDENT STEP 1: Basic Information */}
         {accountType === 'student' && currentStep === 1 && (

@@ -43,6 +43,7 @@ export default function AuthPage() {
   const [otpReason, setOtpReason] = useState<'login' | 'reset_password'>('login');
   const [initialSimulatedOtp, setInitialSimulatedOtp] = useState<string | undefined>();
   const [resetModalStep, setResetModalStep] = useState<1 | 2>(1);
+  const [showNewPasswordForm, setShowNewPasswordForm] = useState(false);
 
   const navigate = useNavigate();
   const { appName, logoUrl, contactEmail } = useSettings();
@@ -237,10 +238,45 @@ export default function AuthPage() {
 
         // Trigger email sign in or re-auth
         toast.success('Phone verified! Signing you into Edulpha...');
+        
+        // Since we can't easily sign in via password here without the password, 
+        // we'll use the virtual email and a one-time token if possible, or just redirect
+        // For AI Studio, we'll refresh to trigger AuthContext detection
         window.location.reload();
       }
     } catch (err: any) {
       toast.error('Failed to finalize login: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinishResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPasswordInput || newPasswordInput.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post('/api/auth/reset-password-phone', {
+        phone: phoneInput,
+        newPassword: newPasswordInput
+      });
+
+      if (response.data.success) {
+        toast.success('Password updated successfully! Please login with your new password.');
+        setShowNewPasswordForm(false);
+        setIsForgot(false);
+        setIsLogin(true);
+        setPasswordInput(newPasswordInput);
+      } else {
+        setError(response.data.error || 'Failed to update password');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.error || err.message || 'Failed to update password');
     } finally {
       setLoading(false);
     }
@@ -326,14 +362,57 @@ export default function AuthPage() {
           </p>
         </div>
 
-        {/* REGISTRATION MODAL OR LOGIN CARD */}
-        {!isLogin && !isForgot ? (
-          <EnhancedRegistrationModal 
-            onSuccess={() => navigate('/dashboard')}
-            onSwitchToLogin={() => setIsLogin(true)}
-            lang={language as 'en' | 'fr'}
-          />
-        ) : (
+            {/* REGISTRATION MODAL OR LOGIN CARD */}
+            {!isLogin && !isForgot ? (
+              <EnhancedRegistrationModal 
+                onSuccess={() => navigate('/dashboard')}
+                onSwitchToLogin={() => setIsLogin(true)}
+                lang={language as 'en' | 'fr'}
+              />
+            ) : showNewPasswordForm ? (
+              <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-slate-200 rounded-2xl sm:rounded-3xl w-full max-w-full box-border overflow-hidden">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-slate-900">Set New Password</h2>
+                  <p className="text-sm text-slate-500">Resetting password for {phoneInput}</p>
+                </div>
+                <form onSubmit={handleFinishResetPassword} className="space-y-4">
+                  {error && (
+                    <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl flex items-start gap-2.5">
+                      <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={18} />
+                      <p className="text-xs font-bold text-rose-700">{error}</p>
+                    </div>
+                  )}
+                  <div className="space-y-1.5 w-full">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-0.5">New Password</label>
+                    <div className="relative w-full">
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        className="w-full pl-11 pr-11 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold text-slate-900 text-sm box-border"
+                        placeholder="••••••••"
+                        value={newPasswordInput}
+                        onChange={e => setNewPasswordInput(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-indigo-600"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                  </div>
+                  <Button 
+                    type="submit" 
+                    disabled={loading}
+                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest rounded-xl"
+                  >
+                    {loading ? <RefreshCw size={18} className="animate-spin" /> : 'Update Password'}
+                  </Button>
+                </form>
+              </Card>
+            ) : (
           <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-slate-200 rounded-2xl sm:rounded-3xl w-full max-w-full box-border overflow-hidden">
             {/* Method Tabs for Login */}
             {isLogin && !isForgot && (
@@ -607,6 +686,7 @@ export default function AuthPage() {
         phone={formatPhoneNumber(phoneInput)}
         onSuccess={otpReason === 'login' ? handleOtpLoginVerified : () => {
           setShowOtpModal(false);
+          setShowNewPasswordForm(true);
           toast.success('SMS OTP Verified! Please set your new password.');
         }}
         reason={otpReason}

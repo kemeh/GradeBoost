@@ -33,7 +33,8 @@ import {
   HNDProgramme, 
   HNDCourse, 
   HNDAcademicLevel, 
-  HNDSemester 
+  HNDSemester,
+  HNDLearningMaterial
 } from '../../types/hnd';
 import { 
   getHNDSchools, 
@@ -48,7 +49,10 @@ import {
   getHNDCourses, 
   saveHNDCourse, 
   deleteHNDCourse,
-  seedHNDDefaults
+  seedHNDDefaults,
+  getHNDMaterials,
+  saveHNDMaterial,
+  deleteHNDMaterial
 } from '../../services/hndService';
 import { Card, Button, Badge, cn } from '../ui';
 import { toast } from 'react-hot-toast';
@@ -67,7 +71,7 @@ import {
 } from '../../services/institutionService';
 
 export const AdminHNDManagement: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'programmes' | 'departments' | 'schools' | 'courses' | 'levels' | 'institutions' | 'sync' | 'requests'>('programmes');
+  const [activeTab, setActiveTab] = useState<'programmes' | 'departments' | 'schools' | 'courses' | 'levels' | 'institutions' | 'sync' | 'requests' | 'materials'>('programmes');
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -76,6 +80,31 @@ export const AdminHNDManagement: React.FC = () => {
   const [departments, setDepartments] = useState<HNDDepartment[]>([]);
   const [programmes, setProgrammes] = useState<HNDProgramme[]>([]);
   const [courses, setCourses] = useState<HNDCourse[]>([]);
+  const [materials, setMaterials] = useState<HNDLearningMaterial[]>([]);
+
+  // Materials modal and form state
+  const [showMaterialModal, setShowMaterialModal] = useState(false);
+  const [editingMaterial, setEditingMaterial] = useState<Partial<HNDLearningMaterial> | null>(null);
+  const [materialForm, setMaterialForm] = useState<Partial<HNDLearningMaterial>>({
+    title: '',
+    titleFr: '',
+    courseId: '',
+    programmeId: '',
+    level: 'HND Level 1',
+    semester: 'Semester 1',
+    type: 'Lecture Notes',
+    fileUrl: '',
+    fileSize: '1.2 MB',
+    fileName: '',
+    description: '',
+    authorOrLecturer: '',
+    academicYear: '2025/2026',
+    isPublished: true
+  });
+
+  // Materials filters
+  const [selectedMaterialTypeFilter, setSelectedMaterialTypeFilter] = useState<string>('all');
+  const [selectedMaterialCourseFilter, setSelectedMaterialCourseFilter] = useState<string>('all');
 
   // Institution & Sync Data
   const [institutions, setInstitutions] = useState<Institution[]>([]);
@@ -206,7 +235,8 @@ export const AdminHNDManagement: React.FC = () => {
         fetchedInsts,
         fetchedServiceProgs,
         fetchedLogs,
-        fetchedReqs
+        fetchedReqs,
+        fetchedMaterials
       ] = await Promise.all([
         getHNDSchools(force),
         getHNDDepartments(undefined, force),
@@ -215,7 +245,8 @@ export const AdminHNDManagement: React.FC = () => {
         getInstitutions(),
         getServiceProgrammes(),
         getSyncLogs(),
-        getInstitutionRequests()
+        getInstitutionRequests(),
+        getHNDMaterials()
       ]);
       setSchools(fetchedSchools);
       setDepartments(fetchedDepts);
@@ -225,6 +256,7 @@ export const AdminHNDManagement: React.FC = () => {
       setServiceProgrammes(fetchedServiceProgs);
       setSyncLogs(fetchedLogs);
       setInstitutionRequests(fetchedReqs);
+      setMaterials(fetchedMaterials || []);
     } catch (err) {
       console.error('Error loading HND administration data:', err);
       toast.error('Failed to load HND configuration.');
@@ -521,6 +553,86 @@ export const AdminHNDManagement: React.FC = () => {
   };
 
   // ==========================================
+  // HND MATERIALS HANDLERS
+  // ==========================================
+  const handleOpenMaterialModal = (material?: HNDLearningMaterial) => {
+    if (material) {
+      setEditingMaterial(material);
+      setMaterialForm({ ...material });
+    } else {
+      setEditingMaterial(null);
+      setMaterialForm({
+        title: '',
+        titleFr: '',
+        courseId: courses[0]?.id || '',
+        programmeId: programmes[0]?.id || '',
+        level: 'HND Level 1',
+        semester: 'Semester 1',
+        type: 'Lecture Notes',
+        fileUrl: '',
+        fileSize: '1.2 MB',
+        fileName: '',
+        description: '',
+        authorOrLecturer: '',
+        academicYear: '2025/2026',
+        isPublished: true
+      });
+    }
+    setShowMaterialModal(true);
+  };
+
+  const handleSaveMaterial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!materialForm.title || !materialForm.courseId) {
+      toast.error('Title and Course are required.');
+      return;
+    }
+    setActionLoading(true);
+    try {
+      const selectedCourse = courses.find(c => c.id === materialForm.courseId);
+      const selectedProg = programmes.find(p => p.id === materialForm.programmeId || p.id === selectedCourse?.programmeId);
+      
+      const materialData: Partial<HNDLearningMaterial> = {
+        ...materialForm,
+        id: editingMaterial?.id || undefined,
+        courseName: selectedCourse?.name || 'Unknown Course',
+        courseCode: selectedCourse?.code || 'UNK-000',
+        programmeId: selectedProg?.id || selectedCourse?.programmeId || '',
+        programmeName: selectedProg?.name || selectedCourse?.programmeName || 'General',
+        fileName: materialForm.fileName || `${materialForm.title?.toLowerCase().replace(/[^a-z0-9]/g, '_')}.pdf`
+      };
+
+      await saveHNDMaterial(materialData);
+      toast.success(editingMaterial ? 'Learning material updated successfully!' : 'Learning material added successfully!');
+      setShowMaterialModal(false);
+      // Refresh list
+      const fetchedMaterials = await getHNDMaterials();
+      setMaterials(fetchedMaterials || []);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to save learning material.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteMaterial = async (id: string, name: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${name}"?`)) return;
+    setActionLoading(true);
+    try {
+      await deleteHNDMaterial(id);
+      toast.success('Learning material deleted successfully.');
+      const fetchedMaterials = await getHNDMaterials();
+      setMaterials(fetchedMaterials || []);
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to delete learning material.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ==========================================
   // INSTITUTION DIRECTORY HANDLERS
   // ==========================================
   const handleOpenInstitutionModal = (inst?: Institution) => {
@@ -670,6 +782,21 @@ export const AdminHNDManagement: React.FC = () => {
     });
   }, [courses, selectedProgFilter, selectedLevelFilter, selectedSemesterFilter, searchTerm]);
 
+  const filteredMaterials = useMemo(() => {
+    return materials.filter(mat => {
+      if (selectedMaterialCourseFilter !== 'all' && mat.courseId !== selectedMaterialCourseFilter) return false;
+      if (selectedMaterialTypeFilter !== 'all' && mat.type !== selectedMaterialTypeFilter) return false;
+      if (searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        const matchesTitle = mat.title?.toLowerCase().includes(term);
+        const matchesCourse = mat.courseName?.toLowerCase().includes(term);
+        const matchesCode = mat.courseCode?.toLowerCase().includes(term);
+        if (!matchesTitle && !matchesCourse && !matchesCode) return false;
+      }
+      return true;
+    });
+  }, [materials, selectedMaterialCourseFilter, selectedMaterialTypeFilter, searchTerm]);
+
   if (loading) {
     return (
       <div className="p-12 flex flex-col items-center justify-center bg-white rounded-3xl border border-slate-100 min-h-[350px]">
@@ -717,7 +844,7 @@ export const AdminHNDManagement: React.FC = () => {
         </div>
 
         {/* Quick Stat Pill Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-indigo-800/60">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-6 pt-6 border-t border-indigo-800/60">
           <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
             <p className="text-[11px] font-bold text-indigo-300 uppercase">Schools / Faculties</p>
             <p className="text-2xl font-black text-white mt-1">{schools.length}</p>
@@ -734,6 +861,10 @@ export const AdminHNDManagement: React.FC = () => {
             <p className="text-[11px] font-bold text-indigo-300 uppercase">Course Modules</p>
             <p className="text-2xl font-black text-white mt-1">{courses.length}</p>
           </div>
+          <div className="p-3 bg-white/5 rounded-2xl border border-white/10 col-span-2 sm:col-span-1">
+            <p className="text-[11px] font-bold text-indigo-300 uppercase">Learning Materials</p>
+            <p className="text-2xl font-black text-white mt-1">{materials.length}</p>
+          </div>
         </div>
       </div>
 
@@ -743,6 +874,7 @@ export const AdminHNDManagement: React.FC = () => {
           {[
             { id: 'programmes', label: 'Programmes / Specialties', icon: GraduationCap, count: programmes.length },
             { id: 'courses', label: 'Course Modules', icon: BookOpen, count: courses.length },
+            { id: 'materials', label: 'Learning Materials', icon: FileText, count: materials.length },
             { id: 'departments', label: 'Departments', icon: Layers, count: departments.length },
             { id: 'schools', label: 'Schools / Faculties', icon: Building2, count: schools.length },
             { id: 'levels', label: 'Levels & Semesters', icon: SlidersHorizontal, count: 2 },
@@ -790,6 +922,14 @@ export const AdminHNDManagement: React.FC = () => {
               className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-2xl px-4 py-2.5 flex items-center gap-2"
             >
               <Plus size={16} /> Add HND Course
+            </Button>
+          )}
+          {activeTab === 'materials' && (
+            <Button
+              onClick={() => handleOpenMaterialModal()}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-2xl px-4 py-2.5 flex items-center gap-2"
+            >
+              <Plus size={16} /> Add HND Material
             </Button>
           )}
           {activeTab === 'departments' && (
@@ -1058,6 +1198,153 @@ export const AdminHNDManagement: React.FC = () => {
                               onClick={() => handleDeleteCourse(course.id, course.name)}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
                               title="Delete Course"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* TAB: LEARNING MATERIALS */}
+      {/* ========================================================================= */}
+      {activeTab === 'materials' && (
+        <div className="space-y-4">
+          {/* Material Filters */}
+          <div className="p-4 bg-white rounded-2xl border border-slate-200 flex flex-col md:flex-row items-stretch md:items-center gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+              <input
+                type="text"
+                placeholder="Search learning materials by title, course, or code..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white transition"
+              />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <select
+                value={selectedMaterialTypeFilter}
+                onChange={e => setSelectedMaterialTypeFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+              >
+                <option value="all">All Material Types</option>
+                <option value="Lecture Notes">Lecture Notes</option>
+                <option value="Syllabus">Syllabus</option>
+                <option value="Past Exams">Past Exams</option>
+                <option value="Assignment">Assignment</option>
+                <option value="Reference Book">Reference Book</option>
+              </select>
+
+              <select
+                value={selectedMaterialCourseFilter}
+                onChange={e => setSelectedMaterialCourseFilter(e.target.value)}
+                className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none max-w-xs"
+              >
+                <option value="all">All Course Modules ({courses.length})</option>
+                {courses.map(c => (
+                  <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Materials Table/Grid */}
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-wider border-b border-slate-100">
+                    <th className="py-3 px-4">Title</th>
+                    <th className="py-3 px-4">Course / Code</th>
+                    <th className="py-3 px-4">Type</th>
+                    <th className="py-3 px-4">Level / Semester</th>
+                    <th className="py-3 px-4">File Specs</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs text-slate-700">
+                  {filteredMaterials.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-slate-400 font-bold">
+                        No learning materials found matching the filters or query.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredMaterials.map(mat => (
+                      <tr key={mat.id} className="hover:bg-slate-50/50 transition-all font-semibold">
+                        <td className="py-3.5 px-4">
+                          <div>
+                            <div className="font-black text-slate-900 flex items-center gap-1.5">
+                              <FileText className="text-indigo-500" size={14} />
+                              <span>{mat.title}</span>
+                            </div>
+                            {mat.titleFr && (
+                              <p className="text-[10px] text-slate-400 font-medium italic mt-0.5">
+                                FR: {mat.titleFr}
+                              </p>
+                            )}
+                            {mat.authorOrLecturer && (
+                              <p className="text-[10px] text-slate-500 font-bold mt-1">
+                                By: {mat.authorOrLecturer} ({mat.academicYear || '2025/2026'})
+                              </p>
+                            )}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div>
+                            <div className="font-bold text-indigo-600">{mat.courseCode}</div>
+                            <div className="text-[10px] text-slate-400 font-bold mt-0.5 max-w-[150px] truncate" title={mat.courseName}>
+                              {mat.courseName}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-md text-[10px] font-black uppercase">
+                            {mat.type}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500 font-bold">
+                          <div>
+                            <div>{mat.level}</div>
+                            <div className="text-[10px] text-slate-400">{mat.semester}</div>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-slate-500 font-bold">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-mono text-[11px] text-slate-600">{mat.fileSize || '1.2 MB'}</span>
+                            <span className="text-[10px] text-slate-400 max-w-[120px] truncate" title={mat.fileName || mat.fileUrl}>
+                              {mat.fileName || 'document.pdf'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <Badge variant={mat.isPublished ? 'success' : 'secondary'} className="text-[10px] font-black">
+                            {mat.isPublished ? 'Published' : 'Draft'}
+                          </Badge>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => handleOpenMaterialModal(mat)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                              title="Edit Material"
+                            >
+                              <Edit3 size={15} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMaterial(mat.id, mat.title)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                              title="Delete Material"
                             >
                               <Trash2 size={15} />
                             </button>
@@ -2219,6 +2506,206 @@ export const AdminHNDManagement: React.FC = () => {
                 >
                   {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                   Save Specialty
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* ========================================================================= */}
+      {/* MODAL: ADD / EDIT HND LEARNING MATERIAL */}
+      {/* ========================================================================= */}
+      {showMaterialModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 space-y-6 shadow-2xl animate-in zoom-in-95 my-8">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center">
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-slate-900">
+                    {editingMaterial ? 'Edit Learning Material' : 'Add Learning Material'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Upload or configure PDF notes, syllabi, or exams.</p>
+                </div>
+              </div>
+              <button onClick={() => setShowMaterialModal(false)} className="p-2 text-slate-400 hover:text-slate-700 rounded-xl">
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveMaterial} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-700">Material Title (English) *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Introduction to Programming Lecture Notes"
+                    value={materialForm.title || ''}
+                    onChange={e => setMaterialForm({ ...materialForm, title: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-700">Titre du Matériel (French)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Notes de cours d'introduction à la programmation"
+                    value={materialForm.titleFr || ''}
+                    onChange={e => setMaterialForm({ ...materialForm, titleFr: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-700">Associated Course Module *</label>
+                  <select
+                    required
+                    value={materialForm.courseId || ''}
+                    onChange={e => {
+                      const selectedCourse = courses.find(c => c.id === e.target.value);
+                      setMaterialForm({ 
+                        ...materialForm, 
+                        courseId: e.target.value,
+                        programmeId: selectedCourse?.programmeId || materialForm.programmeId
+                      });
+                    }}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+                  >
+                    <option value="">-- Select Course Module --</option>
+                    {courses.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.code})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Material Type *</label>
+                  <select
+                    required
+                    value={materialForm.type || 'Lecture Notes'}
+                    onChange={e => setMaterialForm({ ...materialForm, type: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+                  >
+                    <option value="Lecture Notes">Lecture Notes</option>
+                    <option value="Syllabus">Syllabus</option>
+                    <option value="Past Exams">Past Exams</option>
+                    <option value="Assignment">Assignment</option>
+                    <option value="Reference Book">Reference Book</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Academic Year</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 2025/2026"
+                    value={materialForm.academicYear || '2025/2026'}
+                    onChange={e => setMaterialForm({ ...materialForm, academicYear: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Academic Level</label>
+                  <select
+                    value={materialForm.level || 'HND Level 1'}
+                    onChange={e => setMaterialForm({ ...materialForm, level: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+                  >
+                    <option value="HND Level 1">HND Level 1 (Year 1)</option>
+                    <option value="HND Level 2">HND Level 2 (Year 2)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Semester</label>
+                  <select
+                    value={materialForm.semester || 'Semester 1'}
+                    onChange={e => setMaterialForm({ ...materialForm, semester: e.target.value as any })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none"
+                  >
+                    <option value="Semester 1">Semester 1</option>
+                    <option value="Semester 2">Semester 2</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Author / Lecturer</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Dr. Bernard"
+                    value={materialForm.authorOrLecturer || ''}
+                    onChange={e => setMaterialForm({ ...materialForm, authorOrLecturer: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">File Size Display</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 1.2 MB or 850 KB"
+                    value={materialForm.fileSize || '1.2 MB'}
+                    onChange={e => setMaterialForm({ ...materialForm, fileSize: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-700">PDF File URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://firebasestorage.googleapis.com/... or /uploads/..."
+                    value={materialForm.fileUrl || ''}
+                    onChange={e => setMaterialForm({ ...materialForm, fileUrl: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white"
+                  />
+                </div>
+
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs font-bold text-slate-700">Description / Details</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Provide context, chapters covered, or instructions..."
+                    value={materialForm.description || ''}
+                    onChange={e => setMaterialForm({ ...materialForm, description: e.target.value })}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold outline-none focus:border-indigo-500 focus:bg-white resize-none"
+                  />
+                </div>
+
+                <div className="col-span-1 sm:col-span-2">
+                  <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={materialForm.isPublished || false}
+                      onChange={e => setMaterialForm({ ...materialForm, isPublished: e.target.checked })}
+                      className="w-4 h-4 rounded text-indigo-600"
+                    />
+                    <span>Publish instantly (make visible to registered HND/BTS students)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowMaterialModal(false)}
+                  className="px-5 rounded-xl text-xs font-bold"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-xl text-xs font-bold flex items-center gap-2"
+                >
+                  {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                  Save Material
                 </Button>
               </div>
             </form>

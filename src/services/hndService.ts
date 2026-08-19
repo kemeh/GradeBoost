@@ -3,6 +3,7 @@ import {
   query, where, orderBy, serverTimestamp, setDoc, writeBatch 
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { handleFirestoreError, OperationType } from './authSecurityService';
 import { 
   HNDSchool, HNDDepartment, HNDProgramme, HNDCourse, 
   HNDLearningMaterial, HNDProject, HNDAssignment, HNDAssignmentSubmission,
@@ -47,21 +48,25 @@ export async function getHNDSchools(forceRefresh = false): Promise<HNDSchool[]> 
 
 export async function saveHNDSchool(school: Partial<HNDSchool>): Promise<string> {
   cachedSchools = null;
-  if (school.id && !school.id.startsWith('new_')) {
-    const docRef = doc(db, 'hnd_schools', school.id);
-    await updateDoc(docRef, { ...school, updatedAt: serverTimestamp() });
-    return school.id;
-  } else {
-    const id = school.code ? `school_${school.code.toLowerCase().replace(/[^a-z0-9]/g, '_')}` : doc(collection(db, 'hnd_schools')).id;
-    const docRef = doc(db, 'hnd_schools', id);
-    await setDoc(docRef, {
-      ...school,
-      id,
-      isActive: school.isActive ?? true,
-      order: school.order ?? 99,
-      createdAt: serverTimestamp()
-    });
-    return id;
+  try {
+    if (school.id && !school.id.startsWith('new_')) {
+      const docRef = doc(db, 'hnd_schools', school.id);
+      await updateDoc(docRef, { ...school, updatedAt: serverTimestamp() });
+      return school.id;
+    } else {
+      const id = school.code ? `school_${school.code.toLowerCase().replace(/[^a-z0-9]/g, '_')}` : doc(collection(db, 'hnd_schools')).id;
+      const docRef = doc(db, 'hnd_schools', id);
+      await setDoc(docRef, {
+        ...school,
+        id,
+        isActive: school.isActive ?? true,
+        order: school.order ?? 99,
+        createdAt: serverTimestamp()
+      });
+      return id;
+    }
+  } catch (err) {
+    return handleFirestoreError(err, OperationType.WRITE, 'hnd_schools');
   }
 }
 
@@ -284,15 +289,19 @@ function filterMaterials(mats: HNDLearningMaterial[], filters?: {
 
 export async function saveHNDMaterial(mat: Partial<HNDLearningMaterial>): Promise<string> {
   cachedMaterials = null;
-  const docRef = mat.id ? doc(db, 'hnd_materials', mat.id) : doc(collection(db, 'hnd_materials'));
-  const id = docRef.id;
-  await setDoc(docRef, {
-    ...mat,
-    id,
-    isPublished: mat.isPublished ?? true,
-    createdAt: serverTimestamp()
-  }, { merge: true });
-  return id;
+  try {
+    const docRef = mat.id ? doc(db, 'hnd_materials', mat.id) : doc(collection(db, 'hnd_materials'));
+    const id = docRef.id;
+    await setDoc(docRef, {
+      ...mat,
+      id,
+      isPublished: mat.isPublished ?? true,
+      createdAt: serverTimestamp()
+    }, { merge: true });
+    return id;
+  } catch (err) {
+    return handleFirestoreError(err, OperationType.WRITE, 'hnd_materials');
+  }
 }
 
 export async function deleteHNDMaterial(id: string): Promise<void> {

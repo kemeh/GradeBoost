@@ -209,6 +209,9 @@ export interface UserProfile {
   photoURL?: string;
   points: number;
   streak: number;
+  verificationMethod?: 'email' | 'phone';
+  emailVerifiedAt?: any;
+  phoneVerifiedAt?: any;
   lastActiveDate?: any; // Timestamp
   badges: string[]; // Array of badge IDs
 }

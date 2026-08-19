@@ -10,6 +10,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
@@ -38,6 +50,40 @@ service cloud.firestore {
              data.rating <= 5 &&
              data.comment is string &&
              data.comment.size() <= 5000;
+    }
+
+    function isValidUserProfile(data) {
+      return data.email is string && data.email.size() <= 128 &&
+             data.name is string && data.name.size() <= 128 &&
+             data.role in ['student', 'teacher', 'admin', 'super_admin'];
+    }
+
+    function isValidHNDSchool(data) {
+      return data.name is string && data.name.size() <= 200 &&
+             data.code is string && data.code.size() <= 20;
+    }
+
+    function isValidHNDDepartment(data) {
+      return data.schoolId is string &&
+             data.name is string && data.name.size() <= 200;
+    }
+
+    function isValidHNDProgramme(data) {
+      return data.departmentId is string &&
+             data.name is string && data.name.size() <= 200;
+    }
+
+    function isValidHNDCourse(data) {
+      return data.programmeId is string &&
+             data.name is string && data.name.size() <= 200 &&
+             data.code is string && data.code.size() <= 20;
+    }
+
+    function isValidHNDMaterial(data) {
+      return data.courseId is string &&
+             data.programmeId is string &&
+             data.title is string && data.title.size() <= 200 &&
+             data.type in ['Lecture Notes', 'Slides / PDF', 'Study Guide', 'Revision Sheet', 'Practical Manual', 'Tutorial & Lab', 'Past Solution', 'Syllabus', 'Past Exams', 'Assignment', 'Reference Book', 'Other', 'note', 'guide', 'video', 'other'];
     }
 
     // ===============================================================
@@ -94,9 +140,9 @@ service cloud.firestore {
 
     // Users collection
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if (isAuthenticated() && isOwner(userId) && (request.resource.data.role == 'student' || request.resource.data.role == 'teacher')) || isAdmin();
-      allow update: if (isOwner(userId) && (request.resource.data.role == resource.data.role || isAdmin())) || isAdmin();
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if (isAuthenticated() && isOwner(userId) && (incoming().role == 'student' || incoming().role == 'teacher') && isValidUserProfile(incoming())) || isAdmin();
+      allow update: if (isOwner(userId) && (incoming().role == existing().role || isAdmin()) && isValidUserProfile(incoming())) || isAdmin();
       allow delete: if isAdmin();
     }
 
@@ -700,27 +746,32 @@ service cloud.firestore {
     // Higher National Diploma (HND) Architecture & Programme Collections
     match /hnd_schools/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && isValidHNDSchool(incoming());
+      allow delete: if isAdmin();
     }
 
     match /hnd_departments/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && isValidHNDDepartment(incoming());
+      allow delete: if isAdmin();
     }
 
     match /hnd_programmes/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && isValidHNDProgramme(incoming());
+      allow delete: if isAdmin();
     }
 
     match /hnd_courses/{id} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create, update: if isAdmin() && isValidHNDCourse(incoming());
+      allow delete: if isAdmin();
     }
 
     match /hnd_materials/{id} {
       allow read: if isAuthenticated();
-      allow write: if isTeacher() || isAdmin();
+      allow create, update: if (isTeacher() || isAdmin()) && isValidHNDMaterial(incoming());
+      allow delete: if isTeacher() || isAdmin();
     }
 
     match /hnd_projects/{id} {

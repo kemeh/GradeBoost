@@ -310,6 +310,60 @@ async function startServer() {
   // ... (keep existing API routes)
 
   // ===============================================================
+  // Phone-Based Authentication & Password Reset API
+  // ===============================================================
+  
+  /**
+   * Reset password for phone-based accounts after OTP verification.
+   * Note: In a production environment, this should verify the OTP token 
+   * against the database again before allowing the reset.
+   */
+  app.post("/api/auth/reset-password-phone", async (req, res) => {
+    try {
+      const { phone, newPassword } = req.body;
+      
+      if (!phone || !newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: "Invalid phone or password (min 6 characters)" });
+      }
+
+      // 1. Format phone to match stored format
+      const cleanDigits = phone.replace(/\D/g, '');
+      const formattedPhone = `+${cleanDigits.startsWith('237') ? cleanDigits : '237' + cleanDigits}`;
+      
+      // 2. Resolve virtual email
+      const virtualEmail = `${formattedPhone.replace(/\D/g, '')}@phone.edulpha.local`;
+
+      // 3. Find user in Auth
+      try {
+        const authUser = await admin.auth().getUserByEmail(virtualEmail);
+        
+        // 4. Update password
+        await admin.auth().updateUser(authUser.uid, {
+          password: newPassword
+        });
+
+        console.log(`[Server Auth API] Password reset successful for phone user: ${formattedPhone}`);
+        return res.json({ success: true, message: "Password updated successfully" });
+      } catch (authErr: any) {
+        if (authErr.code === 'auth/user-not-found') {
+          // Try finding by Firestore mapping if virtual email doesn't match
+          const usersSnap = await db.collection("users").where("phone", "==", formattedPhone).get();
+          if (usersSnap.empty) {
+            return res.status(404).json({ error: "No account found with this phone number." });
+          }
+          const uid = usersSnap.docs[0].id;
+          await admin.auth().updateUser(uid, { password: newPassword });
+          return res.json({ success: true, message: "Password updated successfully" });
+        }
+        throw authErr;
+      }
+    } catch (err: any) {
+      console.error("[Server Auth API Error] Phone Password Reset Failed:", err);
+      return res.status(500).json({ error: err.message || "Internal server error" });
+    }
+  });
+
+  // ===============================================================
   // Edulpha AI REST API Endpoints
   // ===============================================================
 

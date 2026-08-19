@@ -405,6 +405,22 @@
       },
       "required": ["title", "educationLevel", "subject", "topic", "format", "status"]
     },
+    "HNDLearningMaterial": {
+      "title": "HND Learning Material",
+      "description": "Educational materials like lecture notes and study guides for HND courses.",
+      "type": "object",
+      "properties": {
+        "courseId": { "type": "string" },
+        "programmeId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["note", "guide", "video", "other"] },
+        "fileUrl": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["courseId", "programmeId", "title", "type", "fileUrl", "createdAt"]
+    },
     "Institution": {
       "title": "Institution",
       "description": "Educational higher institutions in Cameroon offering professional HND/BTS programmes.",
@@ -603,6 +619,10 @@
     "/hnd_enrollments/{enrollmentId}": {
       "schema": "HNDEnrollmentRecord",
       "description": "Student HND programme and semester enrollments."
+    },
+    "/hnd_materials/{materialId}": {
+      "schema": "HNDLearningMaterial",
+      "description": "Educational materials for HND courses."
     },
     "/accounting_companies/{companyId}": {
       "schema": "AccountingCompany",

@@ -43,7 +43,28 @@ export default function SubjectsPage() {
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16 space-y-12">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 space-y-12">
+        {/* HND / BTS Professional Higher Education Cross-linking Callout */}
+        <div className="bg-gradient-to-r from-indigo-500/10 via-blue-500/5 to-transparent border border-indigo-100 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 animate-in fade-in duration-300">
+          <div className="space-y-1.5">
+            <Badge className="bg-indigo-50 text-indigo-700 border-indigo-100 px-2.5 py-0.5 text-[10px] uppercase font-black">
+              Professional Higher Education
+            </Badge>
+            <h3 className="text-lg font-black text-slate-900">
+              Higher National Diploma (HND) & BTS Portal
+            </h3>
+            <p className="text-xs text-slate-600 font-medium max-w-2xl leading-relaxed">
+              Are you pursuing a professional university degree? Access our unified HND / BTS Portal to view accredited Cameroon higher institutes, professional course syllabi, past exams, and virtual lab simulators.
+            </p>
+          </div>
+          <Link to="/hnd-bts">
+            <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-3 rounded-xl text-xs flex items-center gap-2 whitespace-nowrap shadow-md">
+              <span>View HND / BTS Programme</span>
+              <ArrowRight size={14} />
+            </Button>
+          </Link>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {categories.map((cat, idx) => (
             <div key={idx} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-4 shadow-xs">

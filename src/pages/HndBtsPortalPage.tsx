@@ -209,6 +209,12 @@ export default function HndBtsPortalPage() {
             >
               <Sparkles size={14} /> {language === 'fr' ? 'S\'enregistrer en HND / BTS' : 'Register for HND / BTS'} <ArrowRight size={14} />
             </button>
+            <button 
+              onClick={() => navigate('/subjects')}
+              className="w-full py-3 border border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-200 font-extrabold text-xs rounded-xl flex items-center justify-center gap-2 transition-all"
+            >
+              <BookOpen size={14} className="text-indigo-600" /> {language === 'fr' ? 'Voir tous les cours GCE / Généraux' : 'View General & GCE Courses'}
+            </button>
           </div>
         </div>
       </section>

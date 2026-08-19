@@ -19,6 +19,7 @@ interface AuthContextType {
   isTeacher: boolean;
   isStudent: boolean;
   isEmailVerified: boolean;
+  isAccountVerified: boolean;
   role: 'student' | 'teacher' | 'admin';
   logout: () => Promise<void>;
   setRememberMe: (remember: boolean) => Promise<void>;
@@ -35,6 +36,7 @@ const AuthContext = createContext<AuthContextType>({
   isTeacher: false,
   isStudent: false,
   isEmailVerified: false,
+  isAccountVerified: false,
   role: 'student',
   logout: async () => {},
   setRememberMe: async () => {},
@@ -246,6 +248,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const role: 'student' | 'teacher' | 'admin' = isAdmin ? 'admin' : isTeacher ? 'teacher' : 'student';
   const isEmailVerified = firebaseUser?.emailVerified || false;
 
+  const isAccountVerified = (user?.verificationMethod === 'phone') 
+    ? (user?.phoneVerified || false) 
+    : (firebaseUser?.emailVerified || false);
+
   const setRememberMe = async (remember: boolean) => {
     try {
       await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
@@ -325,6 +331,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isTeacher, 
       isStudent, 
       isEmailVerified, 
+      isAccountVerified,
       role, 
       logout,
       setRememberMe,
