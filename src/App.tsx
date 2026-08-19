@@ -6,6 +6,7 @@ import { SettingsProvider } from './contexts/SettingsContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { lazyWithRetry as lazy } from './utils/lazyWithRetry';
 import { OfflineStatusBanner } from './components/OfflineStatusBanner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Eagerly loaded components (critical path)
 import LandingPage from './pages/LandingPage';
@@ -140,14 +141,15 @@ const TeacherRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 export default function App() {
   return (
-    <SettingsProvider>
-      <AuthProvider>
-        <LanguageProvider>
-          <Router>
-            <OfflineStatusBanner />
-            <Toaster position="top-right" />
-            <Suspense fallback={<LoadingFallback />}>
-              <Routes>
+    <ErrorBoundary>
+      <SettingsProvider>
+        <AuthProvider>
+          <LanguageProvider>
+            <Router>
+              <OfflineStatusBanner />
+              <Toaster position="top-right" />
+              <Suspense fallback={<LoadingFallback />}>
+                <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/features" element={<FeaturesPage />} />
@@ -193,6 +195,9 @@ export default function App() {
               <Route path="/doc/:slug" element={<PublicDocumentView />} />
 
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/login" element={<Navigate to="/auth" replace />} />
+              <Route path="/register" element={<Navigate to="/auth" replace />} />
+              <Route path="/signup" element={<Navigate to="/auth" replace />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/verify-phone" element={<VerifyPhone />} />
               <Route path="/payment" element={<PrivateRoute><PaymentPage /></PrivateRoute>} />
@@ -246,5 +251,6 @@ export default function App() {
       </LanguageProvider>
     </AuthProvider>
   </SettingsProvider>
+</ErrorBoundary>
   );
 }

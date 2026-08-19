@@ -47,7 +47,7 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const { appName, logoUrl, contactEmail } = useSettings();
   const { user, loading: authLoading, isAdmin, isTeacher, setRememberMe: setAuthRememberMe } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
 
   useEffect(() => {
     if (!authLoading && (user || isAdmin)) {
