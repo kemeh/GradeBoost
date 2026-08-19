@@ -58,24 +58,26 @@ export const AIAdminDashboard: React.FC = () => {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 text-white flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-3 bg-indigo-500/20 rounded-xl text-indigo-300 border border-indigo-500/30">
-            <Sliders size={24} />
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-5 sm:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="p-3 bg-indigo-500/20 rounded-xl text-indigo-300 border border-indigo-500/30 shrink-0">
+              <Sliders size={24} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-bold leading-tight">Edulpha AI Administration & Moderation</h2>
+              <p className="text-[10px] sm:text-xs text-indigo-200 mt-1 leading-relaxed">
+                Configure system prompts, provider selection, student rate-limits, and monitor token usage logs
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold">Edulpha AI Administration & Moderation</h2>
-            <p className="text-xs text-indigo-200">
-              Configure system prompts, provider selection, student rate-limits, and monitor token usage logs
-            </p>
-          </div>
-        </div>
 
-        {saveSuccess && (
-          <div className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5">
-            <CheckCircle2 size={16} /> Saved Successfully
-          </div>
-        )}
+          {saveSuccess && (
+            <div className="bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-3 py-1.5 rounded-xl text-[10px] sm:text-xs font-semibold flex items-center gap-1.5 self-start sm:self-center">
+              <CheckCircle2 size={16} /> Saved Successfully
+            </div>
+          )}
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="p-6 space-y-8">

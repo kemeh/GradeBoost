@@ -209,7 +209,7 @@ export default function SubjectManager() {
   });
 
   return (
-    <Card className="p-8 space-y-8">
+    <Card className="p-4 sm:p-8 space-y-6 sm:space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-indigo-50 rounded-2xl">

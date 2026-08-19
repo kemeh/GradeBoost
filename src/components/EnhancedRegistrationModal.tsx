@@ -16,6 +16,7 @@ import { HNDAcademicLevel, HNDSemester } from '../types/hnd';
 import { sendPhoneOtp, formatPhoneNumber, detectCarrier, phoneToVirtualEmail } from '../services/phoneAuthService';
 import { PhoneOtpVerificationModal } from './PhoneOtpVerificationModal';
 import { getInstitutions, getProgrammes, submitInstitutionRequest, Institution, Programme } from '../services/institutionService';
+import { useLanguage } from '../contexts/LanguageContext';
 import toast from 'react-hot-toast';
 
 interface EnhancedRegistrationProps {
@@ -29,6 +30,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
   onSwitchToLogin,
   lang = 'en'
 }) => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [accountType, setAccountType] = useState<'student' | 'teacher'>('student');
   const [currentStep, setCurrentStep] = useState(1);
@@ -1029,7 +1031,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
 
                   {/* Programme / Specialty */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600">HND Programme / Specialty</label>
+                    <label className="text-xs font-bold text-slate-600">{t('curriculum.hndProgramme')}</label>
                     <select
                       value={formData.hndProgrammeId}
                       onChange={e => {
@@ -1061,7 +1063,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Academic Level */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600">Academic Year / Level</label>
+                    <label className="text-xs font-bold text-slate-600">{t('common.level')}</label>
                     <div className="grid grid-cols-2 gap-2">
                       {['HND Level 1', 'HND Level 2'].map(lvl => (
                         <button
@@ -1084,7 +1086,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                               : 'bg-slate-50 text-slate-700 border-slate-200'
                           }`}
                         >
-                          {lvl === 'HND Level 1' ? 'Level 1 (Yr 1)' : 'Level 2 (Yr 2)'}
+                          {lvl === 'HND Level 1' ? t('common.level1', 'Level 1') : t('common.level2', 'Level 2')}
                         </button>
                       ))}
                     </div>
@@ -1092,7 +1094,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
 
                   {/* Semester */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-600">Current Semester</label>
+                    <label className="text-xs font-bold text-slate-600">{t('common.semester', 'Semester')}</label>
                     <div className="grid grid-cols-2 gap-2">
                       {['Semester 1', 'Semester 2'].map(sem => (
                         <button
@@ -1114,7 +1116,7 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                               : 'bg-slate-50 text-slate-700 border-slate-200'
                           }`}
                         >
-                          {sem}
+                          {sem === 'Semester 1' ? t('common.semester1', 'Sem 1') : t('common.semester2', 'Sem 2')}
                         </button>
                       ))}
                     </div>

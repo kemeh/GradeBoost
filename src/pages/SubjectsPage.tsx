@@ -23,22 +23,26 @@ export default function SubjectsPage() {
     {
       title: 'TVEE & Technical Specialties',
       subjects: ['Electrical Technology', 'Building Construction', 'Motor Vehicle Technology', 'Woodwork & Cabinet Making', 'Mechanical Engineering']
+    },
+    {
+      title: 'HND & BTS Professional Specialties',
+      subjects: ['Software Engineering', 'Computer Engineering', 'Accountancy', 'Banking & Finance', 'Marketing', 'Business Management', 'Electrical Power Systems', 'Civil Engineering Technology']
     }
   ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
-      <SEO title="Explore Subjects | Edulpha" description="Full directory of subjects covered across General, Technical, Commercial and TVEE sub-systems." />
+      <SEO title="Explore Subjects | Edulpha" description="Full directory of subjects covered across General, Technical, Commercial, TVEE, and HND/BTS professional sub-systems." />
       <Navbar />
 
       <section className="pt-28 pb-16 px-4 sm:px-6 bg-gradient-to-b from-slate-950 via-indigo-950 to-slate-900 text-white text-center">
         <div className="max-w-4xl mx-auto space-y-4">
           <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30 px-3 py-1 text-xs uppercase font-black">
-            COMPLETE CURRICULUM CATALOG
+            UNIFIED CURRICULUM CATALOG
           </Badge>
           <h1 className="text-3xl sm:text-5xl font-black">Subject Directory</h1>
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto">
-            Comprehensive past papers, AI step-by-step solutions, and revision notes across all major subjects.
+            Comprehensive past papers, AI step-by-step solutions, and revision notes across all major subsystems including GCE, TVEE, and HND/BTS.
           </p>
         </div>
       </section>
@@ -54,12 +58,12 @@ export default function SubjectsPage() {
               Higher National Diploma (HND) & BTS Portal
             </h3>
             <p className="text-xs text-slate-600 font-medium max-w-2xl leading-relaxed">
-              Are you pursuing a professional university degree? Access our unified HND / BTS Portal to view accredited Cameroon higher institutes, professional course syllabi, past exams, and virtual lab simulators.
+              Are you pursuing a professional university degree? Access our unified HND / BTS Portal to view accredited Cameroon higher institutes, professional course syllabi, past exams, and virtual lab simulators for Software Engineering, Accountancy, and more.
             </p>
           </div>
           <Link to="/hnd-bts">
             <Button className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-5 py-3 rounded-xl text-xs flex items-center gap-2 whitespace-nowrap shadow-md">
-              <span>View HND / BTS Programme</span>
+              <span>View HND / BTS Portal</span>
               <ArrowRight size={14} />
             </Button>
           </Link>

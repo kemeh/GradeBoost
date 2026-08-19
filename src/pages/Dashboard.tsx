@@ -28,6 +28,7 @@ import { getSystemSettings } from '../services/settingsService';
 import { fetchDailyDrill } from '../services/dailyDrillService';
 import PhoneMigrationBanner from '../components/PhoneMigrationBanner';
 import { HNDEnrollmentModal } from '../components/HNDEnrollmentModal';
+import HNDLearnerDashboard from '../components/hnd/HNDLearnerDashboard';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -293,8 +294,12 @@ export default function Dashboard() {
         
         <WelcomeDashboard />
 
-        {/* Study Challenges & Learning Roadmap Banner */}
-        <section className="mb-12">
+        {user.curriculumId === 'hnd' ? (
+          <HNDLearnerDashboard />
+        ) : (
+          <>
+            {/* Study Challenges & Learning Roadmap Banner */}
+            <section className="mb-12">
           <Card className="p-8 bg-indigo-600 text-white overflow-hidden relative">
             <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
               <div className="flex-1">
@@ -512,6 +517,9 @@ export default function Dashboard() {
               ))}
             </div>
           </section>
+        )}
+
+          </>
         )}
 
         {/* Quick Access Grid */}

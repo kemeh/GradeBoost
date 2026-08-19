@@ -310,60 +310,6 @@ async function startServer() {
   // ... (keep existing API routes)
 
   // ===============================================================
-  // Phone-Based Authentication & Password Reset API
-  // ===============================================================
-  
-  /**
-   * Reset password for phone-based accounts after OTP verification.
-   * Note: In a production environment, this should verify the OTP token 
-   * against the database again before allowing the reset.
-   */
-  app.post("/api/auth/reset-password-phone", async (req, res) => {
-    try {
-      const { phone, newPassword } = req.body;
-      
-      if (!phone || !newPassword || newPassword.length < 6) {
-        return res.status(400).json({ error: "Invalid phone or password (min 6 characters)" });
-      }
-
-      // 1. Format phone to match stored format
-      const cleanDigits = phone.replace(/\D/g, '');
-      const formattedPhone = `+${cleanDigits.startsWith('237') ? cleanDigits : '237' + cleanDigits}`;
-      
-      // 2. Resolve virtual email
-      const virtualEmail = `${formattedPhone.replace(/\D/g, '')}@phone.edulpha.local`;
-
-      // 3. Find user in Auth
-      try {
-        const authUser = await admin.auth().getUserByEmail(virtualEmail);
-        
-        // 4. Update password
-        await admin.auth().updateUser(authUser.uid, {
-          password: newPassword
-        });
-
-        console.log(`[Server Auth API] Password reset successful for phone user: ${formattedPhone}`);
-        return res.json({ success: true, message: "Password updated successfully" });
-      } catch (authErr: any) {
-        if (authErr.code === 'auth/user-not-found') {
-          // Try finding by Firestore mapping if virtual email doesn't match
-          const usersSnap = await db.collection("users").where("phone", "==", formattedPhone).get();
-          if (usersSnap.empty) {
-            return res.status(404).json({ error: "No account found with this phone number." });
-          }
-          const uid = usersSnap.docs[0].id;
-          await admin.auth().updateUser(uid, { password: newPassword });
-          return res.json({ success: true, message: "Password updated successfully" });
-        }
-        throw authErr;
-      }
-    } catch (err: any) {
-      console.error("[Server Auth API Error] Phone Password Reset Failed:", err);
-      return res.status(500).json({ error: err.message || "Internal server error" });
-    }
-  });
-
-  // ===============================================================
   // Edulpha AI REST API Endpoints
   // ===============================================================
 
@@ -1081,6 +1027,173 @@ Return ONLY valid JSON matching this structure:
       res.json({ success: true, id: ref.id, message: "Report submitted to moderators" });
     } catch (err) {
       res.status(500).json({ success: false, error: "Failed to report content" });
+    }
+  });
+
+  // ===============================================================
+  // Passwordless OTP Authentication Endpoints
+  // ===============================================================
+
+  app.post("/api/auth/otp-login", async (req, res) => {
+    try {
+      const { phone, otpCode, reason = "login" } = req.body;
+      if (!phone || !otpCode) {
+        return res.status(400).json({ success: false, error: "Phone number and OTP code are required" });
+      }
+
+      const cleanPhone = phone.replace(/\D/g, "");
+      const formattedPhone = phone.startsWith("+") ? phone : `+${phone}`;
+      const otpDocId = `otp_${cleanPhone}_${reason}`;
+      
+      const otpDoc = await db.collection("phone_verifications").doc(otpDocId).get();
+      
+      if (!otpDoc.exists) {
+        return res.status(404).json({ success: false, error: "No active verification code found for this number." });
+      }
+
+      const otpData = otpDoc.data();
+      if (!otpData) return res.status(500).json({ success: false, error: "Invalid verification data" });
+
+      // Check expiry
+      if (Date.now() > otpData.expiresAt) {
+        return res.status(400).json({ success: false, error: "The verification code has expired. Please request a new one." });
+      }
+
+      // Check code
+      if (otpData.otpCode !== otpCode.trim()) {
+        return res.status(400).json({ success: false, error: "Incorrect verification code." });
+      }
+
+      // 1. Find user by phone
+      let userUid = "";
+      const usersSnap = await db.collection("users").where("phone", "==", formattedPhone).limit(1).get();
+      
+      if (usersSnap.empty) {
+        // Check virtual email fallback
+        const virtualEmail = `${cleanPhone}@phone.edulpha.local`;
+        const usersSnap2 = await db.collection("users").where("email", "==", virtualEmail).limit(1).get();
+        if (usersSnap2.empty) {
+          return res.status(404).json({ success: false, error: "No Edulpha account found associated with this phone number." });
+        }
+        userUid = usersSnap2.docs[0].id;
+      } else {
+        userUid = usersSnap.docs[0].id;
+      }
+
+      // 2. Generate Custom Token
+      const customToken = await admin.auth().createCustomToken(userUid);
+      
+      // 3. Mark verified
+      await db.collection("phone_verifications").doc(otpDocId).update({
+        verified: true,
+        verifiedAt: Date.now()
+      });
+
+      return res.json({ 
+        success: true, 
+        token: customToken,
+        message: "OTP verified successfully. Authenticaton token generated."
+      });
+    } catch (err: any) {
+      console.error("[OTP Login Error]", err);
+      return res.status(500).json({ success: false, error: err.message || "Failed to verify OTP login" });
+    }
+  });
+
+  app.post("/api/auth/otp-register", async (req, res) => {
+    try {
+      const { phone, otpCode, password, userData } = req.body;
+      if (!phone || !otpCode || !password || !userData) {
+        return res.status(400).json({ success: false, error: "Missing required registration data" });
+      }
+
+      const cleanPhone = phone.replace(/\D/g, "");
+      const formattedPhone = phone.startsWith("+") ? phone : `+${phone}`;
+      const otpDocId = `otp_${cleanPhone}_registration`;
+      
+      const otpDoc = await db.collection("phone_verifications").doc(otpDocId).get();
+      
+      if (!otpDoc.exists) {
+        return res.status(404).json({ success: false, error: "No active verification code found for this number." });
+      }
+
+      const otpData = otpDoc.data();
+      if (!otpData) return res.status(500).json({ success: false, error: "Invalid verification data" });
+
+      if (Date.now() > otpData.expiresAt) {
+        return res.status(400).json({ success: false, error: "The verification code has expired." });
+      }
+
+      if (otpData.otpCode !== otpCode.trim()) {
+        return res.status(400).json({ success: false, error: "Incorrect verification code." });
+      }
+
+      // Check if user already exists
+      const usersSnap = await db.collection("users").where("phone", "==", formattedPhone).limit(1).get();
+      if (!usersSnap.empty) {
+        return res.status(400).json({ success: false, error: "An Edulpha account already exists with this phone number." });
+      }
+
+      const virtualEmail = `${cleanPhone}@phone.edulpha.local`;
+
+      // 1. Create Auth User
+      const userRecord = await admin.auth().createUser({
+        email: userData.email || virtualEmail,
+        password: password,
+        displayName: `${userData.firstName} ${userData.lastName}`,
+        phoneNumber: formattedPhone
+      });
+
+      // 2. Create Firestore User Doc
+      const userDoc = {
+        uid: userRecord.uid,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        displayName: `${userData.firstName} ${userData.lastName}`,
+        email: userData.email || virtualEmail,
+        phone: formattedPhone,
+        role: userData.role || 'student',
+        accountType: userData.accountType || 'student',
+        country: userData.country || 'Cameroon',
+        region: userData.region || '',
+        city: userData.city || '',
+        school: userData.school || '',
+        educationLevel: userData.educationLevel || '',
+        curriculum: userData.curriculum || 'gce',
+        academicYear: userData.academicYear || '2024/2025',
+        selectedSubjects: userData.selectedSubjects || [],
+        interests: userData.interests || [],
+        learningStyle: userData.learningStyle || 'visual',
+        onboardingComplete: true,
+        isPhoneVerified: true,
+        createdAt: FieldValue.serverTimestamp(),
+        lastLogin: FieldValue.serverTimestamp(),
+        systemStats: {
+          coursesEnrolled: 0,
+          pointsEarned: 0,
+          rank: 'Bronze'
+        }
+      };
+
+      await db.collection("users").doc(userRecord.uid).set(userDoc);
+
+      // 3. Generate Custom Token
+      const customToken = await admin.auth().createCustomToken(userRecord.uid);
+      
+      // 4. Mark OTP verified
+      await db.collection("phone_verifications").doc(otpDocId).update({
+        verified: true,
+        verifiedAt: Date.now()
+      });
+
+      return res.json({ 
+        success: true, 
+        token: customToken,
+        message: "Account created and verified successfully."
+      });
+    } catch (err: any) {
+      console.error("[OTP Registration Error]", err);
+      return res.status(500).json({ success: false, error: err.message || "Failed to complete registration" });
     }
   });
 

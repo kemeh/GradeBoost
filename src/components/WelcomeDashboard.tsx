@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Trophy, Zap, Target } from 'lucide-react';
+import { Trophy, Zap, Target, Layers } from 'lucide-react';
 import { Badge } from './ui';
 
 export default function WelcomeDashboard() {
@@ -44,9 +44,23 @@ export default function WelcomeDashboard() {
           
           <div className="space-y-4">
             <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest">
-              {language === 'fr' ? 'Matières du jour :' : 'Today’s subjects:'}
+              {user.curriculumId === 'hnd' 
+                ? (language === 'fr' ? 'Modules inscrits :' : 'Enrolled Modules:')
+                : (language === 'fr' ? 'Matières du jour :' : 'Today’s subjects:')}
             </h3>
-            {subjects.length > 0 ? (
+            {user.curriculumId === 'hnd' && user.selectedSubjects && user.selectedSubjects.length > 0 ? (
+              <div className="flex flex-wrap gap-3">
+                {user.selectedSubjects.map((course, index) => (
+                  <div 
+                    key={index}
+                    className="flex items-center gap-3 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl font-bold border border-indigo-100"
+                  >
+                    <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                    {course}
+                  </div>
+                ))}
+              </div>
+            ) : subjects.length > 0 ? (
               <div className="flex flex-wrap gap-3">
                 {subjects.map((subject, index) => (
                   <div 
@@ -61,18 +75,25 @@ export default function WelcomeDashboard() {
             ) : (
               <p className="text-slate-400 italic text-sm">
                 {language === 'fr'
-                  ? "Aucune matière attribuée pour l'instant. Mettez à jour votre profil pour choisir votre matière principale !"
-                  : "No subjects assigned yet. Check your profile to set your target subject!"}
+                  ? "Aucune matière attribuée pour l'instant."
+                  : "No subjects assigned yet."}
               </p>
             )}
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-4 lg:flex-col lg:items-end">
-          <Badge variant="primary" className="px-4 py-2 text-sm font-black">
-            <Target size={16} className="mr-2" />
-            {language === 'fr' ? `Objectif : Note ${user.targetGrade || 'A'}` : `Target: Grade ${user.targetGrade || 'A'}`}
-          </Badge>
+          {user.curriculumId === 'hnd' ? (
+            <Badge variant="primary" className="px-4 py-2 text-sm font-black bg-indigo-600 text-white border-none">
+              <Layers size={16} className="mr-2" />
+              {user.hndProgrammeCode || 'HND'} • {user.hndLevel}
+            </Badge>
+          ) : (
+            <Badge variant="primary" className="px-4 py-2 text-sm font-black">
+              <Target size={16} className="mr-2" />
+              {language === 'fr' ? `Objectif : Note ${user.targetGrade || 'A'}` : `Target: Grade ${user.targetGrade || 'A'}`}
+            </Badge>
+          )}
           <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 rounded-xl border border-amber-100">
             <Zap className="text-amber-500" size={16} />
             <span className="text-sm font-black text-amber-700">

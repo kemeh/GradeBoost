@@ -1,10 +1,12 @@
 {
-  "projectId": "edulpha-app",
+  "projectId": "gradeboost-df887",
   "appId": "1:230517027925:web:76bb195a80f44e1b3bd0dc",
   "apiKey": "AIzaSyBs8kp-qj7X-3ESbirTiZNEPjbd1CKuk30",
-  "authDomain": "edulpha-app.firebaseapp.com",
+  "authDomain": "gradeboost-df887.firebaseapp.com",
   "firestoreDatabaseId": "ai-studio-8cbb773b-9589-470c-a864-1eb415b2302d",
-  "storageBucket": "edulpha-app.appspot.com",
+  "storageBucket": "gradeboost-df887.firebasestorage.app",
   "messagingSenderId": "230517027925",
-  "measurementId": ""
+  "measurementId": "",
+  "oAuthClientId": "230517027925-dllnkqdkngsb4ppq1fm7bl7nvpfnk564.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
 }

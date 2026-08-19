@@ -362,7 +362,50 @@ export async function saveHNDProject(proj: Partial<HNDProject>): Promise<string>
 }
 
 // ==========================================
-// 7. SEED ALL DEFAULTS
+// 7. HND ASSIGNMENTS & SUBMISSIONS
+// ==========================================
+export async function getHNDAssignments(filters?: {
+  courseId?: string;
+  programmeId?: string;
+  level?: string;
+  semester?: string;
+  activeOnly?: boolean;
+}): Promise<HNDAssignment[]> {
+  try {
+    let q = query(collection(db, 'hnd_assignments'), orderBy('createdAt', 'desc'));
+    
+    if (filters?.courseId) q = query(q, where('courseId', '==', filters.courseId));
+    if (filters?.programmeId) q = query(q, where('programmeId', '==', filters.programmeId));
+    if (filters?.level) q = query(q, where('level', '==', filters.level));
+    if (filters?.semester) q = query(q, where('semester', '==', filters.semester));
+    if (filters?.activeOnly) q = query(q, where('active', '==', true));
+
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as HNDAssignment));
+  } catch (err) {
+    console.warn('[HND Service] Error fetching assignments:', err);
+    return [];
+  }
+}
+
+export async function saveHNDAssignment(assignment: Partial<HNDAssignment>): Promise<string> {
+  try {
+    const docRef = assignment.id ? doc(db, 'hnd_assignments', assignment.id) : doc(collection(db, 'hnd_assignments'));
+    const id = docRef.id;
+    await setDoc(docRef, {
+      ...assignment,
+      id,
+      active: assignment.active ?? true,
+      createdAt: serverTimestamp()
+    }, { merge: true });
+    return id;
+  } catch (err) {
+    return handleFirestoreError(err, OperationType.WRITE, 'hnd_assignments');
+  }
+}
+
+// ==========================================
+// 8. SEED ALL DEFAULTS
 // ==========================================
 export async function seedHNDDefaults(): Promise<void> {
   try {

@@ -107,49 +107,51 @@ export default function AdminNavigationManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200/80 shadow-xs">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
-            <Compass size={24} />
+      <div className="flex flex-col gap-6 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold shrink-0">
+              <Compass size={24} />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
+                {language === 'fr' ? 'Gestionnaire de Navigation Edulpha' : 'Navigation Bar Builder & Extensibility'}
+              </h2>
+              <p className="text-[10px] sm:text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                {language === 'fr' 
+                  ? 'Gérez les liens, l\'ordre, la visibilité et les mega menus en temps réel.'
+                  : 'Configure menu items, mega menus, link targets, and role permissions without code changes.'}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-black text-slate-900">
-              {language === 'fr' ? 'Gestionnaire de Navigation Edulpha' : 'Navigation Bar Builder & Extensibility'}
-            </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              {language === 'fr' 
-                ? 'Gérez les liens, l\'ordre, la visibilité et les mega menus en temps réel.'
-                : 'Configure menu items, mega menus, link targets, and role permissions without code changes.'}
-            </p>
+
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetDefault}
+              className="flex-1 sm:flex-none text-[10px] sm:text-xs font-bold rounded-xl"
+            >
+              <RefreshCw size={14} className="mr-1.5" /> Reset
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={handleAddNew}
+              className="flex-1 sm:flex-none bg-slate-900 hover:bg-slate-800 text-white font-bold text-[10px] sm:text-xs rounded-xl"
+            >
+              <Plus size={14} className="mr-1.5" /> Add Item
+            </Button>
+
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saving}
+              className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px] sm:text-xs rounded-xl shadow-md"
+            >
+              <Save size={14} className="mr-1.5" /> {saving ? 'Saving...' : 'Save Configuration'}
+            </Button>
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleResetDefault}
-            className="text-xs font-bold rounded-xl"
-          >
-            <RefreshCw size={14} className="mr-1.5" /> Reset Default
-          </Button>
-
-          <Button
-            size="sm"
-            onClick={handleAddNew}
-            className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl"
-          >
-            <Plus size={14} className="mr-1.5" /> Add Menu Item
-          </Button>
-
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-md"
-          >
-            <Save size={14} className="mr-1.5" /> {saving ? 'Saving...' : 'Save Configuration'}
-          </Button>
         </div>
       </div>
 

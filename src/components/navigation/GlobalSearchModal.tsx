@@ -36,6 +36,11 @@ const SEARCH_DATABASE: NavSearchResult[] = [
   { id: 'ai-1', title: 'Ask Edulpha AI Step-by-Step Solver', category: 'AI Tutor', href: '/diagnostic', subtitle: '24/7 AI tutor for instant past paper help' },
   { id: 'ai-2', title: 'AI Exam Readiness Diagnostic Test', category: 'AI Tutor', href: '/diagnostic', subtitle: 'Analyze your weak topics across 10 years of exams' },
 
+  // HND & BTS Portal
+  { id: 'hnd-1', title: 'HND & BTS Professional Portal', category: 'Course', href: '/hnd-bts', subtitle: 'National Higher Diploma & BTS specialties, practical labs' },
+  { id: 'hnd-2', title: 'Software Engineering (HND)', category: 'Subject', href: '/lms?qualification=HND&programmeId=prog_hnd_swe', subtitle: 'Programming, Database Systems, Software Design' },
+  { id: 'hnd-3', title: 'Accounting (HND)', category: 'Subject', href: '/lms?qualification=HND&programmeId=prog_hnd_acc', subtitle: 'Professional auditing, cost accounting, financial reporting' },
+
   // Help Articles
   { id: 'help-1', title: 'How to download past papers for offline revision', category: 'Help Article', href: '/docs', subtitle: 'Edulpha Mobile App Guide' },
   { id: 'help-2', title: 'Understanding your Exam Readiness Score', category: 'Help Article', href: '/docs', subtitle: 'Analytics and score calculation' },

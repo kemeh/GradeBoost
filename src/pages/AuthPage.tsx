@@ -43,7 +43,6 @@ export default function AuthPage() {
   const [otpReason, setOtpReason] = useState<'login' | 'reset_password'>('login');
   const [initialSimulatedOtp, setInitialSimulatedOtp] = useState<string | undefined>();
   const [resetModalStep, setResetModalStep] = useState<1 | 2>(1);
-  const [showNewPasswordForm, setShowNewPasswordForm] = useState(false);
 
   const navigate = useNavigate();
   const { appName, logoUrl, contactEmail } = useSettings();
@@ -66,30 +65,30 @@ export default function AuthPage() {
 
   const getFriendlyErrorMessage = (error: any) => {
     if (error.message && error.message.startsWith('{')) {
-      return 'A database error occurred. Please try again.';
+      return t('auth.login.error.general');
     }
 
     const code = error.code || '';
     switch (code) {
       case 'auth/email-already-in-use':
-        return 'This account is already registered. Please login instead.';
+        return t('auth.register.emailInUse', 'This account is already registered. Please login instead.');
       case 'auth/invalid-email':
-        return 'Please enter a valid phone number or email.';
+        return t('auth.login.error.invalidEmail', 'Please enter a valid phone number or email.');
       case 'auth/user-disabled':
-        return `This account has been disabled. Please contact ${contactEmail}.`;
+        return `${t('auth.login.error.disabled', 'This account has been disabled. Please contact')} ${contactEmail}.`;
       case 'auth/user-not-found':
-        return 'No account found with these credentials. Please sign up.';
+        return t('auth.login.error.noAccount', 'No account found with these credentials. Please sign up.');
       case 'auth/wrong-password':
       case 'auth/invalid-credential':
-        return 'Incorrect password or phone number. Please try again.';
+        return t('auth.login.error.invalidCredentials', 'Incorrect password or phone number. Please try again.');
       case 'auth/weak-password':
-        return 'Password should be at least 6 characters.';
+        return t('auth.register.weakPassword', 'Password should be at least 6 characters.');
       case 'auth/network-request-failed':
-        return 'Network error. Please check your internet connection.';
+        return t('common.error.network', 'Network error. Please check your internet connection.');
       case 'auth/too-many-requests':
-        return 'Too many failed attempts. Account temporarily locked for security.';
+        return t('auth.login.error.tooManyAttempts');
       default:
-        return error.message || 'An unexpected error occurred. Please try again.';
+        return error.message || t('auth.login.error.general');
     }
   };
 
@@ -123,7 +122,7 @@ export default function AuthPage() {
     const inputIdentifier = loginMethod === 'email_password' ? emailInput : phoneInput;
 
     if (!inputIdentifier.trim()) {
-      setError(loginMethod === 'email_password' ? 'Please enter your email address' : 'Please enter your phone number');
+      setError(loginMethod === 'email_password' ? t('auth.login.error.emptyEmail') : t('auth.login.error.emptyPhone'));
       setLoading(false);
       return;
     }
@@ -133,7 +132,7 @@ export default function AuthPage() {
 
       const lockout = await checkAccountLockout(targetEmail);
       if (lockout.isLocked) {
-        setError(`Account locked due to 5 failed attempts. Please try again in ${Math.ceil(lockout.remainingSeconds / 60)} minutes.`);
+        setError(t('auth.login.error.accountLocked').replace('{minutes}', Math.ceil(lockout.remainingSeconds / 60).toString()));
         setLoading(false);
         return;
       }
@@ -179,7 +178,7 @@ export default function AuthPage() {
     const carrier = detectCarrier(formatted);
 
     if (!carrier.isValid) {
-      setError('Please enter a valid MTN or Orange Cameroon mobile number (e.g. +237 670000000)');
+      setError(t('auth.login.error.invalidPhone'));
       return;
     }
 
@@ -192,7 +191,7 @@ export default function AuthPage() {
       const snap = await getDocs(q);
 
       if (snap.empty) {
-        setError('No account found with this phone number. Please register first.');
+        setError(t('auth.login.error.noAccount'));
         setLoading(false);
         return;
       }
@@ -213,70 +212,37 @@ export default function AuthPage() {
   };
 
   // Handle OTP Verified for Passwordless Login
-  const handleOtpLoginVerified = async () => {
+  const handleOtpLoginVerified = async (otpCode?: string) => {
     setShowOtpModal(false);
-    setLoading(true);
-
-    try {
-      const formatted = formatPhoneNumber(phoneInput);
-      const targetEmail = await resolveTargetEmail(formatted);
-
-      // Fetch user doc to obtain passwordless magic sign-in or auto-verify
-      const q = query(collection(db, 'users'), where('phone', '==', formatted));
-      const snap = await getDocs(q);
-
-      if (!snap.empty) {
-        // Sign in using existing user credentials or profile match
-        // For seamless firebase auth compatibility, we sign in or set session
-        const docId = snap.docs[0].id;
-        const userData = snap.docs[0].data();
-
-        // Update last login
-        await updateDoc(doc(db, 'users', docId), {
-          lastLogin: new Date().toISOString()
-        });
-
-        // Trigger email sign in or re-auth
-        toast.success('Phone verified! Signing you into Edulpha...');
-        
-        // Since we can't easily sign in via password here without the password, 
-        // we'll use the virtual email and a one-time token if possible, or just redirect
-        // For AI Studio, we'll refresh to trigger AuthContext detection
-        window.location.reload();
-      }
-    } catch (err: any) {
-      toast.error('Failed to finalize login: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleFinishResetPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPasswordInput || newPasswordInput.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
     setLoading(true);
     setError('');
 
     try {
-      const response = await axios.post('/api/auth/reset-password-phone', {
-        phone: phoneInput,
-        newPassword: newPasswordInput
+      const formatted = formatPhoneNumber(phoneInput);
+      
+      // Call server to verify OTP and get custom token for passwordless sign-in
+      const { default: axios } = await import('axios');
+      const response = await axios.post('/api/auth/otp-login', {
+        phone: formatted,
+        otpCode: otpCode,
+        reason: 'login'
       });
 
-      if (response.data.success) {
-        toast.success('Password updated successfully! Please login with your new password.');
-        setShowNewPasswordForm(false);
-        setIsForgot(false);
-        setIsLogin(true);
-        setPasswordInput(newPasswordInput);
+      if (response.data.success && response.data.token) {
+        // Sign in with Custom Token
+        const { signInWithCustomToken } = await import('firebase/auth');
+        await signInWithCustomToken(auth, response.data.token);
+        
+        toast.success(t('auth.login.success.otpVerified', 'Login successful!'));
+        navigate('/dashboard');
       } else {
-        setError(response.data.error || 'Failed to update password');
+        setError(response.data.error || t('auth.login.error.otpFailed', 'Failed to verify OTP'));
       }
     } catch (err: any) {
-      setError(err.response?.data?.error || err.message || 'Failed to update password');
+      console.error("OTP Login Error:", err);
+      const msg = err.response?.data?.error || err.message || t('auth.login.error.otpFailed', "Failed to finalize login after OTP");
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -292,7 +258,7 @@ export default function AuthPage() {
     try {
       if (recoveryMethod === 'email') {
         if (!emailInput.trim()) {
-          setError('Please enter your email address');
+          setError(t('auth.login.error.emptyEmail'));
           setLoading(false);
           return;
         }
@@ -302,14 +268,14 @@ export default function AuthPage() {
           action: 'PASSWORD_RESET_REQUEST',
           details: 'User requested password reset link via email',
         });
-        setSuccess('Password reset link sent to your email.');
+        setSuccess(t('auth.login.success.resetSent'));
       } else {
         // Phone Recovery via SMS OTP
         const formatted = formatPhoneNumber(phoneInput);
         const carrier = detectCarrier(formatted);
 
         if (!carrier.isValid) {
-          setError('Please enter a valid phone number');
+          setError(t('auth.login.error.invalidPhone'));
           setLoading(false);
           return;
         }
@@ -348,71 +314,28 @@ export default function AuthPage() {
           </Link>
           <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 tracking-tight leading-snug px-2">
             {isForgot 
-              ? 'Reset Your Password' 
+              ? t('auth.login.resetTitle') 
               : isLogin 
-              ? 'Login to Edulpha' 
-              : 'Create Edulpha Account'}
+              ? t('auth.login.title') 
+              : t('auth.login.createAccountTitle')}
           </h1>
           <p className="text-slate-500 font-medium text-xs sm:text-sm max-w-sm mx-auto px-2">
             {isForgot 
-              ? 'Choose phone SMS OTP recovery or email link.' 
+              ? t('auth.login.resetSubtitle') 
               : isLogin 
-              ? 'Primary phone authentication for Cameroon & African learners.' 
-              : 'Join Edulpha: GCE, BEPC & Baccalauréat Practical Learning Ecosystem'}
+              ? t('auth.login.subtitle') 
+              : t('auth.login.createAccountSubtitle')}
           </p>
         </div>
 
-            {/* REGISTRATION MODAL OR LOGIN CARD */}
-            {!isLogin && !isForgot ? (
-              <EnhancedRegistrationModal 
-                onSuccess={() => navigate('/dashboard')}
-                onSwitchToLogin={() => setIsLogin(true)}
-                lang={language as 'en' | 'fr'}
-              />
-            ) : showNewPasswordForm ? (
-              <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-slate-200 rounded-2xl sm:rounded-3xl w-full max-w-full box-border overflow-hidden">
-                <div className="text-center mb-6">
-                  <h2 className="text-xl font-bold text-slate-900">Set New Password</h2>
-                  <p className="text-sm text-slate-500">Resetting password for {phoneInput}</p>
-                </div>
-                <form onSubmit={handleFinishResetPassword} className="space-y-4">
-                  {error && (
-                    <div className="bg-rose-50 border border-rose-200 p-3 rounded-xl flex items-start gap-2.5">
-                      <AlertCircle className="text-rose-600 shrink-0 mt-0.5" size={18} />
-                      <p className="text-xs font-bold text-rose-700">{error}</p>
-                    </div>
-                  )}
-                  <div className="space-y-1.5 w-full">
-                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-wider ml-0.5">New Password</label>
-                    <div className="relative w-full">
-                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        required
-                        className="w-full pl-11 pr-11 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-indigo-600 outline-none transition-all font-bold text-slate-900 text-sm box-border"
-                        placeholder="••••••••"
-                        value={newPasswordInput}
-                        onChange={e => setNewPasswordInput(e.target.value)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-indigo-600"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-                  <Button 
-                    type="submit" 
-                    disabled={loading}
-                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest rounded-xl"
-                  >
-                    {loading ? <RefreshCw size={18} className="animate-spin" /> : 'Update Password'}
-                  </Button>
-                </form>
-              </Card>
-            ) : (
+        {/* REGISTRATION MODAL OR LOGIN CARD */}
+        {!isLogin && !isForgot ? (
+          <EnhancedRegistrationModal 
+            onSuccess={() => navigate('/dashboard')}
+            onSwitchToLogin={() => setIsLogin(true)}
+            lang={language as 'en' | 'fr'}
+          />
+        ) : (
           <Card className="p-4 sm:p-6 md:p-8 shadow-xl border-slate-200 rounded-2xl sm:rounded-3xl w-full max-w-full box-border overflow-hidden">
             {/* Method Tabs for Login */}
             {isLogin && !isForgot && (
@@ -427,7 +350,7 @@ export default function AuthPage() {
                   }`}
                 >
                   <Smartphone size={18} className="text-indigo-600 shrink-0" />
-                  <span className="truncate">Phone Number</span>
+                  <span className="truncate">{t('auth.login.phoneTab')}</span>
                 </button>
 
                 <button
@@ -440,7 +363,7 @@ export default function AuthPage() {
                   }`}
                 >
                   <Mail size={18} className="text-slate-400 shrink-0" />
-                  <span className="truncate">Email Login</span>
+                  <span className="truncate">{t('auth.login.emailTab')}</span>
                 </button>
               </div>
             )}
@@ -449,8 +372,8 @@ export default function AuthPage() {
             {isLogin && !isForgot && loginMethod.startsWith('phone') && (
               <div className="space-y-1.5 mb-5 w-full">
                 <div className="flex items-center gap-1 text-[11px] font-bold text-slate-600 ml-0.5">
-                  <span>Login Mode</span>
-                  <div className="inline-flex items-center text-slate-400 hover:text-slate-600" title="Choose password or SMS OTP verification">
+                  <span>{t('auth.login.loginMode')}</span>
+                  <div className="inline-flex items-center text-slate-400 hover:text-slate-600" title={language === 'fr' ? 'Choisissez le mot de passe ou la vérification par SMS OTP' : "Choose password or SMS OTP verification"}>
                     <span className="w-3.5 h-3.5 rounded-full border border-slate-400 text-[9px] flex items-center justify-center font-serif italic">i</span>
                   </div>
                 </div>
@@ -465,7 +388,7 @@ export default function AuthPage() {
                     }`}
                   >
                     <Lock size={16} className={`shrink-0 ${loginMethod === 'phone_password' ? 'text-white' : 'text-slate-400'}`} />
-                    <span className="text-[11px] sm:text-xs">Phone + Password</span>
+                    <span className="text-[11px] sm:text-xs">{t('auth.login.phonePassword')}</span>
                   </button>
                   <button
                     type="button"
@@ -477,7 +400,7 @@ export default function AuthPage() {
                     }`}
                   >
                     <ShieldCheck size={16} className={`shrink-0 ${loginMethod === 'phone_otp' ? 'text-white' : 'text-slate-400'}`} />
-                    <span className="text-[11px] sm:text-xs">Passwordless OTP</span>
+                    <span className="text-[11px] sm:text-xs">{t('auth.login.passwordlessOtp')}</span>
                   </button>
                 </div>
               </div>
@@ -496,7 +419,7 @@ export default function AuthPage() {
                   }`}
                 >
                   <Smartphone size={16} className="text-indigo-600 shrink-0" />
-                  <span className="truncate">SMS OTP Code</span>
+                  <span className="truncate">{t('auth.login.smsOtpCode')}</span>
                 </button>
 
                 <button
@@ -509,7 +432,7 @@ export default function AuthPage() {
                   }`}
                 >
                   <Mail size={16} className="text-slate-400 shrink-0" />
-                  <span className="truncate">Email Link</span>
+                  <span className="truncate">{t('auth.login.emailLink')}</span>
                 </button>
               </div>
             )}
@@ -545,7 +468,7 @@ export default function AuthPage() {
               {((isLogin && loginMethod.startsWith('phone')) || (isForgot && recoveryMethod === 'phone')) && (
                 <div className="space-y-1.5 w-full">
                   <label className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center justify-between ml-0.5">
-                    <span>Mobile Phone Number</span>
+                    <span>{t('auth.login.mobilePhone')}</span>
                     {phoneInput && (() => {
                       const carrier = detectCarrier(phoneInput);
                       return carrier.isValid ? (
@@ -561,7 +484,7 @@ export default function AuthPage() {
                       type="tel"
                       required
                       className="w-full pl-11 pr-3 py-3.5 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-mono font-bold text-slate-900 text-base sm:text-sm box-border"
-                      placeholder="+237 670 00 00 00"
+                      placeholder={t('auth.login.phonePlaceholder')}
                       value={phoneInput}
                       onChange={e => setPhoneInput(e.target.value)}
                     />
@@ -572,14 +495,14 @@ export default function AuthPage() {
               {/* EMAIL INPUT FIELD */}
               {((isLogin && loginMethod === 'email_password') || (isForgot && recoveryMethod === 'email')) && (
                 <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider ml-0.5">Email Address</label>
+                  <label className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider ml-0.5">{t('auth.email')}</label>
                   <div className="relative w-full">
                     <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     <input
                       type="email"
                       required
                       className="w-full pl-11 pr-3 py-3.5 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-900 text-base sm:text-sm box-border"
-                      placeholder="name@example.com"
+                      placeholder={t('auth.login.emailPlaceholder')}
                       value={emailInput}
                       onChange={e => setEmailInput(e.target.value)}
                     />
@@ -590,14 +513,14 @@ export default function AuthPage() {
               {/* PASSWORD FIELD (Only when not OTP login and not forgot password) */}
               {isLogin && !isForgot && loginMethod !== 'phone_otp' && (
                 <div className="space-y-1.5 w-full">
-                  <label className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider ml-0.5">Password</label>
+                  <label className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider ml-0.5">{t('auth.password')}</label>
                   <div className="relative w-full">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={18} />
                     <input
                       type={showPassword ? 'text' : 'password'}
                       required
                       className="w-full pl-11 pr-11 py-3.5 sm:py-4 bg-slate-50 border border-slate-200 rounded-xl sm:rounded-2xl focus:bg-white focus:border-indigo-600 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-bold text-slate-900 text-base sm:text-sm box-border"
-                      placeholder="••••••••"
+                      placeholder={t('auth.login.passwordPlaceholder')}
                       value={passwordInput}
                       onChange={e => setPasswordInput(e.target.value)}
                     />
@@ -605,7 +528,7 @@ export default function AuthPage() {
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-indigo-600 transition-colors rounded-lg"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={showPassword ? t('auth.login.hidePassword') : t('auth.login.showPassword')}
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -619,7 +542,7 @@ export default function AuthPage() {
                         onChange={(e) => setRememberMeState(e.target.checked)}
                         className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                       />
-                      <span className="text-xs font-bold text-slate-600">Remember Me</span>
+                      <span className="text-xs font-bold text-slate-600">{t('auth.login.rememberMe')}</span>
                     </label>
                   </div>
                 </div>
@@ -634,11 +557,11 @@ export default function AuthPage() {
                 {loading ? (
                   <RefreshCw size={18} className="animate-spin" />
                 ) : isForgot ? (
-                  recoveryMethod === 'phone' ? 'Send SMS Recovery OTP 📲' : 'Send Email Reset Link 📧'
+                  recoveryMethod === 'phone' ? t('auth.login.sendSmsOtp') : t('auth.login.sendEmailLink')
                 ) : loginMethod === 'phone_otp' ? (
-                  'Send Passwordless OTP 📲'
+                  t('auth.login.sendPasswordlessOtp')
                 ) : (
-                  'Sign In to Edulpha 🚀'
+                  t('auth.login.signInBtn')
                 )}
               </button>
 
@@ -654,7 +577,7 @@ export default function AuthPage() {
                   className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors flex items-center gap-1 py-1"
                 >
                   {isForgot ? <ArrowLeft size={14} /> : null}
-                  <span>{isForgot ? 'Back to Login' : 'Forgot Password?'}</span>
+                  <span>{isForgot ? t('auth.login.backToLogin') : t('auth.login.forgotPassword')}</span>
                 </button>
 
                 <button
@@ -667,7 +590,7 @@ export default function AuthPage() {
                   }}
                   className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors py-1"
                 >
-                  Need an account? Register
+                  {t('auth.login.needAccount')} {t('auth.login.registerLink')}
                 </button>
               </div>
             </form>
@@ -680,14 +603,13 @@ export default function AuthPage() {
       </div>
 
       {/* OTP Modal for Passwordless Login & Reset */}
-      <PhoneOtpVerificationModal
+        <PhoneOtpVerificationModal
         isOpen={showOtpModal}
         onClose={() => setShowOtpModal(false)}
         phone={formatPhoneNumber(phoneInput)}
         onSuccess={otpReason === 'login' ? handleOtpLoginVerified : () => {
           setShowOtpModal(false);
-          setShowNewPasswordForm(true);
-          toast.success('SMS OTP Verified! Please set your new password.');
+          toast.success(t('auth.login.success.otpVerified', 'SMS OTP Verified! Please set your new password.'));
         }}
         reason={otpReason}
         initialSimulatedOtp={initialSimulatedOtp}

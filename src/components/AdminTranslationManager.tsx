@@ -153,8 +153,8 @@ export const AdminTranslationManager: React.FC = () => {
             </form>
 
             {/* Translation Dictionary Table */}
-            <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
-              <table className="w-full text-left text-xs text-slate-700">
+            <div className="border border-slate-200 rounded-2xl overflow-x-auto shadow-xs">
+              <table className="w-full text-left text-xs text-slate-700 min-w-[600px]">
                 <thead className="bg-slate-100 font-bold text-slate-600 border-b border-slate-200">
                   <tr>
                     <th className="p-3.5 w-1/4">Translation Key</th>

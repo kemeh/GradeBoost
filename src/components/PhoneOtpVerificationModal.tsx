@@ -13,12 +13,13 @@ import {
 } from 'lucide-react';
 import { verifyPhoneOtp, sendPhoneOtp, detectCarrier } from '../services/phoneAuthService';
 import { toast } from 'react-hot-toast';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface PhoneOtpVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
   phone: string;
-  onSuccess: () => void;
+  onSuccess: (code?: string) => void;
   reason?: 'registration' | 'login' | 'reset_password' | 'update_phone';
   lang?: 'en' | 'fr';
   initialSimulatedOtp?: string;
@@ -35,6 +36,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
   initialSimulatedOtp,
   initialChannel = 'whatsapp'
 }) => {
+  const { t } = useLanguage();
   const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -125,7 +127,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
     if (e) e.preventDefault();
     const fullCode = otpDigits.join('');
     if (fullCode.length < 6) {
-      setError(lang === 'fr' ? 'Veuillez entrer le code à 6 chiffres' : 'Please enter the complete 6-digit code');
+      setError(t('otp.enterFullCode'));
       return;
     }
 
@@ -136,12 +138,12 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
       const res = await verifyPhoneOtp(phone, fullCode, reason, lang);
       if (res.success) {
         toast.success(res.message);
-        onSuccess();
+        onSuccess(fullCode);
       } else {
         setError(res.message);
       }
     } catch (err: any) {
-      setError(err.message || 'Verification failed. Please try again.');
+      setError(err.message || t('auth.login.error.general'));
     } finally {
       setIsSubmitting(false);
     }
@@ -163,11 +165,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
           setActiveChannel(res.channelUsed);
         }
         if (res.fallbackTriggered) {
-          setFallbackNotice(
-            lang === 'fr'
-              ? 'WhatsApp indisponible. Un SMS de secours vous a été envoyé.'
-              : 'WhatsApp verification unavailable. Sent via SMS fallback.'
-          );
+          setFallbackNotice(t('otp.whatsappIndisponible'));
         }
         if (res.simulatedOtp) {
           setSimulatedCode(res.simulatedOtp);
@@ -179,7 +177,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
         setError(res.message);
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to resend code');
+      setError(err.message || t('auth.login.error.general'));
     } finally {
       setIsResending(false);
     }
@@ -188,7 +186,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
   const autofillSimulated = () => {
     if (simulatedCode && simulatedCode.length === 6) {
       setOtpDigits(simulatedCode.split(''));
-      toast.success(lang === 'fr' ? 'Code Rempli!' : 'Test Code Filled!');
+      toast.success(t('otp.codeFilled'));
     }
   };
 
@@ -216,9 +214,8 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
               <Smartphone size={32} />
             )}
           </div>
-
-          <h3 className="text-2xl font-black text-slate-900 tracking-tight">
-            {lang === 'fr' ? 'Vérification du Téléphone' : 'Phone Verification'}
+<h3 className="text-2xl font-black text-slate-900 tracking-tight">
+            {t('otp.title')}
           </h3>
 
           {/* Active Channel Indicator */}
@@ -226,12 +223,12 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
             {activeChannel === 'whatsapp' ? (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-100 text-emerald-900 font-bold text-xs rounded-full border border-emerald-300">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                WhatsApp OTP (Primary)
+                {t('otp.whatsappPrimary')}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-900 font-bold text-xs rounded-full border border-indigo-300">
                 <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></span>
-                SMS OTP (Fallback)
+                {t('otp.smsFallback')}
               </span>
             )}
 
@@ -247,15 +244,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
           </div>
 
           <p className="text-sm text-slate-500 mt-2">
-            {activeChannel === 'whatsapp' ? (
-              lang === 'fr'
-                ? 'Nous avons envoyé un code de vérification à 6 chiffres via WhatsApp au'
-                : 'We sent a 6-digit WhatsApp verification code to'
-            ) : (
-              lang === 'fr'
-                ? 'Nous avons envoyé un code de vérification à 6 chiffres par SMS au'
-                : 'We sent a 6-digit SMS verification code to'
-            )}
+            {activeChannel === 'whatsapp' ? t('otp.sentWhatsapp') : t('otp.sentSms')}
           </p>
         </div>
 
@@ -272,10 +261,10 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
           <div className="mb-6 p-4 bg-emerald-50 border-2 border-emerald-200 rounded-2xl text-emerald-950 flex flex-col items-center justify-center text-center gap-1">
             <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-800 uppercase tracking-wider">
               <Sparkles size={14} className="text-emerald-600" />
-              {lang === 'fr' ? 'Mode Simulation Sandbox OTP' : 'Sandbox / Test Mode OTP'}
+              {t('otp.sandboxTitle')}
             </div>
             <p className="text-xs text-emerald-800">
-              {lang === 'fr' ? 'Votre code de test est:' : 'Your test verification code is:'}
+              {t('otp.sandboxCode')}
             </p>
             <div className="flex items-center gap-3 mt-1">
               <span className="text-2xl font-black font-mono tracking-widest text-emerald-950 bg-emerald-100 px-4 py-1 rounded-xl border border-emerald-300">
@@ -286,7 +275,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
                 onClick={autofillSimulated}
                 className="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-sm"
               >
-                {lang === 'fr' ? 'Remplir' : 'Auto-fill'}
+                {t('otp.autofill')}
               </button>
             </div>
           </div>
@@ -296,7 +285,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
         <form onSubmit={handleVerify} className="space-y-6">
           <div>
             <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider text-center mb-3">
-              {lang === 'fr' ? 'Entrez le code à 6 chiffres' : 'Enter 6-Digit Code'}
+              {t('otp.enterCode')}
             </label>
             
             <div className="flex justify-center gap-2">
@@ -335,12 +324,12 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
             {isSubmitting ? (
               <>
                 <RefreshCw className="w-5 h-5 animate-spin" />
-                <span>{lang === 'fr' ? 'Vérification...' : 'Verifying...'}</span>
+                <span>{t('otp.verifying')}</span>
               </>
             ) : (
               <>
                 <ShieldCheck size={20} />
-                <span>{lang === 'fr' ? 'Vérifier le Code' : 'Verify & Continue'}</span>
+                <span>{t('otp.verifyBtn')}</span>
               </>
             )}
           </button>
@@ -349,7 +338,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
         {/* Dual Channel Resend & Fallback Controls */}
         <div className="mt-6 pt-4 border-t border-slate-100 text-center space-y-3">
           <p className="text-xs text-slate-500 font-medium">
-            {lang === 'fr' ? "Vous n'avez pas reçu le code ?" : "Didn't receive your verification code?"}
+            {t('otp.noCode')}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-2">
@@ -363,7 +352,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
               {cooldown > 0 ? (
                 <span>WhatsApp ({cooldown}s)</span>
               ) : (
-                <span>{lang === 'fr' ? 'Renvoyer sur WhatsApp' : 'Resend via WhatsApp'}</span>
+                <span>{t('otp.resendWhatsapp')}</span>
               )}
             </button>
 
@@ -377,7 +366,7 @@ export const PhoneOtpVerificationModal: React.FC<PhoneOtpVerificationModalProps>
               {cooldown > 0 ? (
                 <span>SMS ({cooldown}s)</span>
               ) : (
-                <span>{lang === 'fr' ? 'Renvoyer par SMS' : 'Fallback to SMS'}</span>
+                <span>{t('otp.fallbackSms')}</span>
               )}
             </button>
           </div>

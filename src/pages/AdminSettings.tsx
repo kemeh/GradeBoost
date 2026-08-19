@@ -331,22 +331,24 @@ export default function AdminSettings() {
       
       <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors shrink-0" title="Go to Dashboard">
+          <header className="flex flex-col gap-4 mb-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <button onClick={() => navigate('/dashboard')} className="mt-1 p-2 text-slate-400 hover:text-slate-900 transition-colors shrink-0" title="Go to Dashboard">
                 <LayoutDashboard size={20} />
               </button>
-              <div>
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2 sm:gap-3 break-words">
-                  <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600 shrink-0" />
-                  System Settings
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-slate-900 uppercase tracking-tighter flex items-center gap-2 sm:gap-3 leading-tight">
+                  <Settings className="w-5 h-5 sm:w-8 sm:h-8 text-indigo-600 shrink-0" />
+                  <span className="break-words">System Settings</span>
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-500 font-medium">Manage global application configuration and API keys.</p>
+                <p className="text-[10px] sm:text-xs md:text-sm text-slate-500 font-medium mt-1 leading-relaxed">
+                  Manage global application configuration and API keys.
+                </p>
               </div>
             </div>
           </header>
 
-          <div className="grid gap-8">
+          <div className="grid gap-6 sm:gap-8">
             {/* Primary Phone Auth & SMS Gateway Settings */}
             <motion.section
               initial={{ opacity: 0, y: 20 }}
@@ -359,7 +361,7 @@ export default function AdminSettings() {
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"
+              className="bg-white rounded-3xl p-5 sm:p-8 shadow-sm border border-slate-200"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-indigo-50 rounded-2xl">
@@ -462,7 +464,7 @@ export default function AdminSettings() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
-              className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"
+              className="bg-white rounded-3xl p-5 sm:p-8 shadow-sm border border-slate-200"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-blue-50 rounded-2xl">
@@ -564,7 +566,7 @@ export default function AdminSettings() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"
+              className="bg-white rounded-3xl p-5 sm:p-8 shadow-sm border border-slate-200"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-amber-50 rounded-2xl">
@@ -630,7 +632,7 @@ export default function AdminSettings() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200"
+              className="bg-white rounded-3xl p-5 sm:p-8 shadow-sm border border-slate-200"
             >
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 bg-emerald-50 rounded-2xl">
@@ -726,7 +728,7 @@ export default function AdminSettings() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-rose-50 rounded-3xl p-8 border border-rose-200 space-y-6"
+              className="bg-rose-50 rounded-3xl p-5 sm:p-8 border border-rose-200 space-y-6"
             >
               <div className="flex items-center gap-3 text-rose-700">
                 <div className="p-3 bg-rose-100 rounded-2xl">
@@ -771,11 +773,11 @@ export default function AdminSettings() {
             </motion.section>
 
             {/* Save Button Section */}
-            <div className="flex justify-end">
+            <div className="flex justify-center sm:justify-end">
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-12 py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center gap-3 shadow-xl shadow-indigo-200 text-lg"
+                className="w-full sm:w-auto px-12 py-5 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center justify-center gap-3 shadow-xl shadow-indigo-200 text-lg"
               >
                 {isSaving ? <RefreshCw className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
                 Save All Settings
@@ -783,7 +785,7 @@ export default function AdminSettings() {
             </div>
 
             {/* Info Section */}
-            <section className="bg-slate-100 rounded-3xl p-8 border border-slate-200">
+            <section className="bg-slate-100 rounded-3xl p-5 sm:p-8 border border-slate-200">
               <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-indigo-600" />
                 Important Information
