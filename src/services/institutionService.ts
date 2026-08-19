@@ -318,15 +318,30 @@ export async function getInstitutions(): Promise<Institution[]> {
     const snapshot = await getDocs(q);
     
     if (snapshot.empty) {
-      console.log('[InstitutionService] Firestore empty, seeding defaults...');
-      await seedDefaultsIfEmpty();
-      const freshSnapshot = await getDocs(q);
-      return freshSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Institution));
+      console.log('[InstitutionService] Firestore empty, attempting auto-seed...');
+      try {
+        await seedDefaultsIfEmpty();
+        const freshSnapshot = await getDocs(q);
+        if (!freshSnapshot.empty) {
+          return freshSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Institution));
+        }
+      } catch {
+        console.warn('[InstitutionService] Auto-seed skipped due to read-only client permissions.');
+      }
+      return PRE_SEEDED_INSTITUTIONS.map(inst => ({
+        ...inst,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as any as Institution));
     }
 
     return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Institution));
-  } catch (error) {
-    console.error('[InstitutionService] Failed to load institutions:', error);
+  } catch (error: any) {
+    if (error?.code === 'permission-denied' || (error?.message && error.message.includes('permissions'))) {
+      console.warn('[InstitutionService] Read-only mode: using pre-seeded institutions catalog.');
+    } else {
+      console.warn('[InstitutionService] Failed to load institutions from network, using local fallback:', error?.message || error);
+    }
     // Return pre-seeded defaults locally so application never breaks
     return PRE_SEEDED_INSTITUTIONS.map(inst => ({
       ...inst,
@@ -343,13 +358,28 @@ export async function getProgrammes(): Promise<Programme[]> {
   try {
     const snapshot = await getDocs(collection(db, 'programmes'));
     if (snapshot.empty) {
-      await seedDefaultsIfEmpty();
-      const freshSnapshot = await getDocs(collection(db, 'programmes'));
-      return freshSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Programme));
+      try {
+        await seedDefaultsIfEmpty();
+        const freshSnapshot = await getDocs(collection(db, 'programmes'));
+        if (!freshSnapshot.empty) {
+          return freshSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Programme));
+        }
+      } catch {
+        console.warn('[InstitutionService] Auto-seed skipped due to read-only client permissions.');
+      }
+      return PRE_SEEDED_PROGRAMMES.map(p => ({
+        ...p,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      } as any as Programme));
     }
     return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Programme));
-  } catch (error) {
-    console.error('[InstitutionService] Failed to load programmes:', error);
+  } catch (error: any) {
+    if (error?.code === 'permission-denied' || (error?.message && error.message.includes('permissions'))) {
+      console.warn('[InstitutionService] Read-only mode: using pre-seeded programmes catalog.');
+    } else {
+      console.warn('[InstitutionService] Failed to load programmes from network, using local fallback:', error?.message || error);
+    }
     return PRE_SEEDED_PROGRAMMES.map(p => ({
       ...p,
       created_at: new Date().toISOString(),
@@ -594,14 +624,22 @@ export async function runInstitutionSync(): Promise<InstitutionSyncLog> {
  * Base Seeder helper
  */
 async function seedDefaultsIfEmpty() {
-  const snapshot = await getDocs(collection(db, 'institutions'));
-  if (snapshot.empty) {
-    console.log('[Seeder] Seeding higher institutions...');
-    for (const inst of PRE_SEEDED_INSTITUTIONS) {
-      await saveInstitution(inst);
+  try {
+    const snapshot = await getDocs(collection(db, 'institutions'));
+    if (snapshot.empty) {
+      console.log('[Seeder] Seeding higher institutions...');
+      for (const inst of PRE_SEEDED_INSTITUTIONS) {
+        await saveInstitution(inst);
+      }
+      for (const prog of PRE_SEEDED_PROGRAMMES) {
+        await saveProgramme(prog);
+      }
     }
-    for (const prog of PRE_SEEDED_PROGRAMMES) {
-      await saveProgramme(prog);
+  } catch (err: any) {
+    if (err?.code === 'permission-denied' || (err?.message && err.message.includes('permissions'))) {
+      console.warn('[Seeder] Seeding skipped: current user does not have database write permissions.');
+    } else {
+      console.warn('[Seeder] Could not seed default institutions:', err?.message || err);
     }
   }
 }
