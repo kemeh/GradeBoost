@@ -6,6 +6,8 @@ import {
 import { db } from '../../firebase';
 import { useAuth } from '../../contexts/AuthContext';
 import { SubjectModel, PaperConfig, QuestionPaper, Subject, PaperType } from '../../types';
+import { HNDSchool, HNDProgramme, HNDCourse, HNDAcademicLevel, HNDSemester } from '../../types/hnd';
+import { getHNDSchools, getHNDProgrammes, getHNDCourses } from '../../services/hndService';
 import { DEFAULT_GCE_SUBJECTS, getPapersForSubjectName } from '../../data/defaultSubjects';
 import { Button, Card, Badge, cn } from '../ui';
 import FileUpload from '../FileUpload';
@@ -13,7 +15,7 @@ import {
   X, Upload, FileText, CheckCircle2, AlertCircle, 
   Sparkles, Calendar, BookOpen, Layers, Check, HelpCircle,
   Hash, Clock, Award, ShieldCheck, ChevronDown, ListChecks,
-  Eye, RefreshCw, FileCheck, Loader2
+  Eye, RefreshCw, FileCheck, Loader2, GraduationCap, Building2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { 
@@ -58,6 +60,16 @@ export default function DynamicQuestionPaperUploadModal({
   const [selectedCurriculumFilter, setSelectedCurriculumFilter] = useState<string>('all');
   const [subjectSearch, setSubjectSearch] = useState<string>('');
 
+  // HND Specific State
+  const [hndSchools, setHndSchools] = useState<HNDSchool[]>([]);
+  const [hndProgrammes, setHndProgrammes] = useState<HNDProgramme[]>([]);
+  const [hndCourses, setHndCourses] = useState<HNDCourse[]>([]);
+  const [selectedHndSchoolId, setSelectedHndSchoolId] = useState<string>('');
+  const [selectedHndProgrammeId, setSelectedHndProgrammeId] = useState<string>('');
+  const [selectedHndLevel, setSelectedHndLevel] = useState<HNDAcademicLevel>('HND Level 1');
+  const [selectedHndSemester, setSelectedHndSemester] = useState<HNDSemester>('Semester 1');
+  const [selectedHndCourseId, setSelectedHndCourseId] = useState<string>('');
+
   // Selected State
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>('');
   const [selectedPaperType, setSelectedPaperType] = useState<string>('');
@@ -97,55 +109,64 @@ export default function DynamicQuestionPaperUploadModal({
   const isSubmittingRef = useRef<boolean>(false);
   const slowTimerRef = useRef<any>(null);
 
-  // Fetch subjects if not passed or empty
+  // Fetch subjects and HND data if not passed or empty
   useEffect(() => {
     if (initialSubjects && initialSubjects.length > 0) {
       setSubjectsList(initialSubjects);
       if (!selectedSubjectName) {
         setSelectedSubjectName(initialSubjects[0].name);
       }
-      return;
     }
 
-    const loadSubjects = async () => {
+    const loadData = async () => {
       setLoadingSubjects(true);
       try {
-        const q = query(collection(db, 'subjects'), where('isActive', '==', true));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() })) as SubjectModel[];
-          setSubjectsList(loaded);
-          if (loaded.length > 0) {
-            setSelectedSubjectName(loaded[0].name);
+        // Load regular subjects
+        if (!initialSubjects || initialSubjects.length === 0) {
+          const q = query(collection(db, 'subjects'), where('isActive', '==', true));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const loaded = snap.docs.map(d => ({ id: d.id, ...d.data() })) as SubjectModel[];
+            setSubjectsList(loaded);
+            if (loaded.length > 0 && !selectedSubjectName) {
+              setSelectedSubjectName(loaded[0].name);
+            }
+          } else {
+            const defaultModels: SubjectModel[] = DEFAULT_GCE_SUBJECTS.map((s, idx) => ({
+              id: `default-${idx}`,
+              ...s
+            }));
+            setSubjectsList(defaultModels);
+            if (defaultModels.length > 0 && !selectedSubjectName) {
+              setSelectedSubjectName(defaultModels[0].name);
+            }
           }
-        } else {
-          // Fallback to DEFAULT_GCE_SUBJECTS
-          const defaultModels: SubjectModel[] = DEFAULT_GCE_SUBJECTS.map((s, idx) => ({
-            id: `default-${idx}`,
-            ...s
-          }));
-          setSubjectsList(defaultModels);
-          if (defaultModels.length > 0) {
-            setSelectedSubjectName(defaultModels[0].name);
-          }
+        }
+
+        // Load HND entities in parallel
+        const [schools, progs, courses] = await Promise.all([
+          getHNDSchools(),
+          getHNDProgrammes(),
+          getHNDCourses()
+        ]);
+        setHndSchools(schools);
+        setHndProgrammes(progs);
+        setHndCourses(courses);
+        if (schools.length > 0 && !selectedHndSchoolId) {
+          setSelectedHndSchoolId(schools[0].id);
+        }
+        if (progs.length > 0 && !selectedHndProgrammeId) {
+          setSelectedHndProgrammeId(progs[0].id);
         }
       } catch (err) {
-        console.warn('Error loading subjects from Firestore, using default catalogue:', err);
-        const defaultModels: SubjectModel[] = DEFAULT_GCE_SUBJECTS.map((s, idx) => ({
-          id: `default-${idx}`,
-          ...s
-        }));
-        setSubjectsList(defaultModels);
-        if (defaultModels.length > 0) {
-          setSelectedSubjectName(defaultModels[0].name);
-        }
+        console.warn('Error loading subjects or HND data:', err);
       } finally {
         setLoadingSubjects(false);
       }
     };
 
     if (isOpen) {
-      loadSubjects();
+      loadData();
     }
   }, [isOpen, initialSubjects]);
 
@@ -293,11 +314,39 @@ export default function DynamicQuestionPaperUploadModal({
         (selectedCurriculumFilter === 'olevel' && s.level?.toLowerCase().includes('ordinary')) ||
         (selectedCurriculumFilter === 'alevel' && s.level?.toLowerCase().includes('advance')) ||
         (selectedCurriculumFilter === 'commercial' && (s.category?.toLowerCase().includes('commercial') || s.level?.toLowerCase().includes('intermediate'))) ||
-        (selectedCurriculumFilter === 'francophone' && (s.curriculumId === 'cameroon_francophone' || s.level?.toLowerCase().includes('bac') || s.level?.toLowerCase().includes('troisieme')));
+        (selectedCurriculumFilter === 'francophone' && (s.curriculumId === 'cameroon_francophone' || s.level?.toLowerCase().includes('bac') || s.level?.toLowerCase().includes('troisieme'))) ||
+        (selectedCurriculumFilter === 'hnd' && (s.curriculumId === 'hnd' || s.level?.toLowerCase().includes('hnd')));
       
       return matchesSearch && matchesCurriculum;
     });
   }, [subjectsList, subjectSearch, selectedCurriculumFilter]);
+
+  // Filtered HND Programmes and Courses
+  const filteredHndProgrammes = useMemo(() => {
+    if (!selectedHndSchoolId) return hndProgrammes;
+    return hndProgrammes.filter(p => p.schoolId === selectedHndSchoolId);
+  }, [hndProgrammes, selectedHndSchoolId]);
+
+  const filteredHndCourses = useMemo(() => {
+    return hndCourses.filter(c => {
+      if (selectedHndProgrammeId && c.programmeId !== selectedHndProgrammeId) return false;
+      if (selectedHndLevel && c.level !== selectedHndLevel) return false;
+      if (selectedHndSemester && c.semester !== selectedHndSemester) return false;
+      return true;
+    });
+  }, [hndCourses, selectedHndProgrammeId, selectedHndLevel, selectedHndSemester]);
+
+  // Handle HND Course Selection
+  const handleSelectHndCourse = (courseId: string) => {
+    setSelectedHndCourseId(courseId);
+    const course = hndCourses.find(c => c.id === courseId);
+    if (course) {
+      setSelectedSubjectName(course.name);
+      if (isAutoTitle) {
+        setTitle(`${year} [${course.code}] ${course.name} - ${selectedPaperType || 'End of Semester Examination'}`);
+      }
+    }
+  };
 
   // Form submission & persistence
   const handleSubmit = async (e: React.FormEvent) => {
@@ -323,7 +372,7 @@ export default function DynamicQuestionPaperUploadModal({
     }
 
     if (!selectedSubjectName) {
-      setErrorMsg('Please select a subject.');
+      setErrorMsg('Please select a subject or HND course.');
       toast.error('Subject is required.');
       return;
     }
@@ -362,6 +411,10 @@ export default function DynamicQuestionPaperUploadModal({
         });
       }
 
+      const isHNDMode = selectedCurriculumFilter === 'hnd' || currentSubjectObj?.curriculumId === 'hnd';
+      const selectedHndProg = hndProgrammes.find(p => p.id === selectedHndProgrammeId);
+      const selectedHndCrs = hndCourses.find(c => c.id === selectedHndCourseId || c.name.toLowerCase() === selectedSubjectName.toLowerCase());
+
       // Delegate to high-performance batch publisher service
       const publishedPaper = await publishQuestionPaper({
         title: title.trim() || `${year} ${selectedSubjectName} - ${effectivePaperType}`,
@@ -372,17 +425,28 @@ export default function DynamicQuestionPaperUploadModal({
         pdfUrl: pdfUrl,
         fileName: pdfFileName,
         fileSize: pdfFileSize,
-        curriculumId: currentSubjectObj?.curriculumId || 'cameroon_gce',
-        curriculumName: currentSubjectObj?.curriculumName || (currentSubjectObj?.level === 'Advance level' ? 'GCE Advanced Level' : 'GCE Ordinary Level'),
-        level: currentSubjectObj?.level || 'Ordinary level',
+        curriculumId: isHNDMode ? 'hnd' : (currentSubjectObj?.curriculumId || 'cameroon_gce'),
+        curriculumName: isHNDMode ? 'Higher National Diploma (HND)' : (currentSubjectObj?.curriculumName || (currentSubjectObj?.level === 'Advance level' ? 'GCE Advanced Level' : 'GCE Ordinary Level')),
+        level: isHNDMode ? selectedHndLevel : (currentSubjectObj?.level || 'Ordinary level'),
         session: session,
         totalMarks: Number(totalMarks) || 100,
         durationMinutes: Number(durationMinutes) || 120,
         instructions: instructions.trim(),
-        paperCode: currentSubjectObj?.code || '',
+        paperCode: isHNDMode ? (selectedHndCrs?.code || '') : (currentSubjectObj?.code || ''),
         requiresAnswerKey: requiresAnswerKey,
         correctAnswers: finalCorrectAnswers,
-        markingSchemeUrl: includeMarkingScheme ? markingSchemeUrl : undefined
+        markingSchemeUrl: includeMarkingScheme ? markingSchemeUrl : undefined,
+        // HND-Specific Metadata
+        ...(isHNDMode && {
+          academicLevel: 'HND',
+          hndSchoolId: selectedHndSchoolId || undefined,
+          hndProgrammeId: selectedHndProgrammeId || undefined,
+          hndProgrammeName: selectedHndProg?.name || undefined,
+          hndLevel: selectedHndLevel,
+          hndSemester: selectedHndSemester,
+          courseCode: selectedHndCrs?.code || undefined,
+          creditValue: selectedHndCrs?.creditValue || 3
+        })
       }, user.uid, (status) => {
         setPublishStatus(status);
       });
@@ -511,11 +575,17 @@ export default function DynamicQuestionPaperUploadModal({
                   { id: 'alevel', label: 'GCE A-Level' },
                   { id: 'commercial', label: 'Commercial / TVEE' },
                   { id: 'francophone', label: 'Francophone (Bac/BEPC)' },
+                  { id: 'hnd', label: 'HND (Higher National Diploma)' },
                 ].map(tab => (
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setSelectedCurriculumFilter(tab.id)}
+                    onClick={() => {
+                      setSelectedCurriculumFilter(tab.id);
+                      if (tab.id === 'hnd' && hndCourses.length > 0) {
+                        handleSelectHndCourse(hndCourses[0].id);
+                      }
+                    }}
                     className={cn(
                       "px-3 py-1.5 rounded-xl text-xs font-bold transition-all",
                       selectedCurriculumFilter === tab.id
@@ -528,42 +598,132 @@ export default function DynamicQuestionPaperUploadModal({
                 ))}
               </div>
 
-              {/* Subject Selector & Search */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    Subject Name <span className="text-rose-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={selectedSubjectName}
-                      onChange={e => setSelectedSubjectName(e.target.value)}
-                      disabled={loadingSubjects || submitting}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition-all appearance-none cursor-pointer"
-                    >
-                      {filteredSubjects.map(s => (
-                        <option key={s.id || s.name} value={s.name}>
-                          {s.name} {s.code ? `(${s.code})` : ''} - {s.level || 'Standard'}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+              {/* HND-Specific Hierarchy Controls */}
+              {selectedCurriculumFilter === 'hnd' ? (
+                <div className="space-y-4 pt-2 border-t border-slate-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* School / Faculty */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        HND School / Faculty
+                      </label>
+                      <select
+                        value={selectedHndSchoolId}
+                        onChange={e => setSelectedHndSchoolId(e.target.value)}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none"
+                      >
+                        <option value="">All Schools</option>
+                        {hndSchools.map(s => (
+                          <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Programme / Specialty */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        HND Programme / Specialty <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={selectedHndProgrammeId}
+                        onChange={e => setSelectedHndProgrammeId(e.target.value)}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none"
+                      >
+                        <option value="">Select Programme</option>
+                        {filteredHndProgrammes.map(p => (
+                          <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Level */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        Academic Level
+                      </label>
+                      <select
+                        value={selectedHndLevel}
+                        onChange={e => setSelectedHndLevel(e.target.value as HNDAcademicLevel)}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none"
+                      >
+                        <option value="HND Level 1">HND Level 1 (Year 1)</option>
+                        <option value="HND Level 2">HND Level 2 (Year 2 / National)</option>
+                      </select>
+                    </div>
+
+                    {/* Semester */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        Semester
+                      </label>
+                      <select
+                        value={selectedHndSemester}
+                        onChange={e => setSelectedHndSemester(e.target.value as HNDSemester)}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none"
+                      >
+                        <option value="Semester 1">Semester 1</option>
+                        <option value="Semester 2">Semester 2</option>
+                      </select>
+                    </div>
+
+                    {/* Course */}
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                        HND Course Module <span className="text-rose-500">*</span>
+                      </label>
+                      <select
+                        value={selectedHndCourseId}
+                        onChange={e => handleSelectHndCourse(e.target.value)}
+                        className="w-full px-4 py-3 bg-white border border-indigo-200 bg-indigo-50/30 rounded-xl text-sm font-bold text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none"
+                      >
+                        <option value="">Select Course</option>
+                        {filteredHndCourses.map(c => (
+                          <option key={c.id} value={c.id}>[{c.code}] {c.name} ({c.creditValue} cr)</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
+              ) : (
+                /* Standard Subject Selector & Search */
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Subject Name <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedSubjectName}
+                        onChange={e => setSelectedSubjectName(e.target.value)}
+                        disabled={loadingSubjects || submitting}
+                        className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition-all appearance-none cursor-pointer"
+                      >
+                        {filteredSubjects.map(s => (
+                          <option key={s.id || s.name} value={s.name}>
+                            {s.name} {s.code ? `(${s.code})` : ''} - {s.level || 'Standard'}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+                    </div>
+                  </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                    Filter by Subject / Code
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Search subject..."
-                    value={subjectSearch}
-                    onChange={e => setSubjectSearch(e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-400"
-                  />
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                      Filter by Subject / Code
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Search subject..."
+                      value={subjectSearch}
+                      onChange={e => setSubjectSearch(e.target.value)}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 outline-none transition-all placeholder:text-slate-400"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Step 2: Dynamic Paper Type & Examination Year */}

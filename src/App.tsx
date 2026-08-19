@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { lazyWithRetry as lazy } from './utils/lazyWithRetry';
+import { OfflineStatusBanner } from './components/OfflineStatusBanner';
 
 // Eagerly loaded components (critical path)
 import LandingPage from './pages/LandingPage';
@@ -53,6 +54,7 @@ const ExamAnalyticsDashboard = lazy(() => import('./pages/ExamAnalyticsDashboard
 const DocumentationHub = lazy(() => import('./pages/DocumentationHub'));
 const PublicDocumentView = lazy(() => import('./pages/PublicDocumentView'));
 const StudentPracticalLab = lazy(() => import('./pages/StudentPracticalLab'));
+const AccountingPracticalLab = lazy(() => import('./pages/AccountingPracticalLab'));
 const AdminPracticalManager = lazy(() => import('./pages/AdminPracticalManager'));
 const AlumniProgramPage = lazy(() => import('./pages/AlumniProgramPage'));
 const StudentAmbassadorPage = lazy(() => import('./pages/StudentAmbassadorPage'));
@@ -62,6 +64,7 @@ const AboutPage = lazy(() => import('./pages/AboutPage'));
 const FeaturesPage = lazy(() => import('./pages/FeaturesPage'));
 const SubjectsPage = lazy(() => import('./pages/SubjectsPage'));
 const CurriculumPage = lazy(() => import('./pages/CurriculumPage'));
+const HndBtsPortalPage = lazy(() => import('./pages/HndBtsPortalPage'));
 const VirtualLabsPage = lazy(() => import('./pages/VirtualLabsPage'));
 const EdulphaAIPage = lazy(() => import('./pages/EdulphaAIPage'));
 const MockExamsPage = lazy(() => import('./pages/MockExamsPage'));
@@ -130,6 +133,7 @@ export default function App() {
       <AuthProvider>
         <LanguageProvider>
           <Router>
+            <OfflineStatusBanner />
             <Toaster position="top-right" />
             <Suspense fallback={<LoadingFallback />}>
               <Routes>
@@ -138,6 +142,9 @@ export default function App() {
               <Route path="/features" element={<FeaturesPage />} />
               <Route path="/subjects" element={<SubjectsPage />} />
               <Route path="/curriculum" element={<CurriculumPage />} />
+              <Route path="/hnd-bts" element={<HndBtsPortalPage />} />
+              <Route path="/hnd" element={<Navigate to="/hnd-bts" replace />} />
+              <Route path="/bts" element={<Navigate to="/hnd-bts" replace />} />
               <Route path="/virtual-labs" element={<VirtualLabsPage />} />
               <Route path="/edulpha-ai" element={<EdulphaAIPage />} />
               <Route path="/mock-exams" element={<MockExamsPage />} />
@@ -197,6 +204,7 @@ export default function App() {
               <Route path="/challenges" element={<PrivateRoute><LearningChallenges /></PrivateRoute>} />
               <Route path="/practicals" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
               <Route path="/practicals/:id" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
+              <Route path="/accounting-lab" element={<PaymentGatedRoute><AccountingPracticalLab /></PaymentGatedRoute>} />
               <Route path="/lms" element={<PrivateRoute><StudentLMSPortal /></PrivateRoute>} />
               <Route path="/exams" element={<PrivateRoute><StudentExamPortal /></PrivateRoute>} />
               <Route path="/exams/:examId/take" element={<PrivateRoute><ExamSession /></PrivateRoute>} />

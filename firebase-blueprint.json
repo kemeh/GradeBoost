@@ -404,6 +404,63 @@
         "orderIndex": { "type": "integer" }
       },
       "required": ["title", "educationLevel", "subject", "topic", "format", "status"]
+    },
+    "Institution": {
+      "title": "Institution",
+      "description": "Educational higher institutions in Cameroon offering professional HND/BTS programmes.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "official_name": { "type": "string" },
+        "acronym": { "type": "string" },
+        "institution_type": { "type": "string" },
+        "city": { "type": "string" },
+        "region": { "type": "string" },
+        "country": { "type": "string" },
+        "website": { "type": "string" },
+        "source_url": { "type": "string" },
+        "hnd_available": { "type": "boolean" },
+        "bts_available": { "type": "boolean" },
+        "verification_status": { "type": "string", "enum": ["verified", "unverified", "pending"] },
+        "is_active": { "type": "boolean" },
+        "last_verified_at": { "type": "string" },
+        "last_synced_at": { "type": "string" },
+        "created_at": { "type": "string" },
+        "updated_at": { "type": "string" }
+      },
+      "required": ["name", "city", "region", "country", "verification_status", "is_active"]
+    },
+    "Programme": {
+      "title": "Programme",
+      "description": "Professional specializations offered at HND/BTS institutions.",
+      "type": "object",
+      "properties": {
+        "institution_id": { "type": "string" },
+        "qualification_type": { "type": "string" },
+        "programme_name": { "type": "string" },
+        "specialization": { "type": "string" },
+        "is_active": { "type": "boolean" },
+        "source_url": { "type": "string" },
+        "verification_status": { "type": "string" }
+      },
+      "required": ["institution_id", "qualification_type", "programme_name"]
+    },
+    "InstitutionSyncLog": {
+      "title": "Institution Synchronization Log",
+      "description": "System audits and records for synchronization with public MINESUP/official datasets.",
+      "type": "object",
+      "properties": {
+        "sync_started_at": { "type": "string" },
+        "sync_completed_at": { "type": "string" },
+        "source": { "type": "string" },
+        "records_found": { "type": "integer" },
+        "records_added": { "type": "integer" },
+        "records_updated": { "type": "integer" },
+        "records_rejected": { "type": "integer" },
+        "status": { "type": "string" },
+        "error_message": { "type": "string" }
+      },
+      "required": ["sync_started_at", "source", "status"]
     }
   },
   "firestore": {
@@ -526,6 +583,42 @@
     "/ambassadorApplications/{applicationId}": {
       "schema": "AmbassadorApplication",
       "description": "Applications submitted by secondary school students to become Edulpha Ambassadors."
+    },
+    "/hnd_schools/{schoolId}": {
+      "schema": "HNDSchool",
+      "description": "Higher National Diploma schools and faculties."
+    },
+    "/hnd_departments/{departmentId}": {
+      "schema": "HNDDepartment",
+      "description": "HND academic departments."
+    },
+    "/hnd_programmes/{programmeId}": {
+      "schema": "HNDProgramme",
+      "description": "HND degree programmes and specialties."
+    },
+    "/hnd_courses/{courseId}": {
+      "schema": "HNDCourse",
+      "description": "HND course modules and syllabi."
+    },
+    "/hnd_enrollments/{enrollmentId}": {
+      "schema": "HNDEnrollmentRecord",
+      "description": "Student HND programme and semester enrollments."
+    },
+    "/accounting_companies/{companyId}": {
+      "schema": "AccountingCompany",
+      "description": "Stores saved company simulation states for the Accounting Practical Lab."
+    },
+    "/institutions/{institutionId}": {
+      "schema": "Institution",
+      "description": "Educational institutions in Cameroon offering professional HND/BTS."
+    },
+    "/programmes/{programmeId}": {
+      "schema": "Programme",
+      "description": "Professional specialities and programmes offered at institutions."
+    },
+    "/institution_sync_logs/{logId}": {
+      "schema": "InstitutionSyncLog",
+      "description": "Synchronization logs from MINESUP or official sources."
     }
   }
 }

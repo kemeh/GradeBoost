@@ -5,7 +5,7 @@ import {
   BookOpen, Save, X, AlertCircle, CheckCircle2,
   FileText, Calendar, Link as LinkIcon, Eye, EyeOff,
   Upload, Loader2, FileUp, RefreshCw, ArrowRight,
-  LayoutDashboard
+  LayoutDashboard, GraduationCap
 } from 'lucide-react';
 import { db, storage } from '../firebase';
 import { 
@@ -25,6 +25,7 @@ import {
 import { Resource, Assignment, Subject, LearningResource, SubjectModel } from '../types';
 import { toast } from 'react-hot-toast';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
+import { AdminHNDManagement } from '../components/admin/AdminHNDManagement';
 
 export default function AdminManagement() {
   const { user } = useAuth();
@@ -396,25 +397,31 @@ export default function AdminManagement() {
               <FileUp size={20} />
               Bulk Import
             </Button>
-            <Button 
-              onClick={() => {
-                if (activeTab === 'resources') handleOpenResourceDialog();
-                else if (activeTab === 'assignments') handleOpenAssignmentDialog();
-                else handleOpenLearningResourceDialog();
-              }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-4 rounded-2xl flex items-center gap-2"
-            >
-              <Plus size={20} />
-              Add {activeTab === 'resources' ? 'Resource' : activeTab === 'assignments' ? 'Assignment' : 'Learning Link'}
-            </Button>
+            {activeTab !== 'hnd' && (
+              <Button 
+                onClick={() => {
+                  if (activeTab === 'resources') handleOpenResourceDialog();
+                  else if (activeTab === 'assignments') handleOpenAssignmentDialog();
+                  else handleOpenLearningResourceDialog();
+                }}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-4 rounded-2xl flex items-center gap-2"
+              >
+                <Plus size={20} />
+                Add {activeTab === 'resources' ? 'Resource' : activeTab === 'assignments' ? 'Assignment' : 'Learning Link'}
+              </Button>
+            )}
           </div>
         </header>
 
         <Tabs defaultValue="resources" value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
-            <TabsTrigger value="resources" className="px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Resources</TabsTrigger>
-            <TabsTrigger value="assignments" className="px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Assignments</TabsTrigger>
-            <TabsTrigger value="learning-links" className="px-8 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Learning Links</TabsTrigger>
+          <TabsList className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm flex-wrap h-auto gap-1">
+            <TabsTrigger value="resources" className="px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Resources</TabsTrigger>
+            <TabsTrigger value="assignments" className="px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Assignments</TabsTrigger>
+            <TabsTrigger value="learning-links" className="px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs">Learning Links</TabsTrigger>
+            <TabsTrigger value="hnd" className="px-6 py-3 rounded-xl font-black uppercase tracking-widest text-xs bg-indigo-50 text-indigo-700 data-[state=active]:bg-indigo-600 data-[state=active]:text-white flex items-center gap-1.5">
+              <GraduationCap size={15} />
+              HND Programmes & Architecture
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="resources" className="space-y-8">
@@ -547,6 +554,10 @@ export default function AdminManagement() {
                 ))
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="hnd" className="space-y-8">
+            <AdminHNDManagement />
           </TabsContent>
         </Tabs>
 

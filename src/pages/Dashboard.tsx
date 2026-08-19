@@ -27,6 +27,7 @@ import { getCurrentDayNumber, getDaysRemaining } from '../utils/challenge';
 import { getSystemSettings } from '../services/settingsService';
 import { fetchDailyDrill } from '../services/dailyDrillService';
 import PhoneMigrationBanner from '../components/PhoneMigrationBanner';
+import { HNDEnrollmentModal } from '../components/HNDEnrollmentModal';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -49,11 +50,21 @@ export default function Dashboard() {
   const [currentDay, setCurrentDay] = useState(1);
   const [challengeStartDate, setChallengeStartDate] = useState<string | undefined>(undefined);
 
+  const [showHndOnboarding, setShowHndOnboarding] = useState(false);
+
   useEffect(() => {
     if (user?.uid) {
       updateStreak(user.uid).catch(console.error);
     }
   }, [user?.uid]);
+
+  useEffect(() => {
+    if (user?.curriculumId === 'hnd' && (!user.hndProgrammeId || !user.hndSemester || !user.hndEnrolledCourseIds || user.hndEnrolledCourseIds.length === 0)) {
+      setShowHndOnboarding(true);
+    } else {
+      setShowHndOnboarding(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -657,6 +668,12 @@ export default function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <HNDEnrollmentModal
+        isOpen={showHndOnboarding}
+        onClose={() => setShowHndOnboarding(false)}
+        user={user}
+      />
     </div>
   );
 }

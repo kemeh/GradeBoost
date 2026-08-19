@@ -17,6 +17,9 @@ import FileUpload from '../components/FileUpload';
 import { getSystemSettings } from '../services/settingsService';
 import { useSettings } from '../contexts/SettingsContext';
 import { updatePoints, checkAchievements } from '../services/gamificationService';
+import { getOfflinePracticePaperById, queueOfflineSubmission, isOnline } from '../services/offlineStorageService';
+import { WifiOff } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function PracticeSession() {
   const { paperId } = useParams();
@@ -27,6 +30,7 @@ export default function PracticeSession() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [isOfflineSession, setIsOfflineSession] = useState(!isOnline());
   const [timeLeft, setTimeLeft] = useState(10800); // 3 hours in seconds
   const [answers, setAnswers] = useState<any>({});
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
@@ -57,6 +61,16 @@ export default function PracticeSession() {
       if (!paperId || !user) return;
       setError('');
       const path = `questionPapers/${paperId}`;
+
+      // Check offline cache first if offline or as immediate fallback
+      const cachedPaper = await getOfflinePracticePaperById(paperId);
+      if (!isOnline() && cachedPaper) {
+        setIsOfflineSession(true);
+        setPaper(cachedPaper);
+        setLoading(false);
+        return;
+      }
+
       try {
         // Check if user is paid
         const isPaid = user.paymentStatus === 'paid';
@@ -98,13 +112,22 @@ export default function PracticeSession() {
           }
           
           setPaper(paperData);
+        } else if (cachedPaper) {
+          setIsOfflineSession(true);
+          setPaper(cachedPaper);
         } else {
           setError('Exam paper not found.');
         }
       } catch (err: any) {
         console.error("Fetch Paper Error:", err);
-        setError('Failed to load exam paper. Please check your connection.');
-        try { handleFirestoreError(err, OperationType.GET, path); } catch(e) {}
+        if (cachedPaper) {
+          console.log("[PracticeSession] Using cached paper for offline practice.");
+          setIsOfflineSession(true);
+          setPaper(cachedPaper);
+        } else {
+          setError('Failed to load exam paper. Please check your connection or download for offline access.');
+          try { handleFirestoreError(err, OperationType.GET, path); } catch(e) {}
+        }
       } finally {
         setLoading(false);
       }
@@ -151,7 +174,7 @@ export default function PracticeSession() {
       else if (score >= 60) grade = 'C';
       else if (score >= 50) grade = 'D';
 
-      await addDoc(collection(db, path), {
+      const submissionPayload = {
         userId: user.uid,
         paperId: paper.id,
         subject: paper.subject,
@@ -161,19 +184,43 @@ export default function PracticeSession() {
         score,
         grade,
         feedback: "Great attempt! Focus on improving your structured answer keywords.",
-        completedAt: serverTimestamp(),
-      });
+        completedAt: new Date().toISOString(),
+      };
+
+      if (!isOnline()) {
+        // Save to offline queue
+        await queueOfflineSubmission({
+          type: 'practice',
+          userId: user.uid,
+          targetId: paper.id,
+          subject: paper.subject,
+          payload: submissionPayload
+        });
+        toast.success("Exam completed! Stored offline and will sync when internet restores.");
+      } else {
+        try {
+          await addDoc(collection(db, path), {
+            ...submissionPayload,
+            completedAt: serverTimestamp(),
+          });
+          // Award points for completing the paper
+          await updatePoints(user.uid, 50, `Practice Paper Completion: ${paper.paperType}`);
+          await checkAchievements(user.uid);
+        } catch (networkErr) {
+          console.warn("Network submission failed, queueing offline:", networkErr);
+          await queueOfflineSubmission({
+            type: 'practice',
+            userId: user.uid,
+            targetId: paper.id,
+            subject: paper.subject,
+            payload: submissionPayload
+          });
+          toast.success("Saved to offline storage! Will sync when connection is restored.");
+        }
+      }
 
       setResultsSummary({ score, grade });
       setShowResults(true);
-
-      // Award points for completing the paper
-      await updatePoints(user.uid, 50, `Practice Paper Completion: ${paper.paperType}`);
-      // Check for achievements
-      await checkAchievements(user.uid);
-
-      // Only navigate immediately if user is paid or admin (optional, let's show summary to everyone)
-      // navigate('/dashboard');
     } catch (err: any) {
       console.error("Submit Exam Error:", err);
       setError('Failed to submit your exam. Please try again.');
@@ -229,7 +276,14 @@ export default function PracticeSession() {
             }}
           />
           <div>
-            <h1 className="text-lg font-black text-white tracking-tight">{paper.title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-black text-white tracking-tight">{paper.title}</h1>
+              {isOfflineSession && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                  <WifiOff size={10} /> Offline Mode
+                </span>
+              )}
+            </div>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{paper.subject} • {paper.paperType}</p>
           </div>
         </div>

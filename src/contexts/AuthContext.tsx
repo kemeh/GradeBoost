@@ -120,12 +120,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Check if user is in deletedUsers collection before auto-creating profile
             let isDeletedAccount = false;
             try {
-              const delSnap = await getDoc(doc(db, 'deletedUsers', fUser.uid));
-              if (delSnap.exists()) {
+              const queries = [getDoc(doc(db, 'deletedUsers', fUser.uid))];
+              if (fUser.email) {
+                queries.push(getDoc(doc(db, 'deletedUsersByEmail', fUser.email.toLowerCase().trim())));
+              }
+              const results = await Promise.all(queries);
+              const delSnap = results[0];
+              const delEmailSnap = results[1];
+              
+              if (delSnap?.exists() || delEmailSnap?.exists()) {
                 isDeletedAccount = true;
-              } else if (fUser.email) {
-                const delEmailSnap = await getDoc(doc(db, 'deletedUsersByEmail', fUser.email.toLowerCase().trim()));
-                if (delEmailSnap.exists()) isDeletedAccount = true;
               }
             } catch (e) {
               console.warn('Error checking deletedUsers collection:', e);

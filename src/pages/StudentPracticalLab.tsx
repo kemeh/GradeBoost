@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   FlaskConical, Code2, BookOpen, Clock, Award, Sparkles, 
   Search, Filter, CheckCircle2, FileText, ArrowLeft, Play, 
-  Bot, Layers, ChevronRight, RotateCcw, AlertCircle, Eye
+  Bot, Layers, ChevronRight, RotateCcw, AlertCircle, Eye, Calculator, ArrowRight
 } from 'lucide-react';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn } from '../components/ui';
@@ -202,6 +202,32 @@ export default function StudentPracticalLab() {
         {/* 1. BROWSE PRACTICALS TAB */}
         {activeTab === 'browse' && (
           <div className="space-y-6">
+            {/* SPECIAL ACCOUNTING & ERP LAB BANNER */}
+            <div className="bg-gradient-to-r from-indigo-900 via-indigo-950 to-slate-900 p-6 rounded-3xl border border-indigo-800/60 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 text-white">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-1 bg-emerald-500 text-slate-950 font-black text-[10px] uppercase rounded-full">
+                    {language === 'fr' ? 'Nouveau • HND/BTS' : 'New • HND/BTS'}
+                  </span>
+                  <span className="text-indigo-300 text-xs font-bold">Comptabilité, Fiscalité, Audit & ERP</span>
+                </div>
+                <h2 className="text-xl font-black tracking-tight">
+                  {language === 'fr' ? 'Laboratoire Pratique de Comptabilité & Simulateur ERP' : 'Interactive Accounting & ERP Practical Lab'}
+                </h2>
+                <p className="text-xs text-slate-300 max-w-xl font-medium">
+                  {language === 'fr' 
+                    ? 'Créez votre entreprise simulée, gérez le plan comptable, enregistrez les écritures en partie double, établissez la balance, le bilan et simulez la paie & les impôts.'
+                    : 'Create simulated companies, manage chart of accounts, record journal entries, generate trial balance, financial statements, and simulate payroll & taxes.'}
+                </p>
+              </div>
+              <Button 
+                onClick={() => navigate('/accounting-lab')}
+                className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black px-6 py-4 rounded-2xl text-xs flex items-center gap-2 shadow-lg shrink-0"
+              >
+                <Calculator size={16} /> {language === 'fr' ? 'Lancer le Labo Comptable' : 'Launch Accounting Lab'} <ArrowRight size={16} />
+              </Button>
+            </div>
+
             {/* Search & Subject Filters */}
             <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="relative w-full md:w-80">

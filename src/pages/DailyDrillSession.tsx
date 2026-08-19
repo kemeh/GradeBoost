@@ -22,6 +22,14 @@ import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
 import { getSystemSettings } from '../services/settingsService';
 import { useSettings } from '../contexts/SettingsContext';
 import { updatePoints, checkAchievements } from '../services/gamificationService';
+import { 
+  downloadDailyDrill, 
+  getOfflineDailyDrillByDay, 
+  queueOfflineSubmission, 
+  isOnline 
+} from '../services/offlineStorageService';
+import { WifiOff, HardDrive } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 enum OperationType {
   CREATE = 'create',
@@ -119,6 +127,10 @@ export default function DailyDrillSession() {
   const [structuredAnswer, setStructuredAnswer] = useState('');
   const currentQuestion = questions[currentQuestionIndex];
 
+  const [isOfflineSession, setIsOfflineSession] = useState<boolean>(!isOnline());
+  const [isDrillCached, setIsDrillCached] = useState<boolean>(false);
+  const [downloadingDrill, setDownloadingDrill] = useState<boolean>(false);
+
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -128,6 +140,21 @@ export default function DailyDrillSession() {
   const handlePrev = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const handleSaveDrillOffline = async () => {
+    if (!drill || questions.length === 0) return;
+    try {
+      setDownloadingDrill(true);
+      await downloadDailyDrill(drill, questions);
+      setIsDrillCached(true);
+      toast.success(`Day ${drill.day} Daily Drill downloaded for offline practice!`);
+    } catch (err) {
+      console.error("Failed to download drill:", err);
+      toast.error("Failed to save drill for offline use.");
+    } finally {
+      setDownloadingDrill(false);
     }
   };
 
@@ -175,11 +202,25 @@ export default function DailyDrillSession() {
     setQuestions([]);
     
     try {
-      const settings = await getSystemSettings();
+      const settings = await getSystemSettings().catch(() => null);
       const startDate = settings?.challengeStartDate;
       
       const currentDay = getCurrentDayNumber(startDate);
       const dayToFetch = requestedDay ? parseInt(requestedDay) : currentDay;
+
+      // Check offline storage first if offline
+      const cachedDrill = await getOfflineDailyDrillByDay(dayToFetch, user.subject);
+      if (cachedDrill) {
+        setIsDrillCached(true);
+      }
+
+      if (!isOnline() && cachedDrill) {
+        setIsOfflineSession(true);
+        setDrill(cachedDrill);
+        setQuestions(cachedDrill.cachedQuestions || []);
+        setLoading(false);
+        return;
+      }
 
       // Fetch drill with more resilience
       const q = query(
@@ -260,12 +301,25 @@ export default function DailyDrillSession() {
           setLoading(false);
           return;
         }
+      } else if (cachedDrill) {
+        setIsOfflineSession(true);
+        setDrill(cachedDrill);
+        setQuestions(cachedDrill.cachedQuestions || []);
       } else {
         setDrill(null);
       }
     } catch (err) {
       console.error("Error fetching drill:", err);
-      setError('Failed to load today\'s drill.');
+      // Try offline fallback
+      const dayToFetch = requestedDay ? parseInt(requestedDay) : 1;
+      const cachedDrill = await getOfflineDailyDrillByDay(dayToFetch, user?.subject);
+      if (cachedDrill) {
+        setIsOfflineSession(true);
+        setDrill(cachedDrill);
+        setQuestions(cachedDrill.cachedQuestions || []);
+      } else {
+        setError('Failed to load today\'s drill. Please check connection or download for offline access.');
+      }
     } finally {
       setLoading(false);
     }
@@ -358,28 +412,55 @@ export default function DailyDrillSession() {
     setSubmitting(true);
     setError('');
     try {
-      const batch = writeBatch(db);
-      
-      for (const q of questions) {
-        const subRef = doc(collection(db, 'drill_submissions'));
+      const generatedSubs: DrillSubmission[] = questions.map(q => {
         const isPaper1 = q.paper === 'Paper 1';
         const selectedAnswer = answers[q.id] || '';
         const isCorrect = isPaper1 ? selectedAnswer === q.correctAnswer : false;
         const score = isCorrect ? (q.marks || 1) : 0;
-
-        batch.set(subRef, {
+        return {
+          id: `local_${q.id}`,
           userId: user.uid,
-          userEmail: user.email,
+          userEmail: user.email || '',
           drillId: drill.id,
           questionId: q.id,
           day: drill.day,
-          selectedAnswer: selectedAnswer,
+          selectedAnswer,
           fileUrl: fileUrls[q.id] || '',
           correctAnswer: q.correctAnswer || 'N/A',
-          score: score,
+          score,
           status: isPaper1 ? 'graded' : 'pending',
           paper: q.paper || 'Paper 1',
           topic: q.topic || 'General',
+          createdAt: new Date().toISOString()
+        } as DrillSubmission;
+      });
+
+      if (!isOnline()) {
+        // Queue all submissions locally in IndexedDB
+        for (const sub of generatedSubs) {
+          await queueOfflineSubmission({
+            type: 'drill',
+            userId: user.uid,
+            targetId: drill.id,
+            subject: user.subject || 'General',
+            payload: sub
+          });
+        }
+        setSubmissions(generatedSubs);
+        const report = calculatePerformance(questions, generatedSubs);
+        setPerformanceReport(report);
+        setHasSubmitted(true);
+        setSuccess(true);
+        toast.success("Drill completed & saved offline! Will sync when connection is restored.");
+        return;
+      }
+
+      // Online path: Firestore batch write
+      const batch = writeBatch(db);
+      for (const sub of generatedSubs) {
+        const subRef = doc(collection(db, 'drill_submissions'));
+        batch.set(subRef, {
+          ...sub,
           createdAt: serverTimestamp()
         });
       }
@@ -399,9 +480,9 @@ export default function DailyDrillSession() {
       );
       const subSnap = await getDocs(subQ);
       const allSubs = subSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as DrillSubmission));
-      setSubmissions(allSubs);
+      setSubmissions(allSubs.length > 0 ? allSubs : generatedSubs);
 
-      const report = calculatePerformance(questions, allSubs);
+      const report = calculatePerformance(questions, allSubs.length > 0 ? allSubs : generatedSubs);
       setPerformanceReport(report);
       
       setHasSubmitted(true);
@@ -413,7 +494,43 @@ export default function DailyDrillSession() {
 
     } catch (err) {
       console.error("Error submitting drill:", err);
-      setError(`Failed to submit your answers. Please check your connection or contact ${contactEmail}.`);
+      // If error occurs, fallback to local queueing
+      try {
+        const generatedSubs: DrillSubmission[] = questions.map(q => ({
+          id: `local_${q.id}`,
+          userId: user.uid,
+          userEmail: user.email || '',
+          drillId: drill.id,
+          questionId: q.id,
+          day: drill.day,
+          selectedAnswer: answers[q.id] || '',
+          fileUrl: fileUrls[q.id] || '',
+          correctAnswer: q.correctAnswer || 'N/A',
+          score: (q.paper === 'Paper 1' && answers[q.id] === q.correctAnswer) ? (q.marks || 1) : 0,
+          status: q.paper === 'Paper 1' ? 'graded' : 'pending',
+          paper: q.paper || 'Paper 1',
+          topic: q.topic || 'General',
+          createdAt: new Date().toISOString()
+        } as DrillSubmission));
+
+        for (const sub of generatedSubs) {
+          await queueOfflineSubmission({
+            type: 'drill',
+            userId: user.uid,
+            targetId: drill.id,
+            subject: user.subject || 'General',
+            payload: sub
+          });
+        }
+        setSubmissions(generatedSubs);
+        const report = calculatePerformance(questions, generatedSubs);
+        setPerformanceReport(report);
+        setHasSubmitted(true);
+        setSuccess(true);
+        toast.success("Saved to offline cache! Will sync when connection is back.");
+      } catch (localErr) {
+        setError(`Failed to submit answers. Please check connection.`);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -558,24 +675,49 @@ export default function DailyDrillSession() {
             <div className="flex items-center gap-2 mb-0.5">
               <Badge variant="primary" className="text-[10px]">Day {drill.day}</Badge>
               <h1 className="text-lg font-black text-slate-900 tracking-tight">Daily Drill</h1>
+              {isOfflineSession && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 border border-amber-200 flex items-center gap-1">
+                  <WifiOff size={10} /> Offline Mode
+                </span>
+              )}
+              {isDrillCached && !isOfflineSession && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                  <CheckCircle2 size={10} /> Offline Ready
+                </span>
+              )}
             </div>
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Topic: {drill.topic}</p>
           </div>
         </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-50 rounded-xl border border-slate-100">
-            <Timer size={16} className="text-indigo-600" />
+        <div className="flex items-center gap-3">
+          {/* Offline Save Button */}
+          {!isDrillCached && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSaveDrillOffline}
+              loading={downloadingDrill}
+              className="text-indigo-600 border-indigo-200 hover:bg-indigo-50 text-xs font-bold"
+              title="Download for offline study"
+            >
+              <HardDrive size={14} className="mr-1.5" />
+              Save Offline
+            </Button>
+          )}
+
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 rounded-xl border border-slate-100">
+            <Timer size={14} className="text-indigo-600" />
             <span className="text-xs font-black text-slate-600">60-Day Challenge</span>
           </div>
           <Button 
             variant="outline" 
             size="sm" 
             onClick={() => downloadQuestionAsPDF(currentQuestion, drill.day)}
-            className="hidden md:flex items-center gap-2"
+            className="hidden md:flex items-center gap-2 text-xs"
             disabled={!currentQuestion}
           >
-            <Download size={16} />
-            Download Daily Drill
+            <Download size={14} />
+            PDF
           </Button>
           {hasSubmitted ? (
             <div className="flex items-center gap-2">

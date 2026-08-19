@@ -38,6 +38,7 @@ import { AdminAlumniManagement } from '../components/admin/AdminAlumniManagement
 import { AdminAmbassadorManagement } from '../components/admin/AdminAmbassadorManagement';
 import { AdminSystemDataManagement } from '../components/admin/AdminSystemDataManagement';
 import { AdminAuditLog } from '../components/admin/AdminAuditLog';
+import { AdminHNDManagement } from '../components/admin/AdminHNDManagement';
 import DynamicQuestionPaperUploadModal from '../components/admin/DynamicQuestionPaperUploadModal';
 import { 
   publishQuestionPaper, 
@@ -55,7 +56,7 @@ export default function Admin() {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   
-  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'translations' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'system-data' | 'audit-log' | 'papers' | 'manual' | 'samples' | 'duels';
+  type AdminTab = 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'assessments' | 'payments' | 'notifications' | 'reports' | 'settings' | 'translations' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'system-data' | 'audit-log' | 'hnd' | 'papers' | 'manual' | 'samples' | 'duels';
   const activeTab = (searchParams.get('tab') as AdminTab) || 'analytics';
 
   const [users, setUsers] = useState<any[]>([]);
@@ -570,6 +571,7 @@ export default function Admin() {
             <TabsTrigger value="alumni" className="rounded-xl py-2 px-4 text-xs font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">🎓 Alumni Management</TabsTrigger>
             <TabsTrigger value="system-data" className="rounded-xl py-2 px-4 text-xs font-bold bg-rose-50 text-rose-800 dark:bg-rose-950 dark:text-rose-300">🧹 System Data Management</TabsTrigger>
             <TabsTrigger value="audit-log" className="rounded-xl py-2 px-4 text-xs font-bold bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200">📜 Audit Log</TabsTrigger>
+            <TabsTrigger value="hnd" className="rounded-xl py-2 px-4 text-xs font-bold bg-blue-50 text-blue-800 dark:bg-blue-950 dark:text-blue-300">🎓 HND Engineering & Curriculum</TabsTrigger>
             <TabsTrigger value="settings" className="rounded-xl py-2 px-4 text-xs font-bold">Platform Settings</TabsTrigger>
           </TabsList>
 
@@ -1064,6 +1066,11 @@ export default function Admin() {
           {/* Tab 13: Footer Content Management */}
           <TabsContent value="footer">
             <AdminFooterManagement />
+          </TabsContent>
+
+          {/* Tab 14: HND Engineering & Curriculum Management */}
+          <TabsContent value="hnd">
+            <AdminHNDManagement />
           </TabsContent>
         </Tabs>
 

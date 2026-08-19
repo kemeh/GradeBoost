@@ -325,6 +325,27 @@ export default function LearningChallenges() {
                     </div>
                   </div>
 
+                  {/* SYSCOHADA Practical Lab Integration Link */}
+                  {activeChallenge?.id === 'challenge_syscohada_30' && (
+                    <div className="p-5 bg-indigo-50 border border-indigo-100 rounded-3xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-100 text-indigo-700 rounded-2xl">
+                          <LayoutDashboard size={20} />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-black text-indigo-950">SYSCOHADA Interactive Accounting Lab</h4>
+                          <p className="text-xs text-indigo-700 font-medium">Launch the real-time double-entry practice simulator with automatic general ledger postings.</p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => navigate('/accounting-lab')}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shrink-0 flex items-center gap-1.5 shadow-md shadow-indigo-100 w-full sm:w-auto justify-center"
+                      >
+                        Launch Lab <ArrowRight size={14} />
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Revision Link */}
                   {currentDayData?.revisionMaterial && (
                     <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-between">

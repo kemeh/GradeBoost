@@ -38,6 +38,16 @@ export const INITIAL_CURRICULA: Curriculum[] = [
     language: 'fr',
     isActive: true,
     order: 3
+  },
+  {
+    id: 'hnd',
+    name: 'Higher National Diploma (HND)',
+    nameFr: 'Brevet de Technicien Supérieur / HND (MINESUP)',
+    code: 'HND',
+    description: 'Cameroon Higher National Diploma (HND) & Higher Professional Technical Programmes (MINESUP)',
+    language: 'bilingual',
+    isActive: true,
+    order: 4
   }
 ];
 
@@ -58,6 +68,25 @@ export const INITIAL_EDUCATION_LEVELS: EducationLevel[] = [
     name: 'Advanced Level',
     code: 'A-Level',
     description: 'Cameroon GCE Advanced Level (Lower & Upper Sixth)',
+    isActive: true,
+    order: 2
+  },
+  // HND Higher National Diploma Levels
+  {
+    id: 'hnd_level_1',
+    curriculumId: 'hnd',
+    name: 'HND Level 1',
+    code: 'HND-1',
+    description: 'Higher National Diploma - First Year (Semester 1 & Semester 2)',
+    isActive: true,
+    order: 1
+  },
+  {
+    id: 'hnd_level_2',
+    curriculumId: 'hnd',
+    name: 'HND Level 2',
+    code: 'HND-2',
+    description: 'Higher National Diploma - Final Year & National Exam (Semester 1 & Semester 2)',
     isActive: true,
     order: 2
   },
@@ -132,7 +161,13 @@ export const INITIAL_DEPARTMENTS: Department[] = [
   // French Curriculum
   { id: 'dept_fr_general', curriculumId: 'cameroon_francophone', name: 'Enseignement Général', code: 'GEN-FR', isActive: true, description: 'Sciences Exactes et Lettres' },
   { id: 'dept_fr_tech', curriculumId: 'cameroon_francophone', name: 'Enseignement Technique', code: 'TECH-FR', isActive: true, description: 'Séries Industrielles et Techniques (F, TI)' },
-  { id: 'dept_fr_comm', curriculumId: 'cameroon_francophone', name: 'Enseignement Commercial & Gestion', code: 'COMM-FR', isActive: true, description: 'Séries G (G1, G2, G3, SES)' }
+  { id: 'dept_fr_comm', curriculumId: 'cameroon_francophone', name: 'Enseignement Commercial & Gestion', code: 'COMM-FR', isActive: true, description: 'Séries G (G1, G2, G3, SES)' },
+
+  // HND Departments
+  { id: 'dept_hnd_tech', curriculumId: 'hnd', name: 'Technology & Computer Engineering', code: 'HND-TECH', isActive: true, description: 'Software Engineering, Networks, Computer Science, and Telecom' },
+  { id: 'dept_hnd_business', curriculumId: 'hnd', name: 'Business, Finance & Management', code: 'HND-MGMT', isActive: true, description: 'Accountancy, Banking & Finance, Marketing, and Human Resource Management' },
+  { id: 'dept_hnd_health', curriculumId: 'hnd', name: 'Health & Medical Sciences', code: 'HND-HLTH', isActive: true, description: 'Nursing Sciences and Medical Laboratory Sciences' },
+  { id: 'dept_hnd_engineering', curriculumId: 'hnd', name: 'Electrical & Civil Engineering', code: 'HND-ENG', isActive: true, description: 'Electrical Power Systems and Civil Engineering Technology' }
 ];
 
 export const INITIAL_FRENCH_SUBJECTS: Omit<SubjectModel, 'id'>[] = [

@@ -1,3 +1,5 @@
+export * from './types/hnd';
+
 declare global {
   interface Window {
     aistudio: {
@@ -154,7 +156,26 @@ export interface UserProfile {
   educationLevelName?: string;
   departmentId?: string;
   departmentName?: string;
-  level?: 'Ordinary level' | 'Advance level' | 'Intermediate level' | string;
+  level?: 'Ordinary level' | 'Advance level' | 'Intermediate level' | 'HND Level 1' | 'HND Level 2' | string;
+  academicLevel?: 'Ordinary Level' | 'Advanced Level' | 'HND' | 'Higher National Diploma' | 'HND_BTS' | string;
+  programme?: string;
+  studentId?: string;
+  student_id?: string;
+  academicYear?: string;
+  academic_year?: string;
+  institution?: string;
+  institutionName?: string;
+  hndSchoolId?: string;
+  hndSchoolName?: string;
+  hndDepartmentId?: string;
+  hndDepartmentName?: string;
+  hndProgrammeId?: string;
+  hndProgrammeName?: string;
+  hndProgrammeCode?: string;
+  hndLevel?: 'HND Level 1' | 'HND Level 2' | string;
+  hndSemester?: 'Semester 1' | 'Semester 2' | string;
+  hndEnrolledCourseIds?: string[];
+  hndEnrolledCourseCodes?: string[];
   school: string;
   region: string;
   commercialSpecialtyId?: string;
@@ -257,6 +278,17 @@ export interface QuestionPaper {
   curriculumId?: string;
   curriculumName?: string;
   level?: string;
+  academicLevel?: string;
+  hndSchoolId?: string;
+  hndSchoolName?: string;
+  hndDepartmentId?: string;
+  hndDepartmentName?: string;
+  hndProgrammeId?: string;
+  hndProgrammeName?: string;
+  hndLevel?: string;
+  hndSemester?: string;
+  courseCode?: string;
+  creditValue?: number;
   session?: string;
   markingSchemeUrl?: string;
   solutionUrl?: string;
@@ -620,7 +652,7 @@ export type QuestionType =
 
 export type QuestionDifficulty = 'Easy' | 'Medium' | 'Hard' | 'Expert';
 export type QuestionStatus = 'draft' | 'published' | 'archived';
-export type AcademicLevel = 'Ordinary Level' | 'Advanced Level';
+export type AcademicLevel = 'Ordinary Level' | 'Advanced Level' | 'HND' | 'Higher National Diploma' | 'HND Level 1' | 'HND Level 2' | 'Intermediate level' | 'BEPC' | 'Probatoire' | 'Baccalauréat' | string;
 export type ExamSessionType = 'June' | 'November' | 'Mock' | 'Special';
 
 export interface QuestionMedia {

@@ -4,7 +4,8 @@ import {
   BookOpen, Search, Filter, PlayCircle, FileText, Download, CheckCircle, 
   Clock, Bookmark, ArrowLeft, Award, Sparkles, Code, Video, Music, 
   HelpCircle, ChevronRight, CheckCircle2, Save, Star, RotateCcw, 
-  Layers, FolderTree, BookCheck, ShieldCheck, FileCheck, Share2, X
+  Layers, FolderTree, BookCheck, ShieldCheck, FileCheck, Share2, X,
+  GraduationCap, Building2, Book
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
@@ -12,6 +13,7 @@ import jsPDF from 'jspdf';
 import Sidebar from '../components/Sidebar';
 import { Button, Card, Badge, cn, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
+import { HNDEnrollmentModal } from '../components/HNDEnrollmentModal';
 import { 
   LMSLesson, LMSUserProgress, LMSLessonFormat, LMSNote 
 } from '../types';
@@ -32,12 +34,22 @@ export default function StudentLMSPortal() {
   const [userProgress, setUserProgress] = useState<LMSUserProgress[]>([]);
   const [bookmarks, setBookmarks] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showHndEnrollmentModal, setShowHndEnrollmentModal] = useState(false);
 
   // Active Selected Lesson (if viewing a lesson)
   const [activeLesson, setActiveLesson] = useState<LMSLesson | null>(null);
 
   // Search & Filter filters
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 250); // 250ms debounce
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
   const [selectedLevel, setSelectedLevel] = useState<string>('Ordinary Level');
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
   const [selectedTopic, setSelectedTopic] = useState<string>('All');
@@ -284,7 +296,13 @@ export default function StudentLMSPortal() {
   };
 
   // Extract subjects & topics
-  const availableLevels = Array.from(new Set(['Ordinary Level', 'Advanced Level', ...lessons.map(l => l.educationLevel)]));
+  const availableLevels = Array.from(new Set([
+    'Ordinary Level', 
+    'Advanced Level', 
+    'HND Level 1', 
+    'HND Level 2',
+    ...lessons.map(l => l.educationLevel)
+  ]));
   const availableSubjects = Array.from(new Set(['All', ...lessons.map(l => l.subject)]));
   const availableTopics = Array.from(new Set(['All', ...lessons.filter(l => selectedSubject === 'All' || l.subject === selectedSubject).map(l => l.topic)]));
 
@@ -294,10 +312,10 @@ export default function StudentLMSPortal() {
     const matchesSubject = selectedSubject === 'All' || l.subject === selectedSubject;
     const matchesTopic = selectedTopic === 'All' || l.topic === selectedTopic;
     const matchesFormat = selectedFormat === 'All' || l.format === selectedFormat;
-    const matchesQuery = searchQuery === '' || 
-      l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.topic.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesQuery = debouncedSearchQuery === '' || 
+      l.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      l.subject.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+      l.topic.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
 
     return matchesLevel && matchesSubject && matchesTopic && matchesFormat && matchesQuery;
   });
@@ -696,16 +714,42 @@ export default function StudentLMSPortal() {
           <div className="space-y-8">
             {/* Hero Banner */}
             <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl p-8 lg:p-12 shadow-xl space-y-4 relative overflow-hidden">
-              <div className="relative z-10 max-w-2xl space-y-3">
-                <Badge className="bg-indigo-500/30 text-indigo-300 border border-indigo-400/30 font-bold uppercase text-[10px] tracking-widest">
-                  Digital School LMS Portal
-                </Badge>
+              <div className="relative z-10 max-w-3xl space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge className="bg-indigo-500/30 text-indigo-300 border border-indigo-400/30 font-bold uppercase text-[10px] tracking-widest">
+                    Digital School LMS Portal
+                  </Badge>
+                  {user?.curriculumId === 'hnd' && (
+                    <Badge className="bg-emerald-500/30 text-emerald-300 border border-emerald-400/30 font-bold uppercase text-[10px] tracking-widest flex items-center gap-1">
+                      <GraduationCap size={12} />
+                      {user.hndProgrammeName || 'HND Student'} • {user.hndLevel || 'Level 1'}
+                    </Badge>
+                  )}
+                </div>
                 <h1 className="text-3xl lg:text-4xl font-black tracking-tight">
-                  Cameroon GCE & TVET Digital Learning Hub
+                  Cameroon GCE, TVET & HND Digital Learning Hub
                 </h1>
                 <p className="text-slate-300 text-sm font-medium leading-relaxed">
                   Browse video lectures, interactive notes, practice drills, and downloadable past paper revision guides organized by Education Level, Department, Subject, and Topic.
                 </p>
+
+                {/* HND Quick Enrollment Pill / Status */}
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <Button
+                    size="sm"
+                    onClick={() => setShowHndEnrollmentModal(true)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-950/40"
+                  >
+                    <GraduationCap size={14} />
+                    {user?.curriculumId === 'hnd' ? 'Manage HND Courses & Semester' : 'Switch / Enroll into HND Higher Education'}
+                  </Button>
+
+                  {user?.curriculumId === 'hnd' && user.hndSemester && (
+                    <span className="text-xs text-indigo-200 font-semibold flex items-center gap-1">
+                      Active: <strong>{user.hndSemester}</strong> ({user.hndEnrolledCourseIds?.length || 0} Modules Registered)
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -833,6 +877,13 @@ export default function StudentLMSPortal() {
           </div>
         )}
       </main>
+
+      {/* HND Enrollment / Course Management Modal */}
+      <HNDEnrollmentModal
+        isOpen={showHndEnrollmentModal}
+        onClose={() => setShowHndEnrollmentModal(false)}
+        user={user}
+      />
     </div>
   );
 }

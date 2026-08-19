@@ -3,12 +3,13 @@ import { collection, getDocs, setDoc, doc, deleteDoc, query, orderBy, serverTime
 import { db } from '../../firebase';
 import { AcademicLevelModel, AcademicDepartment, SubjectModel, SyllabusTopic } from '../../types';
 import { Card, Button, Badge, cn } from '../ui';
-import { Layers, FolderKanban, BookOpen, ListTree, Plus, Trash2, Edit3, Save, X, Loader2, CheckCircle2 } from 'lucide-react';
+import { Layers, FolderKanban, BookOpen, ListTree, Plus, Trash2, Edit3, Save, X, Loader2, CheckCircle2, GraduationCap } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import SubjectManager from '../SubjectManager';
+import { AdminHNDManagement } from './AdminHNDManagement';
 
 export default function AdminAcademicHierarchy() {
-  const [activeTab, setActiveTab] = useState<'levels' | 'departments' | 'subjects' | 'topics'>('levels');
+  const [activeTab, setActiveTab] = useState<'levels' | 'departments' | 'subjects' | 'topics' | 'hnd'>('levels');
   const [levels, setLevels] = useState<AcademicLevelModel[]>([]);
   const [departments, setDepartments] = useState<AcademicDepartment[]>([]);
   const [subjects, setSubjects] = useState<SubjectModel[]>([]);
@@ -54,6 +55,7 @@ export default function AdminAcademicHierarchy() {
     const defaultLvls: AcademicLevelModel[] = [
       { id: 'o-level', name: 'Ordinary level', code: 'O-Level', description: 'General Certificate of Education Ordinary Level (Form 1 - Form 5)', passPercentage: 50, defaultPapersCount: 2, isActive: true },
       { id: 'a-level', name: 'Advance level', code: 'A-Level', description: 'General Certificate of Education Advanced Level (Lower & Upper Sixth)', passPercentage: 50, defaultPapersCount: 3, isActive: true },
+      { id: 'hnd', name: 'Higher National Diploma', code: 'HND', description: 'Vocational & Technical Higher National Diploma (Level 1 & Level 2)', passPercentage: 50, defaultPapersCount: 4, isActive: true },
     ];
     const defaultDepts: AcademicDepartment[] = [
       { id: 'sciences', name: 'Sciences & STEM', code: 'SCI', description: 'Biology, Chemistry, Physics, Mathematics, Computer Science' },
@@ -272,6 +274,15 @@ export default function AdminAcademicHierarchy() {
           )}
         >
           <ListTree size={14} /> Syllabus Topics ({topics.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('hnd')}
+          className={cn(
+            "px-5 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-2",
+            activeTab === 'hnd' ? "bg-indigo-600 text-white shadow-sm" : "text-indigo-600 bg-indigo-50 hover:bg-indigo-100"
+          )}
+        >
+          <GraduationCap size={14} /> HND Architecture
         </button>
       </div>
 
@@ -579,6 +590,11 @@ export default function AdminAcademicHierarchy() {
             </form>
           </Card>
         </div>
+      )}
+
+      {/* HND Tab */}
+      {activeTab === 'hnd' && (
+        <AdminHNDManagement />
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen, LayoutDashboard, ShieldCheck, KeyRound, RefreshCw, History, Sparkles, GraduationCap } from 'lucide-react';
+import { User, Mail, School, MapPin, ChevronRight, Save, TrendingUp, CheckCircle2, AlertCircle, Camera, Loader2, Trophy, Star, Zap, CreditCard, BookOpen, LayoutDashboard, ShieldCheck, KeyRound, RefreshCw, History, Sparkles, GraduationCap, Building2, Layers, Clock, Award, Check } from 'lucide-react';
 import { ACHIEVEMENTS } from '../services/gamificationService';
 import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -18,6 +18,15 @@ import FileUpload from '../components/FileUpload';
 import { toast } from 'react-hot-toast';
 import { fetchAuditLogs, AuditLogEntry } from '../services/auditService';
 import AlumniAmbassadorSection from '../components/profile/AlumniAmbassadorSection';
+import { HNDEnrollmentModal } from '../components/HNDEnrollmentModal';
+import { 
+  getHNDSchools, getHNDDepartments, getHNDProgrammes, getHNDCourses, 
+  enrollStudentInHND 
+} from '../services/hndService';
+import { 
+  HNDSchool, HNDDepartment, HNDProgramme, HNDCourse, 
+  HNDAcademicLevel, HNDSemester 
+} from '../types/hnd';
 
 import { DEFAULT_GCE_SUBJECTS, getPapersForSubjectName } from '../data/defaultSubjects';
 
@@ -32,6 +41,15 @@ export default function Profile() {
   const [userLogs, setUserLogs] = useState<AuditLogEntry[]>([]);
   const [resendingEmail, setResendingEmail] = useState(false);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [showHndEnrollmentModal, setShowHndEnrollmentModal] = useState(false);
+
+  // HND Dynamic Catalog
+  const [hndSchools, setHndSchools] = useState<HNDSchool[]>([]);
+  const [hndDepartments, setHndDepartments] = useState<HNDDepartment[]>([]);
+  const [hndProgrammes, setHndProgrammes] = useState<HNDProgramme[]>([]);
+  const [hndCourses, setHndCourses] = useState<HNDCourse[]>([]);
+  const [loadingHndCatalog, setLoadingHndCatalog] = useState(false);
+
   const [formData, setFormData] = useState({
     name: user?.name || '',
     school: user?.school || '',
@@ -40,8 +58,50 @@ export default function Profile() {
     curriculumId: user?.curriculumId || 'cameroon_gce',
     curriculumName: user?.curriculumName || 'English Curriculum (Cameroon GCE)',
     educationLevelName: user?.educationLevelName || user?.level || 'Ordinary level',
-    level: user?.level || 'Ordinary level'
+    level: user?.level || 'Ordinary level',
+    // HND Fields
+    hndSchoolId: user?.hndSchoolId || '',
+    hndSchoolName: user?.hndSchoolName || '',
+    hndDepartmentId: user?.hndDepartmentId || '',
+    hndDepartmentName: user?.hndDepartmentName || '',
+    hndProgrammeId: user?.hndProgrammeId || '',
+    hndProgrammeName: user?.hndProgrammeName || '',
+    hndProgrammeCode: user?.hndProgrammeCode || '',
+    hndLevel: (user?.hndLevel as HNDAcademicLevel) || 'HND Level 1',
+    hndSemester: (user?.hndSemester as HNDSemester) || 'Semester 1',
+    hndEnrolledCourseIds: user?.hndEnrolledCourseIds || [] as string[],
+    selectedSubjects: user?.selectedSubjects || [] as string[],
+    studentId: user?.studentId || user?.student_id || '',
+    academicYear: user?.academicYear || user?.academic_year || '2025/2026',
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        school: user.school || '',
+        region: user.region || '',
+        subject: user.subject || '',
+        curriculumId: user.curriculumId || 'cameroon_gce',
+        curriculumName: user.curriculumName || 'English Curriculum (Cameroon GCE)',
+        educationLevelName: user.educationLevelName || user.level || 'Ordinary level',
+        level: user.level || 'Ordinary level',
+        hndSchoolId: user.hndSchoolId || '',
+        hndSchoolName: user.hndSchoolName || '',
+        hndDepartmentId: user.hndDepartmentId || '',
+        hndDepartmentName: user.hndDepartmentName || '',
+        hndProgrammeId: user.hndProgrammeId || '',
+        hndProgrammeName: user.hndProgrammeName || '',
+        hndProgrammeCode: user.hndProgrammeCode || '',
+        hndLevel: (user.hndLevel as HNDAcademicLevel) || 'HND Level 1',
+        hndSemester: (user.hndSemester as HNDSemester) || 'Semester 1',
+        hndEnrolledCourseIds: user.hndEnrolledCourseIds || [],
+        selectedSubjects: user.selectedSubjects || [],
+        studentId: user.studentId || user.student_id || '',
+        academicYear: user.academicYear || user.academic_year || '2025/2026',
+      });
+    }
+  }, [user]);
 
   useEffect(() => {
     if (user?.email) {
@@ -61,6 +121,45 @@ export default function Profile() {
     };
     fetchSubjects();
   }, []);
+
+  // Fetch HND Hierarchy Catalog
+  useEffect(() => {
+    const fetchHndData = async () => {
+      setLoadingHndCatalog(true);
+      try {
+        const [schoolsData, deptsData, progsData, coursesData] = await Promise.all([
+          getHNDSchools(),
+          getHNDDepartments(),
+          getHNDProgrammes(),
+          getHNDCourses()
+        ]);
+        setHndSchools(schoolsData.filter(s => s.isActive));
+        setHndDepartments(deptsData.filter(d => d.isActive));
+        setHndProgrammes(progsData.filter(p => p.isActive));
+        setHndCourses(coursesData.filter(c => c.isActive));
+
+        // Auto-assign default HND values if empty and curriculum is HND
+        if (formData.curriculumId === 'hnd' && !formData.hndProgrammeId && progsData.length > 0) {
+          const firstProg = progsData[0];
+          setFormData(prev => ({
+            ...prev,
+            hndSchoolId: firstProg.schoolId,
+            hndDepartmentId: firstProg.departmentId,
+            hndProgrammeId: firstProg.id,
+            hndProgrammeName: firstProg.name,
+            hndProgrammeCode: firstProg.code,
+            subject: firstProg.name,
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching HND catalog for profile:', err);
+      } finally {
+        setLoadingHndCatalog(false);
+      }
+    };
+
+    fetchHndData();
+  }, [formData.curriculumId]);
 
   useEffect(() => {
     const fetchPaymentHistory = async () => {
@@ -92,27 +191,106 @@ export default function Profile() {
     const path = `users/${user.uid}`;
 
     try {
-      const currName = formData.curriculumId === 'cameroon_gce'
-        ? 'English Curriculum (Cameroon GCE)'
-        : 'French Curriculum (Cameroon Francophone)';
+      if (formData.curriculumId === 'hnd') {
+        const activeProg = hndProgrammes.find(p => p.id === formData.hndProgrammeId);
+        const activeSchool = hndSchools.find(s => s.id === formData.hndSchoolId);
+        const activeDept = hndDepartments.find(d => d.id === formData.hndDepartmentId);
 
-      const matchedPapers = getPapersForSubjectName(formData.subject, formData.level, subjects);
-      const assignedPaperIds = matchedPapers.map(p => p.id);
+        const currentSemesterCourses = hndCourses.filter(c => 
+          c.programmeId === formData.hndProgrammeId && 
+          c.level === formData.hndLevel && 
+          c.semester === formData.hndSemester
+        );
 
-      await updateDoc(doc(db, 'users', user.uid), {
-        ...formData,
-        curriculumName: currName,
-        subject: formData.subject.trim(),
-        assignedPapers: assignedPaperIds.length > 0 ? assignedPaperIds : ['paper1', 'paper2'],
-        updatedAt: serverTimestamp(),
-      });
+        let enrolledCourseIds = formData.hndEnrolledCourseIds;
+        if (!enrolledCourseIds || enrolledCourseIds.length === 0) {
+          enrolledCourseIds = currentSemesterCourses.map(c => c.id);
+        }
+
+        const enrolledCourses = hndCourses.filter(c => enrolledCourseIds.includes(c.id));
+        const courseNames = enrolledCourses.map(c => c.name);
+        const courseCodes = enrolledCourses.map(c => c.code);
+
+        await enrollStudentInHND(
+          user.uid,
+          {
+            schoolId: formData.hndSchoolId || activeProg?.schoolId || '',
+            schoolName: activeSchool?.name || formData.hndSchoolName || 'School of Engineering & Technology',
+            departmentId: formData.hndDepartmentId || activeProg?.departmentId || '',
+            departmentName: activeDept?.name || formData.hndDepartmentName || 'Department of Technology',
+            programmeId: formData.hndProgrammeId,
+            programmeName: activeProg?.name || formData.hndProgrammeName || 'Software Engineering',
+            programmeCode: activeProg?.code || formData.hndProgrammeCode || 'SWE',
+            level: formData.hndLevel,
+            semester: formData.hndSemester,
+            enrolledCourseIds,
+            enrolledCourseCodes: courseCodes,
+            enrolledCourseNames: courseNames,
+          },
+          {
+            name: formData.name,
+            email: user.email
+          }
+        );
+
+        // Also update name, school, region, and HND dynamic fields
+        await updateDoc(doc(db, 'users', user.uid), {
+          name: formData.name,
+          school: formData.school,
+          region: formData.region,
+          academicLevel: 'HND_BTS',
+          programme: formData.hndProgrammeName,
+          student_id: formData.studentId || '',
+          studentId: formData.studentId || '',
+          institution: formData.hndSchoolName || formData.school || '',
+          institutionName: formData.hndSchoolName || formData.school || '',
+          academic_year: formData.academicYear || '2025/2026',
+          academicYear: formData.academicYear || '2025/2026',
+          updatedAt: serverTimestamp()
+        });
+
+      } else {
+        const currName = formData.curriculumId === 'cameroon_gce'
+          ? 'English Curriculum (Cameroon GCE)'
+          : 'French Curriculum (Cameroon Francophone)';
+
+        const matchedPapers = getPapersForSubjectName(formData.subject, formData.level, subjects);
+        const assignedPaperIds = matchedPapers.map(p => p.id);
+
+        await updateDoc(doc(db, 'users', user.uid), {
+          name: formData.name,
+          school: formData.school,
+          region: formData.region,
+          curriculumId: formData.curriculumId,
+          curriculumName: currName,
+          educationLevelName: formData.educationLevelName || formData.level,
+          level: formData.level,
+          academicLevel: (formData.level === 'Ordinary level' ? 'Ordinary Level' : 'Advanced Level'),
+          subject: formData.subject.trim(),
+          assignedPapers: assignedPaperIds.length > 0 ? assignedPaperIds : ['paper1', 'paper2'],
+          updatedAt: serverTimestamp(),
+        });
+      }
+
       setSuccess(true);
+      toast.success('Profile updated successfully!');
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
+      console.error('Profile update error:', error);
       handleFirestoreError(error, OperationType.UPDATE, path);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleToggleCourseSelection = (courseId: string) => {
+    setFormData(prev => {
+      const exists = prev.hndEnrolledCourseIds.includes(courseId);
+      const newIds = exists 
+        ? prev.hndEnrolledCourseIds.filter(id => id !== courseId)
+        : [...prev.hndEnrolledCourseIds, courseId];
+      return { ...prev, hndEnrolledCourseIds: newIds };
+    });
   };
 
   if (!user) return null;
@@ -290,78 +468,292 @@ export default function Profile() {
                         value={formData.curriculumId}
                         onChange={e => {
                           const currId = e.target.value;
-                          setFormData({ 
-                            ...formData, 
-                            curriculumId: currId,
-                            level: currId === 'cameroon_francophone' ? 'Terminale' : 'Ordinary level',
-                            subject: currId === 'cameroon_francophone' ? 'Mathématiques' : 'Computer Science'
-                          });
+                          if (currId === 'hnd') {
+                            const firstProg = hndProgrammes[0];
+                            setFormData({
+                              ...formData,
+                              curriculumId: 'hnd',
+                              curriculumName: 'Higher National Diploma (HND)',
+                              level: 'HND Level 1',
+                              hndLevel: 'HND Level 1',
+                              hndSemester: 'Semester 1',
+                              hndProgrammeId: firstProg?.id || 'prog_hnd_swe',
+                              hndProgrammeName: firstProg?.name || 'Software Engineering',
+                              hndProgrammeCode: firstProg?.code || 'SWE',
+                              hndSchoolId: firstProg?.schoolId || 'sch_eng_tech',
+                              hndDepartmentId: firstProg?.departmentId || 'dept_comp_eng',
+                              subject: firstProg?.name || 'Software Engineering',
+                            });
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              curriculumId: currId,
+                              level: currId === 'cameroon_francophone' ? 'Terminale' : 'Ordinary level',
+                              subject: currId === 'cameroon_francophone' ? 'Mathématiques' : 'Computer Science'
+                            });
+                          }
                         }}
                       >
                         <option value="cameroon_gce">English Curriculum (Cameroon GCE)</option>
                         <option value="cameroon_francophone">French Curriculum (Système Francophone)</option>
+                        <option value="hnd">Higher National Diploma (HND) - MINESUP</option>
                       </select>
                     </div>
 
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <BookOpen size={12} /> Education Level
-                      </label>
-                      <select 
-                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none"
-                        value={formData.level}
-                        onChange={e => setFormData({ ...formData, level: e.target.value })}
-                      >
-                        {formData.curriculumId === 'cameroon_gce' ? (
-                          <>
-                            <option value="Ordinary level">Ordinary Level (O-Level)</option>
-                            <option value="Advance level">Advanced Level (A-Level)</option>
-                          </>
-                        ) : (
-                          <>
-                            <option value="Troisième (BEPC)">Troisième (BEPC)</option>
-                            <option value="Seconde">Seconde</option>
-                            <option value="Première">Première</option>
-                            <option value="Terminale">Terminale</option>
-                          </>
-                        )}
-                      </select>
-                    </div>
+                    {formData.curriculumId === 'hnd' ? (
+                      /* HND Academic Configuration Fields */
+                      <>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <Building2 size={12} /> HND School / Faculty
+                          </label>
+                          <select
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none text-xs"
+                            value={formData.hndSchoolId}
+                            onChange={e => {
+                              const sId = e.target.value;
+                              const s = hndSchools.find(item => item.id === sId);
+                              const availableProgs = hndProgrammes.filter(p => p.schoolId === sId);
+                              const firstProg = availableProgs[0];
+                              setFormData({
+                                ...formData,
+                                hndSchoolId: sId,
+                                hndSchoolName: s?.name || '',
+                                hndProgrammeId: firstProg?.id || formData.hndProgrammeId,
+                                hndProgrammeName: firstProg?.name || formData.hndProgrammeName,
+                                hndProgrammeCode: firstProg?.code || formData.hndProgrammeCode,
+                                subject: firstProg?.name || formData.subject
+                              });
+                            }}
+                          >
+                            {hndSchools.map(s => (
+                              <option key={s.id} value={s.id}>{s.name} ({s.code})</option>
+                            ))}
+                          </select>
+                        </div>
 
-                    <div className="space-y-3">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <BookOpen size={12} /> Target Subject
-                      </label>
-                      <select 
-                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none"
-                        value={formData.subject}
-                        onChange={e => setFormData({ ...formData, subject: e.target.value })}
-                        required
-                      >
-                        <option value="">Select a Subject</option>
-                        {formData.curriculumId === 'cameroon_francophone' ? (
-                          <>
-                            <option value="Mathématiques">Mathématiques</option>
-                            <option value="Langue Française">Langue Française</option>
-                            <option value="English Language">English Language</option>
-                            <option value="Histoire">Histoire</option>
-                            <option value="Géographie">Géographie</option>
-                            <option value="Économie">Économie</option>
-                            <option value="Philosophie">Philosophie</option>
-                            <option value="Physique">Physique</option>
-                            <option value="Chimie">Chimie</option>
-                            <option value="Sciences de la Vie et de la Terre (SVT)">Sciences de la Vie et de la Terre (SVT)</option>
-                            <option value="Informatique">Informatique</option>
-                            <option value="Éducation à la Citoyenneté">Éducation à la Citoyenneté</option>
-                          </>
-                        ) : (
-                          subjects.map(s => (
-                            <option key={s.id} value={s.name}>{s.name}</option>
-                          ))
-                        )}
-                      </select>
-                    </div>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <GraduationCap size={12} /> HND Programme / Specialty
+                          </label>
+                          <select
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none text-xs"
+                            value={formData.hndProgrammeId}
+                            onChange={e => {
+                              const pId = e.target.value;
+                              const p = hndProgrammes.find(item => item.id === pId);
+                              setFormData({
+                                ...formData,
+                                hndProgrammeId: pId,
+                                hndProgrammeName: p?.name || '',
+                                hndProgrammeCode: p?.code || '',
+                                subject: p?.name || '',
+                              });
+                            }}
+                          >
+                            {hndProgrammes
+                              .filter(p => !formData.hndSchoolId || p.schoolId === formData.hndSchoolId)
+                              .map(p => (
+                                <option key={p.id} value={p.id}>{p.name} ({p.code})</option>
+                              ))}
+                          </select>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <Award size={12} /> Academic Level / Year
+                          </label>
+                          <select
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none text-xs"
+                            value={formData.hndLevel}
+                            onChange={e => {
+                              const lvl = e.target.value as HNDAcademicLevel;
+                              setFormData({ ...formData, hndLevel: lvl, level: lvl, educationLevelName: lvl });
+                            }}
+                          >
+                            <option value="HND Level 1">HND Level 1 (Year 1 Foundation)</option>
+                            <option value="HND Level 2">HND Level 2 (Year 2 / National Exam)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <Clock size={12} /> Academic Semester
+                          </label>
+                          <select
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none text-xs"
+                            value={formData.hndSemester}
+                            onChange={e => {
+                              const sem = e.target.value as HNDSemester;
+                              setFormData({ ...formData, hndSemester: sem });
+                            }}
+                          >
+                            <option value="Semester 1">Semester 1 (October - February)</option>
+                            <option value="Semester 2">Semester 2 (March - July)</option>
+                          </select>
+                        </div>
+
+                        {/* Dynamic HND/BTS Fields: Student ID & Academic Year */}
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <CreditCard size={12} /> Student ID / Matriculation Number
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.studentId}
+                            onChange={e => setFormData({ ...formData, studentId: e.target.value })}
+                            placeholder="e.g. HND2026-SWE01"
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none text-xs"
+                          />
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <Clock size={12} /> Academic Year
+                          </label>
+                          <input
+                            type="text"
+                            value={formData.academicYear}
+                            onChange={e => setFormData({ ...formData, academicYear: e.target.value })}
+                            placeholder="2025/2026"
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none text-xs"
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <BookOpen size={12} /> Education Level
+                          </label>
+                          <select 
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none"
+                            value={formData.level}
+                            onChange={e => setFormData({ ...formData, level: e.target.value })}
+                          >
+                            {formData.curriculumId === 'cameroon_gce' ? (
+                              <>
+                                <option value="Ordinary level">Ordinary Level (O-Level)</option>
+                                <option value="Advance level">Advanced Level (A-Level)</option>
+                              </>
+                            ) : (
+                              <>
+                                <option value="Troisième (BEPC)">Troisième (BEPC)</option>
+                                <option value="Seconde">Seconde</option>
+                                <option value="Première">Première</option>
+                                <option value="Terminale">Terminale</option>
+                              </>
+                            )}
+                          </select>
+                        </div>
+
+                        <div className="space-y-3">
+                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <BookOpen size={12} /> Target Subject
+                          </label>
+                          <select 
+                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-bold text-slate-900 focus:bg-white focus:border-indigo-600 outline-none transition-all appearance-none"
+                            value={formData.subject}
+                            onChange={e => setFormData({ ...formData, subject: e.target.value })}
+                            required
+                          >
+                            <option value="">Select a Subject</option>
+                            {formData.curriculumId === 'cameroon_francophone' ? (
+                              <>
+                                <option value="Mathématiques">Mathématiques</option>
+                                <option value="Langue Française">Langue Française</option>
+                                <option value="English Language">English Language</option>
+                                <option value="Histoire">Histoire</option>
+                                <option value="Géographie">Géographie</option>
+                                <option value="Économie">Économie</option>
+                                <option value="Philosophie">Philosophie</option>
+                                <option value="Physique">Physique</option>
+                                <option value="Chimie">Chimie</option>
+                                <option value="Sciences de la Vie et de la Terre (SVT)">Sciences de la Vie et de la Terre (SVT)</option>
+                                <option value="Informatique">Informatique</option>
+                                <option value="Éducation à la Citoyenneté">Éducation à la Citoyenneté</option>
+                              </>
+                            ) : (
+                              subjects.map(s => (
+                                <option key={s.id} value={s.name}>{s.name}</option>
+                              ))
+                            )}
+                          </select>
+                        </div>
+                      </>
+                    )}
                   </div>
+
+                  {/* If HND curriculum is selected, show enrolled semester courses */}
+                  {formData.curriculumId === 'hnd' && (
+                    <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <GraduationCap size={16} className="text-indigo-600" />
+                            <h4 className="text-sm font-black text-indigo-950">
+                              Enrolled HND Course Modules ({formData.hndLevel} • {formData.hndSemester})
+                            </h4>
+                          </div>
+                          <p className="text-[11px] text-indigo-700/80 font-medium mt-0.5">
+                            Select active course modules to personalize your LMS materials and quizzes.
+                          </p>
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowHndEnrollmentModal(true)}
+                          className="rounded-xl font-bold bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 shrink-0"
+                        >
+                          <Sparkles size={14} className="mr-1.5" /> Full Enrollment Wizard
+                        </Button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-56 overflow-y-auto p-1">
+                        {hndCourses
+                          .filter(c => 
+                            c.programmeId === formData.hndProgrammeId && 
+                            c.level === formData.hndLevel && 
+                            c.semester === formData.hndSemester
+                          )
+                          .map(course => {
+                            const isEnrolled = formData.hndEnrolledCourseIds.includes(course.id);
+                            return (
+                              <div
+                                key={course.id}
+                                onClick={() => handleToggleCourseSelection(course.id)}
+                                className={cn(
+                                  "p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-2",
+                                  isEnrolled 
+                                    ? "bg-white border-indigo-600 text-indigo-950 shadow-xs" 
+                                    : "bg-white/60 border-slate-200 text-slate-600 hover:bg-white"
+                                )}
+                              >
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-800">
+                                      {course.code}
+                                    </span>
+                                    <span className="text-xs font-bold truncate">{course.name}</span>
+                                  </div>
+                                  <div className="text-[10px] text-slate-400 mt-0.5">
+                                    {course.creditValue} Credits • {course.isPractical ? 'Practical' : 'Core Theory'}
+                                  </div>
+                                </div>
+                                <div className={cn(
+                                  "w-5 h-5 rounded-lg border flex items-center justify-center shrink-0",
+                                  isEnrolled ? "bg-indigo-600 border-indigo-600 text-white" : "border-slate-300 bg-white"
+                                )}>
+                                  {isEnrolled && <Check size={12} />}
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-between pt-4">
                     <div className="flex items-center gap-2">
@@ -619,6 +1011,11 @@ export default function Profile() {
                     { label: 'View Progress', icon: TrendingUp, onClick: () => navigate('/dashboard') },
                     { label: 'Practice History', icon: ChevronRight, onClick: () => navigate('/practice') },
                     { 
+                      label: 'HND Programme Enrollment', 
+                      icon: GraduationCap, 
+                      onClick: () => setShowHndEnrollmentModal(true)
+                    },
+                    { 
                       label: 'Ambassador & Alumni', 
                       icon: Sparkles, 
                       onClick: () => {
@@ -645,6 +1042,13 @@ export default function Profile() {
           </div>
         </div>
       </main>
+
+      {/* HND Enrollment Modal */}
+      <HNDEnrollmentModal
+        isOpen={showHndEnrollmentModal}
+        onClose={() => setShowHndEnrollmentModal(false)}
+        user={user}
+      />
     </div>
   );
 }

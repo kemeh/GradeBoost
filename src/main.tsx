@@ -4,9 +4,16 @@ import { inject } from '@vercel/analytics';
 import { Analytics } from '@vercel/analytics/react';
 import App from './App';
 import './index.css';
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 // Initialize Vercel Analytics
 inject();
+
+// Register Service Worker for offline Practice and Daily Drill caching
+serviceWorkerRegistration.register({
+  onSuccess: () => console.log('[Edulpha] App is ready for offline study.'),
+  onUpdate: () => console.log('[Edulpha] New study material cache version ready.')
+});
 
 // Handle chunk load errors (common in SPAs when a new version is deployed)
 window.addEventListener('error', (e) => {

@@ -2,22 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Search, Bell, Sparkles, Download, Award, ChevronDown, Menu, X, 
-  User, LayoutDashboard, Settings, LogOut, HelpCircle, Sun, Moon,
-  MessageSquare, Trophy, Zap, Building2, Globe, Shield, BookOpen, Compass
+  Search, Bell, Sparkles, ChevronDown, Menu, X, 
+  User, LayoutDashboard, LogOut, Sun, Moon, HelpCircle, BookOpen, MessageSquare, Trophy, Zap
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { LanguageSwitcher } from '../LanguageSwitcher';
 import { Button, Badge, cn } from '../ui';
-import { getNavConfig } from '../../services/navigationService';
-import { NavItem } from '../../types/navigation';
-import CurriculumMegaMenu from './CurriculumMegaMenu';
-import SubjectsMegaMenu from './SubjectsMegaMenu';
 import GlobalSearchModal from './GlobalSearchModal';
-import MobileNavigationDrawer from './MobileNavigationDrawer';
-import MobileBottomTabBar from './MobileBottomTabBar';
 
 export default function Navbar() {
   const { user, isAdmin, logout } = useAuth();
@@ -26,54 +19,39 @@ export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [navItems, setNavItems] = useState<NavItem[]>([]);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [activeMegaMenu, setActiveMegaMenu] = useState<'curriculum' | 'subjects' | 'custom' | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
+  const [isResourcesOpen, setIsResourcesOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  const megaMenuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const resourcesMenuRef = useRef<HTMLDivElement>(null);
 
-  // Load Nav Items
-  useEffect(() => {
-    async function loadNav() {
-      const items = await getNavConfig();
-      setNavItems(items);
-    }
-    loadNav();
-  }, []);
-
-  // Handle Scroll to toggle sticky styling
+  // Scroll detection
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close menus when clicking outside
+  // Click outside to close menus
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (megaMenuRef.current && !megaMenuRef.current.contains(e.target as Node)) {
-        setActiveMegaMenu(null);
-      }
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setIsUserMenuOpen(false);
+      }
+      if (resourcesMenuRef.current && !resourcesMenuRef.current.contains(e.target as Node)) {
+        setIsResourcesOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Toggle Theme
   const handleToggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(nextTheme);
@@ -84,312 +62,395 @@ export default function Navbar() {
     }
   };
 
-  const handleLinkNavigate = (href: string) => {
-    setActiveMegaMenu(null);
-    if (href.startsWith('#')) {
-      const el = document.getElementById(href.replace('#', ''));
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-      } else if (location.pathname !== '/') {
-        navigate('/' + href);
-      }
-    } else {
-      navigate(href);
-    }
-  };
-
   const handleLogout = async () => {
     setIsUserMenuOpen(false);
     await logout();
     navigate('/');
   };
 
+  // Active navigation checker (not hardcoded)
+  const isTabActive = (href: string) => {
+    const current = location.pathname;
+    if (href === '/hnd-bts') {
+      return current === '/hnd-bts' || current === '/hnd' || current === '/bts';
+    }
+    if (href === '/curriculum') {
+      return current === '/curriculum' || current === '/gce';
+    }
+    if (href === '/subjects') {
+      return current === '/subjects' || current === '/courses';
+    }
+    return current === href;
+  };
+
+  // Defined top-level nav elements
+  const primaryNavItems = [
+    { labelEn: 'Home', labelFr: 'Accueil', href: '/' },
+    { labelEn: 'Courses', labelFr: 'Matières', href: '/subjects' },
+    { labelEn: 'GCE', labelFr: 'GCE', href: '/curriculum' },
+    { labelEn: 'HND / BTS', labelFr: 'HND / BTS', href: '/hnd-bts' },
+    { labelEn: 'University', labelFr: 'Université', href: '/lms' },
+  ];
+
+  const resourceDropdownItems = [
+    { labelEn: 'Discussion Forum', labelFr: 'Forum de Discussion', href: '/forum', icon: MessageSquare },
+    { labelEn: 'Documentation Hub', labelFr: 'Centre de Documentation', href: '/docs', icon: BookOpen },
+    { labelEn: 'Leaderboard & Duels', labelFr: 'Classement & Duels', href: '/leaderboard', icon: Trophy },
+    { labelEn: 'Daily Challenge', labelFr: 'Défis Quotidiens', href: '/daily-drill-new', icon: Zap },
+  ];
+
   return (
     <>
-      {/* Top Announcement Banner (Responsive across mobile, tablet, desktop) */}
-      <div className="bg-slate-900 text-slate-200 px-3 py-2 text-xs border-b border-slate-800">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 sm:gap-4 text-center sm:text-left">
-          <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3">
-            <span className="px-2.5 py-0.5 rounded-full bg-emerald-600 text-white font-black text-[10px] tracking-wider uppercase shadow-2xs shrink-0">
-              {t('hero.badge', 'CAMEROON & AFRICA #1')}
-            </span>
-            <span className="text-slate-300 font-medium text-[11px] sm:text-xs leading-tight">
-              {t('nav.announcementText', 'Empowering Students across General, Technical, Commercial & TVEE Sub-systems')}
-            </span>
-          </div>
-          <button 
-            onClick={() => handleLinkNavigate('/subjects')}
-            className="text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 transition-colors group text-xs shrink-0"
-          >
-            <span>{t('nav.exploreSubjects', 'Explore Subjects')}</span>
-            <span className="group-hover:translate-x-1 transition-transform">→</span>
-          </button>
-        </div>
-      </div>
-
-      {/* 1. Main Navigation Header Bar */}
       <nav
+        id="main-nav-bar"
         className={cn(
-          "sticky top-0 w-full z-40 transition-all duration-300 border-b",
+          "fixed top-0 w-full z-40 transition-all duration-300 border-b",
           isScrolled
-            ? "bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-slate-200/90 dark:border-slate-800 shadow-md py-2"
-            : "bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-slate-200/60 dark:border-slate-800 py-2.5 sm:py-3.5"
+            ? "bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-slate-200/95 dark:border-slate-800 shadow-md py-2"
+            : "bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-slate-200/70 dark:border-slate-800 py-3"
         )}
       >
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
           
-          {/* Left Section: Logo & Platform Title (Mobile: Hamburger + Logo) */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-            <button
-              onClick={() => setIsMobileDrawerOpen(true)}
-              className="md:hidden p-1.5 sm:p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition-colors shrink-0"
-              aria-label="Open Menu"
-            >
-              <Menu size={18} />
-            </button>
-
-            <div 
-              className="flex items-center gap-2 sm:gap-3 cursor-pointer shrink-0 group"
-              onClick={() => handleLinkNavigate('/')}
-            >
+          {/* Logo Brand Area */}
+          <div className="flex items-center gap-3 shrink-0">
+            <Link to="/" className="flex items-center gap-2 group outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl p-1">
               <img 
                 src={logoUrl || "/edulpha-logo.png"} 
-                alt={appName || "Edulpha"} 
-                className="h-7 sm:h-10 w-auto rounded-xl object-contain shadow-xs group-hover:scale-105 transition-transform"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
+                alt="Edulpha" 
+                className="h-8 sm:h-9 w-auto rounded-xl object-contain group-hover:scale-105 transition-transform"
+                onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
               />
-              <div className="flex flex-col">
-                <span className="text-base sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
-                  {appName || 'Edulpha'}<span className="text-emerald-600">.</span>
-                </span>
-                <span className="hidden sm:inline-block text-[8px] sm:text-[9px] font-black tracking-widest text-indigo-600 dark:text-indigo-400 uppercase -mt-0.5">
-                  Learn. Practice. Succeed.
-                </span>
-              </div>
-            </div>
+              <span className="text-xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
+                {appName || 'Edulpha'}<span className="text-indigo-600">.</span>
+              </span>
+            </Link>
           </div>
 
-          {/* Center Navigation Links (Desktop 1200px+ & Tablet 768px-1199px) */}
-          <div className="hidden md:flex items-center gap-1 xl:gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 relative" ref={megaMenuRef}>
-            {navItems.filter(i => i.isVisible).map((item) => {
-              const hasMega = item.megaType === 'curriculum' || item.megaType === 'subjects' || item.megaType === 'custom';
-              const isCurrentMegaOpen = activeMegaMenu === item.megaType;
+          {/* Desktop Central Navigation Menu Items */}
+          <div className="hidden md:flex items-center gap-1 lg:gap-1.5 text-xs font-black text-slate-700 dark:text-slate-300">
+            {primaryNavItems.map((item) => (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "px-3 py-2 rounded-xl transition-all font-bold outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500",
+                  isTabActive(item.href)
+                    ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 font-extrabold"
+                    : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
+                )}
+              >
+                {language === 'fr' ? item.labelFr : item.labelEn}
+              </Link>
+            ))}
 
-              return (
-                <div key={item.id} className="relative">
-                  <button
-                    onClick={() => {
-                      if (hasMega) {
-                        setActiveMegaMenu(isCurrentMegaOpen ? null : (item.megaType as any));
-                      } else {
-                        handleLinkNavigate(item.href);
-                      }
-                    }}
-                    onMouseEnter={() => {
-                      if (hasMega) setActiveMegaMenu(item.megaType as any);
-                    }}
-                    className={cn(
-                      "px-2.5 py-2 rounded-xl transition-all flex items-center gap-1 font-bold hover:bg-slate-100/80 dark:hover:bg-slate-800 hover:text-indigo-600 dark:hover:text-indigo-400",
-                      isCurrentMegaOpen && "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-2xs"
-                    )}
+            {/* Resources Dropdown Trigger */}
+            <div className="relative" ref={resourcesMenuRef}>
+              <button
+                onClick={() => setIsResourcesOpen(!isResourcesOpen)}
+                className={cn(
+                  "px-3 py-2 rounded-xl transition-all font-bold flex items-center gap-1 hover:bg-slate-100 dark:hover:bg-slate-800 outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500",
+                  isResourcesOpen && "bg-slate-100 dark:bg-slate-800"
+                )}
+                aria-expanded={isResourcesOpen}
+                aria-haspopup="true"
+              >
+                <span>{language === 'fr' ? 'Ressources' : 'Resources'}</span>
+                <ChevronDown size={14} className={cn("transition-transform duration-200 opacity-60", isResourcesOpen && "rotate-180")} />
+              </button>
+
+              <AnimatePresence>
+                {isResourcesOpen && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute top-full left-0 mt-1.5 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 rounded-2xl shadow-xl z-50 flex flex-col gap-0.5"
                   >
-                    {item.id === 'nav-ai-tutor' && <Sparkles size={14} className="text-amber-500" />}
-                    {item.id === 'nav-download-app' && <Download size={14} className="text-emerald-600" />}
-                    {item.id === 'nav-exams' && <Award size={14} className="text-sky-600" />}
-                    
-                    <span className="truncate max-w-[90px] lg:max-w-none">{language === 'fr' ? item.labelFr : item.labelEn}</span>
+                    {resourceDropdownItems.map((res) => (
+                      <Link
+                        key={res.href}
+                        to={res.href}
+                        onClick={() => setIsResourcesOpen(false)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs font-bold transition-colors"
+                      >
+                        <res.icon size={15} className="text-indigo-500" />
+                        <span>{language === 'fr' ? res.labelFr : res.labelEn}</span>
+                      </Link>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
 
-                    {item.badgeEn && (
-                      <span className={cn("hidden lg:inline-block px-1.5 py-0.5 text-[9px] font-black uppercase rounded-md border", item.badgeColor || 'bg-indigo-50 text-indigo-700 border-indigo-200')}>
-                        {language === 'fr' ? item.badgeFr : item.badgeEn}
-                      </span>
-                    )}
-
-                    {hasMega && (
-                      <ChevronDown size={14} className={cn("transition-transform duration-200 opacity-60", isCurrentMegaOpen && "rotate-180")} />
-                    )}
-                  </button>
-
-                  {/* Dropdown for "More" custom menu */}
-                  {item.megaType === 'custom' && activeMegaMenu === 'custom' && (
-                    <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-2 space-y-1 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                      {item.dropdownItems?.map((drop, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => handleLinkNavigate(drop.href)}
-                          className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-indigo-600 flex items-center justify-between transition-colors"
-                        >
-                          <span>{language === 'fr' ? drop.labelFr : drop.labelEn}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Render Mega Menus */}
-            <AnimatePresence>
-              {activeMegaMenu === 'curriculum' && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50">
-                  <CurriculumMegaMenu onClose={() => setActiveMegaMenu(null)} />
-                </div>
+            {/* About Tab */}
+            <Link
+              to="/about"
+              className={cn(
+                "px-3 py-2 rounded-xl transition-all font-bold outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500",
+                isTabActive('/about')
+                  ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
+                  : "hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-white"
               )}
-              {activeMegaMenu === 'subjects' && (
-                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-3 z-50">
-                  <SubjectsMegaMenu onClose={() => setActiveMegaMenu(null)} />
-                </div>
-              )}
-            </AnimatePresence>
+            >
+              {language === 'fr' ? 'À propos' : 'About'}
+            </Link>
           </div>
 
-          {/* Right Section: Action Tools */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right Action Tools Bar */}
+          <div className="flex items-center gap-2.5 shrink-0">
             
-            {/* Global Search Button */}
+            {/* Global search trigger */}
             <button
               onClick={() => setIsSearchOpen(true)}
-              className="p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center gap-2 text-xs font-bold transition-all border border-slate-200/60 dark:border-slate-700 shadow-2xs"
-              title="Global Search"
+              className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200/90 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200/50 dark:border-slate-700 outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+              title="Search"
+              aria-label="Search"
             >
-              <Search size={16} className="text-indigo-600 dark:text-indigo-400" />
-              <span className="hidden xl:inline text-slate-500">
-                {language === 'fr' ? 'Rechercher...' : 'Search...'}
-              </span>
-              <kbd className="hidden xl:inline-block px-1.5 py-0.5 text-[9px] font-black bg-white dark:bg-slate-900 text-slate-500 border border-slate-200 dark:border-slate-700 rounded-md">
-                ⌘K
-              </kbd>
+              <Search size={16} />
             </button>
 
-            {/* Language Switcher */}
-            <div className="hidden sm:block">
-              <LanguageSwitcher />
-            </div>
-
-            {/* Theme Toggle Button */}
+            {/* Theme switcher */}
             <button
               onClick={handleToggleTheme}
-              className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors border border-slate-200/60 dark:border-slate-700"
-              title="Toggle Theme"
+              className="p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200/90 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center border border-slate-200/50 dark:border-slate-700 outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+              title="Theme Toggle"
+              aria-label="Toggle Theme"
             >
               {theme === 'dark' ? <Moon size={16} className="text-indigo-400" /> : <Sun size={16} className="text-amber-500" />}
             </button>
 
-            {/* User Notifications Bell (Logged in) */}
+            {/* Language switcher */}
+            <div className="hidden sm:block shrink-0">
+              <LanguageSwitcher />
+            </div>
+
+            {/* Notification triggers */}
             {user && (
-              <Link to="/notifications" className="relative p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 transition-colors">
+              <Link 
+                to="/notifications" 
+                className="relative p-2 rounded-xl bg-slate-100/80 dark:bg-slate-800 hover:bg-slate-200/90 dark:hover:bg-slate-750 text-slate-750 dark:text-slate-200 outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                aria-label="Notifications"
+              >
                 <Bell size={16} />
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
               </Link>
             )}
 
-            {/* Logged Out / Logged In Accounts State */}
+            {/* Account authentication states or quick control dropdown */}
             {user ? (
               <div className="relative" ref={userMenuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200/60 dark:border-slate-700"
+                  className="flex items-center gap-1.5 p-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200/50 dark:border-slate-700 outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500"
+                  aria-expanded={isUserMenuOpen}
+                  aria-haspopup="true"
                 >
-                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white font-black flex items-center justify-center text-xs shadow-2xs">
-                    {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-black flex items-center justify-center text-xs shadow-xs uppercase">
+                    {user.displayName ? user.displayName.charAt(0) : 'U'}
                   </div>
                   <ChevronDown size={14} className="text-slate-400 hidden sm:block" />
                 </button>
 
-                {/* User Avatar Dropdown Menu */}
-                {isUserMenuOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 p-3 space-y-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1">
-                      <p className="text-xs font-black text-slate-900 dark:text-white truncate">
-                        {user.displayName || 'Student User'}
-                      </p>
-                      <p className="text-[11px] text-slate-500 truncate">{user.email}</p>
-                      <span className="inline-block px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 text-[9px] font-black uppercase border border-indigo-200">
-                        {user.role || 'Student'}
-                      </span>
-                    </div>
+                <AnimatePresence>
+                  {isUserMenuOpen && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 8 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-full right-0 mt-2 w-60 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-3 space-y-2 z-50"
+                    >
+                      <div className="p-2.5 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-100 dark:border-slate-800 space-y-0.5 truncate">
+                        <p className="text-xs font-black text-slate-900 dark:text-white truncate">
+                          {user.displayName || 'Learner User'}
+                        </p>
+                        <p className="text-[10px] text-slate-500 truncate font-semibold">{user.email}</p>
+                      </div>
 
-                    <div className="space-y-1 pt-1">
-                      <Link
-                        to={isAdmin ? '/admin' : '/dashboard'}
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2"
-                      >
-                        <LayoutDashboard size={14} className="text-indigo-600" />
-                        <span>{isAdmin ? t('sidebar.adminDashboard', 'Admin Dashboard') : t('nav.dashboard', 'Student Dashboard')}</span>
-                      </Link>
+                      <div className="space-y-0.5 flex flex-col">
+                        <Link
+                          to={isAdmin ? '/admin' : '/dashboard'}
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="px-2.5 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                        >
+                          <LayoutDashboard size={14} className="text-indigo-600" />
+                          <span>{isAdmin ? 'Admin Dashboard' : 'Dashboard'}</span>
+                        </Link>
 
-                      <Link
-                        to="/profile"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2"
-                      >
-                        <User size={14} className="text-emerald-600" />
-                        <span>{t('nav.profile', 'Profile & Settings')}</span>
-                      </Link>
+                        <Link
+                          to="/profile"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="px-2.5 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                        >
+                          <User size={14} className="text-emerald-600" />
+                          <span>Profile & Settings</span>
+                        </Link>
+                      </div>
 
-                      <Link
-                        to="/docs"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 flex items-center gap-2"
-                      >
-                        <HelpCircle size={14} className="text-sky-600" />
-                        <span>{t('nav.helpDocs', 'Help & Documentation')}</span>
-                      </Link>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                      <button
-                        onClick={handleLogout}
-                        className="w-full text-left px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/40 text-xs font-bold text-rose-600 flex items-center gap-2 transition-colors"
-                      >
-                        <LogOut size={14} />
-                        <span>{t('nav.logout', 'Logout')}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
+                      <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full px-2.5 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 text-xs font-black text-rose-600 flex items-center gap-2 transition-colors"
+                        >
+                          <LogOut size={14} />
+                          <span>{language === 'fr' ? 'Déconnexion' : 'Logout'}</span>
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                <Link to="/auth" className="hidden sm:inline-block">
-                  <Button size="sm" variant="ghost" className="font-bold text-xs text-slate-700 dark:text-slate-300 hover:text-indigo-600">
-                    {t('nav.login', 'Log In')}
+              <div className="hidden sm:flex items-center gap-1.5">
+                <Link to="/auth">
+                  <Button size="sm" variant="ghost" className="font-bold text-xs text-slate-750 dark:text-slate-300 hover:text-indigo-600">
+                    {language === 'fr' ? 'Connexion' : 'Login'}
                   </Button>
                 </Link>
-
-                <Link to="/auth" className="shrink-0 max-w-[130px] sm:max-w-none">
-                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md font-black text-[11px] sm:text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl whitespace-nowrap truncate min-w-0 w-full">
-                    {t('hero.cta', 'Get Started Free')}
+                <Link to="/auth?mode=register">
+                  <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs px-3.5 py-2 rounded-xl shadow-xs">
+                    {language === 'fr' ? "S'enregistrer" : 'Register'}
                   </Button>
                 </Link>
               </div>
             )}
+
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 hover:text-slate-900 border border-slate-200/50 outline-hidden focus-visible:ring-2 focus-visible:ring-indigo-500 shrink-0"
+              aria-expanded={isMobileMenuOpen}
+              aria-label="Toggle Mobile Menu"
+            >
+              {isMobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Dropdown Menu */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden border-t border-slate-150 dark:border-slate-800 bg-white dark:bg-slate-900/95 backdrop-blur-md absolute top-full left-0 w-full shadow-lg max-h-[calc(100vh-80px)] overflow-y-auto"
+            >
+              <div className="p-4 space-y-1.5">
+                {/* Standard items */}
+                {primaryNavItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className={cn(
+                      "block p-3 rounded-xl text-xs font-black uppercase transition-all",
+                      isTabActive(item.href)
+                        ? "bg-indigo-50 text-indigo-600 dark:bg-indigo-950/40 dark:text-indigo-400"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                    )}
+                  >
+                    {language === 'fr' ? item.labelFr : item.labelEn}
+                  </Link>
+                ))}
+
+                {/* Sub-resource lists inside mobile menu */}
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                  <p className="px-3 text-[10px] font-black uppercase text-slate-400 tracking-wider mb-1">
+                    {language === 'fr' ? 'Ressources' : 'Resources'}
+                  </p>
+                  {resourceDropdownItems.map((res) => (
+                    <Link
+                      key={res.href}
+                      to={res.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="flex items-center gap-2 p-3 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 rounded-xl"
+                    >
+                      <res.icon size={14} className="text-indigo-500 shrink-0" />
+                      <span>{language === 'fr' ? res.labelFr : res.labelEn}</span>
+                    </Link>
+                  ))}
+                </div>
+
+                <Link
+                  to="/about"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block p-3 rounded-xl text-xs font-black uppercase text-slate-700 dark:text-slate-300 hover:bg-slate-50"
+                >
+                  {language === 'fr' ? 'À propos' : 'About'}
+                </Link>
+
+                {/* Authentication states */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                  {user ? (
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2.5 p-2 bg-slate-50 dark:bg-slate-800/40 rounded-xl">
+                        <div className="w-8 h-8 rounded-full bg-indigo-600 text-white font-black flex items-center justify-center text-xs uppercase shrink-0">
+                          {user.displayName ? user.displayName.charAt(0) : 'U'}
+                        </div>
+                        <div className="truncate">
+                          <p className="text-xs font-black text-slate-900 dark:text-white truncate">{user.displayName || user.email}</p>
+                          <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">{user.role || 'Student'}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <Link 
+                          to={isAdmin ? '/admin' : '/dashboard'} 
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="w-full"
+                        >
+                          <Button size="sm" variant="outline" className="w-full text-xs font-bold py-2.5 rounded-xl">
+                            Dashboard
+                          </Button>
+                        </Link>
+                        <Link 
+                          to="/profile" 
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className="w-full"
+                        >
+                          <Button size="sm" variant="outline" className="w-full text-xs font-bold py-2.5 rounded-xl">
+                            Profile
+                          </Button>
+                        </Link>
+                      </div>
+
+                      <button
+                        onClick={handleLogout}
+                        className="w-full p-3 rounded-xl hover:bg-rose-50 text-xs font-black text-rose-600 flex items-center justify-center gap-2 border border-rose-100"
+                      >
+                        <LogOut size={14} />
+                        <span>{language === 'fr' ? 'Se déconnecter' : 'Logout'}</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2">
+                      <Link to="/auth" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button variant="outline" className="w-full font-bold text-xs py-2.5 rounded-xl">
+                          {language === 'fr' ? 'Se Connecter' : 'Login'}
+                        </Button>
+                      </Link>
+                      <Link to="/auth?mode=register" onClick={() => setIsMobileMenuOpen(false)}>
+                        <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs py-2.5 rounded-xl">
+                          {language === 'fr' ? "S'enregistrer" : 'Register'}
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
-      {/* 2. Global Search Overlay Modal */}
+      {/* Global Search Overlay Modal */}
       <GlobalSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
-      />
-
-      {/* 3. Mobile Navigation Drawer */}
-      <MobileNavigationDrawer
-        isOpen={isMobileDrawerOpen}
-        onClose={() => setIsMobileDrawerOpen(false)}
-        navItems={navItems}
-        currentTheme={theme}
-        onToggleTheme={handleToggleTheme}
-        onOpenSearch={() => setIsSearchOpen(true)}
-      />
-
-      {/* 4. Mobile Bottom Action Bar */}
-      <MobileBottomTabBar
-        onOpenSearch={() => setIsSearchOpen(true)}
       />
     </>
   );
