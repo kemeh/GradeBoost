@@ -222,6 +222,66 @@ export default function AdminPlatformSettingsView() {
           )}
         </Card>
 
+        {/* Payment & Mobile Money Settings */}
+        <Card className="p-6 space-y-4">
+          <h3 className="text-base font-black text-slate-900">Payment & Mobile Money Configuration</h3>
+          <div>
+            <label className="text-xs font-bold text-slate-600">Premium Plan Price (FCFA)</label>
+            <input 
+              type="number" 
+              required 
+              min="0"
+              className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold mt-1 outline-none" 
+              value={paymentPrice} 
+              onChange={e => setPaymentPrice(parseInt(e.target.value) || 0)} 
+            />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+            <div>
+              <label className="text-xs font-bold text-slate-600">MTN MoMo Number</label>
+              <input 
+                type="text" 
+                placeholder="e.g. 677123456"
+                className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold mt-1 outline-none" 
+                value={momoNumber} 
+                onChange={e => setMomoNumber(e.target.value)} 
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-600">MTN MoMo Account Name</label>
+              <input 
+                type="text" 
+                placeholder="e.g. EDULPHA ADMIN"
+                className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold mt-1 outline-none" 
+                value={momoName} 
+                onChange={e => setMomoName(e.target.value)} 
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-bold text-slate-600">Orange Money Number</label>
+              <input 
+                type="text" 
+                placeholder="e.g. 699123456"
+                className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold mt-1 outline-none" 
+                value={omNumber} 
+                onChange={e => setOmNumber(e.target.value)} 
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-600">Orange Money Account Name</label>
+              <input 
+                type="text" 
+                placeholder="e.g. EDULPHA ADMIN"
+                className="w-full p-2.5 bg-slate-50 border rounded-xl text-sm font-bold mt-1 outline-none" 
+                value={omName} 
+                onChange={e => setOmName(e.target.value)} 
+              />
+            </div>
+          </div>
+        </Card>
+
         {/* Challenge Start Date */}
         <Card className="p-6 space-y-4">
           <h3 className="text-base font-black text-slate-900">60-Day Challenge Countdown Start Date</h3>

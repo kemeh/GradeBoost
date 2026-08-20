@@ -114,21 +114,22 @@ export const getSystemSettings = async (): Promise<SystemSettings | null> => {
   }
 
   if (serverData) {
+    const primaryLogo = serverData.logoUrl || serverData.platformLogoUrl || localCache?.logoUrl || DEFAULT_SETTINGS.logoUrl;
     const merged: SystemSettings = {
       ...DEFAULT_SETTINGS,
-      ...serverData,
       ...(localCache || {}),
-      // Ensure server overrides default placeholders if serverData has values
-      logoUrl: serverData.logoUrl || serverData.platformLogoUrl || localCache?.logoUrl || DEFAULT_SETTINGS.logoUrl,
-      platformLogoUrl: serverData.platformLogoUrl || serverData.logoUrl || localCache?.platformLogoUrl || DEFAULT_SETTINGS.logoUrl,
-      landingLogoUrl: serverData.landingLogoUrl || serverData.logoUrl || localCache?.landingLogoUrl || DEFAULT_SETTINGS.logoUrl,
-      footerLogoUrl: serverData.footerLogoUrl || serverData.logoUrl || localCache?.footerLogoUrl || DEFAULT_SETTINGS.logoUrl,
-      partnerLogoUrl: serverData.partnerLogoUrl !== undefined ? serverData.partnerLogoUrl : localCache?.partnerLogoUrl || '',
-      institutionLogoUrl: serverData.institutionLogoUrl !== undefined ? serverData.institutionLogoUrl : localCache?.institutionLogoUrl || '',
-      sponsorLogoUrl: serverData.sponsorLogoUrl !== undefined ? serverData.sponsorLogoUrl : localCache?.sponsorLogoUrl || '',
-      aiLogoUrl: serverData.aiLogoUrl !== undefined ? serverData.aiLogoUrl : localCache?.aiLogoUrl || '',
-      faviconUrl: serverData.faviconUrl !== undefined ? serverData.faviconUrl : localCache?.faviconUrl || '',
-      appIconUrl: serverData.appIconUrl !== undefined ? serverData.appIconUrl : localCache?.appIconUrl || '',
+      ...serverData,
+      // Ensure server values strictly override default placeholders
+      logoUrl: primaryLogo,
+      platformLogoUrl: serverData.platformLogoUrl || primaryLogo,
+      landingLogoUrl: serverData.landingLogoUrl || primaryLogo,
+      footerLogoUrl: serverData.footerLogoUrl || primaryLogo,
+      partnerLogoUrl: serverData.partnerLogoUrl !== undefined ? serverData.partnerLogoUrl : (localCache?.partnerLogoUrl || ''),
+      institutionLogoUrl: serverData.institutionLogoUrl !== undefined ? serverData.institutionLogoUrl : (localCache?.institutionLogoUrl || ''),
+      sponsorLogoUrl: serverData.sponsorLogoUrl !== undefined ? serverData.sponsorLogoUrl : (localCache?.sponsorLogoUrl || ''),
+      aiLogoUrl: serverData.aiLogoUrl !== undefined ? serverData.aiLogoUrl : (localCache?.aiLogoUrl || DEFAULT_SETTINGS.aiLogoUrl || '/ai-logo.png'),
+      faviconUrl: serverData.faviconUrl !== undefined ? serverData.faviconUrl : (localCache?.faviconUrl || '/favicon.ico'),
+      appIconUrl: serverData.appIconUrl !== undefined ? serverData.appIconUrl : (localCache?.appIconUrl || '/icon.png'),
     };
 
     saveLocalSettings(merged);
@@ -177,14 +178,14 @@ export const updateSystemSettings = async (
     };
   }
 
-  // Ensure logoUrl and platformLogoUrl remain aligned
-  if (settingsObj.platformLogoUrl && !settingsObj.logoUrl) {
-    settingsObj.logoUrl = settingsObj.platformLogoUrl;
-  } else if (settingsObj.logoUrl && !settingsObj.platformLogoUrl) {
-    settingsObj.platformLogoUrl = settingsObj.logoUrl;
+  // Ensure primary logo fields are kept in sync
+  const activeLogo = settingsObj.logoUrl || settingsObj.platformLogoUrl;
+  if (activeLogo) {
+    if (!settingsObj.logoUrl) settingsObj.logoUrl = activeLogo;
+    if (!settingsObj.platformLogoUrl) settingsObj.platformLogoUrl = activeLogo;
   }
 
-  // 1. Immediately update local storage so UI and offline sessions persist instantly
+  // 1. Immediately update local storage so UI and offline sessions update
   saveLocalSettings(settingsObj);
 
   // Broadcast settings update event across the browser application
@@ -194,7 +195,32 @@ export const updateSystemSettings = async (
     // Ignore event dispatch failure
   }
 
-  // 2. Persist to Firestore Client SDK
+  let firestoreSuccess = false;
+  let serverApiSuccess = false;
+
+  // 2. Persist via Server API /api/settings first as authoritative backend endpoint
+  try {
+    const resp = await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...settingsObj,
+        geminiApiKey: keyToSave,
+        updatedBy: userId || settingsObj.updatedBy || 'admin',
+      })
+    });
+    if (resp.ok) {
+      const json = await resp.json();
+      if (json.success && json.settings) {
+        saveLocalSettings(json.settings);
+        serverApiSuccess = true;
+      }
+    }
+  } catch (serverErr) {
+    console.warn('Server settings API notice:', serverErr);
+  }
+
+  // 3. Persist to Firestore Client SDK
   try {
     const globalRef = doc(db, 'system_settings', SETTINGS_DOC_ID);
     const secretsRef = doc(db, 'system_settings', SECRETS_DOC_ID);
@@ -212,23 +238,13 @@ export const updateSystemSettings = async (
         updatedBy: userId || 'admin',
       }, { merge: true });
     }
+    firestoreSuccess = true;
   } catch (error) {
-    console.warn('Firestore client update notice (attempting server backup):', error);
+    console.warn('Firestore client update notice:', error);
   }
 
-  // 3. Persist via Server API /api/settings as guaranteed admin backend fallback
-  try {
-    await fetch('/api/settings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...settingsObj,
-        geminiApiKey: keyToSave,
-        updatedBy: userId || settingsObj.updatedBy || 'admin',
-      })
-    });
-  } catch (serverErr) {
-    console.warn('Server settings API fallback notice:', serverErr);
+  if (!serverApiSuccess && !firestoreSuccess) {
+    console.warn('Both backend persistence channels returned warnings, relying on local storage cache.');
   }
 };
 

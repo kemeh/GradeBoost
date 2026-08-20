@@ -91,12 +91,16 @@ export default function AdminBrandingLogosView() {
     setLogos(updatedLogos);
 
     try {
+      const primaryLogo = key === 'platformLogoUrl' || key === 'landingLogoUrl'
+        ? (url || '/edulpha-logo.png')
+        : (updatedLogos.platformLogoUrl || updatedLogos.landingLogoUrl || '/edulpha-logo.png');
+
       await updateSystemSettings({
         ...updatedLogos,
-        logoUrl: key === 'platformLogoUrl' || key === 'landingLogoUrl' 
-          ? url || '/edulpha-logo.png' 
-          : updatedLogos.platformLogoUrl || updatedLogos.landingLogoUrl || '/edulpha-logo.png',
-        platformLogoUrl: key === 'platformLogoUrl' ? url : updatedLogos.platformLogoUrl,
+        logoUrl: primaryLogo,
+        platformLogoUrl: updatedLogos.platformLogoUrl || primaryLogo,
+        landingLogoUrl: updatedLogos.landingLogoUrl || primaryLogo,
+        footerLogoUrl: updatedLogos.footerLogoUrl || primaryLogo,
       });
       await refreshSettings();
     } catch (err) {
