@@ -16,6 +16,7 @@ import { HNDAcademicLevel, HNDSemester } from '../types/hnd';
 import { sendPhoneOtp, formatPhoneNumber, detectCarrier, phoneToVirtualEmail } from '../services/phoneAuthService';
 import { PhoneOtpVerificationModal } from './PhoneOtpVerificationModal';
 import { getInstitutions, getProgrammes, submitInstitutionRequest, Institution, Programme } from '../services/institutionService';
+import { trackReferralOnRegistration } from '../services/referralService';
 import { useLanguage } from '../contexts/LanguageContext';
 import toast from 'react-hot-toast';
 
@@ -119,6 +120,9 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
     teachingLevel: 'Secondary High School',
     subjectsTaught: ['Mathematics', 'Physics'],
     yearsExperience: '5+ Years',
+
+    // Referral System
+    referralCode: sessionStorage.getItem('edulpha_ref_code') || '',
   });
 
   // OTP Verification Modal State
@@ -358,6 +362,24 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
         enrolledAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+    }
+
+    // Track Referral Code
+    const refCodeToUse = formData.referralCode || sessionStorage.getItem('edulpha_ref_code');
+    if (refCodeToUse) {
+      try {
+        await trackReferralOnRegistration(
+          {
+            uid: firebaseUser.uid,
+            name: userPayload.name,
+            email: authEmail,
+            phone: formattedPhone
+          },
+          refCodeToUse
+        );
+      } catch (refErr) {
+        console.warn("Failed to record referral during registration:", refErr);
+      }
     }
 
     // Log Audit
@@ -649,6 +671,25 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
                   className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold box-border"
                 />
               </div>
+            </div>
+
+            {/* Referral Code Field */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-bold text-slate-600 flex items-center justify-between">
+                <span>{lang === 'fr' ? 'Code de Parrainage' : 'Referral Code'} <span className="text-slate-400 font-normal">({lang === 'fr' ? 'Optionnel' : 'Optional'})</span></span>
+                {formData.referralCode && (
+                  <span className="text-[10px] text-emerald-600 font-bold font-mono">
+                    ✓ Applied
+                  </span>
+                )}
+              </label>
+              <input
+                type="text"
+                value={formData.referralCode}
+                onChange={e => setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })}
+                placeholder="e.g. EDU-7K29X"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold uppercase focus:bg-white focus:border-indigo-600 outline-none box-border"
+              />
             </div>
           </div>
         )}

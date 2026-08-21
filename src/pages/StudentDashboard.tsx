@@ -7,7 +7,7 @@ import {
   ChevronRight, CheckCircle2, Star, Layers, MessageSquare, 
   BarChart2, Search, Filter, Plus, Trash2, Edit3, Send, 
   Bot, GraduationCap, Calendar, Zap, Shield, FileCheck, 
-  ArrowRight, RefreshCw, Trophy, Target, BookCheck, Eye, X
+  ArrowRight, RefreshCw, Trophy, Target, BookCheck, Eye, X, Gift
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { useAuth } from '../contexts/AuthContext';
@@ -29,6 +29,7 @@ import { AIStudyPlanner } from '../components/EdulphaAI/AIStudyPlanner';
 import { AIProgrammingAssistant } from '../components/EdulphaAI/AIProgrammingAssistant';
 import { AILessonSummarizer } from '../components/EdulphaAI/AILessonSummarizer';
 import { AIWeaknessAnalyzer } from '../components/EdulphaAI/AIWeaknessAnalyzer';
+import { ReferralCenter } from '../components/ReferralCenter';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -52,9 +53,17 @@ export default function StudentDashboard() {
     | 'progress' 
     | 'achievements' 
     | 'certificates' 
+    | 'referrals'
     | 'forum' 
     | 'ai_tutor'
   >('overview');
+
+  useEffect(() => {
+    const urlTab = searchParams.get('tab');
+    if (urlTab) {
+      setActiveTab(urlTab as any);
+    }
+  }, [searchParams]);
 
   // Edulpha AI Studio Sub-Tab
   const [aiSubTab, setAiSubTab] = useState<'chat' | 'quiz' | 'planner' | 'code' | 'summarizer' | 'weakness'>('chat');
@@ -719,6 +728,7 @@ export default function StudentDashboard() {
             { id: 'progress', label: t('nav.analytics', 'Analytics & Progress'), icon: BarChart2 },
             { id: 'achievements', label: t('dashboard.tabAchievements', 'Achievements'), icon: Trophy },
             { id: 'certificates', label: t('dashboard.tabCertificates', 'Certificates'), icon: FileCheck },
+            { id: 'referrals', label: t('nav.referrals', '🎁 Referral & Rewards'), icon: Gift },
             { id: 'forum', label: t('sidebar.forum', 'Discussion Forum'), icon: MessageSquare },
             { id: 'ai_tutor', label: t('nav.aiTutor', '24/7 AI Tutor'), icon: Bot }
           ].map(tab => (
@@ -1387,6 +1397,11 @@ export default function StudentDashboard() {
               </Card>
             ))}
           </div>
+        )}
+
+        {/* TAB: REFERRALS & STUDENT GROWTH CENTER */}
+        {activeTab === 'referrals' && (
+          <ReferralCenter />
         )}
 
         {/* TAB 15: DISCUSSION FORUM */}

@@ -17,6 +17,7 @@ import FileUpload from '../components/FileUpload';
 import { getSystemSettings } from '../services/settingsService';
 import { useSettings } from '../contexts/SettingsContext';
 import { updatePoints, checkAchievements } from '../services/gamificationService';
+import { checkAndQualifyReferral } from '../services/referralService';
 import { getOfflinePracticePaperById, queueOfflineSubmission, isOnline } from '../services/offlineStorageService';
 import { WifiOff } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -206,6 +207,11 @@ export default function PracticeSession() {
           // Award points for completing the paper
           await updatePoints(user.uid, 50, `Practice Paper Completion: ${paper.paperType}`);
           await checkAchievements(user.uid);
+          
+          // Trigger referral qualification if user was referred
+          checkAndQualifyReferral(user.uid, 'quiz').catch(err => 
+            console.warn('Referral qualification check error:', err)
+          );
         } catch (networkErr) {
           console.warn("Network submission failed, queueing offline:", networkErr);
           await queueOfflineSubmission({

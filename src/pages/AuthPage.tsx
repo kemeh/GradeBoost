@@ -50,6 +50,15 @@ export default function AuthPage() {
   const { language, t } = useLanguage();
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const refCode = params.get('ref');
+    if (refCode) {
+      sessionStorage.setItem('edulpha_ref_code', refCode.trim().toUpperCase());
+      setIsLogin(false); // Auto open create account form when joining via referral link
+    }
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && (user || isAdmin)) {
       if (isAdmin) {
         navigate('/admin');

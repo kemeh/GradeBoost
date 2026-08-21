@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, Target, Trophy, 
-  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield, FlaskConical, Award, Database, History
+  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield, FlaskConical, Award, Database, History, Gift
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -36,6 +36,7 @@ export default function Sidebar({ className }: SidebarProps) {
 
   const studentLinks = [
     { icon: LayoutDashboard, label: t('nav.dashboard', 'Dashboard'), path: '/dashboard' },
+    { icon: Gift, label: `🎁 ${t('sidebar.referralRewards', 'Referrals & Rewards')}`, path: '/dashboard?tab=referrals' },
     { icon: FlaskConical, label: `🔬 ${t('sidebar.practicalLab', 'Virtual Practical Lab')}`, path: '/practicals' },
     { icon: Smartphone, label: `📱 ${t('sidebar.mobileApp', 'Edulpha Mobile App')}`, path: '/mobile-app' },
     { icon: TrendingUp, label: t('sidebar.analytics', 'Learning Analytics'), path: '/analytics' },
@@ -73,6 +74,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: Database, label: `🧹 ${t('sidebar.systemData', 'System Data Management')}`, path: '/admin?tab=system-data' },
     { icon: History, label: `📜 ${t('sidebar.auditLog', 'Admin Audit Log')}`, path: '/admin?tab=audit-log' },
     { icon: Sparkles, label: `🎒 ${t('sidebar.ambassadorAdmin', 'Student Ambassador Admin')}`, path: '/admin?tab=ambassadors' },
+    { icon: Gift, label: `🎁 ${t('sidebar.referralAdmin', 'Referral Growth Admin')}`, path: '/admin?tab=referrals' },
     { icon: Award, label: `🎓 ${t('sidebar.alumniAdmin', 'Alumni Management')}`, path: '/admin?tab=alumni' },
     { icon: ShieldCheck, label: t('sidebar.usersSystemAdmin', 'Users & System Admin'), path: '/admin' },
     { icon: FlaskConical, label: `🔬 ${t('sidebar.practicalStudio', 'Practical Studio')}`, path: '/admin/practicals' },

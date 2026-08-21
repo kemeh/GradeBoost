@@ -22,6 +22,7 @@ import { getCurrentDayNumber, isDrillAccessible } from '../utils/challenge';
 import { getSystemSettings } from '../services/settingsService';
 import { useSettings } from '../contexts/SettingsContext';
 import { updatePoints, checkAchievements } from '../services/gamificationService';
+import { checkAndQualifyReferral } from '../services/referralService';
 import { 
   downloadDailyDrill, 
   getOfflineDailyDrillByDay, 
@@ -471,6 +472,10 @@ export default function DailyDrillSession() {
       await updatePoints(user.uid, 20, 'Daily Drill Completion');
       // Check for achievements
       await checkAchievements(user.uid);
+      // Trigger referral qualification if user was referred
+      checkAndQualifyReferral(user.uid, 'daily_drill').catch(err => 
+        console.warn('Referral qualification check error:', err)
+      );
 
       // Refresh submissions to calculate performance
       const subQ = query(
