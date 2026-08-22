@@ -40,8 +40,8 @@ export async function getDemoDataCounts(): Promise<DemoDataCounts> {
   // Count active demo records
   let ambProfiles = DEMO_AMB_PROFILE_IDS.length;
   let alumniProfiles = DEMO_ALUMNI_PROFILE_IDS.length;
-  let ambApps = DEMO_AMB_APP_IDS.length;
-  let alumniApps = 1; // sample demo application
+  let ambApps = 0;
+  let alumniApps = 0;
   let ambGal = DEMO_AMB_GAL_IDS.length;
   let alumniGal = DEMO_ALUMNI_GAL_IDS.length;
   let testimonials = 3;
@@ -57,6 +57,16 @@ export async function getDemoDataCounts(): Promise<DemoDataCounts> {
     const alumSnap = await getDocs(collection(db, 'alumniProfiles'));
     if (!alumSnap.empty) {
       alumniProfiles = alumSnap.docs.filter(d => d.data().is_demo === true || DEMO_ALUMNI_PROFILE_IDS.includes(d.id)).length;
+    }
+
+    const ambAppSnap = await getDocs(collection(db, 'ambassadorApplications'));
+    if (!ambAppSnap.empty) {
+      ambApps = ambAppSnap.docs.filter(d => d.data().is_demo === true || DEMO_AMB_APP_IDS.includes(d.id)).length;
+    }
+
+    const alumAppSnap = await getDocs(collection(db, 'alumniApplications'));
+    if (!alumAppSnap.empty) {
+      alumniApps = alumAppSnap.docs.filter(d => d.data().is_demo === true).length;
     }
   } catch (err) {
     console.warn('Counting demo records from default estimates:', err);

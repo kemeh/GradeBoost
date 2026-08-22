@@ -305,7 +305,16 @@ export class AlumniService {
         return snap.docs.map(d => ({ id: d.id, ...d.data() } as AlumniApplication));
       }
     } catch (err) {
-      console.warn('Error fetching alumni applications:', err);
+      console.warn('Error fetching alumni applications with orderBy, falling back:', err);
+      try {
+        const snap = await getDocs(collection(db, 'alumniApplications'));
+        if (!snap.empty) {
+          const list = snap.docs.map(d => ({ id: d.id, ...d.data() } as AlumniApplication));
+          return list.sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+        }
+      } catch (err2) {
+        console.warn('Error fetching alumni applications fallback:', err2);
+      }
     }
     return [];
   }

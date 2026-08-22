@@ -724,7 +724,8 @@ service cloud.firestore {
 
     match /alumniApplications/{applicationId} {
       allow create: if true;
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin() || (isAuthenticated() && (resource.data.email == request.auth.token.email || resource.data.email == request.auth.email || resource.data.userId == request.auth.uid));
+      allow update, delete: if isAdmin();
     }
 
     // Student Ambassador Program Collections
@@ -740,7 +741,8 @@ service cloud.firestore {
 
     match /ambassadorApplications/{applicationId} {
       allow create: if true;
-      allow read, update, delete: if isAdmin();
+      allow read: if isAdmin() || (isAuthenticated() && (resource.data.email == request.auth.token.email || resource.data.email == request.auth.email || resource.data.userId == request.auth.uid));
+      allow update, delete: if isAdmin();
     }
 
     // Higher National Diploma (HND) Architecture & Programme Collections
