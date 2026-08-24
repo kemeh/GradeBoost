@@ -186,32 +186,43 @@ export async function publishQuestionPaper(
   updateStage('saving');
 
   const batchWritePromise = async () => {
-    try {
-      const batch = writeBatch(db);
+    let attempts = 0;
+    const maxAttempts = 2;
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        const batch = writeBatch(db);
 
-      // Primary collection: `questionPapers`
-      const primaryDocRef = doc(db, 'questionPapers', paperId);
-      batch.set(primaryDocRef, {
-        ...paperDocument,
-        serverTimestamp: serverTimestamp()
-      }, { merge: true });
+        // Primary collection: `questionPapers`
+        const primaryDocRef = doc(db, 'questionPapers', paperId);
+        batch.set(primaryDocRef, {
+          ...paperDocument,
+          serverTimestamp: serverTimestamp()
+        }, { merge: true });
 
-      // Legacy/interoperability collection: `question_papers`
-      const legacyDocRef = doc(db, 'question_papers', paperId);
-      batch.set(legacyDocRef, {
-        ...paperDocument,
-        serverTimestamp: serverTimestamp()
-      }, { merge: true });
+        // Legacy/interoperability collection: `question_papers`
+        const legacyDocRef = doc(db, 'question_papers', paperId);
+        batch.set(legacyDocRef, {
+          ...paperDocument,
+          serverTimestamp: serverTimestamp()
+        }, { merge: true });
 
-      await batch.commit();
-    } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, `questionPapers/${paperId}`);
+        await batch.commit();
+        break; // Success
+      } catch (err: any) {
+        if (attempts >= maxAttempts) {
+          handleFirestoreError(err, OperationType.WRITE, `questionPapers/${paperId}`);
+        } else {
+          console.warn(`Firestore batch write attempt ${attempts} failed, retrying due to network latency...`, err);
+          await new Promise(resolve => setTimeout(resolve, 1500));
+        }
+      }
     }
   };
 
-  // Run with an 12-second safeguard timeout
+  // Run with a 45-second safeguard timeout to accommodate network latency
   const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Publishing is taking longer than expected. Please check your network connection and retry.')), 12000)
+    setTimeout(() => reject(new Error('Publishing request timed out due to high network latency. Please check your connection and click Retry.')), 45000)
   );
 
   await Promise.race([batchWritePromise(), timeoutPromise]);
