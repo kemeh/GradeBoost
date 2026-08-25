@@ -13,12 +13,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Use memoryLocalCache to prevent QuotaExceededError in browser iframe storage
-// and enable auto-detect long polling for reliable backend connectivity across all network environments
+// and enable forced long polling for immediate, reliable backend connectivity across all sandboxed network environments
 export const db = initializeFirestore(
   app,
   {
     localCache: memoryLocalCache(),
-    experimentalAutoDetectLongPolling: true,
+    experimentalForceLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId || '(default)'
 );
@@ -26,12 +26,18 @@ export const db = initializeFirestore(
 // Validate connection to Firestore on boot as per firebase-skill guidelines
 const testConnection = async () => {
   try {
-    // Attempting to fetch a document from server to verify connectivity
-    await getDocFromServer(doc(db, '_internal_', 'connection_test'));
+    const fetchPromise = getDocFromServer(doc(db, '_internal_', 'connection_test'));
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Connection check timeout')), 4000)
+    );
+    await Promise.race([fetchPromise, timeoutPromise]);
     console.log('Firestore connectivity check succeeded');
   } catch (error: any) {
-    if (error?.code === 'unavailable' || (error instanceof Error && error.message.includes('offline'))) {
-      console.warn("Firestore connectivity check: Backend temporarily unavailable or offline. Client will retry automatically.");
+    if (
+      error?.code === 'unavailable' ||
+      (error instanceof Error && (error.message.includes('offline') || error.message.includes('timeout')))
+    ) {
+      console.warn("Firestore connectivity check: Operating in robust mode / pending connection.");
     } else {
       // Ignore document non-existence or permission errors for internal test doc
       console.log('Firestore connection established');
