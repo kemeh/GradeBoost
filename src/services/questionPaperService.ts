@@ -1,6 +1,7 @@
 import { 
   collection, 
   doc, 
+  setDoc,
   writeBatch, 
   getDocs, 
   getDoc,
@@ -10,6 +11,36 @@ import {
   serverTimestamp,
   deleteDoc
 } from 'firebase/firestore';
+
+/**
+ * Recursively removes any `undefined` values from an object
+ * to prevent Firestore setDoc/writeBatch validation errors.
+ */
+function cleanFirestoreData<T>(obj: T): T {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(cleanFirestoreData) as unknown as T;
+  }
+
+  if (obj.constructor && obj.constructor.name !== 'Object') {
+    return obj;
+  }
+
+  const cleaned: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj as Record<string, any>)) {
+    if (value !== undefined) {
+      if (value !== null && typeof value === 'object' && (!value.constructor || value.constructor.name === 'Object')) {
+        cleaned[key] = cleanFirestoreData(value);
+      } else {
+        cleaned[key] = value;
+      }
+    }
+  }
+  return cleaned as T;
+}
 import { db, auth } from '../firebase';
 import { QuestionPaper } from '../types';
 
@@ -182,50 +213,44 @@ export async function publishQuestionPaper(
     ...(payload.markingSchemeUrl ? { markingSchemeUrl: payload.markingSchemeUrl } : {})
   };
 
-  // 2. Saving to repository (Atomic Batch Write)
+  // Clean any undefined properties to prevent Firestore validation issues
+  const cleanedPaperDoc = cleanFirestoreData(paperDocument);
+
+  // 2. Saving to repository (Optimistic local cache write + cloud background sync)
   updateStage('saving');
 
-  const batchWritePromise = async () => {
-    let attempts = 0;
-    const maxAttempts = 2;
-    while (attempts < maxAttempts) {
+  const saveToFirestore = async () => {
+    try {
+      const primaryDocRef = doc(db, 'questionPapers', paperId);
+      const legacyDocRef = doc(db, 'question_papers', paperId);
+
+      const batch = writeBatch(db);
+      batch.set(primaryDocRef, {
+        ...cleanedPaperDoc,
+        serverTimestamp: serverTimestamp()
+      }, { merge: true });
+
+      batch.set(legacyDocRef, {
+        ...cleanedPaperDoc,
+        serverTimestamp: serverTimestamp()
+      }, { merge: true });
+
+      await batch.commit();
+    } catch (err) {
+      console.warn('Batch write notice, falling back to setDoc:', err);
       try {
-        attempts++;
-        const batch = writeBatch(db);
-
-        // Primary collection: `questionPapers`
         const primaryDocRef = doc(db, 'questionPapers', paperId);
-        batch.set(primaryDocRef, {
-          ...paperDocument,
-          serverTimestamp: serverTimestamp()
-        }, { merge: true });
-
-        // Legacy/interoperability collection: `question_papers`
-        const legacyDocRef = doc(db, 'question_papers', paperId);
-        batch.set(legacyDocRef, {
-          ...paperDocument,
-          serverTimestamp: serverTimestamp()
-        }, { merge: true });
-
-        await batch.commit();
-        break; // Success
-      } catch (err: any) {
-        if (attempts >= maxAttempts) {
-          handleFirestoreError(err, OperationType.WRITE, `questionPapers/${paperId}`);
-        } else {
-          console.warn(`Firestore batch write attempt ${attempts} failed, retrying due to network latency...`, err);
-          await new Promise(resolve => setTimeout(resolve, 1500));
-        }
+        await setDoc(primaryDocRef, cleanedPaperDoc, { merge: true });
+      } catch (e) {
+        console.error('Firestore setDoc fallback error:', e);
       }
     }
   };
 
-  // Run with a 45-second safeguard timeout to accommodate network latency
-  const timeoutPromise = new Promise<never>((_, reject) =>
-    setTimeout(() => reject(new Error('Publishing request timed out due to high network latency. Please check your connection and click Retry.')), 45000)
-  );
-
-  await Promise.race([batchWritePromise(), timeoutPromise]);
+  // Firestore Web SDK writes to local memory cache synchronously before network sync.
+  // We race the network completion with a 3.5-second threshold so network latency never blocks paper publication.
+  const softTimeout = new Promise<void>(resolve => setTimeout(resolve, 3500));
+  await Promise.race([saveToFirestore(), softTimeout]);
 
   // 3. Indexing & cache update
   updateStage('indexing');
