@@ -44,6 +44,7 @@ function cleanFirestoreData<T>(obj: T): T {
 import { db, auth } from '../firebase';
 import { QuestionPaper } from '../types';
 import { GeneratedPaperData } from '../types/paperGenerator';
+import { getCachedSchoolBranding } from './schoolBrandingService';
 
 export type PublishStage = 'validating' | 'saving' | 'indexing' | 'finalizing' | 'completed';
 
@@ -374,7 +375,8 @@ export async function savePaperDraft(
     createdBy: userId,
     creatorName: userProfile?.name || paperData.creatorName || 'Administrator',
     creatorEmail: userProfile?.email || paperData.creatorEmail || '',
-    isGeneratedPaper: true
+    isGeneratedPaper: true,
+    brandingSnapshot: paperData.brandingSnapshot || getCachedSchoolBranding()
   };
 
   // 1. Save to localStorage immediately as local buffer
@@ -439,7 +441,8 @@ export async function saveAsFinalPaper(
     createdBy: userId,
     creatorName: userProfile?.name || paperData.creatorName || 'Administrator',
     creatorEmail: userProfile?.email || paperData.creatorEmail || '',
-    isGeneratedPaper: true
+    isGeneratedPaper: true,
+    brandingSnapshot: paperData.brandingSnapshot || getCachedSchoolBranding()
   };
 
   const cleaned = cleanFirestoreData(finalPaper);

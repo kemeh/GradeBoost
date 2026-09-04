@@ -1,7 +1,13 @@
-import React from 'react';
-import { X, Download, FileText, Printer, CheckCircle, Edit3, Save } from 'lucide-react';
-import { GeneratedPaperData } from '../../types/paperGenerator';
+import React, { useState, useEffect } from 'react';
+import { X, Download, FileText, Printer, CheckCircle, Edit3, Save, Shield, Settings2, RefreshCw } from 'lucide-react';
+import { GeneratedPaperData, SchoolBrandingSettings } from '../../types/paperGenerator';
 import { useSettings } from '../../contexts/SettingsContext';
+import { getEffectivePaperBranding, getCachedSchoolBranding } from '../../services/schoolBrandingService';
+import { 
+  ExaminationLetterhead, 
+  ExaminationWatermark, 
+  ExaminationPageFooter 
+} from './ExaminationLetterhead';
 
 interface PaperPreviewModalProps {
   isOpen: boolean;
@@ -10,6 +16,7 @@ interface PaperPreviewModalProps {
   onSave?: () => void;
   onGeneratePDF: () => void;
   onExportWord: () => void;
+  onOpenBrandingSettings?: () => void;
   isSaving?: boolean;
 }
 
@@ -20,28 +27,37 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
   onSave,
   onGeneratePDF,
   onExportWord,
+  onOpenBrandingSettings,
   isSaving = false
 }) => {
   const { appName, logoUrl } = useSettings();
+  const [activeBranding, setActiveBranding] = useState<SchoolBrandingSettings>(getCachedSchoolBranding());
+  const [useCurrentBranding, setUseCurrentBranding] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleBrandingUpdated = (e: any) => {
+      if (e.detail) {
+        setActiveBranding(e.detail);
+      }
+    };
+    window.addEventListener('edulpha_school_branding_updated', handleBrandingUpdated);
+    return () => {
+      window.removeEventListener('edulpha_school_branding_updated', handleBrandingUpdated);
+    };
+  }, []);
 
   if (!isOpen) return null;
+
+  // Decide effective branding: if paper has snapshot and user hasn't explicitly toggled to current branding
+  const hasSnapshot = Boolean(paper.brandingSnapshot && paper.brandingSnapshot.schoolName);
+  const effectiveBranding = useCurrentBranding
+    ? activeBranding
+    : getEffectivePaperBranding(paper, activeBranding);
 
   const totalMarks = (paper.questions || []).reduce(
     (sum, q) => sum + (q.subparts || []).reduce((sSum, s) => sSum + (Number(s.marks) || 0), 0),
     0
   );
-
-  const defaultInstructions = [
-    'Answer ALL questions or as specified in your syllabus examination instructions.',
-    'All questions carry equal marks unless otherwise indicated.',
-    'Write your answers clearly and orderly in the spaces provided or standard answer booklet.',
-    'Credit will be given for clear diagrams, concise reasoning, and neat presentation.',
-    'Mathematical and non-programmable calculators may be used where appropriate.'
-  ];
-
-  const candidateInstructions = (paper.instructions && paper.instructions.length > 0)
-    ? paper.instructions
-    : defaultInstructions;
 
   const handlePrint = () => {
     window.print();
@@ -49,10 +65,10 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/80 backdrop-blur-sm overflow-y-auto">
-      <div className="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[94vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div className="relative w-full max-w-5xl bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[95vh] overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
         
         {/* Top Sticky Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/90 backdrop-blur sticky top-0 z-20">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/95 backdrop-blur sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-indigo-50 text-indigo-700 rounded-xl border border-indigo-200/60">
               <FileText size={22} />
@@ -61,7 +77,7 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-bold text-slate-900">Examination Paper Preview</h2>
                 <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                  A4 Print Simulation
+                  Official Letterhead & Watermark
                 </span>
               </div>
               <p className="text-xs text-slate-500">
@@ -71,6 +87,16 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {onOpenBrandingSettings && (
+              <button
+                onClick={onOpenBrandingSettings}
+                className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition"
+                title="Configure school letterhead and watermark"
+              >
+                <Settings2 size={14} className="text-slate-500" />
+                Edit School Branding
+              </button>
+            )}
             <button
               onClick={handlePrint}
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition"
@@ -89,11 +115,28 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
           </div>
         </div>
 
-        {/* Action Controls Bar inside Modal */}
-        <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3 bg-amber-50/70 border-b border-amber-200/60 text-xs">
+        {/* Action Controls & Branding Snapshot Banner */}
+        <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-2.5 bg-amber-50/80 border-b border-amber-200/60 text-xs">
           <div className="flex items-center gap-2 text-amber-900">
-            <CheckCircle size={15} className="text-emerald-600" />
-            <span>Official Examination Layout • Exact replica of generated PDF & Word document</span>
+            <CheckCircle size={15} className="text-emerald-600 shrink-0" />
+            <span className="font-medium">
+              School: <strong className="text-slate-900 font-bold">{effectiveBranding.schoolName}</strong>
+            </span>
+            {hasSnapshot && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full font-mono text-[10px] border border-blue-200">
+                Saved Snapshot
+              </span>
+            )}
+            {hasSnapshot && (
+              <button
+                onClick={() => setUseCurrentBranding(!useCurrentBranding)}
+                className="ml-2 text-indigo-700 hover:text-indigo-900 underline font-medium inline-flex items-center gap-1"
+                title="Toggle between snapshot and current settings"
+              >
+                <RefreshCw size={11} />
+                {useCurrentBranding ? 'Revert to Paper Snapshot' : 'Preview with Current System Branding'}
+              </button>
+            )}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <button
@@ -101,7 +144,7 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white text-slate-700 font-semibold rounded-lg border border-slate-300 hover:bg-slate-50 transition"
             >
               <Edit3 size={14} />
-              Edit Paper
+              Edit Questions
             </button>
             {onSave && (
               <button
@@ -118,7 +161,7 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-rose-600 text-white font-semibold rounded-lg hover:bg-rose-700 transition shadow-sm"
             >
               <Download size={14} />
-              Generate PDF
+              Download PDF
             </button>
             <button
               onClick={onExportWord}
@@ -131,68 +174,29 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
         </div>
 
         {/* Paper Document Body (Scrollable A4 sheet container) */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100/80 flex justify-center">
-          <div className="w-full max-w-3xl bg-white shadow-lg rounded-sm border border-slate-200 p-8 sm:p-14 text-slate-900 font-sans print:shadow-none print:border-none print:p-0">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-100/80 flex justify-center print:bg-white print:p-0">
+          <div className="relative w-full max-w-3xl bg-white shadow-xl rounded-sm border border-slate-300 p-8 sm:p-14 text-slate-900 font-sans print:shadow-none print:border-none print:p-0 overflow-hidden min-h-[900px]">
             
-            {/* Examination Header */}
-            <div className="text-center pb-6 border-b-2 border-slate-900">
-              {logoUrl && (
-                <div className="flex justify-center mb-3">
-                  <img
-                    src={logoUrl}
-                    alt={appName || 'Edulpha Logo'}
-                    className="h-10 w-auto object-contain"
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
-                </div>
-              )}
-              <h1 className="text-2xl font-black tracking-wider text-[#0F2C59] uppercase">
-                {appName || 'EDULPHA'}
-              </h1>
-              <h2 className="text-sm sm:text-base font-bold tracking-wide text-slate-800 uppercase mt-1">
-                CAMEROON GENERAL CERTIFICATE OF EDUCATION BOARD
-              </h2>
-              <div className="inline-block mt-1 px-3 py-0.5 bg-amber-500/10 text-amber-700 font-bold text-xs uppercase tracking-widest rounded">
-                {(paper.level || 'ADVANCED LEVEL').toUpperCase()} EXAMINATION
-              </div>
+            {/* Background Subtle Academic Watermark */}
+            <ExaminationWatermark branding={effectiveBranding} year={paper.year} />
 
-              {/* Meta Grid Box */}
-              <div className="mt-5 grid grid-cols-2 gap-y-2 gap-x-6 text-left p-3.5 bg-slate-50 rounded-lg border border-slate-200 text-xs sm:text-sm">
-                <div>
-                  <span className="font-bold text-slate-900">SUBJECT: </span>
-                  <span className="font-semibold text-slate-700 uppercase">{paper.subject}</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-bold text-slate-900">EXAMINATION YEAR: </span>
-                  <span className="font-semibold text-slate-700">{paper.year}</span>
-                </div>
-                <div>
-                  <span className="font-bold text-slate-900">PAPER: </span>
-                  <span className="font-semibold text-slate-700 uppercase">{paper.paperType || 'Paper 2'}</span>
-                </div>
-                <div className="text-right">
-                  <span className="font-bold text-slate-900">TIME ALLOWED: </span>
-                  <span className="font-semibold text-slate-700 uppercase">{paper.timeAllowed}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Candidate Instructions */}
-            <div className="my-6 pb-6 border-b border-slate-300">
-              <h3 className="font-black text-xs uppercase tracking-wider text-slate-900 mb-2.5">
-                INSTRUCTIONS TO CANDIDATES
-              </h3>
-              <ol className="list-decimal list-inside space-y-1.5 text-xs text-slate-700 leading-relaxed">
-                {candidateInstructions.map((instruction, idx) => (
-                  <li key={idx} className="pl-1">
-                    <span>{instruction}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
+            {/* Official School Letterhead on Page 1 */}
+            <ExaminationLetterhead
+              branding={effectiveBranding}
+              paperInfo={{
+                subject: paper.subject,
+                paperType: paper.paperType,
+                title: paper.title,
+                year: paper.year,
+                level: paper.level,
+                timeAllowed: paper.timeAllowed,
+                totalMarks: totalMarks,
+                instructions: paper.instructions
+              }}
+            />
 
             {/* Questions Section */}
-            <div className="space-y-8">
+            <div className="relative z-10 space-y-7 mt-4">
               {(paper.questions || []).map((q, qIdx) => {
                 const qNumber = q.id || (qIdx + 1);
                 const qTotalMarks = (q.subparts || []).reduce((sum, s) => sum + (Number(s.marks) || 0), 0);
@@ -201,7 +205,7 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
                   <div key={q.id || qIdx} className="break-inside-avoid border-b border-slate-200/80 pb-6 last:border-b-0">
                     
                     {/* Question Header */}
-                    <div className="flex items-center justify-between pb-2 mb-2.5 bg-slate-50 px-3 py-1.5 rounded border border-slate-100">
+                    <div className="flex items-center justify-between pb-1.5 mb-2.5 bg-slate-100/90 px-3 py-1.5 rounded border border-slate-200">
                       <h4 className="font-bold text-sm text-slate-900 tracking-wide uppercase">
                         QUESTION {qNumber}
                       </h4>
@@ -227,7 +231,7 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
                     )}
 
                     {/* Subparts */}
-                    <div className="space-y-3.5 pl-2 sm:pl-4 mt-3">
+                    <div className="space-y-3 pl-2 sm:pl-4 mt-3">
                       {(q.subparts || []).map((sub, sIdx) => {
                         const subLabel = sub.label || `(${String.fromCharCode(97 + sIdx)})`;
                         const subMarks = Number(sub.marks) || 0;
@@ -239,7 +243,7 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
                                 <span className="font-bold text-slate-950 mr-2">{subLabel}</span>
                                 <span className="whitespace-pre-line">{sub.text}</span>
                               </div>
-                              <div className="shrink-0 font-bold text-emerald-700 text-xs px-2 py-0.5 bg-emerald-50 rounded border border-emerald-200">
+                              <div className="shrink-0 font-bold text-teal-800 text-xs px-2 py-0.5 bg-teal-50 rounded border border-teal-200 font-mono">
                                 [{subMarks} mark{subMarks === 1 ? '' : 's'}]
                               </div>
                             </div>
@@ -259,15 +263,22 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
               })}
             </div>
 
-            {/* End of Examination Footer */}
-            <div className="mt-12 pt-6 text-center border-t-2 border-slate-900">
+            {/* End of Examination Marker */}
+            <div className="relative z-10 mt-12 pt-6 text-center border-t-2 border-slate-900">
               <p className="font-black text-xs uppercase tracking-widest text-slate-600">
                 ★★★  END OF EXAMINATION QUESTION PAPER  ★★★
               </p>
-              <p className="text-[11px] text-slate-400 mt-2">
-                © {appName || 'Edulpha'} Smart Exam Practice System  •  Cameroon General Certificate of Education
+              <p className="text-[11px] text-slate-500 mt-2">
+                {effectiveBranding.schoolName}  •  {effectiveBranding.examinationBoardText || 'Cameroon General Certificate of Education'}
               </p>
             </div>
+
+            {/* Page Footer */}
+            <ExaminationPageFooter
+              branding={effectiveBranding}
+              pageNumber={1}
+              totalPages={1}
+            />
 
           </div>
         </div>
@@ -275,7 +286,7 @@ export const PaperPreviewModal: React.FC<PaperPreviewModalProps> = ({
         {/* Bottom Footer Action Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-slate-200 bg-slate-50">
           <div className="text-xs text-slate-500">
-            Clicking <strong className="text-slate-800">Generate PDF</strong> or <strong className="text-slate-800">Export Word</strong> will download publication-ready files formatted for A4 printing.
+            Exported documents contain official letterheads, watermark stamps, and automated pagination.
           </div>
           <div className="flex items-center gap-2.5">
             <button

@@ -6,7 +6,7 @@ import {
   LayoutDashboard, AlertCircle, Loader2, Search,
   Eye, Copy, CheckCircle, Clock, BookOpen,
   ArrowUp, ArrowDown, Code, Check, Sparkles,
-  ExternalLink, RotateCcw, AlertTriangle, ShieldCheck
+  ExternalLink, RotateCcw, AlertTriangle, ShieldCheck, School
 } from 'lucide-react';
 import { db } from '../firebase';
 import ReactMarkdown from 'react-markdown';
@@ -43,6 +43,7 @@ import {
   PaperGenerationProgressModal, 
   ProgressStage 
 } from '../components/admin/PaperGenerationProgressModal';
+import { ExaminationLetterheadSettingsModal } from '../components/admin/ExaminationLetterheadSettingsModal';
 import { toast } from 'react-hot-toast';
 
 const DEFAULT_SUBJECTS = [
@@ -83,6 +84,7 @@ export default function AdminPaperGenerator() {
   // Modals state
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
+  const [isBrandingModalOpen, setIsBrandingModalOpen] = useState(false);
   const [isProgressOpen, setIsProgressOpen] = useState(false);
   const [progressStage, setProgressStage] = useState<ProgressStage>('validating');
   const [progressError, setProgressError] = useState<string>('');
@@ -602,7 +604,11 @@ export default function AdminPaperGenerator() {
       await new Promise(r => setTimeout(r, 500));
       setProgressStage('finalizing');
 
-      const { filename } = await generateGCEPaper2PDF(paperData, { appName, logoUrl });
+      const { filename } = await generateGCEPaper2PDF(paperData, { 
+        appName, 
+        logoUrl, 
+        branding: paperData.brandingSnapshot 
+      });
       setLastExportedFilename(filename);
 
       // Auto save as ready if was draft
@@ -647,7 +653,11 @@ export default function AdminPaperGenerator() {
       await new Promise(r => setTimeout(r, 500));
       setProgressStage('finalizing');
 
-      const filename = await downloadGCEPaper2Docx(paperData, { appName, logoUrl });
+      const filename = await downloadGCEPaper2Docx(paperData, { 
+        appName, 
+        logoUrl, 
+        branding: paperData.brandingSnapshot 
+      });
       setLastExportedFilename(filename);
 
       if (user && paperData.status === 'draft') {
@@ -782,6 +792,17 @@ export default function AdminPaperGenerator() {
             >
               <BookOpen size={15} />
               Paper Library
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBrandingModalOpen(true)}
+              className="flex items-center gap-1.5 font-bold text-xs text-indigo-700 bg-indigo-50/50 hover:bg-indigo-50 border-indigo-200"
+              title="Configure School Letterhead and Watermark"
+            >
+              <School size={15} className="text-indigo-600" />
+              School Branding
             </Button>
 
             <Button
@@ -1521,7 +1542,15 @@ export default function AdminPaperGenerator() {
           onSave={handleSaveDraft}
           onGeneratePDF={handleGeneratePDF}
           onExportWord={handleExportWord}
+          onOpenBrandingSettings={() => setIsBrandingModalOpen(true)}
           isSaving={isSaving}
+        />
+
+        {/* School Letterhead and Watermark Settings Modal */}
+        <ExaminationLetterheadSettingsModal
+          isOpen={isBrandingModalOpen}
+          onClose={() => setIsBrandingModalOpen(false)}
+          userId={currentUserId}
         />
 
         {/* Paper Library Modal */}

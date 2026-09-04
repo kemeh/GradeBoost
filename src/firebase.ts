@@ -13,12 +13,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Use memoryLocalCache to prevent QuotaExceededError in browser iframe storage
-// and enable forced long polling for immediate, reliable backend connectivity across all sandboxed network environments
+// and enable auto-detect long polling so standard streaming is preferred with seamless long-polling fallback
 export const db = initializeFirestore(
   app,
   {
     localCache: memoryLocalCache(),
-    experimentalForceLongPolling: true,
+    experimentalAutoDetectLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId || '(default)'
 );
@@ -26,20 +26,16 @@ export const db = initializeFirestore(
 // Validate connection to Firestore on boot as per firebase-skill guidelines
 const testConnection = async () => {
   try {
-    const fetchPromise = getDocFromServer(doc(db, '_internal_', 'connection_test'));
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Connection check timeout')), 4000)
-    );
-    await Promise.race([fetchPromise, timeoutPromise]);
+    await getDocFromServer(doc(db, 'test', 'connection'));
     console.log('Firestore connectivity check succeeded');
   } catch (error: any) {
     if (
-      error?.code === 'unavailable' ||
-      (error instanceof Error && (error.message.includes('offline') || error.message.includes('timeout')))
+      error instanceof Error &&
+      (error.message.includes('the client is offline') || error.message.includes('offline') || error.message.includes('unavailable'))
     ) {
-      console.warn("Firestore connectivity check: Operating in robust mode / pending connection.");
+      console.warn("Firestore connectivity check: Operating in offline/robust mode.");
     } else {
-      // Ignore document non-existence or permission errors for internal test doc
+      // Document doesn't need to exist for connection to be validated
       console.log('Firestore connection established');
     }
   }
@@ -47,7 +43,7 @@ const testConnection = async () => {
 
 // Defer connection check to allow transport layer initialization
 if (typeof window !== 'undefined') {
-  setTimeout(testConnection, 1000);
+  setTimeout(testConnection, 500);
 } else {
   testConnection();
 }

@@ -139,7 +139,7 @@ export const PaperLibraryModal: React.FC<PaperLibraryModalProps> = ({
   const handleDirectPDF = async (paper: GeneratedPaperData) => {
     setActionLoadingId(paper.id);
     try {
-      await generateGCEPaper2PDF(paper, { appName, logoUrl });
+      await generateGCEPaper2PDF(paper, { appName, logoUrl, branding: paper.brandingSnapshot });
       toast.success('PDF downloaded successfully.');
     } catch (err) {
       console.error('PDF export error:', err);
@@ -152,7 +152,7 @@ export const PaperLibraryModal: React.FC<PaperLibraryModalProps> = ({
   const handleDirectWord = async (paper: GeneratedPaperData) => {
     setActionLoadingId(paper.id);
     try {
-      await downloadGCEPaper2Docx(paper, { appName, logoUrl });
+      await downloadGCEPaper2Docx(paper, { appName, logoUrl, branding: paper.brandingSnapshot });
       toast.success('Word (.docx) downloaded successfully.');
     } catch (err) {
       console.error('Word export error:', err);
@@ -347,6 +347,11 @@ export const PaperLibraryModal: React.FC<PaperLibraryModalProps> = ({
                         {paper.creatorName && (
                           <span>
                             By: <strong className="text-slate-700">{paper.creatorName}</strong>
+                          </span>
+                        )}
+                        {paper.brandingSnapshot?.schoolName && (
+                          <span className="px-2 py-0.5 bg-indigo-50/70 text-indigo-800 rounded font-medium text-[11px] border border-indigo-200/60">
+                            {paper.brandingSnapshot.schoolName}
                           </span>
                         )}
                         {paper.updatedAt && (

@@ -307,6 +307,105 @@ async function startServer() {
     }
   });
 
+  // Examination Branding & Letterhead API Endpoints
+  const BRANDING_FILE_PATH = path.join(process.cwd(), "data", "examination_branding.json");
+
+  const DEFAULT_SERVER_BRANDING = {
+    schoolName: "EDULPHA INTERNATIONAL ACADEMY",
+    motto: "Learn • Build • Lead",
+    address: "P.O. Box 1234, Yaoundé, Cameroon",
+    city: "Yaoundé",
+    country: "Cameroon",
+    telephone: "+237 6XX XXX XXX",
+    email: "info@edulpha.academy",
+    website: "www.edulpha.academy",
+    schoolLogoUrl: "/edulpha-logo.png",
+    examinationLogoUrl: "",
+    accreditationSealUrl: "",
+    examinationCentreNumber: "CENTRE NO: 0124",
+    examinationBoardText: "CAMEROON GENERAL CERTIFICATE OF EDUCATION BOARD",
+    securityLabel: "CONFIDENTIAL • OFFICIAL EXAMINATION DOCUMENT",
+    isConfidential: true,
+    footerText: "EDULPHA INTERNATIONAL ACADEMY • CONFIDENTIAL",
+    watermark: {
+      enabled: true,
+      text: "OFFICIAL EXAMINATION PAPER",
+      secondaryText: "EDULPHA INTERNATIONAL ACADEMY",
+      academicYear: 2026,
+      opacity: 0.09,
+      rotation: -35,
+      size: "large",
+      position: "center",
+      repeatEveryPage: true
+    }
+  };
+
+  const getLocalServerBranding = () => {
+    try {
+      if (fs.existsSync(BRANDING_FILE_PATH)) {
+        const raw = fs.readFileSync(BRANDING_FILE_PATH, "utf-8");
+        return JSON.parse(raw);
+      }
+    } catch (e) {
+      console.warn("[Branding Disk Cache Warning]", e);
+    }
+    return DEFAULT_SERVER_BRANDING;
+  };
+
+  const saveLocalServerBranding = (newBranding: any) => {
+    try {
+      const existing = getLocalServerBranding();
+      const merged = { ...existing, ...newBranding };
+      fs.mkdirSync(path.dirname(BRANDING_FILE_PATH), { recursive: true });
+      fs.writeFileSync(BRANDING_FILE_PATH, JSON.stringify(merged, null, 2), "utf-8");
+      return merged;
+    } catch (e) {
+      console.warn("[Branding Disk Save Warning]", e);
+      return newBranding;
+    }
+  };
+
+  app.get("/api/examination-branding", async (req, res) => {
+    const diskBranding = getLocalServerBranding();
+    try {
+      if (db) {
+        const docSnap = await db.collection("system_settings").doc("examination_branding").get();
+        if (docSnap.exists) {
+          const data = docSnap.data() || {};
+          const merged = { ...diskBranding, ...data };
+          saveLocalServerBranding(merged);
+          return res.json({ success: true, branding: merged });
+        }
+      }
+    } catch (err: any) {
+      console.warn("[Server Branding GET Warning]", err?.message || err);
+    }
+    return res.json({ success: true, branding: diskBranding });
+  });
+
+  app.post("/api/examination-branding", async (req, res) => {
+    try {
+      const payload = req.body || {};
+      const merged = saveLocalServerBranding(payload);
+
+      try {
+        if (db) {
+          await db.collection("system_settings").doc("examination_branding").set({
+            ...payload,
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+      } catch (dbErr: any) {
+        console.warn("[Server Branding POST Firestore Warning]", dbErr?.message || dbErr);
+      }
+
+      return res.json({ success: true, message: "Branding saved successfully", branding: merged });
+    } catch (err: any) {
+      console.error("[Server Branding POST Error]", err);
+      return res.json({ success: true, message: "Saved with disk fallback", branding: getLocalServerBranding() });
+    }
+  });
+
   // ... (keep existing API routes)
 
   // ===============================================================

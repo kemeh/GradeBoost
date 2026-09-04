@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import { ExamQuestion } from '../types';
+import { SchoolBrandingSettings, DEFAULT_SCHOOL_BRANDING } from '../types/paperGenerator';
 
 export const downloadQuestionAsPDF = async (question: ExamQuestion, dayNumber?: number) => {
   const doc = new jsPDF();
@@ -194,10 +195,14 @@ export const downloadQuestionAsPDF = async (question: ExamQuestion, dayNumber?: 
 export interface GCEPaper2Data {
   id?: string;
   title: string;
+  paperType?: string;
   timeAllowed: string;
   subject: string;
   year: number;
   level?: string;
+  targetTotalMarks?: number;
+  totalCalculatedMarks?: number;
+  brandingSnapshot?: SchoolBrandingSettings;
   instructions?: string[];
   questions: {
     id: number;
@@ -214,7 +219,7 @@ export interface GCEPaper2Data {
 
 export const generateGCEPaper2PDF = async (
   data: GCEPaper2Data,
-  options?: { appName?: string; logoUrl?: string }
+  options?: { appName?: string; logoUrl?: string; branding?: SchoolBrandingSettings }
 ): Promise<{ blob: Blob; filename: string }> => {
   const doc = new jsPDF({
     unit: 'mm',
@@ -222,61 +227,203 @@ export const generateGCEPaper2PDF = async (
     orientation: 'portrait'
   });
 
-  const brandName = (options?.appName || 'EDULPHA').toUpperCase();
+  const branding: SchoolBrandingSettings = 
+    data.brandingSnapshot || 
+    options?.branding || 
+    {
+      ...DEFAULT_SCHOOL_BRANDING,
+      schoolName: options?.appName ? `${options.appName.toUpperCase()} INTERNATIONAL ACADEMY` : DEFAULT_SCHOOL_BRANDING.schoolName,
+      schoolLogoUrl: options?.logoUrl || DEFAULT_SCHOOL_BRANDING.schoolLogoUrl
+    };
+
+  const watermarkConfig = branding.watermark || DEFAULT_SCHOOL_BRANDING.watermark!;
   const cleanSubject = (data.subject || 'COMPUTER_SCIENCE').toUpperCase().replace(/[^A-Z0-9_]/g, '_');
-  const filename = `${brandName}_${cleanSubject}_PAPER_2_${data.year || new Date().getFullYear()}.pdf`;
+  const schoolPrefix = branding.schoolName.replace(/[^A-Z0-9]/gi, '_').toUpperCase().substring(0, 16);
+  const filename = `${schoolPrefix}_${cleanSubject}_PAPER_2_${data.year || new Date().getFullYear()}.pdf`;
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 18;
   const contentWidth = pageWidth - (margin * 2);
-  let currentY = 16;
+  let currentY = 14;
+
+  const totalCalculatedMarks = (data.questions || []).reduce(
+    (sum, q) => sum + (q.subparts || []).reduce((sSum, s) => sSum + (Number(s.marks) || 0), 0),
+    0
+  );
+  const totalPaperMarks = data.targetTotalMarks || data.totalCalculatedMarks || totalCalculatedMarks || 100;
+
+  // Draw subtle, non-intrusive repeating watermark across page
+  const drawWatermark = () => {
+    if (watermarkConfig.enabled === false) return;
+
+    try {
+      const centerX = pageWidth / 2;
+      const centerY = pageHeight / 2;
+      const angle = watermarkConfig.rotation ?? -35;
+      
+      // Light faint watermark tint
+      const opacity = watermarkConfig.opacity ?? 0.09;
+      // High gray value = low contrast/opacity on white background
+      const gray = Math.round(255 - (opacity * 135));
+      
+      doc.saveGraphicsState();
+      doc.setDrawColor(gray, gray + 2, gray + 5);
+      doc.setTextColor(gray, gray + 2, gray + 5);
+      doc.setLineWidth(0.4);
+
+      // Academic seal concentric circles
+      doc.circle(centerX, centerY, 58, 'S');
+      doc.circle(centerX, centerY, 54, 'S');
+      doc.circle(centerX, centerY, 38, 'S');
+
+      // Primary watermark text
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.text(
+        (watermarkConfig.text || 'OFFICIAL EXAMINATION PAPER').toUpperCase(),
+        centerX,
+        centerY - 6,
+        { align: 'center', angle }
+      );
+
+      // Secondary watermark text
+      doc.setFontSize(13);
+      doc.text(
+        (watermarkConfig.secondaryText || branding.schoolName).toUpperCase(),
+        centerX,
+        centerY + 3,
+        { align: 'center', angle }
+      );
+
+      // Academic Year line
+      doc.setFontSize(10);
+      doc.text(
+        `★ ACADEMIC YEAR ${data.year || new Date().getFullYear()} ★`,
+        centerX,
+        centerY + 11,
+        { align: 'center', angle }
+      );
+
+      doc.restoreGraphicsState();
+    } catch (_) {
+      // Ignore graphics state issues if any
+    }
+  };
 
   // Header function for pages
   const printHeader = (pageNum: number) => {
-    if (pageNum === 1) {
-      // Main Title on Page 1
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(15, 44, 89); // Deep Royal Blue
-      doc.text(brandName, pageWidth / 2, currentY, { align: 'center' });
-      currentY += 5.5;
+    // Watermark behind content on every page
+    drawWatermark();
 
-      doc.setFontSize(11);
-      doc.setTextColor(30, 41, 59); // Slate-800
-      doc.text('CAMEROON GENERAL CERTIFICATE OF EDUCATION BOARD', pageWidth / 2, currentY, { align: 'center' });
+    if (pageNum === 1) {
+      currentY = 14;
+
+      // School Name
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(15);
+      doc.setTextColor(15, 44, 89); // Deep Navy #0F2C59
+      doc.text(branding.schoolName.toUpperCase(), pageWidth / 2, currentY, { align: 'center' });
+      currentY += 4.5;
+
+      // School Motto
+      if (branding.motto) {
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(9);
+        doc.setTextColor(71, 85, 105); // Slate-600
+        doc.text(`"${branding.motto}"`, pageWidth / 2, currentY, { align: 'center' });
+        currentY += 4.2;
+      }
+
+      // Address & Phone
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.8);
+      doc.setTextColor(100, 116, 139); // Slate-500
+      const addressLine = `${branding.address || 'Yaoundé, Cameroon'}${branding.telephone ? `  •  Tel: ${branding.telephone}` : ''}`;
+      doc.text(addressLine, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 3.6;
+
+      // Email & Website
+      const contactLine = `Email: ${branding.email || 'info@edulpha.academy'}  •  Web: ${branding.website || 'www.edulpha.academy'}`;
+      doc.text(contactLine, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 4.2;
+
+      // Letterhead decorative double divider
+      doc.setDrawColor(15, 44, 89); // Deep Navy
+      doc.setLineWidth(0.6);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      doc.setDrawColor(203, 213, 225); // Slate-300
+      doc.setLineWidth(0.2);
+      doc.line(margin, currentY + 0.8, pageWidth - margin, currentY + 0.8);
       currentY += 5;
 
-      doc.setFontSize(10);
-      doc.setTextColor(217, 119, 6); // Golden Amber
-      doc.text(`${(data.level || 'ADVANCED LEVEL').toUpperCase()} EXAMINATION`, pageWidth / 2, currentY, { align: 'center' });
-      currentY += 6;
+      // Examination Board Title
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.setTextColor(30, 41, 59); // Slate-800
+      doc.text((branding.examinationBoardText || 'CAMEROON GENERAL CERTIFICATE OF EDUCATION BOARD').toUpperCase(), pageWidth / 2, currentY, { align: 'center' });
+      currentY += 4.5;
 
-      // Meta Box
+      // Examination Level
+      doc.setFontSize(9.5);
+      doc.setTextColor(180, 83, 9); // Amber-700
+      doc.text(`${(data.level || 'ADVANCED LEVEL').toUpperCase()} EXAMINATION`, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 5;
+
+      // Examination Information Box (6 fields)
+      const metaBoxHeight = 21;
       doc.setDrawColor(203, 213, 225); // slate-300
       doc.setFillColor(248, 250, 252); // slate-50
-      doc.roundedRect(margin, currentY, contentWidth, 18, 1.5, 1.5, 'FD');
+      doc.roundedRect(margin, currentY, contentWidth, metaBoxHeight, 1.5, 1.5, 'FD');
 
-      doc.setFontSize(9.5);
+      doc.setFontSize(9);
       doc.setTextColor(15, 23, 42); // slate-900
+
+      // Row 1
       doc.setFont('helvetica', 'bold');
-      doc.text(`SUBJECT: ${(data.subject || '').toUpperCase()}`, margin + 4, currentY + 6);
-      doc.text(`PAPER: ${(data.title || 'Paper 2').toUpperCase()}`, margin + 4, currentY + 12);
+      doc.text('SUBJECT:', margin + 4, currentY + 5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text((data.subject || '').toUpperCase(), margin + 28, currentY + 5.5);
 
-      doc.text(`EXAM YEAR: ${data.year || new Date().getFullYear()}`, pageWidth - margin - 4, currentY + 6, { align: 'right' });
-      doc.text(`TIME ALLOWED: ${(data.timeAllowed || '3 Hours').toUpperCase()}`, pageWidth - margin - 4, currentY + 12, { align: 'right' });
+      doc.setFont('helvetica', 'bold');
+      doc.text('EXAM YEAR:', pageWidth - margin - 40, currentY + 5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text(String(data.year || new Date().getFullYear()), pageWidth - margin - 4, currentY + 5.5, { align: 'right' });
 
-      currentY += 23;
+      // Row 2
+      doc.setFont('helvetica', 'bold');
+      doc.text('PAPER:', margin + 4, currentY + 11.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text((data.paperType || data.title || 'Paper 2').toUpperCase(), margin + 28, currentY + 11.5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('DURATION:', pageWidth - margin - 40, currentY + 11.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text((data.timeAllowed || '3 Hours').toUpperCase(), pageWidth - margin - 4, currentY + 11.5, { align: 'right' });
+
+      // Row 3
+      doc.setFont('helvetica', 'bold');
+      doc.text('LEVEL:', margin + 4, currentY + 17.5);
+      doc.setFont('helvetica', 'normal');
+      doc.text((data.level || 'Advanced Level').toUpperCase(), margin + 28, currentY + 17.5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('TOTAL MARKS:', pageWidth - margin - 40, currentY + 17.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(15, 118, 110); // Teal-700
+      doc.text(`${totalPaperMarks} MARKS`, pageWidth - margin - 4, currentY + 17.5, { align: 'right' });
+
+      currentY += metaBoxHeight + 5;
 
       // Instructions Section
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(9.5);
       doc.setTextColor(15, 23, 42);
       doc.text('INSTRUCTIONS TO CANDIDATES', margin, currentY);
       currentY += 4.5;
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8.2);
       doc.setTextColor(51, 65, 85);
 
       const instructions = (data.instructions && data.instructions.length > 0)
@@ -291,7 +438,7 @@ export const generateGCEPaper2PDF = async (
       instructions.forEach((inst, i) => {
         const instLines = doc.splitTextToSize(`${i + 1}. ${inst}`, contentWidth - 4);
         doc.text(instLines, margin + 2, currentY);
-        currentY += (instLines.length * 3.8) + 0.8;
+        currentY += (instLines.length * 3.6) + 0.8;
       });
 
       // Divider line
@@ -301,15 +448,26 @@ export const generateGCEPaper2PDF = async (
       doc.line(margin, currentY, pageWidth - margin, currentY);
       currentY += 6;
     } else {
-      // Running header on continuation pages
-      doc.setFont('helvetica', 'normal');
+      // Page 2+ Running Compact Header
+      doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
-      doc.setTextColor(148, 163, 184); // slate-400
-      doc.text(`${brandName}  |  ${(data.subject || '').toUpperCase()} - PAPER 2 (${data.year || ''})`, margin, 12);
+      doc.setTextColor(71, 85, 105);
+      doc.text(branding.schoolName.toUpperCase(), margin, 11);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      const subHead = `${(data.subject || '').toUpperCase()} — ${(data.paperType || data.title || 'PAPER 2').toUpperCase()} (${data.year || ''})`;
+      doc.text(subHead, margin, 14.5);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(148, 163, 184);
+      doc.text(branding.securityLabel || 'CONFIDENTIAL', pageWidth - margin, 13, { align: 'right' });
+
       doc.setDrawColor(226, 232, 240);
       doc.setLineWidth(0.2);
-      doc.line(margin, 14, pageWidth - margin, 14);
-      currentY = 20;
+      doc.line(margin, 16.5, pageWidth - margin, 16.5);
+      currentY = 22;
     }
   };
 
@@ -320,7 +478,7 @@ export const generateGCEPaper2PDF = async (
     const qNumber = q.id || (qIdx + 1);
     const qTotalMarks = (q.subparts || []).reduce((sum, s) => sum + (Number(s.marks) || 0), 0);
 
-    // Calculate approximate space needed for question header + first prompt
+    // Calculate approximate space needed for question header + prompt
     if (currentY > pageHeight - 35) {
       doc.addPage();
       printHeader(doc.getNumberOfPages());
@@ -448,12 +606,22 @@ export const generateGCEPaper2PDF = async (
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.line(margin, pageHeight - 11, pageWidth - margin, pageHeight - 11);
+
+    doc.setFontSize(7.5);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(148, 163, 184); // slate-400
-    doc.text(`© ${brandName} Examination Practice System`, margin, pageHeight - 8);
-    doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
-    doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
+    doc.setTextColor(100, 116, 139); // slate-500
+    doc.text(
+      `${branding.schoolName}  •  ${branding.securityLabel || 'CONFIDENTIAL • OFFICIAL EXAMINATION DOCUMENT'}`,
+      margin,
+      pageHeight - 7
+    );
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 7, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin, pageHeight - 7, { align: 'right' });
   }
 
   const blob = doc.output('blob');

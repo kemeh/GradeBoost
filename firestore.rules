@@ -90,6 +90,11 @@ service cloud.firestore {
     // Collection Rules
     // ===============================================================
 
+    // Diagnostic & Connectivity Verification
+    match /test/{docId} {
+      allow read: if true;
+    }
+
     // Public / System Configuration Collections
     match /system_settings/secrets {
       allow read, write: if isAdmin();
