@@ -4,6 +4,7 @@ import { db } from '../../firebase';
 import { Card, Badge, Button } from '../ui';
 import { Users, GraduationCap, ShieldCheck, DollarSign, BookOpen, FileText, Trophy, TrendingUp, BarChart3, Activity, CheckCircle2, AlertTriangle, Sparkles } from 'lucide-react';
 import { formatDate } from '../../utils/dateUtils';
+import { StatsService } from '../../services/statsService';
 
 export default function AdminAnalyticsOverview() {
   const [stats, setStats] = useState({
@@ -108,6 +109,9 @@ export default function AdminAnalyticsOverview() {
         avgPassRate: calculatedPassRate,
         totalRevenueXAF: paid.length * 1000,
       });
+
+      // Synchronize exact platform statistics with system settings and server cache
+      void StatsService.recalculateAndSyncPlatformStats();
 
       setRecentActivities(activities);
     } catch (error) {

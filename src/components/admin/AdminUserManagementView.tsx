@@ -11,6 +11,7 @@ import { adminUnlockAccount } from '../../services/authSecurityService';
 import { logAuditEvent, fetchAuditLogs, AuditLogEntry } from '../../services/auditService';
 import { deleteUserAccount } from '../../services/userDeletionService';
 import { formatDate } from '../../utils/dateUtils';
+import { StatsService } from '../../services/statsService';
 
 export default function AdminUserManagementView() {
   const { user: currentUser } = useAuth();
@@ -81,6 +82,7 @@ export default function AdminUserManagementView() {
       const snapshot = await getDocs(q);
       const list = snapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() })) as UserProfile[];
       setUsers(list);
+      void StatsService.recalculateAndSyncPlatformStats();
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load user list.');
@@ -97,6 +99,7 @@ export default function AdminUserManagementView() {
         paymentStatus: newRole !== 'student' ? 'paid' : 'unpaid',
       });
       toast.success(`Role changed to ${newRole}`);
+      void StatsService.recalculateAndSyncPlatformStats();
       await logAuditEvent({
         userId: uid,
         userEmail,
@@ -114,6 +117,7 @@ export default function AdminUserManagementView() {
     try {
       await updateDoc(doc(db, 'users', userItem.uid), { status: newStatus });
       toast.success(`Account set to ${newStatus}`);
+      void StatsService.recalculateAndSyncPlatformStats();
       await logAuditEvent({
         userId: userItem.uid,
         userEmail: userItem.email,
@@ -179,6 +183,7 @@ export default function AdminUserManagementView() {
       });
 
       toast.success(`Created account for ${createForm.email}`);
+      void StatsService.recalculateAndSyncPlatformStats();
       await logAuditEvent({
         userId: tempRef.id,
         userEmail: createForm.email,

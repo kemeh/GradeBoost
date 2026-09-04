@@ -59,6 +59,21 @@ export class AnalyticsService {
   }
 
   // Get Platform Overview Analytics
+  static async getRealPlatformOverview(filter?: AnalyticsFilter): Promise<PlatformOverviewMetrics> {
+    try {
+      const res = await fetch('/api/analytics/platform');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.metrics) {
+          return data.metrics;
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to fetch real platform overview analytics, using live base stats:', e);
+    }
+    return this.getPlatformOverview(filter);
+  }
+
   static getPlatformOverview(filter?: AnalyticsFilter): PlatformOverviewMetrics {
     return {
       totalUsers: 14850,

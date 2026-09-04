@@ -13,6 +13,7 @@ import {
 import { db, auth } from '../firebase';
 import { logAdminAction } from './auditLogService';
 import { logAuditEvent } from './auditService';
+import { StatsService } from './statsService';
 
 export interface DeletionResult {
   success: boolean;
@@ -169,7 +170,14 @@ export async function deleteUserAccount(
       await auth.signOut();
     }
 
-    // 7. Audit log
+    // 7. Audit log & update live platform statistics
+    try {
+      await StatsService.recordDeletion('student');
+      void StatsService.recalculateAndSyncPlatformStats();
+    } catch (statErr) {
+      console.warn('Failed to update stats after user deletion:', statErr);
+    }
+
     await logAdminAction(
       adminUser.email || 'admin@edulpha.cm',
       adminUser.name || 'Admin',

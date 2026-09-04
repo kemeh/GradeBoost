@@ -39,22 +39,35 @@ export default function LandingPage() {
   const [heroSearch, setHeroSearch] = useState('');
   const [filteredHeroSuggestions, setFilteredHeroSuggestions] = useState<string[]>([]);
   const [stats, setStats] = useState<PlatformStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState(false);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
     async function loadDynamicContent() {
+      setStatsLoading(true);
+      setStatsError(false);
       try {
         const [st, ts] = await Promise.all([
           StatsService.getRealPlatformStats(),
-          TestimonialService.getTestimonials(true)
+          TestimonialService.getTestimonials(true).catch(() => [])
         ]);
-        setStats(st);
-        setTestimonials(ts);
+        if (isMounted) {
+          setStats(st);
+          setTestimonials(ts);
+          setStatsLoading(false);
+        }
       } catch (err) {
         console.warn('Error loading dynamic landing content:', err);
+        if (isMounted) {
+          setStatsError(true);
+          setStatsLoading(false);
+        }
       }
     }
     loadDynamicContent();
+    return () => { isMounted = false; };
   }, []);
 
   const SEARCH_SUGGESTIONS = [
@@ -425,18 +438,80 @@ export default function LandingPage() {
 
           {/* Statistics Counter Bar (Real Database Metrics) */}
           <div className="pt-8 border-t border-slate-800/80">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              {[
-                { value: stats ? stats.studentsCount.toLocaleString() : '0', label: language === 'fr' ? 'Élèves Inscris Actifs' : 'Active Registered Students' },
-                { value: stats ? (stats.subjectsCount > 0 ? `${stats.subjectsCount}+` : '0') : '0', label: language === 'fr' ? 'Matières & Spécialités' : 'Subjects & Specialties' },
-                { value: stats ? (stats.questionsCount > 0 ? `${stats.questionsCount.toLocaleString()}+` : '0') : '0', label: language === 'fr' ? 'Sujets & Épreuves Corrigées' : 'Past Questions & Drills' },
-                { value: stats ? (stats.partnersCount > 0 ? `${stats.partnersCount}` : '0') : '0', label: language === 'fr' ? 'Établissements Partenaires' : 'Verified Partner Institutions' },
-              ].map((stat, i) => (
-                <div key={i} className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800/80 space-y-1">
-                  <div className="text-2xl sm:text-3xl font-black text-emerald-400 tracking-tight">{stat.value}</div>
-                  <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-widest">{stat.label}</div>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6 text-center">
+              {(() => {
+                const formatLocaleNum = (val: number, isPlus: boolean = false) => {
+                  const locale = language === 'fr' ? 'fr-FR' : 'en-US';
+                  const formatted = val.toLocaleString(locale);
+                  return isPlus && val > 0 ? `${formatted}+` : formatted;
+                };
+
+                const statItems = [
+                  {
+                    id: 'stat-students',
+                    value: stats ? formatLocaleNum(stats.studentsCount, stats.studentsCount > 50) : null,
+                    label: t('stats.registeredStudents', language === 'fr' ? 'Élèves & Étudiants Inscrits' : 'Registered Students'),
+                    fallback: t('stats.fallbackStudents', language === 'fr' ? 'Apprenants sur Edulpha' : 'Learners on Edulpha'),
+                    accentColor: 'text-emerald-400',
+                    dotColor: 'bg-emerald-400'
+                  },
+                  {
+                    id: 'stat-teachers',
+                    value: stats ? formatLocaleNum(stats.teachersCount, stats.teachersCount > 20) : null,
+                    label: t('stats.registeredTeachers', language === 'fr' ? 'Enseignants Inscrits' : 'Registered Teachers'),
+                    fallback: t('stats.fallbackTeachers', language === 'fr' ? 'Enseignants Certifiés' : 'Certified Educators'),
+                    accentColor: 'text-teal-400',
+                    dotColor: 'bg-teal-400'
+                  },
+                  {
+                    id: 'stat-subjects',
+                    value: stats ? (stats.subjectsCount > 0 ? `${stats.subjectsCount}+` : '0') : null,
+                    label: t('stats.subjectsSpecialties', language === 'fr' ? 'Matières & Spécialités' : 'Subjects & Specialties'),
+                    fallback: language === 'fr' ? 'Programme National' : 'National Curriculum',
+                    accentColor: 'text-indigo-400',
+                    dotColor: 'bg-indigo-400'
+                  },
+                  {
+                    id: 'stat-questions',
+                    value: stats ? formatLocaleNum(stats.questionsCount, stats.questionsCount > 0) : null,
+                    label: t('stats.pastQuestions', language === 'fr' ? 'Sujets & Épreuves Corrigées' : 'Past Questions & Drills'),
+                    fallback: language === 'fr' ? 'Banque d\'Épreuves' : 'Exam Question Bank',
+                    accentColor: 'text-amber-400',
+                    dotColor: 'bg-amber-400'
+                  },
+                  {
+                    id: 'stat-partners',
+                    value: stats ? (stats.partnersCount > 0 ? `${stats.partnersCount}` : '0') : null,
+                    label: t('stats.partnerInstitutions', language === 'fr' ? 'Établissements Partenaires' : 'Partner Institutions'),
+                    fallback: language === 'fr' ? 'Établissements Partenaires' : 'Partner Institutions',
+                    accentColor: 'text-sky-400',
+                    dotColor: 'bg-sky-400'
+                  },
+                ];
+
+                return statItems.map((stat) => (
+                  <div 
+                    key={stat.id} 
+                    id={stat.id}
+                    className="p-3.5 sm:p-4 rounded-2xl bg-slate-900/60 border border-slate-800/90 space-y-1.5 flex flex-col justify-center items-center backdrop-blur-sm transition-all hover:border-slate-700"
+                  >
+                    {statsLoading ? (
+                      <div className="h-8 w-16 bg-slate-800 animate-pulse rounded-lg my-0.5" />
+                    ) : statsError && !stats ? (
+                      <div className={`text-sm sm:text-base font-bold ${stat.accentColor} tracking-tight`}>
+                        {stat.fallback}
+                      </div>
+                    ) : (
+                      <div className={`text-2xl sm:text-3xl font-black ${stat.accentColor} tracking-tight flex items-center gap-1.5`}>
+                        <span>{stat.value ?? '0'}</span>
+                      </div>
+                    )}
+                    <div className="text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider line-clamp-2">
+                      {stat.label}
+                    </div>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
 

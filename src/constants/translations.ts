@@ -176,11 +176,19 @@ export const TRANSLATIONS: TranslationDictionary = {
 
   // --- Stats Section ---
   'stats.students': { en: 'Active Students', fr: 'Élèves Actifs', es: 'Estudiantes Activos', ar: 'الطلاب النشطون', de: 'Aktive Schüler', pt: 'Alunos Ativos' },
+  'stats.registeredStudents': { en: 'Registered Students', fr: 'Élèves Inscrits', es: 'Estudiantes Registrados', ar: 'الطلاب المسجلون', de: 'Registrierte Schüler', pt: 'Estudantes Registrados' },
+  'stats.teachers': { en: 'Certified Educators', fr: 'Enseignants Certifiés', es: 'Educadores Certificados', ar: 'معلمون معتمدون', de: 'Zertifizierte Lehrkräfte', pt: 'Educadores Certificados' },
+  'stats.registeredTeachers': { en: 'Registered Teachers', fr: 'Enseignants Inscrits', es: 'Profesores Registrados', ar: 'المعلمون المسجلون', de: 'Registrierte Lehrkräfte', pt: 'Professores Registrados' },
+  'stats.subjectsSpecialties': { en: 'Subjects & Specialties', fr: 'Matières & Spécialités', es: 'Materias y Especialidades', ar: 'المواد والتخصصات', de: 'Fächer & Fachrichtungen', pt: 'Matérias e Especialidades' },
+  'stats.pastQuestions': { en: 'Past Questions & Drills', fr: 'Sujets & Épreuves Corrigées', es: 'Exámenes Anteriores y Prácticas', ar: 'الأسئلة والتمارين السابقة', de: 'Prüfungsfragen & Übungen', pt: 'Provas Anteriores e Exercícios' },
+  'stats.partnerInstitutions': { en: 'Verified Partner Institutions', fr: 'Établissements Partenaires', es: 'Instituciones Asociadas', ar: 'المؤسسات الشريكة', de: 'Partnerschulen', pt: 'Instituições Parceiras' },
+  'stats.loading': { en: 'Loading metrics...', fr: 'Chargement des métriques...', es: 'Cargando métricas...', ar: 'جارٍ التحميل...', de: 'Metriken werden geladen...', pt: 'Carregando métricas...' },
+  'stats.fallbackStudents': { en: 'Learners on Edulpha', fr: 'Apprenants sur Edulpha', es: 'Estudiantes en Edulpha', ar: 'متعلمون على المنصة', de: 'Lernende auf Edulpha', pt: 'Alunos no Edulpha' },
+  'stats.fallbackTeachers': { en: 'Certified Educators', fr: 'Enseignants Certifiés', es: 'Educadores Certificados', ar: 'معلمون معتمدون', de: 'Zertifizierte Lehrkräfte', pt: 'Educadores Certificados' },
   'stats.lessons': { en: 'Curriculum Lessons', fr: 'Leçons du Programme', es: 'Lecciones', ar: 'الدروس', de: 'Lektionen', pt: 'Lições' },
   'stats.questions': { en: 'Solved Past Questions', fr: 'Épreuves Corrigées', es: 'Preguntas Resueltas', ar: 'أسئلة محلولة', de: 'Gelöste Aufgaben', pt: 'Questões Resolvidas' },
   'stats.mocks': { en: 'National Mocks', fr: 'Examens Blancs', es: 'Exámenes de Práctica', ar: 'امتحانات تجريبية', de: 'Probe-Prüfungen', pt: 'Simulados' },
   'stats.aiChats': { en: 'AI Explanations', fr: 'Explications IA', es: 'Explicaciones de IA', ar: 'تفسيرات الذكاء الاصطناعي', de: 'KI-Erklärungen', pt: 'Explicações de IA' },
-  'stats.teachers': { en: 'Certified Educators', fr: 'Enseignants Certifiés', es: 'Educadores Certificados', ar: 'معلمون معتمدون', de: 'Zertifizierte Lehrkräfte', pt: 'Educadores Certificados' },
   'stats.schools': { en: 'Partner Institutions', fr: 'Établissements Partenaires', es: 'Instituciones Socias', ar: 'مؤسسات شريكة', de: 'Partnerschulen', pt: 'Instituições Parceiras' },
 
   // --- Features Section ---

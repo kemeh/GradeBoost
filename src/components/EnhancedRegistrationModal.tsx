@@ -17,6 +17,7 @@ import { sendPhoneOtp, formatPhoneNumber, detectCarrier, phoneToVirtualEmail } f
 import { PhoneOtpVerificationModal } from './PhoneOtpVerificationModal';
 import { getInstitutions, getProgrammes, submitInstitutionRequest, Institution, Programme } from '../services/institutionService';
 import { trackReferralOnRegistration } from '../services/referralService';
+import { StatsService } from '../services/statsService';
 import { useLanguage } from '../contexts/LanguageContext';
 import toast from 'react-hot-toast';
 
@@ -380,6 +381,13 @@ export const EnhancedRegistrationModal: React.FC<EnhancedRegistrationProps> = ({
       } catch (refErr) {
         console.warn("Failed to record referral during registration:", refErr);
       }
+    }
+
+    // Record live platform statistics immediately
+    try {
+      await StatsService.recordRegistration(accountType);
+    } catch (statErr) {
+      console.warn("Failed to record registration in platform stats:", statErr);
     }
 
     // Log Audit
