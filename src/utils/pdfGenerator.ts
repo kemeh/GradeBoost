@@ -192,126 +192,272 @@ export const downloadQuestionAsPDF = async (question: ExamQuestion, dayNumber?: 
 };
 
 export interface GCEPaper2Data {
+  id?: string;
   title: string;
   timeAllowed: string;
   subject: string;
   year: number;
+  level?: string;
+  instructions?: string[];
   questions: {
     id: number;
     text: string;
+    codeSnippet?: string;
     subparts: {
       label: string;
       text: string;
       marks: number;
+      codeSnippet?: string;
     }[];
   }[];
 }
 
-export const generateGCEPaper2PDF = async (data: GCEPaper2Data) => {
-  const doc = new jsPDF();
+export const generateGCEPaper2PDF = async (
+  data: GCEPaper2Data,
+  options?: { appName?: string; logoUrl?: string }
+): Promise<{ blob: Blob; filename: string }> => {
+  const doc = new jsPDF({
+    unit: 'mm',
+    format: 'a4',
+    orientation: 'portrait'
+  });
+
+  const brandName = (options?.appName || 'EDULPHA').toUpperCase();
+  const cleanSubject = (data.subject || 'COMPUTER_SCIENCE').toUpperCase().replace(/[^A-Z0-9_]/g, '_');
+  const filename = `${brandName}_${cleanSubject}_PAPER_2_${data.year || new Date().getFullYear()}.pdf`;
+
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 20;
+  const margin = 18;
   const contentWidth = pageWidth - (margin * 2);
-  let currentY = 20;
+  let currentY = 16;
 
-  // Header
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(22);
-  doc.setTextColor(30, 41, 59); // slate-800
-  doc.text('EDULPHA', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 8;
-  
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(71, 85, 105); // slate-600
-  doc.text('Smart Exam Practice System', pageWidth / 2, currentY, { align: 'center' });
-  currentY += 12;
+  // Header function for pages
+  const printHeader = (pageNum: number) => {
+    if (pageNum === 1) {
+      // Main Title on Page 1
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.setTextColor(15, 44, 89); // Deep Royal Blue
+      doc.text(brandName, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 5.5;
 
-  doc.setDrawColor(226, 232, 240); // slate-200
-  doc.line(margin, currentY, pageWidth - margin, currentY);
-  currentY += 10;
+      doc.setFontSize(11);
+      doc.setTextColor(30, 41, 59); // Slate-800
+      doc.text('CAMEROON GENERAL CERTIFICATE OF EDUCATION BOARD', pageWidth / 2, currentY, { align: 'center' });
+      currentY += 5;
 
-  doc.setFontSize(12);
-  doc.setTextColor(30, 41, 59);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`SUBJECT: ${data.subject.toUpperCase()}`, margin, currentY);
-  doc.text(`YEAR: ${data.year}`, pageWidth - margin - 30, currentY);
-  currentY += 7;
-  
-  doc.text(`PAPER: ${data.title.toUpperCase()}`, margin, currentY);
-  currentY += 7;
+      doc.setFontSize(10);
+      doc.setTextColor(217, 119, 6); // Golden Amber
+      doc.text(`${(data.level || 'ADVANCED LEVEL').toUpperCase()} EXAMINATION`, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 6;
 
-  doc.text(`DURATION: ${data.timeAllowed.toUpperCase()}`, margin, currentY);
-  currentY += 12;
+      // Meta Box
+      doc.setDrawColor(203, 213, 225); // slate-300
+      doc.setFillColor(248, 250, 252); // slate-50
+      doc.roundedRect(margin, currentY, contentWidth, 18, 1.5, 1.5, 'FD');
 
-  // Instructions
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.text('INSTRUCTIONS TO CANDIDATES', margin, currentY);
-  currentY += 7;
-  
-  doc.setFont('helvetica', 'normal');
-  const instructions = [
-    'Answer ALL questions or as specified in the section instructions.',
-    'All questions carry equal marks unless otherwise stated.',
-    'Credit will be given for clear working, algorithms, and explanations where appropriate.',
-    'You are reminded of the need for good English and orderly presentation in your answers.'
-  ];
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42); // slate-900
+      doc.setFont('helvetica', 'bold');
+      doc.text(`SUBJECT: ${(data.subject || '').toUpperCase()}`, margin + 4, currentY + 6);
+      doc.text(`PAPER: ${(data.title || 'Paper 2').toUpperCase()}`, margin + 4, currentY + 12);
 
-  instructions.forEach((inst, i) => {
-    doc.text(`${i + 1}. ${inst}`, margin + 5, currentY);
-    currentY += 6;
-  });
-  currentY += 10;
+      doc.text(`EXAM YEAR: ${data.year || new Date().getFullYear()}`, pageWidth - margin - 4, currentY + 6, { align: 'right' });
+      doc.text(`TIME ALLOWED: ${(data.timeAllowed || '3 Hours').toUpperCase()}`, pageWidth - margin - 4, currentY + 12, { align: 'right' });
 
-  // Questions
-  data.questions.forEach((q, qIdx) => {
-    // Check for new page
-    if (currentY > pageHeight - 40) {
-      doc.addPage();
-      currentY = 20;
-    }
+      currentY += 23;
 
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text(`${q.id}.`, margin, currentY);
-    
-    const mainTextLines = doc.splitTextToSize(q.text, contentWidth - 10);
-    doc.text(mainTextLines, margin + 10, currentY);
-    currentY += (mainTextLines.length * 6) + 5;
-
-    q.subparts.forEach((sub) => {
-      if (currentY > pageHeight - 30) {
-        doc.addPage();
-        currentY = 20;
-      }
+      // Instructions Section
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.setTextColor(15, 23, 42);
+      doc.text('INSTRUCTIONS TO CANDIDATES', margin, currentY);
+      currentY += 4.5;
 
       doc.setFont('helvetica', 'normal');
-      const subLabel = sub.label;
-      const subTextLines = doc.splitTextToSize(sub.text, contentWidth - 25);
-      
-      doc.text(subLabel, margin + 15, currentY);
-      doc.text(subTextLines, margin + 25, currentY);
-      
-      // Marks
+      doc.setFontSize(8.5);
+      doc.setTextColor(51, 65, 85);
+
+      const instructions = (data.instructions && data.instructions.length > 0)
+        ? data.instructions
+        : [
+            'Answer ALL questions or as specified in the examination instructions.',
+            'All questions carry equal marks unless otherwise indicated.',
+            'Write your answers clearly and legibly in the spaces provided or answer booklet.',
+            'Credit will be given for clear algorithms, diagrams, and orderly presentation.'
+          ];
+
+      instructions.forEach((inst, i) => {
+        const instLines = doc.splitTextToSize(`${i + 1}. ${inst}`, contentWidth - 4);
+        doc.text(instLines, margin + 2, currentY);
+        currentY += (instLines.length * 3.8) + 0.8;
+      });
+
+      // Divider line
+      currentY += 2;
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.4);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += 6;
+    } else {
+      // Running header on continuation pages
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.text(`${brandName}  |  ${(data.subject || '').toUpperCase()} - PAPER 2 (${data.year || ''})`, margin, 12);
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.2);
+      doc.line(margin, 14, pageWidth - margin, 14);
+      currentY = 20;
+    }
+  };
+
+  printHeader(1);
+
+  // Render Questions
+  (data.questions || []).forEach((q, qIdx) => {
+    const qNumber = q.id || (qIdx + 1);
+    const qTotalMarks = (q.subparts || []).reduce((sum, s) => sum + (Number(s.marks) || 0), 0);
+
+    // Calculate approximate space needed for question header + first prompt
+    if (currentY > pageHeight - 35) {
+      doc.addPage();
+      printHeader(doc.getNumberOfPages());
+    }
+
+    // Question Heading
+    doc.setFillColor(241, 245, 249); // slate-100
+    doc.roundedRect(margin, currentY - 3, contentWidth, 7, 1, 1, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10.5);
+    doc.setTextColor(15, 23, 42); // slate-900
+    doc.text(`QUESTION ${qNumber}`, margin + 3, currentY + 2);
+    
+    if (qTotalMarks > 0) {
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(9);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`[Total: ${qTotalMarks} Marks]`, pageWidth - margin - 3, currentY + 2, { align: 'right' });
+    }
+    currentY += 8;
+
+    // Main Question Text (if any)
+    if (q.text && q.text.trim()) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.5);
+      doc.setTextColor(30, 41, 59);
+
+      const mainTextLines = doc.splitTextToSize(q.text.trim(), contentWidth - 4);
+      if (currentY + (mainTextLines.length * 4.2) > pageHeight - 25) {
+        doc.addPage();
+        printHeader(doc.getNumberOfPages());
+      }
+      doc.text(mainTextLines, margin + 2, currentY);
+      currentY += (mainTextLines.length * 4.2) + 2;
+    }
+
+    // Question Code Snippet (if any)
+    if (q.codeSnippet && q.codeSnippet.trim()) {
+      doc.setFont('courier', 'normal');
+      doc.setFontSize(8.5);
+      const codeLines = doc.splitTextToSize(q.codeSnippet.trim(), contentWidth - 12);
+      const codeBoxHeight = (codeLines.length * 3.8) + 4;
+
+      if (currentY + codeBoxHeight > pageHeight - 25) {
+        doc.addPage();
+        printHeader(doc.getNumberOfPages());
+      }
+
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(margin + 4, currentY, contentWidth - 8, codeBoxHeight, 1, 1, 'FD');
+      doc.setTextColor(15, 23, 42);
+      doc.text(codeLines, margin + 8, currentY + 3.5);
+      currentY += codeBoxHeight + 3;
+    }
+
+    // Subparts
+    (q.subparts || []).forEach((sub, sIdx) => {
+      const subLabel = sub.label || `(${String.fromCharCode(97 + sIdx)})`;
+      const subMarks = Number(sub.marks) || 0;
+      const markText = `[${subMarks} mark${subMarks === 1 ? '' : 's'}]`;
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9.2);
+      const subTextLines = doc.splitTextToSize(sub.text.trim(), contentWidth - 36);
+      const subHeight = (subTextLines.length * 4.1) + 2;
+
+      if (currentY + subHeight > pageHeight - 25) {
+        doc.addPage();
+        printHeader(doc.getNumberOfPages());
+      }
+
+      // Subpart Label
       doc.setFont('helvetica', 'bold');
-      doc.text(`(${sub.marks} marks)`, pageWidth - margin - 20, currentY + (subTextLines.length * 6) - 6);
-      
-      currentY += (subTextLines.length * 6) + 4;
+      doc.setTextColor(15, 23, 42);
+      doc.text(subLabel, margin + 4, currentY);
+
+      // Subpart Text
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 41, 59);
+      doc.text(subTextLines, margin + 12, currentY);
+
+      // Marks aligned right
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(15, 118, 110); // teal-700
+      doc.text(markText, pageWidth - margin - 3, currentY, { align: 'right' });
+
+      currentY += subHeight;
+
+      // Subpart code snippet (if any)
+      if (sub.codeSnippet && sub.codeSnippet.trim()) {
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(8.2);
+        const subCodeLines = doc.splitTextToSize(sub.codeSnippet.trim(), contentWidth - 24);
+        const subCodeBoxHeight = (subCodeLines.length * 3.6) + 4;
+
+        if (currentY + subCodeBoxHeight > pageHeight - 25) {
+          doc.addPage();
+          printHeader(doc.getNumberOfPages());
+        }
+
+        doc.setFillColor(248, 250, 252);
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(margin + 12, currentY, contentWidth - 16, subCodeBoxHeight, 1, 1, 'FD');
+        doc.setTextColor(15, 23, 42);
+        doc.text(subCodeLines, margin + 16, currentY + 3.5);
+        currentY += subCodeBoxHeight + 2;
+      }
     });
 
-    currentY += 10;
+    currentY += 4;
   });
 
-  // Footer
+  // End of paper note
+  if (currentY > pageHeight - 25) {
+    doc.addPage();
+    printHeader(doc.getNumberOfPages());
+  }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text('★★★  END OF EXAMINATION QUESTION PAPER  ★★★', pageWidth / 2, currentY + 6, { align: 'center' });
+
+  // Footers on every page
   const totalPages = doc.getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'italic');
-    doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(148, 163, 184); // slate-400
+    doc.text(`© ${brandName} Examination Practice System`, margin, pageHeight - 8);
+    doc.text(`Page ${i} of ${totalPages}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth - margin, pageHeight - 8, { align: 'right' });
   }
 
-  doc.save(`GCE_AL_${data.subject.replace(/\s+/g, '_')}_Paper2_${data.year}.pdf`);
+  const blob = doc.output('blob');
+  doc.save(filename);
+  return { blob, filename };
 };
+

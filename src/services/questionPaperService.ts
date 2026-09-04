@@ -43,6 +43,7 @@ function cleanFirestoreData<T>(obj: T): T {
 }
 import { db, auth } from '../firebase';
 import { QuestionPaper } from '../types';
+import { GeneratedPaperData } from '../types/paperGenerator';
 
 export type PublishStage = 'validating' | 'saving' | 'indexing' | 'finalizing' | 'completed';
 
@@ -319,3 +320,294 @@ export async function deleteQuestionPaperFast(paperId: string): Promise<void> {
     cachedPapers = cachedPapers.filter(p => p.id !== paperId);
   }
 }
+
+/**
+ * Save draft for the Paper 2 Generator.
+ * Can be incomplete; saves to Firestore and localStorage fallback.
+ */
+export async function savePaperDraft(
+  paperData: Partial<GeneratedPaperData>,
+  userId: string,
+  userProfile?: { name?: string; email?: string }
+): Promise<GeneratedPaperData> {
+  const now = new Date().toISOString();
+  const paperId = paperData.id || `qp_draft_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+  const draft: GeneratedPaperData = {
+    id: paperId,
+    title: paperData.title?.trim() || `${paperData.subject || 'Subject'} Paper 2 (${paperData.year || new Date().getFullYear()}) - Draft`,
+    subject: paperData.subject || 'Computer Science',
+    paperType: paperData.paperType || 'Paper 2',
+    level: paperData.level || 'Advanced Level',
+    curriculumId: paperData.curriculumId || 'cameroon_gce',
+    curriculumName: paperData.curriculumName || 'Cameroon GCE',
+    year: Number(paperData.year) || new Date().getFullYear(),
+    timeAllowed: paperData.timeAllowed || '3 Hours',
+    durationMinutes: Number(paperData.durationMinutes) || 180,
+    instructions: paperData.instructions || [],
+    questions: (paperData.questions || []).map((q, idx) => ({
+      id: q.id || (idx + 1),
+      title: q.title || `Question ${q.id || (idx + 1)}`,
+      text: q.text || '',
+      codeSnippet: q.codeSnippet || '',
+      diagramUrl: q.diagramUrl || '',
+      subparts: (q.subparts || []).map((s, sIdx) => ({
+        id: s.id || `sub_${idx + 1}_${sIdx + 1}`,
+        label: s.label || `(${String.fromCharCode(97 + sIdx)})`,
+        text: s.text || '',
+        marks: Number(s.marks) || 0,
+        codeSnippet: s.codeSnippet || '',
+        notes: s.notes || ''
+      }))
+    })),
+    targetQuestionsCount: paperData.targetQuestionsCount || 8,
+    targetMarksPerQuestion: paperData.targetMarksPerQuestion || 17,
+    targetTotalMarks: paperData.targetTotalMarks || 100,
+    totalCalculatedMarks: (paperData.questions || []).reduce(
+      (sum, q) => sum + (q.subparts || []).reduce((sSum, s) => sSum + (Number(s.marks) || 0), 0),
+      0
+    ),
+    status: 'draft',
+    createdAt: paperData.createdAt || now,
+    updatedAt: now,
+    lastSavedAt: now,
+    createdBy: userId,
+    creatorName: userProfile?.name || paperData.creatorName || 'Administrator',
+    creatorEmail: userProfile?.email || paperData.creatorEmail || '',
+    isGeneratedPaper: true
+  };
+
+  // 1. Save to localStorage immediately as local buffer
+  try {
+    localStorage.setItem(`edulpha_paper_draft_${paperId}`, JSON.stringify(draft));
+    localStorage.setItem('edulpha_last_paper_draft_id', paperId);
+  } catch (e) {
+    console.warn('LocalStorage draft cache write failed:', e);
+  }
+
+  // 2. Persist to Firestore
+  const cleaned = cleanFirestoreData(draft);
+  const primaryDoc = doc(db, 'questionPapers', paperId);
+  const legacyDoc = doc(db, 'question_papers', paperId);
+
+  try {
+    const batch = writeBatch(db);
+    batch.set(primaryDoc, { ...cleaned, serverTimestamp: serverTimestamp() }, { merge: true });
+    batch.set(legacyDoc, { ...cleaned, serverTimestamp: serverTimestamp() }, { merge: true });
+    await batch.commit();
+  } catch (err) {
+    console.warn('Batch write failed, trying direct setDoc:', err);
+    try {
+      await setDoc(primaryDoc, cleaned, { merge: true });
+    } catch (inner) {
+      console.error('Firestore draft save failed:', inner);
+    }
+  }
+
+  return draft;
+}
+
+/**
+ * Save final examination paper (marks status as 'ready' or 'published').
+ */
+export async function saveAsFinalPaper(
+  paperData: GeneratedPaperData,
+  userId: string,
+  userProfile?: { name?: string; email?: string },
+  status: 'ready' | 'published' = 'ready'
+): Promise<GeneratedPaperData> {
+  const now = new Date().toISOString();
+  const paperId = paperData.id && !paperData.id.startsWith('qp_draft_')
+    ? paperData.id
+    : `qp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+  const totalMarks = (paperData.questions || []).reduce(
+    (sum, q) => sum + (q.subparts || []).reduce((sSum, s) => sSum + (Number(s.marks) || 0), 0),
+    0
+  );
+
+  const finalPaper: GeneratedPaperData = {
+    ...paperData,
+    id: paperId,
+    title: paperData.title?.trim() || `${paperData.subject} - Paper 2 (${paperData.year})`,
+    totalCalculatedMarks: totalMarks,
+    targetTotalMarks: totalMarks,
+    status,
+    createdAt: paperData.createdAt || now,
+    updatedAt: now,
+    lastSavedAt: now,
+    createdBy: userId,
+    creatorName: userProfile?.name || paperData.creatorName || 'Administrator',
+    creatorEmail: userProfile?.email || paperData.creatorEmail || '',
+    isGeneratedPaper: true
+  };
+
+  const cleaned = cleanFirestoreData(finalPaper);
+  const primaryDoc = doc(db, 'questionPapers', paperId);
+  const legacyDoc = doc(db, 'question_papers', paperId);
+
+  const batch = writeBatch(db);
+  batch.set(primaryDoc, { ...cleaned, serverTimestamp: serverTimestamp() }, { merge: true });
+  batch.set(legacyDoc, { ...cleaned, serverTimestamp: serverTimestamp() }, { merge: true });
+  await batch.commit();
+
+  // Also remove transient draft cache
+  try {
+    if (paperData.id && paperData.id.startsWith('qp_draft_')) {
+      localStorage.removeItem(`edulpha_paper_draft_${paperData.id}`);
+    }
+  } catch (_) {}
+
+  return finalPaper;
+}
+
+/**
+ * Fetch a single generated examination paper by ID.
+ */
+export async function fetchPaperById(paperId: string): Promise<GeneratedPaperData | null> {
+  // Check localStorage first for instant draft recovery
+  try {
+    const local = localStorage.getItem(`edulpha_paper_draft_${paperId}`);
+    if (local) {
+      const parsed = JSON.parse(local);
+      if (parsed && parsed.id === paperId) {
+        return parsed as GeneratedPaperData;
+      }
+    }
+  } catch (_) {}
+
+  try {
+    const snap = await getDoc(doc(db, 'questionPapers', paperId));
+    if (snap.exists()) {
+      return { id: snap.id, ...snap.data() } as GeneratedPaperData;
+    }
+    const snapLegacy = await getDoc(doc(db, 'question_papers', paperId));
+    if (snapLegacy.exists()) {
+      return { id: snapLegacy.id, ...snapLegacy.data() } as GeneratedPaperData;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Error fetching paper by ID:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetch all saved generated examination papers for the Paper Library.
+ */
+export async function fetchGeneratedPapers(): Promise<GeneratedPaperData[]> {
+  try {
+    const q = query(
+      collection(db, 'questionPapers'),
+      orderBy('updatedAt', 'desc'),
+      limit(100)
+    );
+    const snap = await getDocs(q);
+    let list: GeneratedPaperData[] = [];
+
+    if (!snap.empty) {
+      list = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as GeneratedPaperData))
+        .filter(p => p.isGeneratedPaper || p.questions || p.status === 'draft' || p.status === 'ready');
+    }
+
+    if (list.length === 0) {
+      const snapLegacy = await getDocs(query(collection(db, 'question_papers'), limit(100)));
+      list = snapLegacy.docs
+        .map(d => ({ id: d.id, ...d.data() } as GeneratedPaperData))
+        .filter(p => p.isGeneratedPaper || p.questions || p.status === 'draft' || p.status === 'ready');
+    }
+
+    // Check localStorage for any local drafts
+    try {
+      const localKeys = Object.keys(localStorage).filter(k => k.startsWith('edulpha_paper_draft_'));
+      for (const key of localKeys) {
+        const item = localStorage.getItem(key);
+        if (item) {
+          const parsed = JSON.parse(item) as GeneratedPaperData;
+          if (parsed && parsed.id && !list.some(p => p.id === parsed.id)) {
+            list.unshift(parsed);
+          }
+        }
+      }
+    } catch (_) {}
+
+    return list;
+  } catch (err) {
+    console.warn('Error fetching generated papers:', err);
+    return [];
+  }
+}
+
+/**
+ * Creates an independent duplicate copy of an existing examination paper.
+ */
+export async function duplicatePaper(
+  paperId: string,
+  userId: string,
+  userProfile?: { name?: string; email?: string }
+): Promise<GeneratedPaperData> {
+  const existing = await fetchPaperById(paperId);
+  if (!existing) {
+    throw new Error('Original examination paper not found to duplicate.');
+  }
+
+  const newPaperId = `qp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const now = new Date().toISOString();
+
+  const duplicated: GeneratedPaperData = {
+    ...existing,
+    id: newPaperId,
+    title: `${existing.title || `${existing.subject} Paper 2`} (Copy)`,
+    status: 'draft',
+    createdAt: now,
+    updatedAt: now,
+    lastSavedAt: now,
+    createdBy: userId,
+    creatorName: userProfile?.name || existing.creatorName || 'Administrator',
+    creatorEmail: userProfile?.email || existing.creatorEmail || '',
+    isGeneratedPaper: true
+  };
+
+  const cleaned = cleanFirestoreData(duplicated);
+  const primaryDoc = doc(db, 'questionPapers', newPaperId);
+  const legacyDoc = doc(db, 'question_papers', newPaperId);
+
+  const batch = writeBatch(db);
+  batch.set(primaryDoc, { ...cleaned, serverTimestamp: serverTimestamp() }, { merge: true });
+  batch.set(legacyDoc, { ...cleaned, serverTimestamp: serverTimestamp() }, { merge: true });
+  await batch.commit();
+
+  return duplicated;
+}
+
+/**
+ * Update the status of a saved paper (e.g. to 'published', 'archived', 'ready').
+ */
+export async function updatePaperStatus(
+  paperId: string,
+  status: 'draft' | 'ready' | 'published' | 'archived'
+): Promise<void> {
+  const now = new Date().toISOString();
+  const updatePayload = {
+    status,
+    isPublished: status === 'published',
+    updatedAt: now
+  };
+
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'questionPapers', paperId), updatePayload, { merge: true });
+  batch.set(doc(db, 'question_papers', paperId), updatePayload, { merge: true });
+  await batch.commit();
+}
+
+/**
+ * Delete a generated paper completely from Firestore and local cache.
+ */
+export async function deleteGeneratedPaper(paperId: string): Promise<void> {
+  await deleteQuestionPaperFast(paperId);
+  try {
+    localStorage.removeItem(`edulpha_paper_draft_${paperId}`);
+  } catch (_) {}
+}
+
