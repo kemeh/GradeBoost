@@ -29,6 +29,7 @@ import { AIStudyPlanner } from '../components/EdulphaAI/AIStudyPlanner';
 import { AIProgrammingAssistant } from '../components/EdulphaAI/AIProgrammingAssistant';
 import { AILessonSummarizer } from '../components/EdulphaAI/AILessonSummarizer';
 import { AIWeaknessAnalyzer } from '../components/EdulphaAI/AIWeaknessAnalyzer';
+import { AITeacherClassroom } from '../components/EdulphaAI/AITeacherClassroom';
 import { ReferralCenter } from '../components/ReferralCenter';
 
 export default function StudentDashboard() {
@@ -66,7 +67,7 @@ export default function StudentDashboard() {
   }, [searchParams]);
 
   // Edulpha AI Studio Sub-Tab
-  const [aiSubTab, setAiSubTab] = useState<'chat' | 'quiz' | 'planner' | 'code' | 'summarizer' | 'weakness'>('chat');
+  const [aiSubTab, setAiSubTab] = useState<'ai_teacher' | 'chat' | 'quiz' | 'planner' | 'code' | 'summarizer' | 'weakness'>('ai_teacher');
 
   // Loading & Search
   const [loading, setLoading] = useState(true);
@@ -1480,8 +1481,28 @@ export default function StudentDashboard() {
                 </div>
               </div>
 
-              {/* Responsive Feature Cards Grid (1 column on mobile, 2 on tablet, 3 on desktop) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 w-full pt-1">
+              {/* Responsive Feature Cards Grid (1 column on mobile, 2 on tablet, 3 or 4 on desktop) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 w-full pt-1">
+                <button
+                  onClick={() => setAiSubTab('ai_teacher')}
+                  className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 min-w-0 w-full ${
+                    aiSubTab === 'ai_teacher' 
+                      ? 'bg-indigo-600 border-indigo-600 text-white shadow-md font-bold' 
+                      : 'bg-indigo-50/50 border-indigo-200 text-indigo-950 hover:bg-indigo-100 hover:border-indigo-300'
+                  }`}
+                >
+                  <div className={`p-2.5 rounded-xl shrink-0 ${aiSubTab === 'ai_teacher' ? 'bg-white/20 text-white' : 'bg-indigo-600 text-white'}`}>
+                    <GraduationCap size={20} />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs sm:text-sm font-bold block truncate">AI Teacher</span>
+                      <span className={`text-[9px] px-1.5 py-0.2 rounded font-black uppercase tracking-wider ${aiSubTab === 'ai_teacher' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>Primary</span>
+                    </div>
+                    <span className={`text-[11px] block truncate font-medium ${aiSubTab === 'ai_teacher' ? 'text-indigo-100' : 'text-slate-500'}`}>Progression-sheet-driven lessons</span>
+                  </div>
+                </button>
+
                 <button
                   onClick={() => setAiSubTab('chat')}
                   className={`p-3.5 rounded-2xl border text-left transition-all flex items-center gap-3 min-w-0 w-full ${
@@ -1587,6 +1608,15 @@ export default function StudentDashboard() {
             </div>
 
             {/* Sub-Tab Component Displays */}
+            {aiSubTab === 'ai_teacher' && (
+              <AITeacherClassroom 
+                studentId={user?.uid || 'guest'}
+                studentName={user?.displayName || 'Student'}
+                defaultSubject={selectedSubject !== 'All' ? selectedSubject : 'Computer Science'}
+                defaultClassLevel="Advanced Level"
+              />
+            )}
+
             {aiSubTab === 'chat' && (
               <AIChatWindow 
                 userId={user?.uid || 'anon'} 

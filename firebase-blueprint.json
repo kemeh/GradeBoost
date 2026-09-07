@@ -477,6 +477,125 @@
         "error_message": { "type": "string" }
       },
       "required": ["sync_started_at", "source", "status"]
+    },
+    "AITeacherAssignment": {
+      "title": "AI Teacher Assignment",
+      "description": "Configures AI Teacher for a specific Subject, Class/Level, and Specialty.",
+      "type": "object",
+      "properties": {
+        "subjectId": { "type": "string" },
+        "subjectName": { "type": "string" },
+        "levelId": { "type": "string" },
+        "levelName": { "type": "string" },
+        "specialtyId": { "type": "string" },
+        "specialtyName": { "type": "string" },
+        "curriculumId": { "type": "string" },
+        "mode": { "type": "string", "enum": ["AI_ONLY", "AI_HUMAN_COMBINED", "AI_ASSISTANT"] },
+        "enabled": { "type": "boolean" },
+        "progressionSheetId": { "type": "string" },
+        "humanTeacherCount": { "type": "integer" },
+        "allowFutureExploration": { "type": "boolean" },
+        "teachingStyle": { "type": "string" },
+        "difficulty": { "type": "string", "enum": ["BEGINNER", "DEVELOPING", "INTERMEDIATE", "ADVANCED"] },
+        "currentWeekOverride": { "type": "integer" },
+        "virtualLabIntegration": { "type": "boolean" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["subjectName", "levelName", "mode", "enabled", "createdAt"]
+    },
+    "ProgressionSheet": {
+      "title": "Progression Sheet",
+      "description": "Curriculum-aligned progression sheet containing weekly topics, subtopics, and competencies.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subject": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "level": { "type": "string" },
+        "levelId": { "type": "string" },
+        "specialty": { "type": "string" },
+        "academicYear": { "type": "string" },
+        "term": { "type": "integer" },
+        "version": { "type": "integer" },
+        "status": { "type": "string", "enum": ["UNVERIFIED", "REVIEW_REQUIRED", "APPROVED", "REJECTED"] },
+        "sourceType": { "type": "string", "enum": ["upload", "internet", "manual"] },
+        "sourceUrl": { "type": "string" },
+        "sourceDomain": { "type": "string" },
+        "sourceTitle": { "type": "string" },
+        "documentDate": { "type": "string" },
+        "retrievedAt": { "type": "string" },
+        "importMethod": { "type": "string" },
+        "weeks": { "type": "array" },
+        "createdBy": { "type": "string" },
+        "approvedBy": { "type": "string" },
+        "approvedAt": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["title", "subject", "level", "status", "weeks", "createdAt"]
+    },
+    "StudentLearningProgress": {
+      "title": "Student Learning Progress",
+      "description": "Tracks student journey, current week, mastery level, and progression pacing.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subject": { "type": "string" },
+        "level": { "type": "string" },
+        "progressionSheetId": { "type": "string" },
+        "currentWeek": { "type": "integer" },
+        "currentLessonIndex": { "type": "integer" },
+        "currentTopic": { "type": "string" },
+        "masteryLevel": { "type": "string" },
+        "overallMasteryScore": { "type": "number" },
+        "lessonsCompleted": { "type": "integer" },
+        "topicsMastered": { "type": "array" },
+        "topicsNeedingPractice": { "type": "array" },
+        "isBehindProgression": { "type": "boolean" },
+        "remedialPlan": { "type": "object" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "subject", "level", "currentWeek", "currentTopic"]
+    },
+    "AILessonSession": {
+      "title": "AI Lesson Session",
+      "description": "Generated or cached structured lesson content for a student and topic.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "subject": { "type": "string" },
+        "level": { "type": "string" },
+        "progressionSheetId": { "type": "string" },
+        "week": { "type": "integer" },
+        "topic": { "type": "string" },
+        "lessonTitle": { "type": "string" },
+        "objectives": { "type": "array" },
+        "explanation": { "type": "string" },
+        "examples": { "type": "array" },
+        "summary": { "type": "string" },
+        "isCompleted": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "subject", "week", "topic", "lessonTitle"]
+    },
+    "AIContentFlag": {
+      "title": "AI Content Flag",
+      "description": "Student or teacher flags for inaccurate, outdated, or misaligned AI content.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userRole": { "type": "string" },
+        "subject": { "type": "string" },
+        "topic": { "type": "string" },
+        "lessonId": { "type": "string" },
+        "reason": { "type": "string" },
+        "details": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "reason", "details", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -639,6 +758,26 @@
     "/institution_sync_logs/{logId}": {
       "schema": "InstitutionSyncLog",
       "description": "Synchronization logs from MINESUP or official sources."
+    },
+    "/ai_teacher_assignments/{assignmentId}": {
+      "schema": "AITeacherAssignment",
+      "description": "AI Teacher assignments across subjects and classes."
+    },
+    "/progression_sheets/{sheetId}": {
+      "schema": "ProgressionSheet",
+      "description": "Curriculum progression sheets with weekly lessons."
+    },
+    "/student_learning_progress/{progressId}": {
+      "schema": "StudentLearningProgress",
+      "description": "Student progression tracker and mastery state."
+    },
+    "/ai_lesson_sessions/{sessionId}": {
+      "schema": "AILessonSession",
+      "description": "Structured AI lessons for specific topics and students."
+    },
+    "/ai_content_flags/{flagId}": {
+      "schema": "AIContentFlag",
+      "description": "Content flags reported by students and teachers."
     }
   }
 }

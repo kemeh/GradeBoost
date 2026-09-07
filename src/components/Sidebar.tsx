@@ -111,7 +111,7 @@ export default function Sidebar({ className }: SidebarProps) {
       <button 
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Toggle Navigation Menu"
-        className="lg:hidden fixed top-3 right-3 sm:top-4 sm:right-4 z-50 p-2.5 sm:p-3 bg-white/95 border border-slate-200 shadow-md rounded-2xl text-slate-700 hover:text-indigo-600 active:scale-95 transition-all backdrop-blur-md"
+        className="lg:hidden fixed top-3 right-3 sm:top-4 sm:right-4 z-50 p-2.5 sm:p-3 bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-md rounded-2xl text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-indigo-400 active:scale-95 transition-all backdrop-blur-md"
       >
         {isOpen ? <X size={22} /> : <Menu size={22} />}
       </button>
@@ -119,90 +119,84 @@ export default function Sidebar({ className }: SidebarProps) {
       {/* Overlay */}
       {isOpen && (
         <div 
-          className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity"
+          className="lg:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 transition-opacity"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar Container */}
       <aside className={cn(
-        "fixed top-0 left-0 h-full bg-white border-r border-slate-100 flex flex-col p-5 sm:p-8 z-50 lg:z-30 transition-transform duration-300 ease-in-out w-72 max-w-[85vw] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(1.25rem+env(safe-area-inset-top,0px))]",
+        "fixed top-0 left-0 h-full bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 flex flex-col p-5 sm:p-6 z-50 lg:z-30 transition-transform duration-300 ease-in-out w-72 max-w-[85vw] pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-[calc(1.25rem+env(safe-area-inset-top,0px))] text-slate-800 dark:text-slate-200",
         isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0",
         className
       )}>
         {/* Branding & Mobile Close */}
-        <div className="flex items-center justify-between gap-2 mb-8 sm:mb-10 shrink-0">
+        <div className="flex items-center justify-between gap-2 mb-6 shrink-0">
           <div className="flex flex-col gap-1 min-w-0">
             <img 
-              src={logoUrl} 
+              src={logoUrl || '/edulpha-logo.png'} 
               alt={`${appName} Logo`} 
-              className="h-8 sm:h-10 w-auto object-contain object-left shrink-0"
+              className="h-8 sm:h-9 w-auto object-contain object-left shrink-0"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
             />
-            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest ml-1 truncate">by Vertexon Technologies</span>
+            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1 truncate">
+              {appName} Platform
+            </span>
           </div>
           <button 
             onClick={() => setIsOpen(false)}
             aria-label="Close sidebar"
-            className="lg:hidden p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 transition-colors shrink-0"
+            className="lg:hidden p-2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
           >
             <X size={20} />
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-2 overflow-y-auto pr-2 custom-scrollbar">
+        <nav className="flex-1 space-y-1.5 overflow-y-auto pr-1 custom-scrollbar">
           {links.map((item, i) => (
             <Link 
               key={i} 
               to={item.path}
               onClick={() => setIsOpen(false)}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-2xl font-bold transition-all",
+                "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all",
                 isActive(item.path)
-                  ? "bg-indigo-50 text-indigo-600" 
-                  : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                  ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-2xs font-extrabold" 
+                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white"
               )}
             >
-              <item.icon size={20} />
-              {item.label}
+              <item.icon size={18} className="shrink-0" />
+              <span className="truncate">{item.label}</span>
             </Link>
           ))}
           <button
             onClick={() => setIsFeedbackOpen(true)}
-            className="flex w-full items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-400 hover:bg-indigo-50 hover:text-indigo-600 transition-all"
+            className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-left cursor-pointer"
           >
-            <MessageSquare size={20} />
-            {t('sidebar.feedback', 'Send Feedback')}
+            <MessageSquare size={18} className="shrink-0" />
+            <span className="truncate">{t('sidebar.feedback', 'Send Feedback')}</span>
           </button>
         </nav>
 
         {/* Footer */}
-        <div className="mt-8 space-y-4 pt-6 border-t border-slate-100">
+        <div className="mt-4 space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800 shrink-0">
           {/* Platform Language Switcher */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">
               {t('common.language', 'Language')}
             </label>
             <LanguageSwitcher variant="compact" />
           </div>
 
-          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
-            <p className="text-[10px] text-slate-500 font-bold leading-relaxed">
-              {t('sidebar.devCredit', 'Developed by Vertexon Technologies to empower students with academic excellence.')}
-            </p>
-            <div className="flex flex-col gap-2 text-[10px] font-bold text-slate-500">
-              {contactEmail && <a href={`mailto:${contactEmail}`} className="hover:text-indigo-600 transition-colors">{t('footer.emailSupport', 'Email Support')}</a>}
-              {whatsappNumber && <a href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">{t('footer.whatsappSupport', 'WhatsApp Support')}</a>}
-              {whatsappGroupLink && <a href={whatsappGroupLink} target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">{t('footer.joinWhatsappGroup', 'Join WhatsApp Group')}</a>}
-            </div>
-          </div>
-          
           <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all w-full text-left"
+            className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-500 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-950/40 hover:text-red-600 dark:hover:text-red-400 transition-all w-full text-left cursor-pointer"
           >
-            <LogOut size={20} />
-            {t('nav.logout', 'Logout')}
+            <LogOut size={18} className="shrink-0" />
+            <span>{t('nav.logout', 'Logout')}</span>
           </button>
         </div>
       </aside>

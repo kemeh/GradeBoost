@@ -21,7 +21,12 @@ import {
   SubjectModel 
 } from '../types';
 import { toast } from 'react-hot-toast';
-import { AITeacherTools } from '../components/EdulphaAI/AITeacherTools';
+import { 
+  AITeacherTools, 
+  ProgressionSheetManager, 
+  AITeacherAssignmentManager, 
+  AITeacherAnalyticsView 
+} from '../components/EdulphaAI';
 
 export default function TeacherDashboard() {
   const { user, isTeacher, isAdmin } = useAuth();
@@ -30,6 +35,8 @@ export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState<
     'performance' | 'lessons' | 'videos' | 'pdfs' | 'assignments' | 'quizzes' | 'mock_exams' | 'marking_schemes' | 'discussions' | 'ai_studio'
   >('performance');
+
+  const [aiStudioSubTab, setAiStudioSubTab] = useState<'progression' | 'assignments' | 'analytics' | 'tools'>('progression');
 
   const [subjects, setSubjects] = useState<SubjectModel[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>('All');
@@ -697,7 +704,83 @@ export default function TeacherDashboard() {
         {/* TAB 0: AI Teacher Studio */}
         {activeTab === 'ai_studio' && (
           <div className="space-y-6">
-            <AITeacherTools />
+            {/* Sub-tab navigation */}
+            <div className="flex items-center gap-2 p-1.5 bg-slate-100/80 rounded-2xl w-fit border border-slate-200/80">
+              <button
+                onClick={() => setAiStudioSubTab('progression')}
+                className={cn(
+                  "px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5",
+                  aiStudioSubTab === 'progression' 
+                    ? "bg-white text-indigo-700 shadow-sm" 
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <FileText size={14} />
+                <span>Progression Sheets</span>
+              </button>
+
+              <button
+                onClick={() => setAiStudioSubTab('assignments')}
+                className={cn(
+                  "px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5",
+                  aiStudioSubTab === 'assignments' 
+                    ? "bg-white text-indigo-700 shadow-sm" 
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <UserCheck size={14} />
+                <span>Staffing & AI Coverage</span>
+              </button>
+
+              <button
+                onClick={() => setAiStudioSubTab('analytics')}
+                className={cn(
+                  "px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5",
+                  aiStudioSubTab === 'analytics' 
+                    ? "bg-white text-indigo-700 shadow-sm" 
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <BarChart2 size={14} />
+                <span>Pedagogy & Flags</span>
+              </button>
+
+              <button
+                onClick={() => setAiStudioSubTab('tools')}
+                className={cn(
+                  "px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5",
+                  aiStudioSubTab === 'tools' 
+                    ? "bg-white text-indigo-700 shadow-sm" 
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                <Sparkles size={14} />
+                <span>Lesson Tools</span>
+              </button>
+            </div>
+
+            {/* Sub-tab view displays */}
+            {aiStudioSubTab === 'progression' && (
+              <ProgressionSheetManager
+                currentUserId={user?.uid || 'teacher'}
+                currentUserName={user?.name || 'Teacher'}
+                isTeacherOrAdmin={true}
+              />
+            )}
+
+            {aiStudioSubTab === 'assignments' && (
+              <AITeacherAssignmentManager
+                currentUserId={user?.uid || 'teacher'}
+              />
+            )}
+
+            {aiStudioSubTab === 'analytics' && (
+              <AITeacherAnalyticsView />
+            )}
+
+            {aiStudioSubTab === 'tools' && (
+              <AITeacherTools />
+            )}
           </div>
         )}
 

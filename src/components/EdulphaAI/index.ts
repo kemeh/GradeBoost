@@ -7,3 +7,7 @@ export * from './AIQuizGenerator';
 export * from './AIStudyPlanner';
 export * from './AITeacherTools';
 export * from './AIWeaknessAnalyzer';
+export * from './AITeacherClassroom';
+export * from './ProgressionSheetManager';
+export * from './AITeacherAssignmentManager';
+export * from './AITeacherAnalyticsView';

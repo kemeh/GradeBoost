@@ -13,12 +13,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Use memoryLocalCache to prevent QuotaExceededError in browser iframe storage
-// and enable auto-detect long polling so standard streaming is preferred with seamless long-polling fallback
+// and enable force long polling to prevent WebChannel 10-second backend connection timeouts in iframe/proxy environments
 export const db = initializeFirestore(
   app,
   {
     localCache: memoryLocalCache(),
-    experimentalAutoDetectLongPolling: true,
+    experimentalForceLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId || '(default)'
 );

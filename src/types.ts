@@ -1175,6 +1175,245 @@ export interface AIUsageLog {
 }
 
 // ===============================================================
+// AI Teacher & Progression Sheet Interfaces
+// ===============================================================
+
+export type AITeacherMode = 'AI_ONLY' | 'AI_HUMAN_COMBINED' | 'AI_ASSISTANT';
+
+export type ProgressionVerificationStatus = 'UNVERIFIED' | 'REVIEW_REQUIRED' | 'APPROVED' | 'REJECTED';
+
+export type MasteryDifficulty = 'BEGINNER' | 'DEVELOPING' | 'INTERMEDIATE' | 'ADVANCED';
+
+export interface ProgressionWeekLesson {
+  id: string;
+  week: number;
+  weekNumber?: number; // Alias
+  lessonNumber?: number;
+  topic: string;
+  topicTitle?: string; // Alias
+  subtopics: string[];
+  learningObjectives: string[];
+  competencies?: string[];
+  activities?: string[];
+  practicalWork?: string;
+  assessment?: string;
+  recommendedDuration?: string;
+  prerequisites?: string[];
+}
+
+export type ProgressionWeek = ProgressionWeekLesson;
+
+export interface ProgressionSheet {
+  id: string;
+  title: string;
+  description?: string;
+  subject: string;
+  subjectId?: string;
+  level: string;
+  levelId?: string;
+  classLevel?: string; // Alias
+  specialty?: string;
+  academicYear: string;
+  term: number | string;
+  version: number;
+  status: ProgressionVerificationStatus;
+  approvalStatus?: ProgressionVerificationStatus; // Alias
+  sourceType: 'upload' | 'internet' | 'manual' | string;
+  sourceUrl?: string;
+  sourceDomain?: string;
+  sourceTitle?: string;
+  documentDate?: string;
+  retrievedAt?: any;
+  importMethod?: string;
+  weeks: ProgressionWeekLesson[];
+  createdBy: string;
+  approvedBy?: string;
+  approvedAt?: any;
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface AITeacherAssignment {
+  id: string;
+  subject: string; // Direct subject name
+  subjectId?: string;
+  subjectName?: string;
+  classLevel?: string; // Direct class level name
+  levelId?: string;
+  levelName?: string;
+  specialtyId?: string;
+  specialtyName?: string;
+  curriculumId?: string;
+  mode: AITeacherMode;
+  enabled?: boolean;
+  progressionSheetId?: string;
+  progressionSheetTitle?: string;
+  assignedHumanTeacherId?: string;
+  humanTeacherCount?: number;
+  humanTeacherNames?: string[];
+  allowFutureExploration?: boolean;
+  teachingStyle?: 'Socratic' | 'Direct' | 'Interactive';
+  pedagogicalStyle?: string;
+  difficulty?: MasteryDifficulty;
+  currentWeek?: number;
+  currentWeekOverride?: number;
+  virtualLabEnabled?: boolean;
+  virtualLabIntegration?: boolean;
+  autonomousProgression?: boolean;
+  studentsEnrolledCount?: number;
+  createdBy?: string;
+  updatedBy?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface StudentLearningProgress {
+  id: string;
+  userId: string;
+  studentId?: string;
+  subject: string;
+  level?: string;
+  classLevel?: string;
+  progressionSheetId: string;
+  currentWeek: number;
+  completedWeeks?: number[];
+  currentLessonIndex?: number;
+  currentTopic: string;
+  currentSubtopic?: string;
+  masteryLevel?: MasteryDifficulty;
+  masteryScore?: number; // Alias for overallMasteryScore
+  overallMasteryScore?: number; // 0 - 100%
+  lessonsStarted?: number;
+  lessonsCompleted?: number;
+  topicsMastered?: string[];
+  topicsNeedingPractice?: string[];
+  quizScores?: { topic: string; score: number; date: string }[];
+  exerciseScores?: { topic: string; score: number; date: string }[];
+  hintsUsedCount?: number;
+  timeSpentMinutes?: number;
+  recentMistakes?: string[];
+  isBehindProgression?: boolean;
+  remedialPlan?: {
+    topic: string;
+    reason: string;
+    recommendedSteps: string[];
+    targetMastery: number;
+  };
+  updatedAt?: any;
+}
+
+export interface AILessonExercise {
+  id: string;
+  question: string;
+  type: 'MCQ' | 'ShortAnswer' | 'ProblemSolving' | 'Programming' | 'Practical' | 'TrueFalse' | 'Matching';
+  options?: string[];
+  correctAnswer?: string;
+  rubric?: string;
+  difficulty: MasteryDifficulty;
+  hints: string[];
+  solutionExplanation?: string;
+}
+
+export interface AILessonSession {
+  id: string;
+  userId: string;
+  subject: string;
+  level: string;
+  classLevel?: string;
+  progressionSheetId: string;
+  week?: number;
+  weekNumber?: number; // Alias
+  topic?: string;
+  topicTitle?: string; // Alias
+  subtopic?: string;
+  lessonTitle: string;
+  learningObjectives?: string[];
+  objectives?: string[];
+  prerequisites?: string[];
+  conceptBreakdown?: string | {
+    overview?: string;
+    corePrinciples?: string[];
+    realWorldAnalogy?: string;
+    bilingualNotes?: { en: string; fr: string };
+  };
+  stepByStepExample?: {
+    problemPrompt?: string;
+    problemStatement?: string;
+    steps?: string[];
+    workingSteps?: string[];
+    finalAnswer: string;
+    commonMistakesWarning?: string;
+    examTip?: string;
+  };
+  guidedPractice?: {
+    problemText?: string;
+    taskPrompt?: string;
+    tier1Hint?: string;
+    tier2Hint?: string;
+    tier3Hint?: string;
+    tier4Hint?: string;
+    modelSolution?: string;
+    hints?: {
+      level1Clue?: string;
+      level2Direction?: string;
+      level3PartialStep?: string;
+      level4FullWalkthrough?: string;
+    };
+  };
+  diagnosticQuiz?: Array<{
+    id: string;
+    questionText: string;
+    options: string[];
+    correctOptionIndex?: number;
+    correctOption?: number | string;
+    explanation: string;
+  }>;
+  chatDialogue?: Array<{
+    role: 'teacher' | 'student' | 'system';
+    text: string;
+    timestamp: string;
+  }>;
+  teachingStyle?: string;
+  introduction?: string;
+  explanation?: string;
+  realWorldAnalogy?: string;
+  examples?: string[];
+  guidedPracticeQuestion?: string;
+  independentExercises?: AILessonExercise[];
+  miniQuiz?: {
+    question: string;
+    options?: string[];
+    correctAnswer: string;
+    explanation: string;
+  }[];
+  summary?: string;
+  homework?: string;
+  masteryCheck?: string;
+  sourceCitation?: string;
+  virtualLabLink?: string;
+  codeSnippet?: {
+    language: string;
+    code: string;
+    explanation: string;
+  };
+  isCompleted?: boolean;
+  createdAt?: any;
+}
+
+export interface AIContentFlag {
+  id: string;
+  userId: string;
+  userRole: string;
+  subject: string;
+  topic: string;
+  lessonId?: string;
+  reason: 'Incorrect' | 'Outdated' | 'Curriculum mismatch' | 'Too difficult' | 'Too easy' | 'Unsafe' | 'Other';
+  details: string;
+  status: 'pending' | 'reviewed' | 'resolved';
+  createdAt: any;
+}
+
+// ===============================================================
 // Subscription & Payment Systems Interfaces
 // ===============================================================
 
