@@ -83,8 +83,29 @@ export const AdminAnalyticsDashboard: React.FC = () => {
   // Real-time pulse state
   const [lastUpdated, setLastUpdated] = useState<string>(new Date().toLocaleTimeString());
 
-  const handleRefresh = () => {
-    setPlatformMetrics(AnalyticsService.getPlatformOverview(filter));
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLiveMetrics() {
+      try {
+        const liveMetrics = await AnalyticsService.getRealPlatformOverview(filter);
+        if (isMounted) {
+          setPlatformMetrics(liveMetrics);
+        }
+      } catch (err) {
+        console.warn('Failed to load live metrics:', err);
+      }
+    }
+    fetchLiveMetrics();
+    return () => { isMounted = false; };
+  }, [filter]);
+
+  const handleRefresh = async () => {
+    try {
+      const liveMetrics = await AnalyticsService.getRealPlatformOverview(filter);
+      setPlatformMetrics(liveMetrics);
+    } catch (err) {
+      console.warn('Failed to refresh live metrics:', err);
+    }
     setCurriculumData(AnalyticsService.getCurriculumAnalytics(filter));
     setContentData(AnalyticsService.getContentAnalytics());
     setAiData(AnalyticsService.getAIAnalytics());
