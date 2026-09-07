@@ -16,7 +16,7 @@ import {
 } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { 
   Button, Card, Badge, cn,
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter
@@ -740,10 +740,8 @@ export default function AdminPaperGenerator() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-100 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-36">
+    <ModernDashboardLayout role="admin" activeTab="paper-generator">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         
         {/* Top Header & Navigation */}
         <header className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -1658,7 +1656,7 @@ export default function AdminPaperGenerator() {
           </DialogContent>
         </Dialog>
 
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

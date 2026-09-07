@@ -10,7 +10,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import jsPDF from 'jspdf';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { Button, Card, Badge, cn, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { HNDEnrollmentModal } from '../components/HNDEnrollmentModal';
@@ -325,10 +325,8 @@ export default function StudentLMSPortal() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="student" activeTab="my_courses">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* IF VIEWING AN ACTIVE LESSON */}
         {activeLesson ? (
           <div className="space-y-6">
@@ -876,14 +874,14 @@ export default function StudentLMSPortal() {
             )}
           </div>
         )}
-      </main>
 
-      {/* HND Enrollment / Course Management Modal */}
-      <HNDEnrollmentModal
-        isOpen={showHndEnrollmentModal}
-        onClose={() => setShowHndEnrollmentModal(false)}
-        user={user}
-      />
-    </div>
+        {/* HND Enrollment / Course Management Modal */}
+        <HNDEnrollmentModal
+          isOpen={showHndEnrollmentModal}
+          onClose={() => setShowHndEnrollmentModal(false)}
+          user={user}
+        />
+      </div>
+    </ModernDashboardLayout>
   );
 }

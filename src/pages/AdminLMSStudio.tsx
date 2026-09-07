@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { Button, Card, Badge, cn, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -442,10 +442,8 @@ export default function AdminLMSStudio() {
   const availableSubjects = Array.from(new Set(['Computer Science', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Economics', ...lessons.map(l => l.subject)]));
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="lms">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -1296,7 +1294,7 @@ export default function AdminLMSStudio() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { LayoutDashboard, Sparkles } from "lucide-react";
 import { fetchDailyDrill } from "../services/dailyDrillService";
-import Sidebar from "../components/Sidebar";
+import ModernDashboardLayout from "../components/layout/ModernDashboardLayout";
 import { Button, Badge } from "../components/ui";
 import { useAuth } from "../contexts/AuthContext";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -37,9 +37,8 @@ function DailyDrill() {
 
   if (questions.length === 0) {
     return (
-      <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-        <Sidebar />
-        <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+      <ModernDashboardLayout role="student" activeTab="daily_drill">
+        <div className="space-y-6 max-w-4xl mx-auto w-full min-w-0">
           <div className="max-w-4xl mx-auto flex flex-col items-center justify-center h-[60vh] text-center space-y-6">
             <div className="w-24 h-24 bg-red-50 text-red-600 rounded-full flex items-center justify-center">
               <Sparkles size={48} />
@@ -54,15 +53,14 @@ function DailyDrill() {
               {t('common.backToDashboard', 'Back to Dashboard')}
             </Button>
           </div>
-        </main>
-      </div>
+        </div>
+      </ModernDashboardLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="student" activeTab="daily_drill">
+      <div className="space-y-6 max-w-4xl mx-auto w-full min-w-0">
         <div className="max-w-4xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
@@ -139,8 +137,8 @@ function DailyDrill() {
             ))}
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }
 

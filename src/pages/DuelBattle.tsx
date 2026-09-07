@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { doc, getDoc, collection, query, where, orderBy, limit, onSnapshot, setDoc, updateDoc, serverTimestamp, getDocs, runTransaction } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';
 import { Zap, Trophy, Users, Timer, Target, CheckCircle2, XCircle, Loader2, Sword, Shield, Crown, Lock, LayoutDashboard } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { LeaderboardEntry } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
@@ -332,9 +332,8 @@ export default function DuelBattle() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-5xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="student" activeTab="duel">
+      <div className="space-y-6 max-w-5xl mx-auto w-full min-w-0">
         <div className="max-w-5xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -634,7 +633,7 @@ export default function DuelBattle() {
             </div>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

@@ -13,7 +13,7 @@ import { db, storage, auth } from '../firebase';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
 import { formatDate } from '../utils/dateUtils';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import FileUpload from '../components/FileUpload';
 import { toast } from 'react-hot-toast';
 import { fetchAuditLogs, AuditLogEntry } from '../services/auditService';
@@ -295,11 +295,11 @@ export default function Profile() {
 
   if (!user) return null;
 
+  const role = user?.role === 'admin' ? 'admin' : user?.role === 'teacher' ? 'teacher' : 'student';
+
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-      
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role={role} activeTab="profile">
+      <div className="space-y-6 max-w-4xl mx-auto w-full min-w-0">
         <div className="max-w-4xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -1041,7 +1041,6 @@ export default function Profile() {
             </div>
           </div>
         </div>
-      </main>
 
       {/* HND Enrollment Modal */}
       <HNDEnrollmentModal
@@ -1049,6 +1048,7 @@ export default function Profile() {
         onClose={() => setShowHndEnrollmentModal(false)}
         user={user}
       />
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

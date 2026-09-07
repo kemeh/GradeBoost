@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { toast } from 'react-hot-toast';
 import { db } from '../firebase';
@@ -446,10 +446,8 @@ export default function AccountingPracticalLab() {
     .reduce((sum, a) => sum + Math.abs(getAccountMovements(a.id).netBalance), 0) + netIncome;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="student" activeTab="practicals">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         
         {/* HEADER & TOP SUMMARY BAR */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
@@ -1294,7 +1292,7 @@ export default function AccountingPracticalLab() {
           </Card>
         )}
 
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

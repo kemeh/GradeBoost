@@ -5,7 +5,7 @@ import {
   CheckCircle2, Sparkles, BookOpen, FileText, Search, Filter, Save, X, ArrowLeft, ChevronRight, Layers, LayoutDashboard
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { Button, Card, Badge, cn, Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { Challenge, ChallengeDay, ExamQuestion, SubjectModel } from '../types';
@@ -271,10 +271,8 @@ export default function AdminChallenges() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="duels">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div>
@@ -787,7 +785,7 @@ export default function AdminChallenges() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

@@ -7,7 +7,7 @@ import {
 import { Announcement, NotificationTemplate, DeliveryReport, NotificationAnalyticsData, TargetAudience, NotificationCategory } from '../types';
 import { notificationService } from '../services/notificationService';
 import { useLanguage } from '../contexts/LanguageContext';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 
 export default function AdminNotificationManagement() {
   const { language } = useLanguage();
@@ -152,10 +152,8 @@ export default function AdminNotificationManagement() {
   });
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="notifications">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* Top Header */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
@@ -560,7 +558,6 @@ export default function AdminNotificationManagement() {
             </div>
           </div>
         )}
-      </main>
 
       {/* CREATE ANNOUNCEMENT MODAL */}
       {isModalOpen && (
@@ -781,6 +778,7 @@ export default function AdminNotificationManagement() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

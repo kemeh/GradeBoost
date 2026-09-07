@@ -9,7 +9,7 @@ import {
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { QuestionPaper } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/firestoreErrors';
@@ -172,11 +172,8 @@ export default function Practice() {
   if (!user) return null;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      {/* Main Content */}
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="student" activeTab="practice">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
           <div className="flex items-center gap-4">
             <Button 
@@ -376,7 +373,7 @@ export default function Practice() {
             <Button variant="outline" onClick={() => setFilter('All')}>{t('common.clearFilters', 'Clear Filters')}</Button>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

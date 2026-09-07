@@ -4,7 +4,7 @@ import {
   Settings, Trash2, Edit3, Sparkles, Layers, BookOpen, Save 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { fetchExams, fetchQuestions, saveExam, deleteExam, generateAutoExamQuestions } from '../services/questionEngineService';
 import { EngineExam, QuestionEngineItem, AcademicLevel, ExamQuestionRef } from '../types';
 import toast from 'react-hot-toast';
@@ -102,10 +102,8 @@ export default function AdminExamBuilder() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="assessments">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">
@@ -384,7 +382,7 @@ export default function AdminExamBuilder() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

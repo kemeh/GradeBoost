@@ -527,11 +527,11 @@ export default function ModernDashboardLayout({
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#070C18] text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased transition-colors duration-200">
       {/* ========================================================================= */}
       {/* 1. TOP BAR (STICKY HEADER)                                                */}
       {/* ========================================================================= */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0B1120]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
         <div className="px-4 sm:px-6 lg:px-8 h-16 sm:h-18 flex items-center justify-between gap-4 max-w-[1600px] mx-auto w-full">
           {/* Left: Mobile Toggle, Brand & Breadcrumbs */}
           <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -935,27 +935,39 @@ export default function ModernDashboardLayout({
         {/* ======================================================================= */}
         <aside
           className={cn(
-            "fixed lg:sticky top-16 sm:top-18 z-40 lg:z-30 h-[calc(100vh-4rem)] sm:h-[calc(100vh-4.5rem)] bg-white dark:bg-slate-900 border-r border-slate-200/80 dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out shrink-0",
+            "fixed lg:sticky top-16 sm:top-18 z-40 lg:z-30 h-[calc(100vh-4rem)] sm:h-[calc(100vh-4.5rem)] bg-white dark:bg-[#0B1120] border-r border-slate-200/80 dark:border-slate-800/80 flex flex-col transition-all duration-300 ease-in-out shrink-0",
             isSidebarCollapsed ? "w-20" : "w-72",
             isMobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0"
           )}
         >
-          {/* Sidebar Top: Collapse Toggle & Quick Status */}
-          <div className="px-4 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-            <div className={cn("flex items-center gap-2 overflow-hidden", isSidebarCollapsed && "hidden")}>
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 truncate">
-                Edulpha Portal
-              </span>
-            </div>
+          {/* Sidebar Top: Logo & Collapse Toggle */}
+          <div className="px-4 py-3.5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+            <Link 
+              to={effectiveRole === 'admin' ? '/admin' : effectiveRole === 'teacher' ? '/teacher' : '/dashboard'}
+              className={cn("flex items-center gap-2.5 overflow-hidden group", isSidebarCollapsed && "justify-center w-full")}
+            >
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-sm shrink-0">
+                <GraduationCap size={18} className="text-white" />
+              </div>
+              {!isSidebarCollapsed && (
+                <div className="flex flex-col leading-none">
+                  <span className="font-black text-sm tracking-wider uppercase text-slate-900 dark:text-white">
+                    {appName.toUpperCase()}
+                  </span>
+                  <span className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+                    Learn • Build • Lead
+                  </span>
+                </div>
+              )}
+            </Link>
 
             {/* Collapse toggle (Desktop) */}
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-auto"
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors ml-auto"
               title={isSidebarCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
             >
-              <Sliders size={15} />
+              <Menu size={16} />
             </button>
 
             {/* Close toggle (Mobile) */}
@@ -994,8 +1006,8 @@ export default function ModernDashboardLayout({
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs transition-all group text-left",
                       active
-                        ? "bg-indigo-50/80 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 font-extrabold"
-                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200",
+                        ? "bg-blue-600 text-white shadow-sm shadow-blue-600/20 font-extrabold"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-slate-200",
                       isSidebarCollapsed && "justify-center px-0"
                     )}
                     title={isSidebarCollapsed ? groupLabel : undefined}
@@ -1006,8 +1018,8 @@ export default function ModernDashboardLayout({
                         className={cn(
                           "shrink-0 transition-colors",
                           active
-                            ? "text-indigo-600 dark:text-indigo-400"
-                            : "text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
+                            ? "text-white"
+                            : "text-slate-400 dark:text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300"
                         )}
                       />
                       {!isSidebarCollapsed && (
@@ -1020,7 +1032,8 @@ export default function ModernDashboardLayout({
                         size={14}
                         className={cn(
                           "text-slate-400 shrink-0 transition-transform duration-200",
-                          isOpen && "rotate-90 text-indigo-500"
+                          isOpen && "rotate-90 text-blue-400",
+                          active && "text-white/80"
                         )}
                       />
                     )}
@@ -1040,13 +1053,18 @@ export default function ModernDashboardLayout({
                             className={cn(
                               "w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all text-left group",
                               isSubActive
-                                ? "bg-indigo-100/60 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold"
+                                ? "bg-blue-600/15 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold"
                                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
                             )}
                           >
                             <span className="truncate">{subLabel}</span>
                             {sub.badge && (
-                              <span className="px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 rounded">
+                              <span className={cn(
+                                "px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded",
+                                sub.badge === 'AI' 
+                                  ? "bg-purple-100 dark:bg-purple-950 text-purple-600 dark:text-purple-300" 
+                                  : "bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-300"
+                              )}>
                                 {sub.badge}
                               </span>
                             )}
@@ -1060,32 +1078,65 @@ export default function ModernDashboardLayout({
             })}
           </nav>
 
-          {/* Sidebar Bottom Footer: Support & Credits */}
-          {!isSidebarCollapsed && (
-            <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-2 shrink-0">
-              <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-slate-800 text-[11px] space-y-2">
-                <div className="flex items-center justify-between text-slate-400 dark:text-slate-500 font-bold">
-                  <span>Edulpha Engine</span>
-                  <span className="text-[10px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-700 dark:text-slate-300">v3.2</span>
-                </div>
-                <div className="flex flex-col gap-1 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                  {contactEmail && (
-                    <a href={`mailto:${contactEmail}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 truncate">
-                      ✉️ {contactEmail}
-                    </a>
-                  )}
-                  {whatsappNumber && (
-                    <a
-                      href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:text-indigo-600 dark:hover:text-indigo-400"
-                    >
-                      💬 Support Desk
-                    </a>
-                  )}
+          {/* Sidebar Bottom Footer: Language Selector & Log Out */}
+          {!isSidebarCollapsed ? (
+            <div className="p-3.5 border-t border-slate-100 dark:border-slate-800/80 space-y-3 shrink-0 bg-slate-50/50 dark:bg-[#080D1A]/50">
+              {/* Language Switcher Pill */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-slate-500 px-1 block">
+                  LANGUAGE
+                </span>
+                <div className="flex items-center p-1 bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xs">
+                  <button
+                    onClick={() => setLanguage('en')}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-bold transition-all",
+                      language === 'en'
+                        ? "bg-blue-600 text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    )}
+                  >
+                    <span>🇬🇧</span> EN
+                  </button>
+                  <button
+                    onClick={() => setLanguage('fr')}
+                    className={cn(
+                      "flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-bold transition-all",
+                      language === 'fr'
+                        ? "bg-blue-600 text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                    )}
+                  >
+                    <span>🇫🇷</span> FR
+                  </button>
                 </div>
               </div>
+
+              {/* Log Out Button */}
+              <button
+                onClick={logout}
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors"
+              >
+                <LogOut size={16} />
+                <span>{t('nav.logout', 'Log Out')}</span>
+              </button>
+            </div>
+          ) : (
+            <div className="p-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-col items-center gap-2 shrink-0">
+              <button
+                onClick={() => setLanguage(language === 'en' ? 'fr' : 'en')}
+                className="p-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                title={`Language: ${language.toUpperCase()}`}
+              >
+                {language === 'fr' ? '🇫🇷' : '🇬🇧'}
+              </button>
+              <button
+                onClick={logout}
+                className="p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30"
+                title="Log Out"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           )}
         </aside>

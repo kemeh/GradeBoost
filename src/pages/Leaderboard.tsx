@@ -7,7 +7,7 @@ import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { WeeklyLeaderboard } from '../types';
 import { Card, Badge, cn, Button } from '../components/ui';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { getWeekNumber } from '../utils/dateUtils';
 
 export default function Leaderboard() {
@@ -80,10 +80,8 @@ export default function Leaderboard() {
   const userRank = leaderboard.findIndex(entry => entry.userId === user?.uid) + 1;
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-      
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-4xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="student" activeTab="leaderboard">
+      <div className="space-y-6 max-w-4xl mx-auto w-full min-w-0">
         <div className="max-w-4xl mx-auto space-y-12">
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
@@ -316,7 +314,7 @@ export default function Leaderboard() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

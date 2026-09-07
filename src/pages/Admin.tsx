@@ -9,7 +9,6 @@ import {
 } from 'lucide-react';
 import { db, storage, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import Sidebar from '../components/Sidebar';
 import FileUpload from '../components/FileUpload';
 import { Button, Card, Badge, cn, Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui';
 import { QuestionPaper, Subject, PaperType, SampleQuestion, LeaderboardEntry, Duel, UserProfile, SubjectModel } from '../types';

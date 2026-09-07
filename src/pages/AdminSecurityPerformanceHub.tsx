@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import {
   Shield,
   Lock,
@@ -109,10 +109,8 @@ export const AdminSecurityPerformanceHub: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-900 text-slate-100 font-sans w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="security">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* Header Banner */}
       <div className="bg-gradient-to-r from-slate-800 via-indigo-950 to-slate-900 p-8 rounded-3xl border border-slate-700 shadow-2xl relative overflow-hidden">
         <div className="absolute right-0 top-0 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -317,8 +315,8 @@ export const AdminSecurityPerformanceHub: React.FC = () => {
           </div>
         </div>
       )}
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 };
 

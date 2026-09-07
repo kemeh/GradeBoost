@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import {
   Smartphone,
   Download,
@@ -95,10 +95,8 @@ export const EdulphaMobileHub: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-900 text-slate-100 font-sans w-full max-w-full overflow-x-hidden select-none">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="student" activeTab="mobile_app">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
       {/* 1. Top Header Banner */}
       <div className="bg-gradient-to-r from-[#0F2C59] via-indigo-950 to-purple-950 p-6 md:p-8 rounded-3xl shadow-2xl relative overflow-hidden border border-blue-500/30">
         <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-amber-400/15 rounded-full blur-3xl pointer-events-none"></div>
@@ -563,8 +561,8 @@ export const EdulphaMobileHub: React.FC = () => {
         isDarkMode={isDarkMode}
         onDownload={handleSimDownload}
       />
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 };
 

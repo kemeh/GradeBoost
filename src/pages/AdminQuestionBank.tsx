@@ -5,7 +5,7 @@ import {
   FileText, Code, HelpCircle, AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import QuestionRenderer from '../components/QuestionRenderer';
 import QuestionEditorModal from '../components/QuestionEditorModal';
 import AIQuestionGeneratorModal from '../components/AIQuestionGeneratorModal';
@@ -82,10 +82,8 @@ export default function AdminQuestionBank() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="questions">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* Top Navigation / Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
@@ -341,7 +339,7 @@ export default function AdminQuestionBank() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

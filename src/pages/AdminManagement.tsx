@@ -15,7 +15,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useAuth } from '../contexts/AuthContext';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import FileUpload from '../components/FileUpload';
 import { 
   Button, Card, Badge, cn,
@@ -374,10 +374,8 @@ export default function AdminManagement() {
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="curriculum">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-3 sm:gap-4">
             <button onClick={() => navigate('/dashboard')} className="p-2 text-slate-400 hover:text-slate-900 transition-colors shrink-0" title="Go to Dashboard">
@@ -808,8 +806,8 @@ export default function AdminManagement() {
             subjects={subjects}
           />
         )}
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }
 

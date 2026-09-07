@@ -10,7 +10,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { auth, db } from '../firebase';
 import { collection, query, where, orderBy, getDocs, limit, onSnapshot, doc } from 'firebase/firestore';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import WelcomeDashboard from '../components/WelcomeDashboard';
 import { 
   Button, Card, Badge, cn,
@@ -262,11 +262,8 @@ export default function Dashboard() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
-      <Sidebar />
-
-      {/* Main Content */}
-      <main className="flex-1 lg:ml-72 p-6 md:p-12 pt-24 lg:pt-12">
+    <ModernDashboardLayout role="student" activeTab="overview">
+      <div className="space-y-6 max-w-7xl mx-auto w-full">
         {user.paymentStatus === 'pending' && (
           <div className="mb-8 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3">
             <AlertCircle className="text-amber-600 shrink-0 mt-0.5" size={20} />
@@ -546,7 +543,6 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
-      </main>
 
       {/* Sample Question Modal */}
       <Dialog open={!!selectedSample} onOpenChange={(open) => !open && handleCloseSample()}>
@@ -682,6 +678,7 @@ export default function Dashboard() {
         onClose={() => setShowHndOnboarding(false)}
         user={user}
       />
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

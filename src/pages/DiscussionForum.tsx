@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { 
   MessageSquare, Search, Plus, Filter, Sparkles, BookOpen, 
   Bookmark, Award, Pin, Lock, CheckCircle2, Heart, Eye, 
@@ -158,11 +158,11 @@ export default function DiscussionForum() {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  return (
-    <div className="flex min-h-screen bg-slate-100/70 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
+  const userRole = isAdmin ? 'admin' : isTeacher ? 'teacher' : 'student';
 
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+  return (
+    <ModernDashboardLayout role={userRole} activeTab="forum">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* Top Header Bar */}
         <header className="sticky top-0 z-30 bg-white border-b border-slate-200/90 shadow-xs px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -551,7 +551,6 @@ export default function DiscussionForum() {
             </div>
           )}
         </div>
-      </main>
 
       {/* Create Discussion Modal */}
       <CreateDiscussionModal
@@ -567,6 +566,7 @@ export default function DiscussionForum() {
         discussion={selectedDiscussion}
         onRefreshDiscussion={() => loadForumData()}
       />
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

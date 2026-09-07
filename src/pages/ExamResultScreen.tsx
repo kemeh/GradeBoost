@@ -4,7 +4,7 @@ import {
   Trophy, CheckCircle2, XCircle, Clock, Award, RotateCcw, 
   ArrowLeft, FileText, Sparkles, Printer, ShieldCheck, Download, ChevronDown, ChevronUp 
 } from 'lucide-react';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import QuestionRenderer from '../components/QuestionRenderer';
 import { ExamAttempt, EngineExam, QuestionEngineItem } from '../types';
 
@@ -49,10 +49,8 @@ export default function ExamResultScreen() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <Sidebar />
-
-      <main className="flex-1 p-6 lg:p-10 max-w-5xl mx-auto overflow-y-auto space-y-8">
+    <ModernDashboardLayout role="student" activeTab="exams">
+      <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-8">
         {/* Top Action Bar */}
         <div className="flex items-center justify-between">
           <button
@@ -244,7 +242,7 @@ export default function ExamResultScreen() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

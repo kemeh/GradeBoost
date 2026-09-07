@@ -4,7 +4,7 @@ import {
   Download, FileSpreadsheet, Loader2, Save, Trash2 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { bulkImportQuestions, parseRawTextToQuestions } from '../services/questionEngineService';
 import { QuestionEngineItem, AcademicLevel } from '../types';
 import toast from 'react-hot-toast';
@@ -93,10 +93,8 @@ export default function AdminBulkImport() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-6xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="questions">
+      <div className="space-y-6 max-w-6xl mx-auto w-full min-w-0">
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <button
@@ -260,7 +258,7 @@ export default function AdminBulkImport() {
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

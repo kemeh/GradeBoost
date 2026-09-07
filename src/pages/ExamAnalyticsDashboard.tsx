@@ -4,7 +4,7 @@ import {
   BookOpen, CheckCircle2, AlertTriangle, ShieldCheck 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchUserAttempts } from '../services/questionEngineService';
 import { ExamAttempt } from '../types';
@@ -35,10 +35,8 @@ export default function ExamAnalyticsDashboard() {
   const readinessScore = Math.min(100, Math.round(avgPercentage * 1.1));
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-6xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="student" activeTab="exams">
+      <div className="space-y-6 max-w-6xl mx-auto w-full min-w-0">
         <header className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 uppercase tracking-widest mb-1">
@@ -127,7 +125,7 @@ export default function ExamAnalyticsDashboard() {
             </div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

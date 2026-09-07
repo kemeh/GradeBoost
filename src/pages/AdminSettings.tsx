@@ -14,7 +14,7 @@ import { toast } from 'react-hot-toast';
 import { GoogleGenAI } from '@google/genai';
 import { collection, getDocs, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import { DEFAULT_CHALLENGE_START_DATE, getCurrentDayNumber } from '../utils/challenge';
 import { Badge, Button, Card } from '../components/ui';
 import FileUpload from '../components/FileUpload';
@@ -298,23 +298,20 @@ export default function AdminSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-        <Sidebar />
-        <main className="flex-1 lg:pl-72 p-4 sm:p-8 flex items-center justify-center">
+      <ModernDashboardLayout role="admin" activeTab="settings">
+        <div className="p-12 flex items-center justify-center">
           <div className="text-center space-y-3">
             <RefreshCw className="w-10 h-10 text-indigo-600 animate-spin mx-auto" />
             <p className="text-sm font-bold text-slate-600">{t('settings.loadingSettings', 'Loading System Settings...')}</p>
           </div>
-        </main>
-      </div>
+        </div>
+      </ModernDashboardLayout>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-12">
+    <ModernDashboardLayout role="admin" activeTab="settings">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         {/* Page Header */}
         <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-2 border-b border-slate-200">
           <div className="flex items-start gap-3 sm:gap-4">
@@ -840,7 +837,7 @@ export default function AdminSettings() {
             </motion.div>
           )}
         </div>
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }

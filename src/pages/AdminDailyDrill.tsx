@@ -14,7 +14,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { db, auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
-import Sidebar from '../components/Sidebar';
+import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import FileUpload from '../components/FileUpload';
 import { Button, Card, Badge, cn } from '../components/ui';
 import { downloadQuestionAsPDF } from '../utils/pdfGenerator';
@@ -482,9 +482,8 @@ export default function AdminDailyDrill() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-800 w-full max-w-full overflow-x-hidden">
-      <Sidebar />
-      <main className="flex-1 lg:pl-72 p-3 sm:p-6 md:p-8 space-y-6 max-w-7xl mx-auto w-full min-w-0 pb-28 sm:pb-8">
+    <ModernDashboardLayout role="admin" activeTab="questions">
+      <div className="space-y-6 max-w-7xl mx-auto w-full min-w-0">
         <div className="max-w-7xl mx-auto">
           <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
             <div className="flex items-center gap-6">
@@ -1637,8 +1636,8 @@ export default function AdminDailyDrill() {
             />
           )}
         </AnimatePresence>
-      </main>
-    </div>
+      </div>
+    </ModernDashboardLayout>
   );
 }
 
