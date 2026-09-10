@@ -60,6 +60,7 @@ const AccountingPracticalLab = lazy(() => import('./pages/AccountingPracticalLab
 const AdminPracticalManager = lazy(() => import('./pages/AdminPracticalManager'));
 const AlumniProgramPage = lazy(() => import('./pages/AlumniProgramPage'));
 const StudentAmbassadorPage = lazy(() => import('./pages/StudentAmbassadorPage'));
+const AdminUserManagement = lazy(() => import('./pages/AdminUserManagement'));
 
 // Dedicated Landing Section Pages
 const AboutPage = lazy(() => import('./pages/AboutPage'));
@@ -204,6 +205,17 @@ export default function App() {
               
               <Route path="/dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/student-dashboard" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/courses" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/lessons" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/study-plans" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/notes" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/downloads" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/digital-school" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/past-questions" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
+              <Route path="/ai-tutor" element={<PrivateRoute><EdulphaAIPage /></PrivateRoute>} />
+              <Route path="/referrals" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/services" element={<Navigate to="/features" replace />} />
+
               <Route path="/forum" element={<PrivateRoute><DiscussionForum /></PrivateRoute>} />
               <Route path="/notifications" element={<PrivateRoute><NotificationCenterPage /></PrivateRoute>} />
               <Route path="/admin/notifications" element={<AdminRoute><AdminNotificationManagement /></AdminRoute>} />
@@ -221,6 +233,9 @@ export default function App() {
               <Route path="/challenges" element={<PrivateRoute><LearningChallenges /></PrivateRoute>} />
               <Route path="/practicals" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
               <Route path="/practicals/:id" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
+              <Route path="/practicals/chemistry" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
+              <Route path="/practicals/biology" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
+              <Route path="/practicals/physics" element={<PrivateRoute><StudentPracticalLab /></PrivateRoute>} />
               <Route path="/accounting-lab" element={<PaymentGatedRoute><AccountingPracticalLab /></PaymentGatedRoute>} />
               <Route path="/lms" element={<PrivateRoute><StudentLMSPortal /></PrivateRoute>} />
               <Route path="/exams" element={<PrivateRoute><StudentExamPortal /></PrivateRoute>} />
@@ -232,7 +247,48 @@ export default function App() {
               <Route path="/profile" element={<PaymentGatedRoute><Profile /></PaymentGatedRoute>} />
               
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+              <Route path="/admin/dashboard" element={<AdminRoute><Admin defaultTab="overview" /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute><AdminUserManagement /></AdminRoute>} />
+              <Route path="/admin/user-management" element={<AdminRoute><AdminUserManagement /></AdminRoute>} />
+              <Route path="/admin/students" element={<AdminRoute><AdminUserManagement defaultRole="student" /></AdminRoute>} />
+              <Route path="/admin/teachers" element={<AdminRoute><AdminUserManagement defaultRole="teacher" /></AdminRoute>} />
+              <Route path="/admin/subjects" element={<AdminRoute><Admin defaultTab="subjects" /></AdminRoute>} />
+              <Route path="/admin/courses" element={<AdminRoute><Admin defaultTab="curriculum" /></AdminRoute>} />
+              <Route path="/admin/curriculum" element={<AdminRoute><Admin defaultTab="curriculum" /></AdminRoute>} />
+              <Route path="/admin/academic-hierarchy" element={<AdminRoute><Admin defaultTab="academic-hierarchy" /></AdminRoute>} />
+              <Route path="/admin/hierarchy" element={<AdminRoute><Admin defaultTab="academic-hierarchy" /></AdminRoute>} />
+              <Route path="/admin/hnd" element={<AdminRoute><Admin defaultTab="hnd" /></AdminRoute>} />
+              <Route path="/admin/specialties" element={<AdminRoute><Admin defaultTab="hnd" /></AdminRoute>} />
+              <Route path="/admin/examinations" element={<AdminRoute><Admin defaultTab="assessments" /></AdminRoute>} />
+              <Route path="/admin/assessments" element={<AdminRoute><Admin defaultTab="assessments" /></AdminRoute>} />
+              <Route path="/admin/question-bank" element={<TeacherRoute><AdminQuestionBank /></TeacherRoute>} />
+              <Route path="/admin/question-papers" element={<AdminRoute><Admin defaultTab="papers" /></AdminRoute>} />
+              <Route path="/admin/samples" element={<AdminRoute><Admin defaultTab="samples" /></AdminRoute>} />
+              <Route path="/admin/free-samples" element={<AdminRoute><Admin defaultTab="samples" /></AdminRoute>} />
+              <Route path="/admin/papers" element={<TeacherRoute><AdminPaperGenerator /></TeacherRoute>} />
+              <Route path="/admin/payments" element={<AdminRoute><Admin defaultTab="payments" /></AdminRoute>} />
+              <Route path="/admin/plans" element={<AdminRoute><Admin defaultTab="plans" /></AdminRoute>} />
+              <Route path="/admin/payment-plans" element={<AdminRoute><Admin defaultTab="plans" /></AdminRoute>} />
+              <Route path="/admin/reports" element={<AdminRoute><AdminAnalyticsDashboard /></AdminRoute>} />
+              <Route path="/admin/branding" element={<AdminRoute><Admin defaultTab="branding" /></AdminRoute>} />
+              <Route path="/admin/navigation" element={<AdminRoute><Admin defaultTab="navigation" /></AdminRoute>} />
+              <Route path="/admin/translations" element={<AdminRoute><Admin defaultTab="translations" /></AdminRoute>} />
+              <Route path="/admin/partners" element={<AdminRoute><Admin defaultTab="partners" /></AdminRoute>} />
+              <Route path="/admin/testimonials" element={<AdminRoute><Admin defaultTab="testimonials" /></AdminRoute>} />
+              <Route path="/admin/documents" element={<AdminRoute><Admin defaultTab="documents" /></AdminRoute>} />
+              <Route path="/admin/alumni" element={<AdminRoute><Admin defaultTab="alumni" /></AdminRoute>} />
+              <Route path="/admin/ambassadors" element={<AdminRoute><Admin defaultTab="ambassadors" /></AdminRoute>} />
+              <Route path="/admin/referrals" element={<AdminRoute><Admin defaultTab="referrals" /></AdminRoute>} />
+              <Route path="/admin/audit-log" element={<AdminRoute><Admin defaultTab="audit-log" /></AdminRoute>} />
+              <Route path="/admin/system-data" element={<AdminRoute><Admin defaultTab="system-data" /></AdminRoute>} />
+              <Route path="/admin/virtual-lab" element={<TeacherRoute><AdminPracticalManager /></TeacherRoute>} />
+              <Route path="/admin/virtual-labs" element={<TeacherRoute><AdminPracticalManager /></TeacherRoute>} />
+              <Route path="/admin/ai-teachers" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>} />
+              <Route path="/admin/ai-teacher" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>} />
+
               <Route path="/teacher" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>} />
+              <Route path="/teacher-dashboard" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>} />
+              <Route path="/teacher/studio" element={<TeacherRoute><TeacherDashboard /></TeacherRoute>} />
               <Route path="/admin/lms" element={<TeacherRoute><AdminLMSStudio /></TeacherRoute>} />
               <Route path="/admin/questions" element={<TeacherRoute><AdminQuestionBank /></TeacherRoute>} />
               <Route path="/admin/bulk-import" element={<TeacherRoute><AdminBulkImport /></TeacherRoute>} />

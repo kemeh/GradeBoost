@@ -10,11 +10,15 @@ import { adminUnlockAccount } from '../services/authSecurityService';
 import { logAuditEvent, fetchAuditLogs, AuditLogEntry } from '../services/auditService';
 import { formatDate } from '../utils/dateUtils';
 
-export default function AdminUserManagement() {
+interface AdminUserManagementProps {
+  defaultRole?: 'all' | 'admin' | 'teacher' | 'student';
+}
+
+export default function AdminUserManagement({ defaultRole = 'all' }: AdminUserManagementProps) {
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'teacher' | 'student'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'teacher' | 'student'>(defaultRole);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'locked'>('all');
   
   const [selectedUserLogs, setSelectedUserLogs] = useState<{ email: string; logs: AuditLogEntry[] } | null>(null);

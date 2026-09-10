@@ -9,8 +9,18 @@ import FileUpload from '../FileUpload';
 import DynamicQuestionPaperUploadModal from './DynamicQuestionPaperUploadModal';
 import { publishQuestionPaper, fetchQuestionPapersFast } from '../../services/questionPaperService';
 
-export default function AdminContentCurriculum() {
-  const [activeTab, setActiveTab] = useState<'papers' | 'lessons' | 'study_plans'>('papers');
+interface AdminContentCurriculumProps {
+  initialTab?: 'papers' | 'lessons' | 'study_plans';
+}
+
+export default function AdminContentCurriculum({ initialTab = 'papers' }: AdminContentCurriculumProps) {
+  const [activeTab, setActiveTab] = useState<'papers' | 'lessons' | 'study_plans'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [papers, setPapers] = useState<QuestionPaper[]>([]);
   const [lessons, setLessons] = useState<LMSLesson[]>([]);
   const [studyPlans, setStudyPlans] = useState<StudyPlanModel[]>([]);

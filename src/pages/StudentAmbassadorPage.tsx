@@ -18,6 +18,7 @@ import {
   AmbassadorClassLevel, 
   AmbassadorLevel 
 } from '../types/ambassador';
+import { toast } from 'react-hot-toast';
 
 export default function StudentAmbassadorPage() {
   const { language } = useLanguage();
@@ -117,7 +118,7 @@ export default function StudentAmbassadorPage() {
       setSubmitSuccess(true);
     } catch (err) {
       console.error('Error submitting application:', err);
-      alert('Application failed. Please try again.');
+      toast.error('Application failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

@@ -29,6 +29,9 @@ import AdminNotificationsManager from '../components/admin/AdminNotificationsMan
 import AdminReportsAnalytics from '../components/admin/AdminReportsAnalytics';
 import AdminPlatformSettingsView from '../components/admin/AdminPlatformSettingsView';
 import AdminTranslationManager from '../components/admin/AdminTranslationManager';
+import AdminBrandingLogosView from '../components/admin/AdminBrandingLogosView';
+import AdminNavigationManagement from '../components/admin/AdminNavigationManagement';
+import AdminPaymentPlanManagement from '../components/admin/AdminPaymentPlanManagement';
 import { AdminPartnerManagement } from '../components/admin/AdminPartnerManagement';
 import { AdminDocumentManagement } from '../components/admin/AdminDocumentManagement';
 import { AdminFooterManagement } from '../components/AdminFooterManagement';
@@ -48,7 +51,11 @@ import {
   deleteQuestionPaperFast 
 } from '../services/questionPaperService';
 
-export default function Admin() {
+interface AdminProps {
+  defaultTab?: string;
+}
+
+export default function Admin({ defaultTab }: AdminProps = {}) {
   const { user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -58,8 +65,8 @@ export default function Admin() {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   
-  type AdminTab = 'overview' | 'analytics' | 'users' | 'hierarchy' | 'curriculum' | 'subjects' | 'lms' | 'academic-hierarchy' | 'assessments' | 'questions' | 'papers' | 'samples' | 'payments' | 'manual' | 'plans' | 'notifications' | 'reports' | 'settings' | 'branding' | 'translations' | 'navigation' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'referrals' | 'system-data' | 'audit-log' | 'hnd' | 'duels';
-  const activeTab = (searchParams.get('tab') as AdminTab) || 'overview';
+  type AdminTab = 'overview' | 'analytics' | 'users' | 'students' | 'teachers' | 'hierarchy' | 'academic-hierarchy' | 'curriculum' | 'subjects' | 'lms' | 'assessments' | 'questions' | 'papers' | 'samples' | 'payments' | 'manual' | 'plans' | 'notifications' | 'reports' | 'settings' | 'branding' | 'translations' | 'navigation' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'referrals' | 'system-data' | 'audit-log' | 'hnd' | 'duels';
+  const activeTab = ((searchParams.get('tab') as AdminTab) || defaultTab || 'overview') as AdminTab;
 
   const [users, setUsers] = useState<any[]>([]);
   const [manualRequests, setManualRequests] = useState<any[]>([]);
@@ -389,19 +396,19 @@ export default function Admin() {
 
     // Validation
     if (!sampleFormData.topic.trim() || !sampleFormData.questionText.trim() || !sampleFormData.reasoning.trim()) {
-      alert('Please fill in all required fields (Topic, Question, Reasoning).');
+      toast.error('Please fill in all required fields (Topic, Question, Reasoning).');
       return;
     }
 
     if (sampleFormData.options.some(opt => !opt.trim())) {
-      alert('Please fill in all four options (A-D).');
+      toast.error('Please fill in all four options (A-D).');
       return;
     }
 
     // Check limit: 5-10 per subject
     const subjectCount = sampleQuestions.filter(q => q.subject === sampleFormData.subject).length;
     if (!editingSample && subjectCount >= 10) {
-      alert(`Limit reached! Maximum 10 sample questions allowed per subject (${sampleFormData.subject}).`);
+      toast.error(`Limit reached! Maximum 10 sample questions allowed per subject (${sampleFormData.subject}).`);
       return;
     }
 
@@ -495,20 +502,38 @@ export default function Admin() {
           <TabsContent value="users">
             <AdminUserManagementView />
           </TabsContent>
+          <TabsContent value="students">
+            <AdminUserManagementView />
+          </TabsContent>
+          <TabsContent value="teachers">
+            <AdminUserManagementView />
+          </TabsContent>
 
           {/* Tab 3: Academic Hierarchy (Levels, Departments, Subjects, Topics) */}
           <TabsContent value="hierarchy">
             <AdminAcademicHierarchy />
+          </TabsContent>
+          <TabsContent value="academic-hierarchy">
+            <AdminAcademicHierarchy />
+          </TabsContent>
+          <TabsContent value="subjects">
+            <AdminAcademicHierarchy initialTab="subjects" />
           </TabsContent>
 
           {/* Tab 4: Content & Curriculum (Papers, Lessons, Study Plans) */}
           <TabsContent value="curriculum">
             <AdminContentCurriculum />
           </TabsContent>
+          <TabsContent value="lms">
+            <AdminContentCurriculum initialTab="lessons" />
+          </TabsContent>
 
           {/* Tab 5: Assessment Engine (Questions & Exams) */}
           <TabsContent value="assessments">
             <AdminAssessmentEngine />
+          </TabsContent>
+          <TabsContent value="questions">
+            <AdminAssessmentEngine initialTab="questions" />
           </TabsContent>
 
           {/* Tab 6: Finance & Payments */}
@@ -976,6 +1001,21 @@ export default function Admin() {
           {/* Tab 14: HND Engineering & Curriculum Management */}
           <TabsContent value="hnd">
             <AdminHNDManagement />
+          </TabsContent>
+
+          {/* Tab 15: Subscription & Payment Plans */}
+          <TabsContent value="plans">
+            <AdminPaymentPlanManagement />
+          </TabsContent>
+
+          {/* Tab 16: Branding & Identity Logos */}
+          <TabsContent value="branding">
+            <AdminBrandingLogosView />
+          </TabsContent>
+
+          {/* Tab 17: Navigation Menu Links */}
+          <TabsContent value="navigation">
+            <AdminNavigationManagement />
           </TabsContent>
         </Tabs>
 

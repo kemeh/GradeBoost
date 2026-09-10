@@ -7,11 +7,21 @@ import { Sparkles, FileText, CheckCircle2, Plus, Trash2, Edit3, X, Loader2, Exte
 import { toast } from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
-export default function AdminAssessmentEngine() {
+interface AdminAssessmentEngineProps {
+  initialTab?: 'questions' | 'exams';
+}
+
+export default function AdminAssessmentEngine({ initialTab = 'questions' }: AdminAssessmentEngineProps) {
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [mockExams, setMockExams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'questions' | 'exams'>('questions');
+  const [activeTab, setActiveTab] = useState<'questions' | 'exams'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Quick Question Form
   const [showQuestionModal, setShowQuestionModal] = useState(false);

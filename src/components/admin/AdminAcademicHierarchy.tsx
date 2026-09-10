@@ -8,8 +8,18 @@ import { toast } from 'react-hot-toast';
 import SubjectManager from '../SubjectManager';
 import { AdminHNDManagement } from './AdminHNDManagement';
 
-export default function AdminAcademicHierarchy() {
-  const [activeTab, setActiveTab] = useState<'levels' | 'departments' | 'subjects' | 'topics' | 'hnd'>('levels');
+interface AdminAcademicHierarchyProps {
+  initialTab?: 'levels' | 'departments' | 'subjects' | 'topics' | 'hnd';
+}
+
+export default function AdminAcademicHierarchy({ initialTab = 'levels' }: AdminAcademicHierarchyProps) {
+  const [activeTab, setActiveTab] = useState<'levels' | 'departments' | 'subjects' | 'topics' | 'hnd'>(initialTab);
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [levels, setLevels] = useState<AcademicLevelModel[]>([]);
   const [departments, setDepartments] = useState<AcademicDepartment[]>([]);
   const [subjects, setSubjects] = useState<SubjectModel[]>([]);
