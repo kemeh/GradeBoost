@@ -235,9 +235,10 @@ export default function ModernDashboardLayout({
       icon: FileText,
       subItems: [
         { id: 'assessments', label: 'Assessment Engine', labelFr: 'Moteur d’Évaluation', tab: 'assessments' },
-        { id: 'questions', label: 'Question Bank', labelFr: 'Banque de Questions', tab: 'questions' },
+        { id: 'questions', label: 'Question Bank', labelFr: 'Banque de Questions', path: '/admin/question-bank' },
         { id: 'paper-generator', label: 'Paper Generator (GCE)', labelFr: 'Générateur d’Épreuves', path: '/admin/paper-generator', badge: 'AI' },
-        { id: 'papers', label: 'Question Papers Archive', labelFr: 'Archives des Épreuves', tab: 'papers' },
+        { id: 'past-papers', label: 'Past Papers Management', labelFr: 'Gestion des Épreuves', path: '/admin/past-papers' },
+        { id: 'papers', label: 'Question Papers Bank', labelFr: 'Banque d’Épreuves', path: '/admin/paper-bank' },
         { id: 'samples', label: 'Free Sample Questions', labelFr: 'Questions Échantillons', tab: 'samples' },
       ],
     },

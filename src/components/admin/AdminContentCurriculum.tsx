@@ -7,7 +7,7 @@ import { FileText, BookOpen, Calendar, Plus, Trash2, ExternalLink, X, Upload, Ch
 import { toast } from 'react-hot-toast';
 import FileUpload from '../FileUpload';
 import DynamicQuestionPaperUploadModal from './DynamicQuestionPaperUploadModal';
-import { publishQuestionPaper, fetchQuestionPapersFast } from '../../services/questionPaperService';
+import { publishQuestionPaper, fetchQuestionPapersFast, deleteQuestionPaperFast } from '../../services/questionPaperService';
 
 interface AdminContentCurriculumProps {
   initialTab?: 'papers' | 'lessons' | 'study_plans';
@@ -215,7 +215,7 @@ export default function AdminContentCurriculum({ initialTab = 'papers' }: AdminC
   const handleDeletePaper = async (id: string) => {
     if (!confirm('Are you sure you want to delete this paper?')) return;
     try {
-      await deleteDoc(doc(db, 'question_papers', id));
+      await deleteQuestionPaperFast(id);
       toast.success('Paper deleted');
       fetchCurriculumData();
     } catch (err) {

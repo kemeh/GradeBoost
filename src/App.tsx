@@ -47,6 +47,7 @@ const EdulphaMobileHub = lazy(() => import('./pages/EdulphaMobileHub'));
 const AdminSecurityPerformanceHub = lazy(() => import('./pages/AdminSecurityPerformanceHub'));
 
 const AdminQuestionBank = lazy(() => import('./pages/AdminQuestionBank'));
+const AdminPastPapers = lazy(() => import('./pages/AdminPastPapers'));
 const AdminBulkImport = lazy(() => import('./pages/AdminBulkImport'));
 const AdminExamBuilder = lazy(() => import('./pages/AdminExamBuilder'));
 const StudentExamPortal = lazy(() => import('./pages/StudentExamPortal'));
@@ -212,6 +213,8 @@ export default function App() {
               <Route path="/downloads" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/digital-school" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/past-questions" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
+              <Route path="/past-papers" element={<PaymentGatedRoute><AdminPastPapers /></PaymentGatedRoute>} />
+              <Route path="/paper-bank" element={<PaymentGatedRoute><AdminPastPapers /></PaymentGatedRoute>} />
               <Route path="/ai-tutor" element={<PrivateRoute><EdulphaAIPage /></PrivateRoute>} />
               <Route path="/referrals" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/services" element={<Navigate to="/features" replace />} />
@@ -262,7 +265,9 @@ export default function App() {
               <Route path="/admin/examinations" element={<AdminRoute><Admin defaultTab="assessments" /></AdminRoute>} />
               <Route path="/admin/assessments" element={<AdminRoute><Admin defaultTab="assessments" /></AdminRoute>} />
               <Route path="/admin/question-bank" element={<TeacherRoute><AdminQuestionBank /></TeacherRoute>} />
-              <Route path="/admin/question-papers" element={<AdminRoute><Admin defaultTab="papers" /></AdminRoute>} />
+              <Route path="/admin/past-papers" element={<AdminRoute><AdminPastPapers /></AdminRoute>} />
+              <Route path="/admin/paper-bank" element={<AdminRoute><AdminPastPapers /></AdminRoute>} />
+              <Route path="/admin/question-papers" element={<AdminRoute><AdminPastPapers /></AdminRoute>} />
               <Route path="/admin/samples" element={<AdminRoute><Admin defaultTab="samples" /></AdminRoute>} />
               <Route path="/admin/free-samples" element={<AdminRoute><Admin defaultTab="samples" /></AdminRoute>} />
               <Route path="/admin/papers" element={<TeacherRoute><AdminPaperGenerator /></TeacherRoute>} />

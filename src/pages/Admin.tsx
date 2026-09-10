@@ -42,6 +42,7 @@ import { AdminReferralManagement } from '../components/admin/AdminReferralManage
 import { AdminSystemDataManagement } from '../components/admin/AdminSystemDataManagement';
 import { AdminAuditLog } from '../components/admin/AdminAuditLog';
 import { AdminHNDManagement } from '../components/admin/AdminHNDManagement';
+import AdminPastPapersManagement from '../components/admin/AdminPastPapersManagement';
 import DynamicQuestionPaperUploadModal from '../components/admin/DynamicQuestionPaperUploadModal';
 import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import AdminModernOverview from '../components/admin/AdminModernOverview';
@@ -65,7 +66,7 @@ export default function Admin({ defaultTab }: AdminProps = {}) {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   
-  type AdminTab = 'overview' | 'analytics' | 'users' | 'students' | 'teachers' | 'hierarchy' | 'academic-hierarchy' | 'curriculum' | 'subjects' | 'lms' | 'assessments' | 'questions' | 'papers' | 'samples' | 'payments' | 'manual' | 'plans' | 'notifications' | 'reports' | 'settings' | 'branding' | 'translations' | 'navigation' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'referrals' | 'system-data' | 'audit-log' | 'hnd' | 'duels';
+  type AdminTab = 'overview' | 'analytics' | 'users' | 'students' | 'teachers' | 'hierarchy' | 'academic-hierarchy' | 'curriculum' | 'subjects' | 'lms' | 'assessments' | 'questions' | 'papers' | 'past-papers' | 'paper-bank' | 'question-papers' | 'samples' | 'payments' | 'manual' | 'plans' | 'notifications' | 'reports' | 'settings' | 'branding' | 'translations' | 'navigation' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'referrals' | 'system-data' | 'audit-log' | 'hnd' | 'duels';
   const activeTab = ((searchParams.get('tab') as AdminTab) || defaultTab || 'overview') as AdminTab;
 
   const [users, setUsers] = useState<any[]>([]);
@@ -602,62 +603,18 @@ export default function Admin({ defaultTab }: AdminProps = {}) {
           </TabsContent>
 
 
-          {/* Papers Table */}
+          {/* Past Papers & Paper Bank Repository */}
           <TabsContent value="papers">
-            <Card className="overflow-hidden">
-            <div className="p-8 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight">Question Papers</h2>
-              <div className="relative w-64">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                <input 
-                  type="text" 
-                  placeholder="Search..." 
-                  className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-bold focus:bg-white outline-none transition-all"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="bg-slate-50 border-b border-slate-100">
-                  <tr>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Title</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Paper</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Year</th>
-                    <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {papers.filter(p => (p.title || '').toLowerCase().includes(searchQuery.toLowerCase())).map((paper) => (
-                    <tr key={paper.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-8 py-4">
-                        <p className="text-sm font-bold text-slate-900">{paper.title}</p>
-                      </td>
-                      <td className="px-8 py-4">
-                        <Badge variant="default">{paper.subject}</Badge>
-                      </td>
-                      <td className="px-8 py-4">
-                        <Badge variant="primary">{paper.paperType}</Badge>
-                      </td>
-                      <td className="px-8 py-4">
-                        <span className="text-sm font-black text-slate-400">{paper.year}</span>
-                      </td>
-                      <td className="px-8 py-4">
-                        <button 
-                          onClick={() => handleDelete(paper.id)}
-                          className="p-2 text-slate-300 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+            <AdminPastPapersManagement embedded />
+          </TabsContent>
+          <TabsContent value="past-papers">
+            <AdminPastPapersManagement embedded />
+          </TabsContent>
+          <TabsContent value="paper-bank">
+            <AdminPastPapersManagement embedded />
+          </TabsContent>
+          <TabsContent value="question-papers">
+            <AdminPastPapersManagement embedded />
           </TabsContent>
           <TabsContent value="payments">
           <Card className="overflow-hidden">

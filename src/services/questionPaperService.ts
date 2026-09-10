@@ -605,6 +605,36 @@ export async function updatePaperStatus(
 }
 
 /**
+ * Update existing question paper metadata in both collections
+ */
+export async function updateQuestionPaper(
+  paperId: string,
+  payload: Partial<PublishPaperPayload | QuestionPaper>
+): Promise<void> {
+  const now = new Date().toISOString();
+  const updateData: Record<string, any> = {
+    ...payload,
+    updatedAt: now
+  };
+
+  const cleaned = cleanFirestoreData(updateData);
+  const primaryDoc = doc(db, 'questionPapers', paperId);
+  const legacyDoc = doc(db, 'question_papers', paperId);
+
+  const batch = writeBatch(db);
+  batch.set(primaryDoc, { ...cleaned, serverTimestamp: serverTimestamp() }, { merge: true });
+  batch.set(legacyDoc, { ...cleaned, serverTimestamp: serverTimestamp() }, { merge: true });
+  await batch.commit();
+
+  if (cachedPapers) {
+    const idx = cachedPapers.findIndex(p => p.id === paperId);
+    if (idx >= 0) {
+      cachedPapers[idx] = { ...cachedPapers[idx], ...cleaned, updatedAt: now };
+    }
+  }
+}
+
+/**
  * Delete a generated paper completely from Firestore and local cache.
  */
 export async function deleteGeneratedPaper(paperId: string): Promise<void> {
@@ -613,4 +643,5 @@ export async function deleteGeneratedPaper(paperId: string): Promise<void> {
     localStorage.removeItem(`edulpha_paper_draft_${paperId}`);
   } catch (_) {}
 }
+
 
