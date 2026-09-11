@@ -22,7 +22,7 @@ export function validatePaper(paper: Partial<GeneratedPaperData>): PaperValidati
     errors.push({
       id: 'err-paper-type',
       type: 'error',
-      message: 'Paper type is required (e.g., Paper 2).',
+      message: 'Paper type is required (e.g., Paper 2, Term 1 Test, Mock Exam).',
       field: 'paperType'
     });
   }
@@ -41,7 +41,7 @@ export function validatePaper(paper: Partial<GeneratedPaperData>): PaperValidati
     errors.push({
       id: 'err-time',
       type: 'error',
-      message: 'Duration / Time allowed is required (e.g., 3 Hours).',
+      message: 'Duration / Time allowed is required (e.g., 1 Hour, 2 Hours, 3 Hours).',
       field: 'timeAllowed'
     });
   }
@@ -58,24 +58,69 @@ export function validatePaper(paper: Partial<GeneratedPaperData>): PaperValidati
   }
 
   const questions = paper.questions || [];
-  const targetCount = paper.targetQuestionsCount || 8;
+  const ruleMode = paper.examinationRule || 'flexible';
 
-  // 2. Question count check
+  // 2. Generic Question Count Check:
+  // Any paper with 1 or more valid questions is structurally valid.
   if (questions.length === 0) {
     errors.push({
       id: 'err-no-questions',
       type: 'error',
-      message: `Paper must contain questions. Expected ${targetCount} questions for Paper 2.`
-    });
-  } else if (questions.length < targetCount) {
-    errors.push({
-      id: 'err-insufficient-questions',
-      type: 'error',
-      message: `Paper has only ${questions.length} question${questions.length === 1 ? '' : 's'}. Cameroon GCE Paper 2 requires ${targetCount} questions.`
+      message: 'Paper must contain at least one question.'
     });
   }
 
-  // 3. Question numbering and uniqueness
+  // 3. Optional Examination-Specific Rules (Advisories & Configurable Constraints)
+  if (ruleMode === 'gce_standard') {
+    const targetGCECount = 8;
+    if (questions.length > 0 && questions.length !== targetGCECount) {
+      if (paper.strictRuleEnforcement) {
+        errors.push({
+          id: 'err-gce-strict-count',
+          type: 'error',
+          message: `Strict Cameroon GCE Paper 2 rule enabled: requires exactly ${targetGCECount} questions (current: ${questions.length}).`
+        });
+      } else {
+        warnings.push({
+          id: 'warn-gce-format-count',
+          type: 'warning',
+          message: `Your paper contains ${questions.length} question${questions.length === 1 ? '' : 's'}. Cameroon GCE Paper 2 standard format typically features ${targetGCECount} questions (17 marks each). You can export this as a custom/school paper or adjust the question count.`
+        });
+      }
+    }
+  } else if (ruleMode === 'custom_target') {
+    if (paper.exactQuestionsCount && questions.length !== paper.exactQuestionsCount) {
+      if (paper.strictRuleEnforcement) {
+        errors.push({
+          id: 'err-custom-exact-count',
+          type: 'error',
+          message: `Custom paper rule requires exactly ${paper.exactQuestionsCount} questions (current: ${questions.length}).`
+        });
+      } else {
+        warnings.push({
+          id: 'warn-custom-exact-count',
+          type: 'warning',
+          message: `Configured target is ${paper.exactQuestionsCount} questions (current: ${questions.length}).`
+        });
+      }
+    }
+    if (paper.minQuestionsCount && questions.length < paper.minQuestionsCount) {
+      errors.push({
+        id: 'err-custom-min-count',
+        type: 'error',
+        message: `Paper requires a minimum of ${paper.minQuestionsCount} questions (current: ${questions.length}).`
+      });
+    }
+    if (paper.maxQuestionsCount && questions.length > paper.maxQuestionsCount) {
+      errors.push({
+        id: 'err-custom-max-count',
+        type: 'error',
+        message: `Paper exceeds the maximum allowed limit of ${paper.maxQuestionsCount} questions (current: ${questions.length}).`
+      });
+    }
+  }
+
+  // 4. Question numbering, uniqueness, content, and marks calculation
   const seenIds = new Set<number>();
   let totalCalculatedMarks = 0;
   let totalSubparts = 0;
@@ -101,8 +146,8 @@ export function validatePaper(paper: Partial<GeneratedPaperData>): PaperValidati
       });
     }
 
-    // Question text
-    if (!q.text || !q.text.trim()) {
+    // Question description or title text
+    if ((!q.text || !q.text.trim()) && (!q.title || !q.title.trim()) && (!q.subparts || q.subparts.length === 0)) {
       errors.push({
         id: `err-q-text-${q.id}`,
         type: 'error',
@@ -114,11 +159,11 @@ export function validatePaper(paper: Partial<GeneratedPaperData>): PaperValidati
 
     // Subparts validation
     const subparts = q.subparts || [];
-    if (subparts.length === 0) {
+    if (subparts.length === 0 && (!q.text || !q.text.trim())) {
       errors.push({
         id: `err-q-nosub-${q.id}`,
         type: 'error',
-        message: `Question ${q.id} contains no sub-questions. Each question must contain at least one sub-part.`,
+        message: `Question ${q.id} contains no content. Please add question text or sub-questions.`,
         questionId: q.id
       });
     } else {
@@ -170,12 +215,12 @@ export function validatePaper(paper: Partial<GeneratedPaperData>): PaperValidati
         }
       });
 
-      // Target marks per question check (e.g. 17 marks each if configured)
+      // Target marks per question advisory check (if explicitly configured)
       if (paper.targetMarksPerQuestion && qTotalMarks !== paper.targetMarksPerQuestion) {
         warnings.push({
           id: `warn-q-target-marks-${q.id}`,
           type: 'warning',
-          message: `Question ${q.id} total marks is ${qTotalMarks} (standard target is ${paper.targetMarksPerQuestion} marks).`,
+          message: `Question ${q.id} total marks is ${qTotalMarks} (configured target is ${paper.targetMarksPerQuestion} marks).`,
           questionId: q.id
         });
       }

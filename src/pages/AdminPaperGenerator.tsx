@@ -6,7 +6,8 @@ import {
   LayoutDashboard, AlertCircle, Loader2, Search,
   Eye, Copy, CheckCircle, Clock, BookOpen,
   ArrowUp, ArrowDown, Code, Check, Sparkles,
-  ExternalLink, RotateCcw, AlertTriangle, ShieldCheck, School
+  ExternalLink, RotateCcw, AlertTriangle, ShieldCheck, School,
+  Settings2
 } from 'lucide-react';
 import { db } from '../firebase';
 import ReactMarkdown from 'react-markdown';
@@ -117,6 +118,7 @@ export default function AdminPaperGenerator() {
     timeAllowed: '3 Hours',
     durationMinutes: 180,
     instructions: [...DEFAULT_INSTRUCTIONS],
+    examinationRule: 'flexible',
     targetQuestionsCount: 8,
     targetMarksPerQuestion: 17,
     targetTotalMarks: 100,
@@ -286,8 +288,8 @@ export default function AdminPaperGenerator() {
 
   // Manual Add Custom Blank Question
   const handleAddBlankQuestion = () => {
-    if (paperData.questions.length >= 12) {
-      toast.error('Maximum questions limit reached for Paper 2.');
+    if (paperData.questions.length >= 100) {
+      toast.error('Maximum questions limit reached for this session (100 questions).');
       return;
     }
 
@@ -693,6 +695,7 @@ export default function AdminPaperGenerator() {
       timeAllowed: '3 Hours',
       durationMinutes: 180,
       instructions: [...DEFAULT_INSTRUCTIONS],
+      examinationRule: 'flexible',
       targetQuestionsCount: 8,
       targetMarksPerQuestion: 17,
       targetTotalMarks: 100,
@@ -723,8 +726,7 @@ export default function AdminPaperGenerator() {
     if (paperData.status === 'published') return 6;
     if (paperData.status === 'ready') return 5;
     if (isPreviewOpen) return 4;
-    if (validationResult.isValid) return 3;
-    if (paperData.questions.length >= 8) return 3;
+    if (paperData.questions.length > 0 && validationResult.isValid) return 3;
     if (paperData.questions.length > 0) return 2;
     return 1;
   };
@@ -896,12 +898,17 @@ export default function AdminPaperGenerator() {
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
                 <div>
                   <h2 className="text-lg font-bold text-slate-900">Paper Configuration</h2>
-                  <p className="text-xs text-slate-500">Standard parameters for Cameroon GCE examination papers.</p>
+                  <p className="text-xs text-slate-500">Flexible examination parameters, subjects, and curriculum benchmarks.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={paperData.questions.length === 8 ? 'success' : 'secondary'} className="font-bold">
-                    {paperData.questions.length} / 8 Questions
+                  <Badge variant={paperData.questions.length > 0 ? 'success' : 'secondary'} className="font-bold">
+                    {paperData.questions.length} Question{paperData.questions.length === 1 ? '' : 's'}
                   </Badge>
+                  {paperData.examinationRule === 'gce_standard' && (
+                    <Badge variant="secondary" className="text-[11px] font-medium bg-slate-100 text-slate-700 border-slate-300">
+                      GCE Benchmark: 8 Qs
+                    </Badge>
+                  )}
                   <Badge variant="warning" className="font-bold bg-amber-50 text-amber-800 border-amber-200">
                     {paperData.totalCalculatedMarks} Total Marks
                   </Badge>
@@ -909,6 +916,109 @@ export default function AdminPaperGenerator() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 text-xs">
+                
+                {/* Examination Rule / Mode */}
+                <div className="space-y-1.5 md:col-span-2 bg-indigo-50/50 p-3 rounded-xl border border-indigo-100">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="font-bold uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
+                      <Settings2 size={13} className="text-indigo-600" />
+                      Question Structure & Rule Mode
+                    </label>
+                    <span className="text-[11px] text-indigo-700 font-medium">
+                      {paperData.examinationRule === 'flexible' && 'Any number of questions allowed (1, 2, 3, 5, 8, 10, 20...)'}
+                      {paperData.examinationRule === 'gce_standard' && 'Cameroon GCE standard advisory (8 questions)'}
+                      {paperData.examinationRule === 'custom_target' && 'Custom target questions count'}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => updatePaper(p => ({ ...p, examinationRule: 'flexible' }))}
+                      className={cn(
+                        "px-3 py-2 rounded-lg font-semibold text-xs border text-left transition",
+                        (!paperData.examinationRule || paperData.examinationRule === 'flexible')
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      <div className="font-bold">Flexible / Custom</div>
+                      <div className={cn("text-[10px]", (!paperData.examinationRule || paperData.examinationRule === 'flexible') ? "text-indigo-100" : "text-slate-500")}>
+                        No hardcoded limit (Any count)
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updatePaper(p => ({ ...p, examinationRule: 'gce_standard' }))}
+                      className={cn(
+                        "px-3 py-2 rounded-lg font-semibold text-xs border text-left transition",
+                        paperData.examinationRule === 'gce_standard'
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      <div className="font-bold">Cameroon GCE Benchmark</div>
+                      <div className={cn("text-[10px]", paperData.examinationRule === 'gce_standard' ? "text-indigo-100" : "text-slate-500")}>
+                        8 Questions standard format
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => updatePaper(p => ({ ...p, examinationRule: 'custom_target', exactQuestionsCount: paperData.questions.length || 5 }))}
+                      className={cn(
+                        "px-3 py-2 rounded-lg font-semibold text-xs border text-left transition",
+                        paperData.examinationRule === 'custom_target'
+                          ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50"
+                      )}
+                    >
+                      <div className="font-bold">Target Count Rule</div>
+                      <div className={cn("text-[10px]", paperData.examinationRule === 'custom_target' ? "text-indigo-100" : "text-slate-500")}>
+                        Set exact or min/max count
+                      </div>
+                    </button>
+                  </div>
+
+                  {paperData.examinationRule === 'custom_target' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 mt-1 border-t border-indigo-100/80">
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-600 uppercase">Exact Questions</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={paperData.exactQuestionsCount || ''}
+                          onChange={e => updatePaper(p => ({ ...p, exactQuestionsCount: parseInt(e.target.value) || undefined }))}
+                          placeholder="e.g. 5"
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-600 uppercase">Min Questions</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={paperData.minQuestionsCount || ''}
+                          onChange={e => updatePaper(p => ({ ...p, minQuestionsCount: parseInt(e.target.value) || undefined }))}
+                          placeholder="e.g. 3"
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] font-bold text-slate-600 uppercase">Max Questions</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={paperData.maxQuestionsCount || ''}
+                          onChange={e => updatePaper(p => ({ ...p, maxQuestionsCount: parseInt(e.target.value) || undefined }))}
+                          placeholder="e.g. 20"
+                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
                 
                 {/* Subject Selector */}
                 <div className="space-y-1.5">
@@ -934,7 +1044,7 @@ export default function AdminPaperGenerator() {
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
                     value={paperData.paperType}
                     onChange={e => updatePaper(p => ({ ...p, paperType: e.target.value, title: e.target.value }))}
-                    placeholder="e.g. Paper 2"
+                    placeholder="e.g. Paper 2, Term 1 Test, Mock Exam"
                   />
                 </div>
 
@@ -971,13 +1081,13 @@ export default function AdminPaperGenerator() {
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
                     value={paperData.timeAllowed}
                     onChange={e => updatePaper(p => ({ ...p, timeAllowed: e.target.value }))}
-                    placeholder="e.g. 3 Hours"
+                    placeholder="e.g. 1 Hour, 2 Hours, 3 Hours"
                   />
                 </div>
 
                 {/* Target Marks per Question */}
                 <div className="space-y-1.5">
-                  <label className="font-bold uppercase tracking-wider text-slate-500">Standard Marks / Question</label>
+                  <label className="font-bold uppercase tracking-wider text-slate-500">Standard Marks / Question (Optional)</label>
                   <input 
                     type="number" 
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none text-slate-800"
@@ -1323,11 +1433,15 @@ export default function AdminPaperGenerator() {
               <div className="space-y-3 text-xs">
                 <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
                   <span className="text-slate-500 font-medium">Questions Count</span>
-                  <span className={cn(
-                    "font-bold",
-                    paperData.questions.length === 8 ? "text-emerald-600" : "text-slate-900"
-                  )}>
-                    {paperData.questions.length} / 8 Questions
+                  <span className="font-bold text-slate-900">
+                    {paperData.questions.length} Question{paperData.questions.length === 1 ? '' : 's'}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
+                  <span className="text-slate-500 font-medium">Question Rule Mode</span>
+                  <span className="font-bold text-indigo-700 capitalize">
+                    {paperData.examinationRule === 'gce_standard' ? 'GCE Standard (8 Qs)' : paperData.examinationRule === 'custom_target' ? 'Custom Target' : 'Flexible / Any Count'}
                   </span>
                 </div>
 
@@ -1374,13 +1488,13 @@ export default function AdminPaperGenerator() {
                 </div>
               </div>
 
-              {/* Validation Checklist / Errors Panel */}
+              {/* Validation Checklist / Errors / Warnings Panel */}
               {!validationResult.isValid ? (
                 <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl space-y-2.5">
                   <div className="flex items-center gap-2 text-rose-900">
                     <AlertTriangle size={16} className="shrink-0 text-rose-600" />
                     <p className="font-bold text-xs uppercase tracking-wider">
-                      Paper Cannot Be Generated Yet
+                      Please Resolve Required Issues
                     </p>
                   </div>
                   <p className="text-[11px] text-rose-700">
@@ -1402,14 +1516,43 @@ export default function AdminPaperGenerator() {
                   </ul>
                 </div>
               ) : (
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1.5 text-emerald-900">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
-                    <p className="font-bold text-xs">All Validation Checks Passed</p>
+                <div className="space-y-3">
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1.5 text-emerald-900">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck size={18} className="text-emerald-600 shrink-0" />
+                      <p className="font-bold text-xs">All Validation Checks Passed</p>
+                    </div>
+                    <p className="text-[11px] text-emerald-700">
+                      Paper is valid with {paperData.questions.length} question{paperData.questions.length === 1 ? '' : 's'}. Ready for PDF and Microsoft Word (.docx) export.
+                    </p>
                   </div>
-                  <p className="text-[11px] text-emerald-700">
-                    Paper conforms with Cameroon GCE rules. Ready for PDF and Microsoft Word (.docx) export.
-                  </p>
+
+                  {validationResult.warnings.length > 0 && (
+                    <div className="p-3.5 bg-amber-50/90 border border-amber-200 rounded-xl space-y-2 text-amber-900">
+                      <div className="flex items-center gap-2 text-amber-900 font-bold text-xs">
+                        <AlertCircle size={15} className="text-amber-600 shrink-0" />
+                        <span>Examination Advisory Notice</span>
+                      </div>
+                      <ul className="space-y-1 text-[11px] text-amber-800">
+                        {validationResult.warnings.map(warn => (
+                          <li key={warn.id} className="flex items-start gap-1.5">
+                            <span className="text-amber-500 font-bold">•</span>
+                            <span className="leading-snug">{warn.message}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="pt-1 flex items-center justify-between">
+                        <span className="text-[10px] text-amber-700 font-medium">You can still export this custom paper:</span>
+                        <Button
+                          size="sm"
+                          onClick={handleGeneratePDF}
+                          className="h-6 px-2 text-[10px] font-bold bg-amber-700 hover:bg-amber-800 text-white"
+                        >
+                          Export Custom Paper
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -361,7 +361,12 @@ export async function savePaperDraft(
         notes: s.notes || ''
       }))
     })),
-    targetQuestionsCount: paperData.targetQuestionsCount || 8,
+    examinationRule: paperData.examinationRule || 'flexible',
+    targetQuestionsCount: paperData.targetQuestionsCount || (paperData.questions?.length || 8),
+    minQuestionsCount: paperData.minQuestionsCount,
+    maxQuestionsCount: paperData.maxQuestionsCount,
+    exactQuestionsCount: paperData.exactQuestionsCount,
+    strictRuleEnforcement: paperData.strictRuleEnforcement,
     targetMarksPerQuestion: paperData.targetMarksPerQuestion || 17,
     targetTotalMarks: paperData.targetTotalMarks || 100,
     totalCalculatedMarks: (paperData.questions || []).reduce(

@@ -81,6 +81,7 @@ export interface PaperQuestion {
 }
 
 export type PaperStatus = 'draft' | 'ready' | 'published' | 'archived';
+export type ExaminationRuleMode = 'flexible' | 'gce_standard' | 'custom_target';
 
 export interface GeneratedPaperData {
   id: string;
@@ -95,7 +96,12 @@ export interface GeneratedPaperData {
   durationMinutes: number;
   instructions: string[];
   questions: PaperQuestion[];
-  targetQuestionsCount: number;
+  examinationRule?: ExaminationRuleMode;
+  targetQuestionsCount?: number;
+  minQuestionsCount?: number;
+  maxQuestionsCount?: number;
+  exactQuestionsCount?: number;
+  strictRuleEnforcement?: boolean;
   targetMarksPerQuestion?: number;
   targetTotalMarks?: number;
   totalCalculatedMarks: number;
