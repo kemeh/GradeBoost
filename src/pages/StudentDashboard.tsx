@@ -7,7 +7,7 @@ import {
   ChevronRight, CheckCircle2, Star, Layers, MessageSquare, 
   BarChart2, Search, Filter, Plus, Trash2, Edit3, Send, 
   Bot, GraduationCap, Calendar, Zap, Shield, FileCheck, 
-  ArrowRight, RefreshCw, Trophy, Target, BookCheck, Eye, X, Gift
+  ArrowRight, RefreshCw, Trophy, Target, BookCheck, Eye, X, Gift, Share2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { useAuth } from '../contexts/AuthContext';
@@ -31,6 +31,7 @@ import { AILessonSummarizer } from '../components/EdulphaAI/AILessonSummarizer';
 import { AIWeaknessAnalyzer } from '../components/EdulphaAI/AIWeaknessAnalyzer';
 import { AITeacherClassroom } from '../components/EdulphaAI/AITeacherClassroom';
 import { ReferralCenter } from '../components/ReferralCenter';
+import { StudentShareModal, ShareItemData, PRESET_BADGES } from '../components/StudentShareModal';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -114,6 +115,10 @@ export default function StudentDashboard() {
   ]);
   const [aiInput, setAiInput] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
+
+  // Share Modal State
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareData, setShareData] = useState<Partial<ShareItemData>>({});
 
   // Practice Questions Interactive State
   const [practiceIdx, setPracticeIdx] = useState(0);
@@ -290,6 +295,8 @@ export default function StudentDashboard() {
           }
         ]);
       }
+    }, (_err) => {
+      // Graceful offline fallback
     });
 
     // Subscribe to PDFs
@@ -320,6 +327,8 @@ export default function StudentDashboard() {
           }
         ]);
       }
+    }, (_err) => {
+      // Graceful offline fallback
     });
 
     // Subscribe to Mock Exams
@@ -352,6 +361,8 @@ export default function StudentDashboard() {
           }
         ]);
       }
+    }, (_err) => {
+      // Graceful offline fallback
     });
 
     // Subscribe to Past Question Papers
@@ -365,6 +376,8 @@ export default function StudentDashboard() {
           { id: 'pp3', title: '2025 GCE O-Level ICT Paper 1', year: 2025, subject: 'ICT', paperType: 'Paper 1' }
         ]);
       }
+    }, (_err) => {
+      // Graceful offline fallback
     });
 
     // Subscribe to Forum Discussions
@@ -394,6 +407,8 @@ export default function StudentDashboard() {
           }
         ]);
       }
+    }, (_err) => {
+      // Graceful offline fallback
     });
 
     setLoading(false);
@@ -664,6 +679,19 @@ export default function StudentDashboard() {
   const totalLessonsCount = lessons.length || 1;
   const overallProgressPercent = Math.min(100, Math.round((completedLessonsCount / totalLessonsCount) * 100));
 
+  const handleOpenShare = (data?: Partial<ShareItemData>) => {
+    setShareData(data || {
+      type: 'progress',
+      overallProgress: overallProgressPercent,
+      completedLessons: completedLessonsCount,
+      totalLessons: totalLessonsCount,
+      streakDays: 7,
+      predictedGrade: 'A',
+      accuracyRate: 78
+    });
+    setIsShareModalOpen(true);
+  };
+
   return (
     <ModernDashboardLayout
       role="student"
@@ -689,27 +717,45 @@ export default function StudentDashboard() {
               </p>
             </div>
 
-            {/* Overall Progress Widget */}
-            <div className="bg-white/10 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-white/10 flex items-center gap-3 sm:gap-4 w-full sm:w-auto min-w-0">
-              <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0 flex items-center justify-center">
-                <svg className="w-12 h-12 sm:w-14 sm:h-14 -rotate-90">
-                  <circle cx="28" cy="28" r="20" className="sm:hidden" stroke="rgba(255,255,255,0.2)" strokeWidth="4" fill="none" />
-                  <circle cx="28" cy="28" r="22" className="hidden sm:block" stroke="rgba(255,255,255,0.2)" strokeWidth="5" fill="none" />
-                  <circle 
-                    cx="28" cy="28" r="22" 
-                    stroke="#818cf8" strokeWidth="5" fill="none"
-                    strokeDasharray={138}
-                    strokeDashoffset={138 - (138 * overallProgressPercent) / 100}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <span className="absolute text-[11px] sm:text-xs font-black text-white">{overallProgressPercent}%</span>
+            {/* Overall Progress & Share Widget */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="bg-white/10 backdrop-blur-md p-3.5 sm:p-4 rounded-2xl border border-white/10 flex items-center gap-3 sm:gap-4 w-full sm:w-auto min-w-0">
+                <div className="relative w-12 h-12 sm:w-14 sm:h-14 shrink-0 flex items-center justify-center">
+                  <svg className="w-12 h-12 sm:w-14 sm:h-14 -rotate-90">
+                    <circle cx="28" cy="28" r="20" className="sm:hidden" stroke="rgba(255,255,255,0.2)" strokeWidth="4" fill="none" />
+                    <circle cx="28" cy="28" r="22" className="hidden sm:block" stroke="rgba(255,255,255,0.2)" strokeWidth="5" fill="none" />
+                    <circle 
+                      cx="28" cy="28" r="22" 
+                      stroke="#818cf8" strokeWidth="5" fill="none"
+                      strokeDasharray={138}
+                      strokeDashoffset={138 - (138 * overallProgressPercent) / 100}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="absolute text-[11px] sm:text-xs font-black text-white">{overallProgressPercent}%</span>
+                </div>
+                <div className="space-y-0.5 min-w-0">
+                  <span className="text-[10px] sm:text-xs font-bold text-indigo-200 uppercase tracking-wider block truncate">{t('lms.overallMastery', 'Overall Mastery')}</span>
+                  <p className="text-xs sm:text-sm font-extrabold text-white truncate">{completedLessonsCount} / {lessons.length} {t('lms.lessons', 'Lessons')}</p>
+                  <p className="text-[10px] text-indigo-300">{t('dashboard.keepMomentum', 'Keep up the momentum!')}</p>
+                </div>
               </div>
-              <div className="space-y-0.5 min-w-0">
-                <span className="text-[10px] sm:text-xs font-bold text-indigo-200 uppercase tracking-wider block truncate">{t('lms.overallMastery', 'Overall Mastery')}</span>
-                <p className="text-xs sm:text-sm font-extrabold text-white truncate">{completedLessonsCount} / {lessons.length} {t('lms.lessons', 'Lessons')}</p>
-                <p className="text-[10px] text-indigo-300">{t('dashboard.keepMomentum', 'Keep up the momentum!')}</p>
-              </div>
+
+              <Button
+                onClick={() => handleOpenShare({
+                  type: 'progress',
+                  overallProgress: overallProgressPercent,
+                  completedLessons: completedLessonsCount,
+                  totalLessons: totalLessonsCount,
+                  streakDays: 7,
+                  predictedGrade: 'A',
+                  accuracyRate: 78
+                })}
+                className="bg-indigo-500/25 hover:bg-indigo-500/40 text-white border border-indigo-300/30 backdrop-blur-md font-bold text-xs gap-2 rounded-2xl py-3 px-4 shadow-md transition-all hover:scale-[1.02] flex items-center justify-center"
+              >
+                <Share2 size={15} className="text-indigo-200" />
+                <span>{t('dashboard.shareProgress', 'Share Progress')}</span>
+              </Button>
             </div>
           </div>
         </div>
@@ -788,13 +834,29 @@ export default function StudentDashboard() {
               <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-indigo-100 bg-indigo-50/30 min-w-0">
                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate block">Lessons Done</span>
                 <p className="text-lg sm:text-2xl font-black text-indigo-900 truncate">{completedLessonsCount} / {lessons.length}</p>
-                <p className="text-[10px] text-indigo-600 font-bold truncate">{overallProgressPercent}% Complete</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-indigo-600 font-bold truncate">{overallProgressPercent}% Complete</p>
+                  <button 
+                    onClick={() => handleOpenShare({ type: 'progress', overallProgress: overallProgressPercent, completedLessons: completedLessonsCount, totalLessons: totalLessonsCount })}
+                    className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 hover:underline"
+                  >
+                    <Share2 size={11} /> Share
+                  </button>
+                </div>
               </Card>
 
               <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-slate-200 min-w-0">
                 <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider truncate block">Practice Drills</span>
                 <p className="text-lg sm:text-2xl font-black text-slate-900 truncate">{practiceScore} Completed</p>
-                <p className="text-[10px] text-emerald-600 font-bold truncate">+150 XP Earned</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-emerald-600 font-bold truncate">+150 XP Earned</p>
+                  <button 
+                    onClick={() => handleOpenShare({ type: 'exam_score', examSubject: 'Practice Drills', examTitle: 'Multiple Choice Drills', scorePercentage: 85, rankText: 'Top 10% in Cameroon' })}
+                    className="text-[10px] font-bold text-emerald-600 hover:text-emerald-800 flex items-center gap-1 hover:underline"
+                  >
+                    <Share2 size={11} /> Share
+                  </button>
+                </div>
               </Card>
 
               <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-slate-200 min-w-0">
@@ -802,7 +864,15 @@ export default function StudentDashboard() {
                 <p className="text-lg sm:text-2xl font-black text-amber-600 flex items-center gap-1 sm:gap-1.5 truncate">
                   <Zap size={18} className="shrink-0" fill="currentColor" /> 7 Days
                 </p>
-                <p className="text-[10px] text-slate-500 font-medium truncate">Active streak</p>
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] text-slate-500 font-medium truncate">Active streak</p>
+                  <button 
+                    onClick={() => handleOpenShare({ type: 'badge', badgeId: 'streak_master' })}
+                    className="text-[10px] font-bold text-amber-600 hover:text-amber-800 flex items-center gap-1 hover:underline"
+                  >
+                    <Share2 size={11} /> Share
+                  </button>
+                </div>
               </Card>
 
               <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-slate-200 min-w-0">
@@ -1271,13 +1341,28 @@ export default function StudentDashboard() {
             )}
 
             <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+              {isAnswered && (
+                <Button 
+                  onClick={() => handleOpenShare({
+                    type: 'exam_score',
+                    examSubject: samplePracticeQuestions[practiceIdx].subject,
+                    examTitle: 'Practice MCQs Drill',
+                    scorePercentage: 100,
+                    rankText: 'Top 10% in Cameroon'
+                  })}
+                  variant="outline"
+                  className="text-xs font-bold gap-1.5 rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                >
+                  <Share2 size={14} /> Share Drill Score
+                </Button>
+              )}
               <Button 
                 onClick={() => {
                   setPracticeIdx((practiceIdx + 1) % samplePracticeQuestions.length);
                   setSelectedOpt(null);
                   setIsAnswered(false);
                 }} 
-                className="bg-indigo-600 text-white font-bold text-xs gap-1 rounded-xl"
+                className="bg-indigo-600 text-white font-bold text-xs gap-1 rounded-xl ml-auto"
               >
                 Next Question →
               </Button>
@@ -1304,9 +1389,24 @@ export default function StudentDashboard() {
                   <span>Total Marks: {exam.totalMarks}</span>
                 </div>
 
-                <Button onClick={() => navigate('/exams')} className="w-full bg-indigo-600 text-white font-bold rounded-xl">
-                  Take Mock Exam Now
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => navigate('/exams')} className="flex-1 bg-indigo-600 text-white font-bold rounded-xl">
+                    Take Mock Exam Now
+                  </Button>
+                  <Button 
+                    onClick={() => handleOpenShare({
+                      type: 'exam_score',
+                      examSubject: exam.subject,
+                      examTitle: exam.title,
+                      scorePercentage: 88,
+                      rankText: 'Top 5% Nationally'
+                    })}
+                    variant="outline"
+                    className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold rounded-xl gap-1.5"
+                  >
+                    <Share2 size={15} /> Share
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
@@ -1354,26 +1454,127 @@ export default function StudentDashboard() {
                 <p className="text-xs text-emerald-600 font-bold">Predicted Grade: A</p>
               </Card>
             </div>
+
+            {/* Social Progress Showcase Banner */}
+            <Card className="p-6 bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white rounded-3xl border border-indigo-500/30 space-y-4 shadow-xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 text-[10px] font-bold rounded-full uppercase tracking-wider flex items-center gap-1">
+                      <Sparkles size={12} /> Shareable Report Card
+                    </span>
+                    <span className="text-xs text-emerald-400 font-bold">GCE Ready • Predicted Grade A</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-white">Share Your Academic Milestones</h3>
+                  <p className="text-xs text-slate-300 max-w-xl">
+                    Inspire your classmates and family by sharing your recent progress, accuracy ranking, and study streak on WhatsApp, Facebook, or X/Twitter.
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={() => handleOpenShare({
+                    type: 'progress',
+                    overallProgress: 78,
+                    completedLessons: completedLessonsCount,
+                    totalLessons: totalLessonsCount,
+                    streakDays: 7,
+                    predictedGrade: 'A',
+                    accuracyRate: 78
+                  })}
+                  className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs gap-2 rounded-2xl py-3 px-5 shadow-lg shrink-0 w-full sm:w-auto"
+                >
+                  <Share2 size={16} /> Share Full Report Card
+                </Button>
+              </div>
+
+              {/* Direct Quick Share Links */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/10 text-xs">
+                <span className="text-slate-400 font-semibold mr-1">Quick share to:</span>
+                <a
+                  href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🎯 I just hit 78% overall mastery in my GCE prep on Edulpha! 7-day study streak, top 10% in Cameroon. Predicted Grade: A. Preparing for GCE examinations with AI teachers & past papers: https://edulpha.com`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold flex items-center gap-1.5 transition-all"
+                >
+                  <MessageSquare size={13} /> WhatsApp
+                </a>
+
+                <a
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent('https://edulpha.com')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold flex items-center gap-1.5 transition-all"
+                >
+                  Facebook
+                </a>
+
+                <a
+                  href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`🎯 I just reached 78% overall mastery in GCE prep on Edulpha! Predicted Grade: A. #Edulpha #GCEPrep #Cameroon`)}&url=${encodeURIComponent('https://edulpha.com')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-black text-white rounded-xl font-bold flex items-center gap-1.5 transition-all border border-slate-700"
+                >
+                  X / Twitter
+                </a>
+              </div>
+            </Card>
           </div>
         )}
 
         {/* TAB 13: ACHIEVEMENTS */}
         {activeTab === 'achievements' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {[
-              { title: '7-Day Streak Master', desc: 'Studied 7 days in a row without missing.', icon: Zap, unlocked: true },
-              { title: 'Quiz Whiz', desc: 'Achieved 100% score on 5 consecutive drills.', icon: Trophy, unlocked: true },
-              { title: 'GCE Scholar', desc: 'Completed 20 full GCE mock exam papers.', icon: GraduationCap, unlocked: false }
-            ].map((ach, i) => (
-              <Card key={i} className={cn("p-6 space-y-3", !ach.unlocked && "opacity-50")}>
-                <div className="p-3 bg-indigo-50 text-indigo-600 w-fit rounded-xl">
-                  <ach.icon size={24} />
-                </div>
-                <h4 className="text-base font-bold text-slate-900">{ach.title}</h4>
-                <p className="text-xs text-slate-500">{ach.desc}</p>
-                <Badge variant={ach.unlocked ? 'success' : 'neutral'}>{ach.unlocked ? 'Unlocked' : 'Locked'}</Badge>
-              </Card>
-            ))}
+          <div className="space-y-6">
+            <div className="bg-gradient-to-r from-amber-500/10 via-indigo-50/30 to-amber-500/10 p-5 rounded-3xl border border-amber-200/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                  <Trophy className="text-amber-500" size={22} />
+                  <span>Academic Trophy Room & Badges</span>
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Earn badges by hitting study streaks, completing mock exams, and achieving top accuracy.
+                </p>
+              </div>
+
+              <Button
+                onClick={() => handleOpenShare({ type: 'badge', badgeId: 'streak_master' })}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-2 rounded-2xl py-2.5 px-4 shadow-md shrink-0"
+              >
+                <Share2 size={15} />
+                <span>Share Trophy Room</span>
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { id: 'streak_master', title: '7-Day Streak Master', desc: 'Studied 7 days in a row without missing.', icon: Zap, unlocked: true },
+                { id: 'quiz_whiz', title: 'Quiz Whiz', desc: 'Achieved 100% score on 5 consecutive drills.', icon: Trophy, unlocked: true },
+                { id: 'gce_scholar', title: 'GCE Scholar', desc: 'Completed 20 full GCE mock exam papers.', icon: GraduationCap, unlocked: false }
+              ].map((ach, i) => (
+                <Card key={i} className={cn("p-6 space-y-4 flex flex-col justify-between", !ach.unlocked && "opacity-60")}>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="p-3 bg-indigo-50 text-indigo-600 w-fit rounded-xl">
+                        <ach.icon size={24} />
+                      </div>
+                      <Badge variant={ach.unlocked ? 'success' : 'neutral'}>{ach.unlocked ? 'Unlocked' : 'Locked'}</Badge>
+                    </div>
+                    <h4 className="text-base font-bold text-slate-900">{ach.title}</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed">{ach.desc}</p>
+                  </div>
+
+                  {ach.unlocked && (
+                    <Button 
+                      onClick={() => handleOpenShare({ type: 'badge', badgeId: ach.id, badgeTitle: ach.title, badgeDescription: ach.desc })}
+                      size="sm"
+                      variant="outline"
+                      className="w-full text-xs font-bold gap-1.5 rounded-xl border-indigo-200 text-indigo-700 hover:bg-indigo-50 mt-2"
+                    >
+                      <Share2 size={13} /> Share Badge
+                    </Button>
+                  )}
+                </Card>
+              ))}
+            </div>
           </div>
         )}
 
@@ -1394,9 +1595,23 @@ export default function StudentDashboard() {
                   <p className="text-xs text-slate-500">Mastery Certificate for GCE Preparation</p>
                 </div>
 
-                <Button onClick={() => handleDownloadCertificate(subject)} className="w-full bg-indigo-600 text-white font-bold rounded-xl gap-2">
-                  <Download size={16} /> Download PDF Certificate
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button onClick={() => handleDownloadCertificate(subject)} className="flex-1 bg-indigo-600 text-white font-bold rounded-xl gap-2">
+                    <Download size={16} /> Download PDF
+                  </Button>
+                  <Button 
+                    onClick={() => handleOpenShare({
+                      type: 'badge',
+                      badgeId: 'gce_scholar',
+                      badgeTitle: `Verified Certificate in ${subject}`,
+                      badgeDescription: `Passed all mastery criteria and GCE preparation modules in ${subject}.`
+                    })}
+                    variant="outline" 
+                    className="border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold rounded-xl gap-1.5"
+                  >
+                    <Share2 size={15} /> Share
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>
@@ -1767,6 +1982,13 @@ export default function StudentDashboard() {
             </div>
           </div>
         )}
+
+        {/* Global Student Achievement & Progress Share Modal */}
+        <StudentShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          initialData={shareData}
+        />
       </div>
     </ModernDashboardLayout>
   );

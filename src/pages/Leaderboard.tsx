@@ -72,6 +72,8 @@ export default function Leaderboard() {
         setLeaderboard(data);
       }
       setLoading(false);
+    }, (_err) => {
+      setLoading(false);
     });
 
     return () => unsubscribe();

@@ -83,6 +83,17 @@ export interface PublishPaperPayload {
   session?: string;
   requiresAnswerKey?: boolean;
   correctAnswers?: Record<string, string>;
+  originalPdfUrl?: string;
+  isRebranded?: boolean;
+  watermarkStatus?: string;
+  academicLevel?: string;
+  hndSchoolId?: string;
+  hndProgrammeId?: string;
+  hndProgrammeName?: string;
+  hndLevel?: string;
+  hndSemester?: string;
+  courseCode?: string;
+  creditValue?: number;
   isPublished?: boolean;
   status?: 'draft' | 'processing' | 'published' | 'archived';
 }

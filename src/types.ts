@@ -302,6 +302,9 @@ export interface QuestionPaper {
   fileSize?: string;
   fileName?: string;
   requiresAnswerKey?: boolean;
+  originalPdfUrl?: string;
+  isRebranded?: boolean;
+  watermarkStatus?: string;
   updatedAt?: string;
   isPublished?: boolean;
   status?: 'draft' | 'processing' | 'published' | 'archived';

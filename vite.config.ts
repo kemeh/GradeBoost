@@ -15,8 +15,10 @@ export default defineConfig(({mode}) => {
       alias: {
         '@': path.resolve(__dirname, '.'),
       },
+      dedupe: ['react', 'react-dom', 'react-router-dom'],
     },
     optimizeDeps: {
+      include: ['react', 'react-dom', 'react-router-dom'],
       exclude: ['pdfjs-dist'],
     },
     build: {
@@ -25,7 +27,7 @@ export default defineConfig(({mode}) => {
       rollupOptions: {
         output: {
           manualChunks(id) {
-            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router-dom')) {
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/') || id.includes('node_modules/react-router/')) {
               return 'vendor-react';
             }
             if (id.includes('node_modules/firebase')) {

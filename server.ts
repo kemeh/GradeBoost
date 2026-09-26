@@ -906,7 +906,7 @@ Return ONLY valid JSON matching this structure:
   }
 
   // 1. GET /api/ai-teachers - List AI Teacher assignments with human coverage status
-  app.get("/api/ai-teachers", async (req, res) => {
+  app.get(["/api/ai-teachers", "/api/ai-teacher/assignments"], async (req, res) => {
     try {
       // 1. Fetch all human teachers from users collection
       const teachersSnap = await db.collection("users").where("role", "==", "teacher").get().catch(() => null);
@@ -914,6 +914,7 @@ Return ONLY valid JSON matching this structure:
 
       // Group teachers by subject
       const teachersBySubject: Record<string, { count: number; names: string[] }> = {};
+      const humanTeacherCoverage: Record<string, { hasHumanTeacher: boolean; teachers: string[] }> = {};
       teacherDocs.forEach(t => {
         const sub = t.subject || t.assignedSubject || "General";
         if (!teachersBySubject[sub]) {
@@ -921,6 +922,10 @@ Return ONLY valid JSON matching this structure:
         }
         teachersBySubject[sub].count += 1;
         if (t.name) teachersBySubject[sub].names.push(t.name);
+        humanTeacherCoverage[sub] = {
+          hasHumanTeacher: true,
+          teachers: teachersBySubject[sub].names
+        };
       });
 
       // 2. Fetch existing AI Teacher assignments
@@ -1001,6 +1006,7 @@ Return ONLY valid JSON matching this structure:
       res.json({
         success: true,
         assignments: compositeList,
+        humanTeacherCoverage,
         coverageStats: {
           totalSubjects: compositeList.length,
           subjectsWithHumanTeachers: subjectsWithHuman,
@@ -1016,7 +1022,7 @@ Return ONLY valid JSON matching this structure:
   });
 
   // 2. POST /api/ai-teachers/assign - Assign or update AI Teacher for a subject/class
-  app.post("/api/ai-teachers/assign", async (req, res) => {
+  app.post(["/api/ai-teachers/assign", "/api/ai-teachers", "/api/ai-teacher/assignments"], async (req, res) => {
     try {
       const {
         subjectName,
@@ -1101,7 +1107,7 @@ Return ONLY valid JSON matching this structure:
   });
 
   // 5. GET /api/ai-teachers/analytics - Summary metrics for AI Teacher system
-  app.get("/api/ai-teachers/analytics", async (req, res) => {
+  app.get(["/api/ai-teachers/analytics", "/api/ai-teacher/analytics"], async (req, res) => {
     try {
       const [progressSnap, flagsSnap, assignmentsSnap, usersSnap] = await Promise.all([
         db.collection("student_learning_progress").get().catch(() => null),
@@ -1160,21 +1166,49 @@ Return ONLY valid JSON matching this structure:
     }
   });
 
-  // 6. POST /api/progression/upload - Upload progression document (PDF, DOCX, XLSX, CSV, TXT, Image)
-  app.post("/api/progression/upload", async (req, res) => {
+  // Seed curated progression sheets
+  app.post("/api/ai-teacher/progression-sheets/curated-seed", async (req, res) => {
     try {
-      const { fileName, fileType, fileData, rawText, subject, level, specialty, createdBy = 'Admin' } = req.body;
+      const { createdBy = 'system_admin' } = req.body;
+      const initialSeeds = Object.entries(CURATED_PROGRESSION_TEMPLATES).map(([key, tmpl]) => ({
+        id: `curated_${key}`,
+        ...tmpl,
+        createdBy,
+        approvedBy: 'National Inspectorate',
+        approvedAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }));
+
+      for (const seed of initialSeeds) {
+        await db.collection("progression_sheets").doc(seed.id).set(seed, { merge: true }).catch(() => {});
+      }
+
+      res.json({ success: true, sheets: initialSeeds });
+    } catch (err: any) {
+      console.error("Error seeding curated progression sheets:", err);
+      res.status(500).json({ error: "Failed to seed curated progression sheets", details: err.message });
+    }
+  });
+
+  // 6. POST /api/progression/upload - Upload progression document (PDF, DOCX, XLSX, CSV, TXT, Image)
+  app.post(["/api/progression/upload", "/api/ai-teacher/progression-sheets"], async (req, res) => {
+    try {
+      const { fileName, fileType, fileData, rawText, subject, level, classLevel, specialty, createdBy = 'Admin', fileBase64, mimeType } = req.body;
 
       let extractedText = rawText || '';
+      const actualFileData = fileData || fileBase64;
+      const actualFileType = fileType || mimeType;
+      const actualLevel = level || classLevel || 'Ordinary Level';
 
-      if (!extractedText && fileData) {
-        const base64Data = fileData.includes(",") ? fileData.split(",")[1] : fileData;
+      if (!extractedText && actualFileData) {
+        const base64Data = actualFileData.includes(",") ? actualFileData.split(",")[1] : actualFileData;
         const buffer = Buffer.from(base64Data, 'base64');
 
-        if (fileName && (fileName.endsWith('.docx') || fileType?.includes('wordprocessingml'))) {
+        if (fileName && (fileName.endsWith('.docx') || actualFileType?.includes('wordprocessingml'))) {
           const result = await mammoth.extractRawText({ buffer });
           extractedText = result.value;
-        } else if (fileName && (fileName.endsWith('.txt') || fileName.endsWith('.csv') || fileType?.includes('text'))) {
+        } else if (fileName && (fileName.endsWith('.txt') || fileName.endsWith('.csv') || actualFileType?.includes('text'))) {
           extractedText = buffer.toString('utf-8');
         } else {
           // For PDF or Images, use Gemini Multimodal OCR
@@ -1189,7 +1223,7 @@ Return ONLY valid JSON matching this structure:
                   parts: [
                     {
                       inlineData: {
-                        mimeType: fileType || 'application/pdf',
+                        mimeType: actualFileType || 'application/pdf',
                         data: base64Data
                       }
                     },
@@ -1210,7 +1244,7 @@ Return ONLY valid JSON matching this structure:
       // Normalize into weekly structure using Gemini
       const normalized = await normalizeProgressionDocument(extractedText, {
         subject,
-        level,
+        level: actualLevel,
         specialty,
         sourceTitle: fileName || 'Uploaded Progression Document'
       });
@@ -1239,9 +1273,11 @@ Return ONLY valid JSON matching this structure:
   });
 
   // 7. POST /api/progression/import - Import progression sheet from Internet or Curated Repository
-  app.post("/api/progression/import", async (req, res) => {
+  app.post(["/api/progression/import", "/api/ai-teacher/progression-sheets/import-url"], async (req, res) => {
     try {
-      const { url, templateId, subject, level, specialty, createdBy = 'Admin' } = req.body;
+      const { url, sourceUrl, templateId, subject, level, classLevel, specialty, createdBy = 'Admin' } = req.body;
+      const targetUrl = url || sourceUrl;
+      const targetLevel = level || classLevel || 'Ordinary Level';
 
       // 1. Curated official template import
       if (templateId && CURATED_PROGRESSION_TEMPLATES[templateId]) {
@@ -1268,18 +1304,18 @@ Return ONLY valid JSON matching this structure:
       }
 
       // 2. Internet URL import with SSRF Protection
-      if (!url) {
+      if (!targetUrl) {
         return res.status(400).json({ error: "Either a valid URL or a templateId must be provided." });
       }
 
-      const safeDoc = await fetchSafeDocumentFromUrl(url);
+      const safeDoc = await fetchSafeDocumentFromUrl(targetUrl);
 
       const normalized = await normalizeProgressionDocument(safeDoc.text, {
         subject,
-        level,
+        level: targetLevel,
         specialty,
         sourceTitle: safeDoc.title,
-        sourceUrl: url,
+        sourceUrl: targetUrl,
         sourceDomain: safeDoc.domain
       });
 
@@ -1307,7 +1343,7 @@ Return ONLY valid JSON matching this structure:
   });
 
   // 8. GET /api/progression - List all progression sheets (with automatic seed of curated templates)
-  app.get("/api/progression", async (req, res) => {
+  app.get(["/api/progression", "/api/ai-teacher/progression-sheets"], async (req, res) => {
     try {
       const { subject, level, status } = req.query;
 
@@ -1332,9 +1368,9 @@ Return ONLY valid JSON matching this structure:
         sheets = initialSeeds;
       }
 
-      if (subject) sheets = sheets.filter(s => s.subject.toLowerCase() === String(subject).toLowerCase());
-      if (level) sheets = sheets.filter(s => s.level.toLowerCase() === String(level).toLowerCase());
-      if (status) sheets = sheets.filter(s => s.status === String(status));
+      if (subject && subject !== 'All') sheets = sheets.filter(s => s.subject.toLowerCase() === String(subject).toLowerCase());
+      if (level && level !== 'All') sheets = sheets.filter(s => s.level.toLowerCase() === String(level).toLowerCase());
+      if (status && status !== 'All') sheets = sheets.filter(s => s.status === String(status));
 
       res.json({ success: true, progressionSheets: sheets });
     } catch (err: any) {
@@ -1344,7 +1380,7 @@ Return ONLY valid JSON matching this structure:
   });
 
   // 9. GET /api/progression/:id
-  app.get("/api/progression/:id", async (req, res) => {
+  app.get(["/api/progression/:id", "/api/ai-teacher/progression-sheets/:id"], async (req, res) => {
     try {
       const { id } = req.params;
       const docSnap = await db.collection("progression_sheets").doc(id).get();
@@ -1358,7 +1394,7 @@ Return ONLY valid JSON matching this structure:
   });
 
   // 10. PATCH /api/progression/:id - Visual progression editor update
-  app.patch("/api/progression/:id", async (req, res) => {
+  app.patch(["/api/progression/:id", "/api/ai-teacher/progression-sheets/:id"], async (req, res) => {
     try {
       const { id } = req.params;
       const updates = { ...req.body, updatedAt: new Date().toISOString() };
@@ -1372,15 +1408,16 @@ Return ONLY valid JSON matching this structure:
     }
   });
 
-  // 11. POST /api/progression/:id/approve - Approve progression sheet for active teaching
-  app.post("/api/progression/:id/approve", async (req, res) => {
+  // 11. POST/PATCH /api/progression/:id/approve - Approve progression sheet for active teaching
+  const handleProgressionApprove = async (req: express.Request, res: express.Response) => {
     try {
       const { id } = req.params;
-      const { approvedBy = 'Admin' } = req.body;
+      const { approvedBy = 'Admin', reviewerId, reviewerName } = req.body;
 
       const updates = {
         status: 'APPROVED',
-        approvedBy,
+        approvedBy: reviewerName || approvedBy,
+        reviewerId: reviewerId || null,
         approvedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -1394,7 +1431,10 @@ Return ONLY valid JSON matching this structure:
     } catch (err: any) {
       res.status(500).json({ error: "Failed to approve progression sheet" });
     }
-  });
+  };
+
+  app.post(["/api/progression/:id/approve", "/api/ai-teacher/progression-sheets/:id/approve"], handleProgressionApprove);
+  app.patch(["/api/progression/:id/approve", "/api/ai-teacher/progression-sheets/:id/approve"], handleProgressionApprove);
 
   // 12. GET /api/student/current-lesson - Return student's active lesson based on progression
   app.get("/api/student/current-lesson", async (req, res) => {
@@ -1566,38 +1606,54 @@ Return ONLY valid JSON matching this structure:
     }
   });
 
-  // 13. POST /api/ai-teacher/lesson/start - Generate or return cached Socratic lesson
-  app.post("/api/ai-teacher/lesson/start", async (req, res) => {
+  // 13. POST /api/ai-teacher/lesson/start or generate - Generate or return cached Socratic lesson
+  app.post(["/api/ai-teacher/lesson/start", "/api/ai-teacher/lesson/generate"], async (req, res) => {
     try {
       const {
-        userId = 'anonymous',
+        userId = req.body.studentId || 'anonymous',
+        studentId,
         subject = 'Computer Science',
-        level = 'Advanced Level',
-        week = 1,
+        level = req.body.classLevel || 'Advanced Level',
+        classLevel,
+        week = req.body.weekNumber || 1,
+        weekNumber,
         topic,
         subtopics = [],
         learningObjectives = [],
-        difficulty = 'BEGINNER',
-        language = 'en',
+        difficulty = req.body.learningPace === 'REMEDIAL' ? 'BEGINNER' : req.body.learningPace === 'ACCELERATED' ? 'ADVANCED' : 'INTERMEDIATE',
+        learningPace,
+        language = req.body.preferredLanguage || 'en',
+        preferredLanguage,
         progressionSheetId = 'default'
       } = req.body;
 
-      const cacheKey = `${subject}_${level}_w${week}_${language}_${difficulty}`;
+      const actualUserId = studentId || userId;
+      const actualLevel = classLevel || level;
+      const actualWeek = Number(weekNumber || week);
+      const actualLanguage = preferredLanguage || language;
+
+      const cacheKey = `${subject}_${actualLevel}_w${actualWeek}_${actualLanguage}_${difficulty}`;
 
       // 1. Check in-memory cache for speed and zero cost
       if (lessonSessionCache.has(cacheKey)) {
+        const cached = lessonSessionCache.get(cacheKey);
         return res.json({
           success: true,
           source: 'cache',
-          lesson: lessonSessionCache.get(cacheKey)
+          lesson: cached,
+          session: cached,
+          progressionSheet: null,
+          assignment: null,
+          studentProgress: null,
+          isCurriculumFallback: false
         });
       }
 
       // 2. Check Firestore ai_lesson_sessions cache
       const sessionSnap = await db.collection("ai_lesson_sessions")
         .where("subject", "==", subject)
-        .where("week", "==", Number(week))
-        .where("language", "==", language)
+        .where("week", "==", actualWeek)
+        .where("language", "==", actualLanguage)
         .limit(1)
         .get()
         .catch(() => null);
@@ -1608,30 +1664,38 @@ Return ONLY valid JSON matching this structure:
         return res.json({
           success: true,
           source: 'database_cache',
-          lesson: cachedLesson
+          lesson: cachedLesson,
+          session: cachedLesson,
+          progressionSheet: null,
+          assignment: null,
+          studentProgress: null,
+          isCurriculumFallback: false
         });
       }
 
       // 3. Generate structured Socratic lesson with Gemini
       const generatedLesson = await generateSocraticLesson({
         subject,
-        level,
-        topic: topic || `${subject} Week ${week} Lesson`,
+        level: actualLevel,
+        topic: topic || `${subject} Week ${actualWeek} Lesson`,
         subtopics: Array.isArray(subtopics) ? subtopics : [],
         learningObjectives: Array.isArray(learningObjectives) ? learningObjectives : [],
-        week: Number(week),
+        week: actualWeek,
         difficulty,
-        language
+        language: actualLanguage
       });
 
       const fullLessonDoc = {
-        userId,
+        userId: actualUserId,
+        studentId: actualUserId,
         subject,
-        level,
+        level: actualLevel,
+        classLevel: actualLevel,
         progressionSheetId,
-        week: Number(week),
-        topic: topic || `${subject} Week ${week}`,
-        language,
+        week: actualWeek,
+        weekNumber: actualWeek,
+        topic: topic || `${subject} Week ${actualWeek}`,
+        language: actualLanguage,
         difficulty,
         ...generatedLesson,
         isCompleted: false,
@@ -1644,7 +1708,7 @@ Return ONLY valid JSON matching this structure:
 
       // Increment student started lessons
       const progRef = db.collection("student_learning_progress")
-        .where("userId", "==", userId)
+        .where("userId", "==", actualUserId)
         .where("subject", "==", subject)
         .limit(1);
       const pSnap = await progRef.get().catch(() => null);
@@ -1659,60 +1723,73 @@ Return ONLY valid JSON matching this structure:
       res.json({
         success: true,
         source: 'generated',
-        lesson: fullLessonDoc
+        lesson: fullLessonDoc,
+        session: fullLessonDoc,
+        progressionSheet: null,
+        assignment: null,
+        studentProgress: null,
+        isCurriculumFallback: false
       });
     } catch (err: any) {
       console.error("Error generating Socratic lesson:", err);
       // Fallback structured lesson
+      const fallbackLesson = {
+        lessonTitle: req.body.topic || `${req.body.subject || 'Subject'} Lesson`,
+        objectives: ['Master fundamental principles', 'Complete step-by-step exercises'],
+        prerequisites: ['Basic introductory knowledge'],
+        introduction: `Welcome to today's lesson on ${req.body.topic || 'the topic'}. We will explore this concept step-by-step.`,
+        realWorldAnalogy: "Think of this like an organized library or market where every item has an exact designated spot.",
+        explanation: `### Core Concept Breakdown\n\n1. **First Principle**: Break the problem down into its smallest inputs and outputs.\n2. **Execution Steps**: Follow standard rules and procedures.\n3. **Examination Method**: State formulas clearly and justify every step.`,
+        examples: ["Example 1: Basic standard case with step-by-step working.", "Example 2: Examination case study."],
+        guidedPracticeQuestion: "Let's work together on this question: What is the first formula or rule we apply?",
+        independentExercises: [
+          {
+            id: "ex1",
+            question: "Apply the rule learned to solve for the unknown parameter.",
+            type: "ShortAnswer",
+            difficulty: "BEGINNER",
+            hints: [
+              "Hint 1: Recall the standard definition.",
+              "Hint 2: Identify the given values.",
+              "Hint 3: Substitute into the core equation.",
+              "Hint 4: Simplify to reach the final answer."
+            ],
+            correctAnswer: "Standard Value",
+            solutionExplanation: "Substitute the knowns and calculate."
+          }
+        ],
+        miniQuiz: [
+          {
+            question: "Which of the following best describes the core principle?",
+            options: ["A) The standard definition", "B) An incorrect assumption", "C) An unrelated concept", "D) None of the above"],
+            correctAnswer: "A",
+            explanation: "Option A matches the official examination marking guide."
+          }
+        ],
+        summary: "Key lesson takeaway: Always follow structured steps and verify your units or syntax.",
+        homework: "Practice two past examination questions on this topic.",
+        masteryCheck: "Are you confident in identifying and applying the main formula?"
+      };
+
       res.json({
         success: true,
         source: 'fallback',
-        lesson: {
-          lessonTitle: req.body.topic || `${req.body.subject || 'Subject'} Lesson`,
-          objectives: ['Master fundamental principles', 'Complete step-by-step exercises'],
-          prerequisites: ['Basic introductory knowledge'],
-          introduction: `Welcome to today's lesson on ${req.body.topic || 'the topic'}. We will explore this concept step-by-step.`,
-          realWorldAnalogy: "Think of this like an organized library or market where every item has an exact designated spot.",
-          explanation: `### Core Concept Breakdown\n\n1. **First Principle**: Break the problem down into its smallest inputs and outputs.\n2. **Execution Steps**: Follow standard rules and procedures.\n3. **Examination Method**: State formulas clearly and justify every step.`,
-          examples: ["Example 1: Basic standard case with step-by-step working.", "Example 2: Examination case study."],
-          guidedPracticeQuestion: "Let's work together on this question: What is the first formula or rule we apply?",
-          independentExercises: [
-            {
-              id: "ex1",
-              question: "Apply the rule learned to solve for the unknown parameter.",
-              type: "ShortAnswer",
-              difficulty: "BEGINNER",
-              hints: [
-                "Hint 1: Recall the standard definition.",
-                "Hint 2: Identify the given values.",
-                "Hint 3: Substitute into the core equation.",
-                "Hint 4: Simplify to reach the final answer."
-              ],
-              correctAnswer: "Standard Value",
-              solutionExplanation: "Substitute the knowns and calculate."
-            }
-          ],
-          miniQuiz: [
-            {
-              question: "Which of the following best describes the core principle?",
-              options: ["A) The standard definition", "B) An incorrect assumption", "C) An unrelated concept", "D) None of the above"],
-              correctAnswer: "A",
-              explanation: "Option A matches the official examination marking guide."
-            }
-          ],
-          summary: "Key lesson takeaway: Always follow structured steps and verify your units or syntax.",
-          homework: "Practice two past examination questions on this topic.",
-          masteryCheck: "Are you confident in identifying and applying the main formula?"
-        }
+        lesson: fallbackLesson,
+        session: fallbackLesson,
+        progressionSheet: null,
+        assignment: null,
+        studentProgress: null,
+        isCurriculumFallback: true
       });
     }
   });
 
-  // 14. POST /api/ai-teacher/chat - Socratic student interaction with intent handlers
-  app.post("/api/ai-teacher/chat", async (req, res) => {
+  // 14. POST /api/ai-teacher/chat or /api/ai-teacher/lesson/chat - Socratic student interaction with intent handlers
+  app.post(["/api/ai-teacher/chat", "/api/ai-teacher/lesson/chat"], async (req, res) => {
     try {
       const {
-        studentMessage = '',
+        studentMessage = req.body.userMessage || '',
+        userMessage,
         intent = 'GENERAL_QUESTION',
         hintLevel = 1,
         currentWeek = 1,
@@ -1722,11 +1799,15 @@ Return ONLY valid JSON matching this structure:
         level = 'Advanced Level',
         masteryLevel = 'BEGINNER',
         history = [],
-        language = 'en'
+        language = req.body.preferredLanguage || 'en',
+        preferredLanguage
       } = req.body;
 
+      const actualMessage = userMessage || studentMessage;
+      const actualLang = preferredLanguage || language;
+
       const chatResult = await processSocraticTeacherChat({
-        studentMessage,
+        studentMessage: actualMessage,
         intent,
         hintLevel: Number(hintLevel),
         currentWeek: Number(currentWeek),
@@ -1736,21 +1817,76 @@ Return ONLY valid JSON matching this structure:
         level,
         masteryLevel,
         history: Array.isArray(history) ? history : [],
-        language
+        language: actualLang
       });
 
       res.json({
         success: true,
+        reply: chatResult.reply,
+        messages: [
+          ...(Array.isArray(history) ? history : []),
+          { role: 'student', text: actualMessage, timestamp: new Date().toISOString() },
+          { role: 'teacher', text: chatResult.reply, timestamp: new Date().toISOString() }
+        ],
         ...chatResult
       });
     } catch (err: any) {
       console.error("Error in AI Teacher chat:", err);
+      const fallbackReply = "I am right here with you! Let's take a deep breath. Can you tell me what specific part of this question feels unclear?";
       res.json({
         success: true,
-        reply: "I am right here with you! Let's take a deep breath. Can you tell me what specific part of this question feels unclear?",
+        reply: fallbackReply,
+        messages: [
+          { role: 'student', text: req.body.userMessage || req.body.studentMessage || '', timestamp: new Date().toISOString() },
+          { role: 'teacher', text: fallbackReply, timestamp: new Date().toISOString() }
+        ],
         actionTaken: req.body.intent || 'TEACH',
         suggestedAction: 'SHOW_EXAMPLE'
       });
+    }
+  });
+
+  // Record student quiz progress
+  app.post("/api/ai-teacher/progress/record", async (req, res) => {
+    try {
+      const { studentId, subject, classLevel, weekNumber, isCorrect, scoreDelta = 10 } = req.body;
+
+      let progress: any = {
+        userId: studentId,
+        subject,
+        level: classLevel,
+        overallMasteryScore: 70,
+        lessonsCompleted: 1
+      };
+
+      if (studentId && subject) {
+        const snap = await db.collection("student_learning_progress")
+          .where("userId", "==", studentId)
+          .where("subject", "==", subject)
+          .limit(1)
+          .get()
+          .catch(() => null);
+
+        if (snap && !snap.empty) {
+          const ref = snap.docs[0].ref;
+          const current = snap.docs[0].data();
+          const newScore = Math.min(Math.max((current.overallMasteryScore || 50) + (isCorrect ? scoreDelta : -5), 0), 100);
+          await ref.update({
+            overallMasteryScore: newScore,
+            updatedAt: new Date().toISOString()
+          });
+          progress = { ...current, overallMasteryScore: newScore };
+        }
+      }
+
+      res.json({
+        success: true,
+        progress,
+        isMastered: (progress.overallMasteryScore || 0) >= 80
+      });
+    } catch (err: any) {
+      console.error("Error recording quiz progress:", err);
+      res.status(500).json({ error: "Failed to record quiz progress" });
     }
   });
 

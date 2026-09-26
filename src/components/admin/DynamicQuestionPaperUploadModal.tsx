@@ -24,6 +24,14 @@ import {
   PUBLISH_STAGES, 
   PublishStage 
 } from '../../services/questionPaperService';
+import { 
+  analyzePdfWatermark, 
+  processAndRebrandPdf, 
+  WatermarkAnalysisReport, 
+  triggerFileDownload 
+} from '../../utils/watermarkProcessor';
+import { getSchoolBranding } from '../../services/schoolBrandingService';
+import { SchoolBrandingSettings, DEFAULT_SCHOOL_BRANDING } from '../../types/paperGenerator';
 
 export interface DynamicQuestionPaperUploadModalProps {
   isOpen: boolean;
@@ -101,6 +109,21 @@ export default function DynamicQuestionPaperUploadModal({
   const [markingSchemeUrl, setMarkingSchemeUrl] = useState<string>('');
   const [includeMarkingScheme, setIncludeMarkingScheme] = useState<boolean>(false);
 
+  // Watermark Replacement & Document Analysis State
+  const [replaceWatermark, setReplaceWatermark] = useState<boolean>(false);
+  const [brandingSettings, setBrandingSettings] = useState<SchoolBrandingSettings>(DEFAULT_SCHOOL_BRANDING);
+  const [customWatermarkText, setCustomWatermarkText] = useState<string>('OFFICIAL EXAMINATION PAPER');
+  const [customWatermarkSecondary, setCustomWatermarkSecondary] = useState<string>('');
+  const [watermarkOpacity, setWatermarkOpacity] = useState<number>(0.09);
+  const [watermarkRotation, setWatermarkRotation] = useState<number>(-35);
+  const [repeatWatermarkEveryPage, setRepeatWatermarkEveryPage] = useState<boolean>(true);
+  const [watermarkAnalysisReport, setWatermarkAnalysisReport] = useState<WatermarkAnalysisReport | null>(null);
+  const [isAnalyzingPdf, setIsAnalyzingPdf] = useState<boolean>(false);
+  const [isProcessingWatermark, setIsProcessingWatermark] = useState<boolean>(false);
+  const [rebrandedPdfUrl, setRebrandedPdfUrl] = useState<string>('');
+  const [rebrandedPdfBlob, setRebrandedPdfBlob] = useState<Blob | null>(null);
+  const [previewingRebranded, setPreviewingRebranded] = useState<boolean>(true);
+
   // Submitting & Progress State
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [publishStatus, setPublishStatus] = useState<PublishStageStatus | null>(null);
@@ -167,8 +190,65 @@ export default function DynamicQuestionPaperUploadModal({
 
     if (isOpen) {
       loadData();
+      getSchoolBranding().then((loaded) => {
+        setBrandingSettings(loaded);
+        setCustomWatermarkText(loaded.watermark?.text || 'OFFICIAL EXAMINATION PAPER');
+        setCustomWatermarkSecondary(loaded.watermark?.secondaryText || loaded.schoolName);
+        setWatermarkOpacity(loaded.watermark?.opacity ?? 0.09);
+        setWatermarkRotation(loaded.watermark?.rotation ?? -35);
+        setRepeatWatermarkEveryPage(loaded.watermark?.repeatEveryPage ?? true);
+      });
     }
   }, [isOpen, initialSubjects]);
+
+  const handleRunPdfAnalysis = async (url: string) => {
+    if (!url) return;
+    setIsAnalyzingPdf(true);
+    try {
+      const resp = await fetch(url);
+      const buf = await resp.arrayBuffer();
+      const rep = await analyzePdfWatermark(buf);
+      setWatermarkAnalysisReport(rep);
+    } catch (e) {
+      console.warn('Analysis error:', e);
+    } finally {
+      setIsAnalyzingPdf(false);
+    }
+  };
+
+  const handleApplyWatermarkRebranding = async () => {
+    if (!pdfUrl) {
+      toast.error('Please upload a question paper PDF first.');
+      return;
+    }
+    setIsProcessingWatermark(true);
+    try {
+      const resp = await fetch(pdfUrl);
+      const buf = await resp.arrayBuffer();
+      const result = await processAndRebrandPdf(
+        buf,
+        brandingSettings,
+        {
+          customText: customWatermarkText,
+          customSecondaryText: customWatermarkSecondary,
+          customYear: year,
+          opacity: watermarkOpacity,
+          rotation: watermarkRotation,
+          repeatEveryPage: repeatWatermarkEveryPage
+        }
+      );
+      setRebrandedPdfUrl(result.rebrandedUrl);
+      setRebrandedPdfBlob(result.rebrandedBlob);
+      setWatermarkAnalysisReport(result.report);
+      setPreviewingRebranded(true);
+      toast.success('Edulpha security watermark & rebranding generated!');
+    } catch (err: any) {
+      console.error('Failed to process watermark:', err);
+      toast.error(err?.message || 'Failed to process document watermark.');
+    } finally {
+      setIsProcessingWatermark(false);
+    }
+  };
 
   // Current Subject Object
   const currentSubjectObj = useMemo(() => {
@@ -422,9 +502,12 @@ export default function DynamicQuestionPaperUploadModal({
         subject: selectedSubjectName,
         paperType: effectivePaperType,
         description: description.trim() || `${selectedSubjectName} past examination paper for ${year} (${session}).`,
-        pdfUrl: pdfUrl,
+        pdfUrl: (replaceWatermark && rebrandedPdfUrl) ? rebrandedPdfUrl : pdfUrl,
+        originalPdfUrl: pdfUrl,
         fileName: pdfFileName,
         fileSize: pdfFileSize,
+        isRebranded: replaceWatermark,
+        watermarkStatus: replaceWatermark ? (watermarkAnalysisReport?.removabilityStatus || 'watermark_replaced') : 'original',
         curriculumId: isHNDMode ? 'hnd' : (currentSubjectObj?.curriculumId || 'cameroon_gce'),
         curriculumName: isHNDMode ? 'Higher National Diploma (HND)' : (currentSubjectObj?.curriculumName || (currentSubjectObj?.level === 'Advance level' ? 'GCE Advanced Level' : 'GCE Ordinary Level')),
         level: isHNDMode ? selectedHndLevel : (currentSubjectObj?.level || 'Ordinary level'),
@@ -1126,15 +1209,172 @@ export default function DynamicQuestionPaperUploadModal({
                     setPdfUrl(url);
                     setPdfFileName(name);
                     setPdfFileSize(size);
+                    handleRunPdfAnalysis(url);
                   }}
                   onDelete={() => {
                     setPdfUrl('');
                     setPdfFileName('');
                     setPdfFileSize('');
+                    setWatermarkAnalysisReport(null);
+                    setRebrandedPdfUrl('');
+                    setRebrandedPdfBlob(null);
                   }}
                   adminOnly={true}
                 />
               </div>
+
+              {/* Watermark Replacement & Document Analysis Section */}
+              {pdfUrl && (
+                <div className="pt-4 border-t border-slate-200/60 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={replaceWatermark}
+                        onChange={e => {
+                          setReplaceWatermark(e.target.checked);
+                          if (e.target.checked && !watermarkAnalysisReport) {
+                            handleRunPdfAnalysis(pdfUrl);
+                          }
+                        }}
+                        className="w-4 h-4 text-indigo-600 rounded-md border-slate-300 focus:ring-indigo-500"
+                      />
+                      <span className="text-xs font-black text-slate-800 flex items-center gap-1.5">
+                        <ShieldCheck size={15} className="text-indigo-600" />
+                        Replace Existing Watermark & Apply Edulpha Rebranding
+                      </span>
+                    </label>
+
+                    {watermarkAnalysisReport && (
+                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                        {watermarkAnalysisReport.removabilityStatus === 'removable_layers_detected' 
+                          ? 'Removable Watermarks Found' 
+                          : 'Safe Overlay Ready'}
+                      </span>
+                    )}
+                  </div>
+
+                  {replaceWatermark && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="p-4 bg-white rounded-xl border border-indigo-100 shadow-xs space-y-4"
+                    >
+                      {/* Analysis Diagnostic Box */}
+                      {isAnalyzingPdf ? (
+                        <div className="flex items-center gap-2 p-3 bg-indigo-50 text-indigo-800 text-xs rounded-lg">
+                          <RefreshCw size={14} className="animate-spin" />
+                          <span>Analyzing PDF document layers, annotations, and bitmap streams...</span>
+                        </div>
+                      ) : watermarkAnalysisReport ? (
+                        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1.5 text-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-bold text-slate-900">{watermarkAnalysisReport.removabilityLabel}</span>
+                            <span className="text-[10px] font-mono text-slate-500">{watermarkAnalysisReport.pageCount} Pages</span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 font-medium">{watermarkAnalysisReport.recommendation}</p>
+                          <p className="text-[10px] text-emerald-700 font-bold">🛡️ {watermarkAnalysisReport.safeguardNotice}</p>
+                        </div>
+                      ) : null}
+
+                      {/* Watermark Config Controls */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">Primary Watermark Text</label>
+                          <input
+                            type="text"
+                            value={customWatermarkText}
+                            onChange={e => setCustomWatermarkText(e.target.value)}
+                            placeholder="OFFICIAL EXAMINATION PAPER"
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-bold uppercase focus:bg-white focus:border-indigo-600 outline-none text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">Secondary Watermark Text</label>
+                          <input
+                            type="text"
+                            value={customWatermarkSecondary}
+                            onChange={e => setCustomWatermarkSecondary(e.target.value)}
+                            placeholder={brandingSettings.schoolName}
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-bold uppercase focus:bg-white focus:border-indigo-600 outline-none text-xs"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="font-bold text-slate-700">Opacity ({Math.round(watermarkOpacity * 100)}%)</label>
+                            <span className="text-[10px] text-slate-400">Subtle to Prominent</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="0.04"
+                            max="0.22"
+                            step="0.01"
+                            value={watermarkOpacity}
+                            onChange={e => setWatermarkOpacity(parseFloat(e.target.value))}
+                            className="w-full accent-indigo-600"
+                          />
+                        </div>
+
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <label className="font-bold text-slate-700">Rotation Angle ({watermarkRotation}°)</label>
+                            <span className="text-[10px] text-slate-400">Standard: -35°</span>
+                          </div>
+                          <input
+                            type="range"
+                            min="-45"
+                            max="45"
+                            step="5"
+                            value={watermarkRotation}
+                            onChange={e => setWatermarkRotation(parseInt(e.target.value, 10))}
+                            className="w-full accent-indigo-600"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Action to Process & Preview */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleApplyWatermarkRebranding}
+                          disabled={isProcessingWatermark}
+                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-black text-xs rounded-xl shadow-xs"
+                        >
+                          {isProcessingWatermark ? (
+                            <div className="flex items-center gap-1.5">
+                              <RefreshCw size={13} className="animate-spin" />
+                              <span>Applying Watermark...</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <Sparkles size={13} />
+                              <span>Apply & Preview Rebranded Watermark</span>
+                            </div>
+                          )}
+                        </Button>
+
+                        {rebrandedPdfUrl && (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-emerald-700 flex items-center gap-1">
+                              <CheckCircle2 size={14} /> Ready
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => triggerFileDownload(rebrandedPdfBlob || rebrandedPdfUrl, `${title || 'paper'}_rebranded.pdf`)}
+                              className="px-2.5 py-1 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
+                            >
+                              Download Rebranded PDF
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              )}
 
               {/* Optional Marking Scheme / Solution Upload */}
               <div className="pt-3 border-t border-slate-200/60 space-y-3">

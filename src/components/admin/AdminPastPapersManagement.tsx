@@ -19,6 +19,7 @@ import { DEFAULT_GCE_SUBJECTS } from '../../data/defaultSubjects';
 import { db, auth } from '../../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import DynamicQuestionPaperUploadModal from './DynamicQuestionPaperUploadModal';
+import { PaperWatermarkModal } from './PaperWatermarkModal';
 import FileUpload from '../FileUpload';
 import toast from 'react-hot-toast';
 
@@ -44,6 +45,7 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [previewPaper, setPreviewPaper] = useState<QuestionPaper | null>(null);
+  const [watermarkModalPaper, setWatermarkModalPaper] = useState<QuestionPaper | null>(null);
   const [editingPaper, setEditingPaper] = useState<QuestionPaper | null>(null);
   const [paperToDelete, setPaperToDelete] = useState<QuestionPaper | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -685,6 +687,16 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
                         <Button 
                           size="sm" 
                           variant="outline"
+                          onClick={() => setWatermarkModalPaper(paper)}
+                          className="h-8 px-2 text-xs text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100 hover:border-indigo-300 font-bold"
+                          title="Watermark & Institutional Rebranding"
+                        >
+                          <ShieldCheck size={14} className="mr-1 text-indigo-600" /> Rebrand
+                        </Button>
+
+                        <Button 
+                          size="sm" 
+                          variant="outline"
                           onClick={() => setPreviewPaper(paper)}
                           className="h-8 px-2.5 text-xs text-slate-600 hover:text-indigo-600 hover:border-indigo-200"
                           title="Preview Paper"
@@ -782,7 +794,7 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-2 pt-4 mt-2">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 pt-4 mt-2">
                 <Button 
                   size="sm"
                   variant="outline"
@@ -793,8 +805,17 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
                 </Button>
                 <Button 
                   size="sm"
+                  variant="outline"
+                  onClick={() => setWatermarkModalPaper(paper)}
+                  className="rounded-xl border-indigo-200 bg-indigo-50/70 text-indigo-700 hover:bg-indigo-100 text-xs font-bold px-2.5"
+                  title="Watermark & Rebrand"
+                >
+                  <ShieldCheck size={14} className="mr-1 text-indigo-600" /> Rebrand
+                </Button>
+                <Button 
+                  size="sm"
                   onClick={() => handleDownload(paper)}
-                  className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3"
+                  className="rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-2.5"
                   title="Download File"
                 >
                   <Download size={14} />
@@ -803,7 +824,7 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
                   size="sm"
                   variant="outline"
                   onClick={() => handleOpenEdit(paper)}
-                  className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 text-xs px-3"
+                  className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-50 text-xs px-2.5"
                   title="Edit Paper"
                 >
                   <Edit3 size={14} />
@@ -812,7 +833,7 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
                   size="sm"
                   variant="outline"
                   onClick={() => setPaperToDelete(paper)}
-                  className="rounded-xl border-slate-200 text-red-500 hover:bg-red-50 text-xs px-3"
+                  className="rounded-xl border-slate-200 text-red-500 hover:bg-red-50 text-xs px-2.5"
                   title="Delete"
                 >
                   <Trash2 size={14} />
@@ -1124,6 +1145,18 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Paper Watermark & Rebranding Modal */}
+      {watermarkModalPaper && (
+        <PaperWatermarkModal
+          isOpen={!!watermarkModalPaper}
+          onClose={() => setWatermarkModalPaper(null)}
+          paper={watermarkModalPaper}
+          onPaperUpdated={(updatedPaper) => {
+            setPapers(prev => prev.map(p => p.id === updatedPaper.id ? { ...p, ...updatedPaper } : p));
+          }}
+        />
       )}
     </div>
   );

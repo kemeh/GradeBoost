@@ -1,13 +1,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { inject } from '@vercel/analytics';
-import { Analytics } from '@vercel/analytics/react';
 import App from './App';
 import './index.css';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
-
-// Initialize Vercel Analytics
-inject();
 
 // Register Service Worker for offline Practice and Daily Drill caching
 serviceWorkerRegistration.register({
@@ -36,6 +31,5 @@ window.addEventListener('unhandledrejection', (e) => {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
-    <Analytics />
   </React.StrictMode>
 );

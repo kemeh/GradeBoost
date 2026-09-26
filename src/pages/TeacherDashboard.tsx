@@ -240,7 +240,7 @@ export default function TeacherDashboard() {
           }
         ]);
       }
-    });
+    }, (_err) => {});
 
     // Subscribe to Assignments
     const unsubAssignments = onSnapshot(collection(db, 'assignments'), (snap) => {
@@ -260,7 +260,7 @@ export default function TeacherDashboard() {
           }
         ]);
       }
-    });
+    }, (_err) => {});
 
     // Subscribe to Quizzes
     const unsubQuizzes = onSnapshot(collection(db, 'quizzes'), (snap) => {
@@ -281,7 +281,7 @@ export default function TeacherDashboard() {
           }
         ]);
       }
-    });
+    }, (_err) => {});
 
     // Subscribe to Mock Exams
     const unsubMockExams = onSnapshot(collection(db, 'mock_exams'), (snap) => {
@@ -302,7 +302,7 @@ export default function TeacherDashboard() {
           }
         ]);
       }
-    });
+    }, (_err) => {});
 
     // Subscribe to Marking Schemes
     const unsubMarkingSchemes = onSnapshot(collection(db, 'marking_schemes'), (snap) => {
@@ -321,7 +321,7 @@ export default function TeacherDashboard() {
           }
         ]);
       }
-    });
+    }, (_err) => {});
 
     // Subscribe to Discussions
     const unsubDiscussions = onSnapshot(collection(db, 'discussions'), (snap) => {
@@ -342,7 +342,7 @@ export default function TeacherDashboard() {
           }
         ]);
       }
-    });
+    }, (_err) => {});
 
     // Fetch Student Attempts and Students for Analytics
     try {

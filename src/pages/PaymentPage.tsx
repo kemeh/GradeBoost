@@ -71,7 +71,7 @@ export default function PaymentPage() {
           }));
         }
       }
-    });
+    }, (_err) => {});
 
     return () => unsubscribe();
   }, []);
