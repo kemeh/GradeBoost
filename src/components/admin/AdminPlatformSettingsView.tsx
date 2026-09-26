@@ -3,7 +3,6 @@ import { getSystemSettings, updateSystemSettings } from '../../services/settings
 import { Card, Button, Badge, cn } from '../ui';
 import { Settings, Key, Save, CheckCircle2, RefreshCw, CreditCard, Calendar, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { GoogleGenAI } from '@google/genai';
 import { DEFAULT_CHALLENGE_START_DATE } from '../../utils/challenge';
 import AdminBrandingLogosView from './AdminBrandingLogosView';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -81,23 +80,25 @@ export default function AdminPlatformSettingsView() {
   };
 
   const testGeminiKey = async () => {
-    if (!apiKey.trim()) {
-      toast.error('Please enter an API key first');
-      return;
-    }
     setIsTesting(true);
     setTestResult(null);
     try {
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: 'Say Hello in one sentence to verify Edulpha API connection.',
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: 'Say Hello in one sentence to verify Edulpha AI connection.',
+          subject: 'Computer Science',
+          topic: 'System Check',
+          apiKey: apiKey.trim() || undefined
+        })
       });
-      if (response.text) {
-        setTestResult({ success: true, message: `Success! Response: ${response.text}` });
+      const data = await res.json();
+      if (data.reply) {
+        setTestResult({ success: true, message: `Success! Response: ${data.reply.slice(0, 100)}...` });
         toast.success('Gemini API Connection Verified!');
       } else {
-        setTestResult({ success: false, message: 'No text returned from Gemini.' });
+        setTestResult({ success: false, message: 'No text returned from AI server.' });
       }
     } catch (err: any) {
       setTestResult({ success: false, message: err.message || 'API Key verification failed.' });

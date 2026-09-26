@@ -435,7 +435,7 @@ export const fetchAISettings = async (): Promise<AISettings> => {
 
   return {
     enabled: true,
-    provider: 'gemini-2.5-flash',
+    provider: 'gemini-3.8-flash',
     dailyLimitPerUser: 50,
     systemPromptTutor: 'You are Edulpha AI, an encouraging and expert GCE Tutor.',
     systemPromptQuiz: 'Generate clear, standard GCE questions with answer keys.',

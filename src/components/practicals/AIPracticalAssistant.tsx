@@ -3,7 +3,6 @@ import {
   Bot, Send, Sparkles, Code2, FlaskConical, X, MessageSquare, 
   HelpCircle, RefreshCw
 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { PracticalActivity } from '../../types';
 
 interface AIPracticalAssistantProps {
@@ -38,27 +37,23 @@ export const AIPracticalAssistant: React.FC<AIPracticalAssistantProps> = ({
     setLoading(true);
 
     try {
-      // Call Gemini API server-side or via @google/genai
-      const apiKey = process.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
-      let aiText = '';
-
-      if (apiKey) {
-        const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: `You are the Edulpha Socratic AI Practical Assistant for the course: "${practical.title}" (${practical.subject}, ${practical.level}).
-User prompt: "${textToSend}".
-Instructions: Provide clear, encouraging, Socratic scientific explanation or debugging advice. Guide the student to understand the underlying logic rather than giving away full answers.`
-        });
-        aiText = response.text || 'I analyzed your query. Let us review the key principles step-by-step.';
-      } else {
-        // High quality educational fallback response
-        aiText = `Let's break down your question for **${practical.title}**:
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `Practical Lab Socratic Guidance for "${practical.title}" (${practical.subject}, ${practical.level}): ${textToSend}`,
+          subject: practical.subject,
+          topic: practical.title,
+          educationLevel: practical.level,
+          mode: 'tutor'
+        })
+      });
+      const data = await res.json();
+      const aiText = data.reply || `Let's break down your question for **${practical.title}**:
 
 1. **Key Concept**: Verify the initial setup parameters and make sure all units match the formula specifications.
 2. **Debugging / Analysis**: Check for missing boundary conditions or syntax errors in logic blocks.
 3. **Next Step**: Try running a single test case with known input values to verify step-by-step execution.`;
-      }
 
       setMessages(prev => [...prev, {
         sender: 'ai',

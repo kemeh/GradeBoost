@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { X, Sparkles, BookOpen, Globe, HelpCircle, FileText, CheckCircle2, Copy, ArrowRight, Bot } from 'lucide-react';
 import { ForumDiscussion } from '../../types';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { GoogleGenAI } from '@google/genai';
 import toast from 'react-hot-toast';
 
 interface ForumAIDrawerProps {
@@ -73,45 +72,48 @@ Content: ${discussion.content}
 Language: Respond in ${isFr ? 'French' : 'English'}.`;
       }
 
-      // Check for Gemini API key on server or client fallback
-      const geminiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
-      if (geminiKey) {
-        const ai = new GoogleGenAI({ apiKey: geminiKey });
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: `${systemPrompt}\n\n${userPrompt}`
-        });
-        setAiOutput(response.text || 'AI response generated successfully.');
+      // Call Edulpha Master AI Server API
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `${systemPrompt}\n\n${userPrompt}`,
+          subject: discussion.subject,
+          topic: discussion.title,
+          educationLevel: discussion.educationLevel,
+          language: isFr ? 'fr' : 'en'
+        })
+      });
+      const data = await res.json();
+      if (data.reply) {
+        setAiOutput(data.reply);
       } else {
         // High quality deterministic fallback response
-        setTimeout(() => {
-          if (actionType === 'explain') {
-            setAiOutput(isFr 
-              ? `💡 **Explication Académique Edulpha AI**:\n\n1. **Concept Clé**: Pour ${discussion.subject}, le problème soulevé par "${discussion.title}" nécessite d'identifier la méthode exacte exigée par le barème.\n2. **Démarche Étape par Étape**: \n   - Étape 1: Poser la condition initiale ou les données d'entrée.\n   - Étape 2: Appliquer la propriété fondamentale ou la formule standard.\n   - Étape 3: Vérifier les cas limites ou la complexité temporelle.\n3. **Conseil d'Examen**: Les correcteurs attribuent des points de méthode même si la réponse finale contient une erreur de calcul. Écrivez toujours vos étapes clairement!`
-              : `💡 **Edulpha AI Academic Explanation**:\n\n1. **Core Concept**: For ${discussion.subject}, mastering "${discussion.title}" requires understanding the exact marking scheme expectations.\n2. **Step-by-Step Method**:\n   - Step 1: Define initial preconditions and parameters.\n   - Step 2: Apply the governing theorem or standard algorithmic logic.\n   - Step 3: Analyze boundary limits and time/space complexity.\n3. **Exam Tip**: Examiners award method marks for clean structure even if a computational slip occurs. Always show intermediate steps!`);
-          } else if (actionType === 'summarize') {
-            setAiOutput(isFr
-              ? `📝 **Résumé Synthétique**:\n• **Point 1**: ${discussion.title} est un sujet central pour le programme ${discussion.educationLevel}.\n• **Point 2**: L'accent est mis sur l'application pratique et la rigueur de démonstration.\n• **Point 3**: Maîtriser cette question permet d'assurer des points précieux sur l'épreuve.`
-              : `📝 **Key Takeaways**:\n• **Point 1**: ${discussion.title} is a high-yield topic for ${discussion.educationLevel} exams.\n• **Point 2**: Emphasizes procedural accuracy and clean representation.\n• **Point 3**: Directly applicable to Paper 1 MCQ and Paper 2 structured questions.`);
-          } else if (actionType === 'questions') {
-            setAiOutput(isFr
-              ? `❓ **Questions de Pratique Générées par IA**:\n\n**Q1.** Expliquez le principe fondamental abordé dans "${discussion.title}".\n*Indice*: Pensez aux conditions d'application.\n\n**Q2.** Quelle est la complexité ou la formule associée ?\n*Indice*: Reportez-vous à la théorie standard du chapitre ${discussion.subject}.\n\n**Q3.** Proposez un exemple concret d'application.`
-              : `❓ **AI Generated Practice Questions**:\n\n**Q1.** Explain the primary condition required to execute the process in "${discussion.title}".\n*Hint*: Consider input preconditions.\n\n**Q2.** Derive the mathematical or algorithmic complexity.\n*Hint*: Recall standard ${discussion.subject} formulas.\n\n**Q3.** Provide a short pseudocode or solution sketch.`);
-          } else if (actionType === 'translate') {
-            setAiOutput(`🌐 **Translation**:\n\n**Title**: ${discussion.title}\n\n**Summary**: ${discussion.content.slice(0, 300)}...`);
-          } else {
-            setAiOutput(isFr
-              ? `📚 **Leçons Recommandées**:\n1. Module 4: ${discussion.subject} - Principes Fondamentaux\n2. Module 7: ${discussion.topic || 'Analyse & Problèmes'}\n3. Session Pratique: Annales Corrigées`
-              : `📚 **Recommended LMS Lessons**:\n1. Unit 3: ${discussion.subject} Foundations\n2. Unit 6: Advanced ${discussion.topic || 'Problem Solving'}\n3. Past Questions Session: Guided Practice`);
-          }
-          setLoading(false);
-        }, 800);
+        if (actionType === 'explain') {
+          setAiOutput(isFr 
+            ? `💡 **Explication Académique Edulpha AI**:\n\n1. **Concept Clé**: Pour ${discussion.subject}, le problème soulevé par "${discussion.title}" nécessite d'identifier la méthode exacte exigée par le barème.\n2. **Démarche Étape par Étape**: \n   - Étape 1: Poser la condition initiale ou les données d'entrée.\n   - Étape 2: Appliquer la propriété fondamentale ou la formule standard.\n   - Étape 3: Vérifier les cas limites ou la complexité temporelle.\n3. **Conseil d'Examen**: Les correcteurs attribuent des points de méthode même si la réponse finale contient une erreur de calcul. Écrivez toujours vos étapes clairement!`
+            : `💡 **Edulpha AI Academic Explanation**:\n\n1. **Core Concept**: For ${discussion.subject}, mastering "${discussion.title}" requires understanding the exact marking scheme expectations.\n2. **Step-by-Step Method**:\n   - Step 1: Define initial preconditions and parameters.\n   - Step 2: Apply the governing theorem or standard algorithmic logic.\n   - Step 3: Analyze boundary limits and time/space complexity.\n3. **Exam Tip**: Examiners award method marks for clean structure even if a computational slip occurs. Always show intermediate steps!`);
+        } else if (actionType === 'summarize') {
+          setAiOutput(isFr
+            ? `📝 **Résumé Synthétique**:\n• **Point 1**: ${discussion.title} est un sujet central pour le programme ${discussion.educationLevel}.\n• **Point 2**: L'accent est mis sur l'application pratique et la rigueur de démonstration.\n• **Point 3**: Maîtriser cette question permet d'assurer des points précieux sur l'épreuve.`
+            : `📝 **Key Takeaways**:\n• **Point 1**: ${discussion.title} is a high-yield topic for ${discussion.educationLevel} exams.\n• **Point 2**: Emphasizes procedural accuracy and clean representation.\n• **Point 3**: Directly applicable to Paper 1 MCQ and Paper 2 structured questions.`);
+        } else if (actionType === 'questions') {
+          setAiOutput(isFr
+            ? `❓ **Questions de Pratique Générées par IA**:\n\n**Q1.** Expliquez le principe fondamental abordé dans "${discussion.title}".\n*Indice*: Pensez aux conditions d'application.\n\n**Q2.** Quelle est la complexité ou la formule associée ?\n*Indice*: Reportez-vous à la théorie standard du chapitre ${discussion.subject}.\n\n**Q3.** Proposez un exemple concret d'application.`
+            : `❓ **AI Generated Practice Questions**:\n\n**Q1.** Explain the primary condition required to execute the process in "${discussion.title}".\n*Hint*: Consider input preconditions.\n\n**Q2.** Derive the mathematical or algorithmic complexity.\n*Hint*: Recall standard ${discussion.subject} formulas.\n\n**Q3.** Provide a short pseudocode or solution sketch.`);
+        } else if (actionType === 'translate') {
+          setAiOutput(`🌐 **Translation**:\n\n**Title**: ${discussion.title}\n\n**Summary**: ${discussion.content.slice(0, 300)}...`);
+        } else {
+          setAiOutput(isFr
+            ? `📚 **Leçons Recommandées**:\n1. Module 4: ${discussion.subject} - Principes Fondamentaux\n2. Module 7: ${discussion.topic || 'Analyse & Problèmes'}\n3. Session Pratique: Annales Corrigées`
+            : `📚 **Recommended LMS Lessons**:\n1. Unit 3: ${discussion.subject} Foundations\n2. Unit 6: Advanced ${discussion.topic || 'Problem Solving'}\n3. Past Questions Session: Guided Practice`);
+        }
       }
     } catch (err) {
       console.error('AI Error:', err);
       toast.error(isFr ? 'Erreur de génération IA.' : 'Failed to generate AI response.');
     } finally {
-      if (process.env.GEMINI_API_KEY) setLoading(false);
+      setLoading(false);
     }
   };
 

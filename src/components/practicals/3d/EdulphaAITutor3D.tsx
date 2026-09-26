@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { 
   Bot, Sparkles, Send, RefreshCw, AlertTriangle, ShieldCheck, X, HelpCircle 
 } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
 import { AssembledItem, ChemistryState, PhysicsState, BiologyState, LabSubject } from './types';
 import { toast } from 'react-hot-toast';
 
@@ -50,39 +49,20 @@ export const EdulphaAITutor3D: React.FC<EdulphaAITutor3DProps> = ({
     setLoading(true);
 
     try {
-      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
-      if (!apiKey) {
-        // Fallback intelligent response if no API key set
-        setTimeout(() => {
-          let reply = `In ${subject} practicals, remember to check your initial apparatus setup carefully. `;
-          if (subject === 'Chemistry') {
-            reply += `For titration, ensure your burette is clamped vertically and indicator is added before adding titrant drip-by-drip.`;
-          } else if (subject === 'Physics') {
-            reply += `For electrical circuits, ensure the ammeter is connected in series and the voltmeter is connected in parallel across components.`;
-          } else {
-            reply += `For microscope viewing, start with the 4x objective and adjust coarse focus knob until cell walls become visible.`;
-          }
-          setChatHistory((prev) => [...prev, { sender: 'ai', text: reply }]);
-          setLoading(false);
-        }, 800);
-        return;
-      }
-
-      const ai = new GoogleGenAI({ apiKey });
-      const systemInstruction = `You are Edulpha AI, an expert science tutor for Cameroon GCE and international practical examinations in Chemistry, Physics, and Biology.
-Provide clear, encouraging guidance. Give hints rather than immediately spoiling the answer.
-Current Lab Subject: ${subject}.
-Current Language: ${lang}.
-Assembled Apparatus Count: ${assembledItems.length}.
-Current Reaction/State: ${JSON.stringify({ chemistryState, physicsState, biologyState })}.`;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: promptInput,
-        config: { systemInstruction }
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: `3D Practical Lab Assistant for ${subject}: ${userText}`,
+          subject,
+          topic: `${subject} 3D Lab Simulation`,
+          educationLevel: 'Ordinary/Advanced Level',
+          language: lang,
+          mode: 'tutor'
+        })
       });
-
-      const aiText = response.text || 'Keep experimenting systematically!';
+      const data = await res.json();
+      const aiText = data.reply || `In ${subject} practicals, remember to check your initial apparatus setup carefully.`;
       setChatHistory((prev) => [...prev, { sender: 'ai', text: aiText }]);
     } catch (err) {
       console.error(err);

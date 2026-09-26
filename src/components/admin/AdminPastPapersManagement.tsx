@@ -19,6 +19,7 @@ import { DEFAULT_GCE_SUBJECTS } from '../../data/defaultSubjects';
 import { db, auth } from '../../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
 import DynamicQuestionPaperUploadModal from './DynamicQuestionPaperUploadModal';
+import AdminPastPaperImporterModal from './AdminPastPaperImporterModal';
 import { PaperWatermarkModal } from './PaperWatermarkModal';
 import FileUpload from '../FileUpload';
 import toast from 'react-hot-toast';
@@ -44,6 +45,7 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImporterOpen, setIsImporterOpen] = useState(false);
   const [previewPaper, setPreviewPaper] = useState<QuestionPaper | null>(null);
   const [watermarkModalPaper, setWatermarkModalPaper] = useState<QuestionPaper | null>(null);
   const [editingPaper, setEditingPaper] = useState<QuestionPaper | null>(null);
@@ -293,6 +295,15 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
           >
             <RefreshCw className={cn("w-4 h-4 mr-1.5", loading && "animate-spin")} />
             Refresh
+          </Button>
+
+          <Button 
+            variant="outline"
+            onClick={() => setIsImporterOpen(true)}
+            className="rounded-xl border-indigo-300 bg-indigo-50/80 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 font-bold"
+          >
+            <Download className="w-4 h-4 mr-1.5 text-indigo-600" />
+            Import Past Paper
           </Button>
 
           <Button 
@@ -1158,6 +1169,13 @@ export default function AdminPastPapersManagement({ embedded = false }: AdminPas
           }}
         />
       )}
+
+      {/* Admin Past Paper Importer Modal */}
+      <AdminPastPaperImporterModal 
+        isOpen={isImporterOpen}
+        onClose={() => setIsImporterOpen(false)}
+        onPaperImported={() => loadPapers(true)}
+      />
     </div>
   );
 }

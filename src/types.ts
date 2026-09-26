@@ -267,6 +267,66 @@ export interface DiagnosticResult {
   timestamp: string;
 }
 
+export type PermissionStatus = 'Unknown' | 'Authorized' | 'Licensed' | 'Publicly Available' | 'Not Authorized';
+export type PastPaperStatus = 'Draft' | 'Pending Review' | 'Verified' | 'Published' | 'Archived' | 'Rejected';
+
+export interface PastPaperItem {
+  id: string;
+  title: string;
+  subject: string;
+  level: string;
+  examination: string; // Cameroon GCE, BEPC, Probatoire, Baccalauréat, HND, etc.
+  year: number;
+  paperNumber: string; // Paper 1, Paper 2, Paper 3, etc.
+  session?: string;
+  language: 'English' | 'French';
+  sourceUrl?: string;
+  sourceName?: string;
+  originalFile?: string;
+  edulphaFile?: string;
+  licenseStatus?: string;
+  permissionStatus: PermissionStatus;
+  fileHash?: string;
+  importedBy?: string;
+  importedAt?: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  status: PastPaperStatus;
+  description?: string;
+  topicsDetected?: string[];
+  extractedQuestionsCount?: number;
+  pdfUrl?: string;
+  durationMinutes?: number;
+  totalMarks?: number;
+  instructions?: string;
+  correctAnswers?: Record<string, string>;
+}
+
+export interface PastPaperQuestion {
+  id: string;
+  paperId: string;
+  paperTitle?: string;
+  examination?: string;
+  year?: number;
+  subject?: string;
+  level?: string;
+  questionNumber: string;
+  questionText: string;
+  options?: string[];
+  correctAnswer?: string;
+  section?: string;
+  marks?: number;
+  topic?: string;
+  subtopic?: string;
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+  sourcePage?: number;
+  isAiGenerated: boolean; // STRICT: false for official questions, true for AI generated
+  solutionText?: string;
+  solutionMethod?: string;
+  examTips?: string[];
+  createdAt?: string;
+}
+
 export interface QuestionPaper {
   id: string;
   title: string;
@@ -308,6 +368,20 @@ export interface QuestionPaper {
   updatedAt?: string;
   isPublished?: boolean;
   status?: 'draft' | 'processing' | 'published' | 'archived';
+  // New Past Paper Importer Fields
+  examination?: string;
+  paperNumber?: string;
+  language?: 'English' | 'French';
+  sourceUrl?: string;
+  sourceName?: string;
+  originalFile?: string;
+  edulphaFile?: string;
+  permissionStatus?: PermissionStatus;
+  fileHash?: string;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  topicsDetected?: string[];
+  extractedQuestionsCount?: number;
 }
 
 export interface ExamResult {
@@ -1154,7 +1228,7 @@ export interface AISummary {
 export interface AISettings {
   id?: string;
   enabled: boolean;
-  provider: 'gemini-2.5-flash' | 'gemini-1.5-pro' | 'custom';
+  provider: 'gemini-3.8-flash' | 'gemini-3.1-pro-preview' | 'custom';
   dailyLimitPerUser: number;
   systemPromptTutor: string;
   systemPromptQuiz: string;

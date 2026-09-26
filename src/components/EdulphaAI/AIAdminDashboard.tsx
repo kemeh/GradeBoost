@@ -105,8 +105,8 @@ export const AIAdminDashboard: React.FC = () => {
               onChange={(e) => setSettings({ ...settings, provider: e.target.value as any })}
               className="w-full bg-white border border-slate-300 rounded-xl p-2.5 text-xs text-slate-800 font-semibold focus:ring-2 focus:ring-indigo-500 outline-none"
             >
-              <option value="gemini-2.5-flash">Google Gemini 2.5 Flash (Recommended)</option>
-              <option value="gemini-1.5-pro">Google Gemini 1.5 Pro</option>
+              <option value="gemini-3.8-flash">Google Gemini 3.8 Flash (High Accuracy & Speed — Recommended)</option>
+              <option value="gemini-3.1-pro-preview">Google Gemini 3.1 Pro (Complex Reasoning)</option>
               <option value="custom">Custom Provider Endpoint</option>
             </select>
           </div>

@@ -51,6 +51,7 @@ const AdminPastPapers = lazy(() => import('./pages/AdminPastPapers'));
 const AdminBulkImport = lazy(() => import('./pages/AdminBulkImport'));
 const AdminExamBuilder = lazy(() => import('./pages/AdminExamBuilder'));
 const StudentExamPortal = lazy(() => import('./pages/StudentExamPortal'));
+const StudentPastPapersPage = lazy(() => import('./pages/StudentPastPapersPage'));
 const ExamSession = lazy(() => import('./pages/ExamSession'));
 const ExamResultScreen = lazy(() => import('./pages/ExamResultScreen'));
 const ExamAnalyticsDashboard = lazy(() => import('./pages/ExamAnalyticsDashboard'));
@@ -213,7 +214,7 @@ export default function App() {
               <Route path="/downloads" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/digital-school" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/past-questions" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
-              <Route path="/past-papers" element={<PaymentGatedRoute><AdminPastPapers /></PaymentGatedRoute>} />
+              <Route path="/past-papers" element={<StudentPastPapersPage />} />
               <Route path="/paper-bank" element={<PaymentGatedRoute><AdminPastPapers /></PaymentGatedRoute>} />
               <Route path="/ai-tutor" element={<PrivateRoute><EdulphaAIPage /></PrivateRoute>} />
               <Route path="/referrals" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
