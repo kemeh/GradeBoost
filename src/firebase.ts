@@ -8,12 +8,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Suppress internal non-fatal connection retry logs
-setLogLevel('error');
+setLogLevel('silent');
 
 export const db = initializeFirestore(
   app,
   {
-    experimentalAutoDetectLongPolling: true,
+    experimentalForceLongPolling: true,
   },
   firebaseConfig.firestoreDatabaseId
 );
