@@ -257,7 +257,7 @@ export default function QuestionRenderer({
               onChange={(e) => handleTextAnswerChange(e.target.value)}
               placeholder="Type your structured solution, steps, arguments, or code logic..."
               rows={question.questionType === 'essay' ? 10 : 5}
-              className="w-full p-4 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 font-sans text-sm text-slate-900 leading-relaxed outline-hidden transition-all disabled:bg-slate-100"
+              className="w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 font-sans text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 leading-relaxed outline-hidden transition-all disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-400"
             />
           </div>
         )}
@@ -281,7 +281,7 @@ export default function QuestionRenderer({
               value={answerState.codeSubmission ?? question.programmingData.starterCode}
               onChange={(e) => handleCodeChange(e.target.value)}
               rows={12}
-              className="w-full p-4 rounded-b-xl border border-slate-800 bg-slate-950 font-mono text-xs text-emerald-400 leading-relaxed outline-hidden focus:ring-2 focus:ring-emerald-500/50"
+              className="w-full p-4 rounded-b-xl border border-slate-800 bg-slate-950 font-mono text-xs text-emerald-400 caret-emerald-400 placeholder:text-slate-600 leading-relaxed outline-hidden focus:ring-2 focus:ring-emerald-500/50"
             />
 
             {/* Test Execution Result */}

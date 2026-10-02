@@ -421,7 +421,7 @@ export default function PracticeSession() {
                       <div key={section} className="space-y-3">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest">{section}</label>
                         <textarea 
-                          className="w-full p-6 bg-slate-900 border border-slate-800 rounded-2xl font-mono text-indigo-400 focus:border-indigo-600 outline-none min-h-[200px] transition-all"
+                          className="w-full p-6 bg-slate-900 border border-slate-800 rounded-2xl font-mono text-indigo-300 dark:text-indigo-400 caret-indigo-400 placeholder:text-slate-500 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none min-h-[200px] transition-all leading-relaxed"
                           placeholder={`// Write your code or logic for ${section} here...`}
                           value={answers[section] || ''}
                           onChange={e => setAnswers({ ...answers, [section]: e.target.value })}
@@ -453,7 +453,7 @@ export default function PracticeSession() {
                       <div key={task} className="space-y-3">
                         <label className="text-xs font-black text-slate-400 uppercase tracking-widest">{task}</label>
                         <textarea 
-                          className="w-full p-6 bg-slate-50 border border-slate-100 rounded-2xl font-medium text-slate-900 focus:bg-white focus:border-indigo-600 outline-none min-h-[120px] transition-all"
+                          className="w-full p-6 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-900 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-500/20 outline-none min-h-[120px] transition-all leading-relaxed"
                           placeholder={`Enter your findings or code for ${task}...`}
                           value={answers[task] || ''}
                           onChange={e => setAnswers({ ...answers, [task]: e.target.value })}

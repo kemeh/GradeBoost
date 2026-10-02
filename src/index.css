@@ -1,6 +1,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+  --input-background: #ffffff;
+  --input-foreground: #0f172a;
+  --input-border: #cbd5e1;
+  --input-placeholder: #64748b;
+  --input-focus: #4f46e5;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;
+  --primary: #4f46e5;
+  --primary-foreground: #ffffff;
+  --danger: #ef4444;
+  --danger-foreground: #ffffff;
+}
+
+.dark, [data-theme="dark"], html.dark {
+  --background: #020617;
+  --foreground: #f8fafc;
+  --card: #0f172a;
+  --card-foreground: #f8fafc;
+  --input-background: #0f172a;
+  --input-foreground: #f8fafc;
+  --input-border: #334155;
+  --input-placeholder: #94a3b8;
+  --input-focus: #6366f1;
+  --muted: #1e293b;
+  --muted-foreground: #94a3b8;
+  --primary: #6366f1;
+  --primary-foreground: #ffffff;
+  --danger: #f87171;
+  --danger-foreground: #ffffff;
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -31,6 +67,8 @@ body,
   overflow-x: hidden;
   margin: 0;
   padding: 0;
+  color: var(--foreground);
+  background-color: var(--background);
 }
 
 /* Ensure bottom space on mobile screens so fixed bottom tab bar does not cover content */
@@ -45,6 +83,10 @@ img, video, canvas, svg, iframe {
   height: auto;
 }
 
+/* ========================================================================= */
+/* EDULPHA GLOBAL INPUT, TEXTAREA, SELECT & WRITING VISIBILITY RULES         */
+/* ========================================================================= */
+
 @layer base {
   body {
     @apply font-sans text-slate-900 bg-slate-50 overflow-x-hidden;
@@ -53,7 +95,7 @@ img, video, canvas, svg, iframe {
   }
   
   h1, h2, h3, h4 {
-    @apply font-display tracking-tight font-bold;
+    @apply font-display tracking-tight font-bold text-slate-900 dark:text-white;
   }
   
   input, select, textarea, button {
@@ -61,6 +103,66 @@ img, video, canvas, svg, iframe {
     max-width: 100%;
     box-sizing: border-box;
   }
+
+  /* Base Input, Textarea & Contenteditable Visibility: Use currentColor so utility classes work flawlessly */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="range"]):not([type="color"]):not([type="file"]),
+  textarea,
+  select,
+  [contenteditable="true"] {
+    color: var(--input-foreground);
+    background-color: var(--input-background);
+    caret-color: currentColor;
+    -webkit-text-fill-color: currentColor;
+    border-color: var(--input-border);
+  }
+
+  /* Explicit Placeholder Visibility */
+  input::placeholder,
+  textarea::placeholder,
+  select::placeholder {
+    color: var(--input-placeholder);
+    -webkit-text-fill-color: var(--input-placeholder);
+    opacity: 1;
+  }
+
+  /* Accessible Focus States */
+  input:focus,
+  textarea:focus,
+  select:focus,
+  [contenteditable="true"]:focus {
+    caret-color: currentColor;
+    -webkit-text-fill-color: currentColor;
+    outline: none;
+  }
+}
+
+/* Browser Autofill Protection: Avoid white background with invisible text */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus,
+select:-webkit-autofill:active {
+  -webkit-text-fill-color: var(--foreground) !important;
+  caret-color: var(--foreground) !important;
+  box-shadow: 0 0 0px 1000px var(--card) inset !important;
+  -webkit-box-shadow: 0 0 0px 1000px var(--card) inset !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Code & Pseudocode editor styling: High-contrast syntax text and visible caret */
+.code-editor,
+.code-editor textarea,
+.code-snippet-input,
+textarea.font-mono,
+input.font-mono {
+  caret-color: #34d399 !important;
 }
 
 @layer components {
@@ -69,11 +171,11 @@ img, video, canvas, svg, iframe {
   }
   
   .card {
-    @apply bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-100 shadow-soft hover:shadow-medium transition-all duration-300 max-w-full box-border overflow-hidden;
+    @apply bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-100 dark:border-slate-800 shadow-soft hover:shadow-medium transition-all duration-300 max-w-full box-border overflow-hidden;
   }
   
   .glass {
-    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-soft;
+    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800/40 shadow-soft;
   }
 
   .table-responsive-container {
@@ -85,11 +187,11 @@ img, video, canvas, svg, iframe {
 }
 
 .prose h2 {
-  @apply text-xl sm:text-2xl font-bold text-slate-800 mt-6 sm:mt-8 mb-3 sm:mb-4;
+  @apply text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-100 mt-6 sm:mt-8 mb-3 sm:mb-4;
 }
 
 .prose p {
-  @apply text-slate-600 leading-relaxed mb-4 text-sm sm:text-base;
+  @apply text-slate-600 dark:text-slate-300 leading-relaxed mb-4 text-sm sm:text-base;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -102,6 +204,11 @@ img, video, canvas, svg, iframe {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full hover:bg-slate-300;
+  @apply bg-slate-200 dark:bg-slate-700 rounded-full hover:bg-slate-300 dark:hover:bg-slate-600;
+}
+
+::selection {
+  background-color: rgba(99, 102, 241, 0.35);
+  color: inherit;
 }
 

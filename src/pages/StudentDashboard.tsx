@@ -28,10 +28,12 @@ import { AIQuizGenerator } from '../components/EdulphaAI/AIQuizGenerator';
 import { AIStudyPlanner } from '../components/EdulphaAI/AIStudyPlanner';
 import { AIProgrammingAssistant } from '../components/EdulphaAI/AIProgrammingAssistant';
 import { AILessonSummarizer } from '../components/EdulphaAI/AILessonSummarizer';
+import { AIStudyTodayWidget } from '../components/EdulphaAI/AIStudyTodayWidget';
 import { AIWeaknessAnalyzer } from '../components/EdulphaAI/AIWeaknessAnalyzer';
 import { AITeacherClassroom } from '../components/EdulphaAI/AITeacherClassroom';
 import { ReferralCenter } from '../components/ReferralCenter';
 import { StudentShareModal, ShareItemData, PRESET_BADGES } from '../components/StudentShareModal';
+import DailyGceChallengeCard from '../components/daily/DailyGceChallengeCard';
 
 export default function StudentDashboard() {
   const { user } = useAuth();
@@ -829,6 +831,13 @@ export default function StudentDashboard() {
         {/* TAB 1: OVERVIEW DASHBOARD */}
         {activeTab === 'overview' && (
           <div className="space-y-6 min-w-0">
+            {/* What Should I Study Today AI Widget */}
+            <AIStudyTodayWidget 
+              studentId={user?.uid || 'student_1'} 
+              defaultSubject={selectedSubject !== 'All' ? selectedSubject : 'Computer Science'} 
+              defaultLevel={(user as any)?.educationLevel || (user as any)?.educationLevelId || 'Upper Sixth'} 
+            />
+
             {/* Quick Stats Banner */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <Card className="p-3.5 sm:p-5 space-y-1.5 sm:space-y-2 border-indigo-100 bg-indigo-50/30 min-w-0">
@@ -881,6 +890,9 @@ export default function StudentDashboard() {
                 <p className="text-[10px] text-slate-500 font-medium truncate">Personal notes</p>
               </Card>
             </div>
+
+            {/* Daily GCE Challenge Card (Prominent National Exam Preparation) */}
+            <DailyGceChallengeCard />
 
             {/* Virtual Practical Lab Promo Banner */}
             <Card className="p-4 sm:p-6 bg-gradient-to-r from-blue-950 via-slate-900 to-amber-950/70 text-white rounded-2xl sm:rounded-3xl border border-amber-500/30 space-y-3 relative overflow-hidden shadow-xl min-w-0">
@@ -1898,25 +1910,25 @@ export default function StudentDashboard() {
 
               <form onSubmit={handleSavePersonalNote} className="space-y-4 text-xs font-semibold">
                 <div className="space-y-1">
-                  <label>Note Title</label>
+                  <label className="text-slate-700 dark:text-slate-300">Note Title</label>
                   <input
                     type="text"
                     required
                     value={newNoteTitle}
                     onChange={e => setNewNoteTitle(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="e.g. Quick Summary of CPU Scheduling Algorithms"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label>Note Content</label>
+                  <label className="text-slate-700 dark:text-slate-300">Note Content</label>
                   <textarea
                     rows={5}
                     required
                     value={newNoteContent}
                     onChange={e => setNewNoteContent(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium outline-none focus:ring-2 focus:ring-indigo-500 resize-y leading-relaxed"
                     placeholder="Write key definitions, equations, or pseudocode..."
                   />
                 </div>
@@ -1930,21 +1942,21 @@ export default function StudentDashboard() {
         {/* MODAL: FORUM QUESTION */}
         {showForumModal && (
           <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white w-full max-w-lg rounded-3xl p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="text-base font-bold text-slate-900">Ask Community Forum Question</h3>
-                <button onClick={() => setShowForumModal(false)} className="text-slate-400 hover:text-slate-600">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl p-6 space-y-4 border border-slate-100 dark:border-slate-800 shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">Ask Community Forum Question</h3>
+                <button onClick={() => setShowForumModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                   <X size={20} />
                 </button>
               </div>
 
               <form onSubmit={handleCreateForumPost} className="space-y-4 text-xs font-semibold">
                 <div className="space-y-1">
-                  <label>Subject</label>
+                  <label className="text-slate-700 dark:text-slate-300">Subject</label>
                   <select
                     value={forumSubject}
                     onChange={e => setForumSubject(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-medium outline-none focus:ring-2 focus:ring-indigo-500"
                   >
                     <option value="Computer Science">Computer Science</option>
                     <option value="ICT">ICT</option>
@@ -1954,25 +1966,25 @@ export default function StudentDashboard() {
                 </div>
 
                 <div className="space-y-1">
-                  <label>Question Title</label>
+                  <label className="text-slate-700 dark:text-slate-300">Question Title</label>
                   <input
                     type="text"
                     required
                     value={forumTitle}
                     onChange={e => setForumTitle(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="e.g. What is the difference between synchronous and asynchronous transfer?"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label>Explanation & Details</label>
+                  <label className="text-slate-700 dark:text-slate-300">Explanation & Details</label>
                   <textarea
                     rows={4}
                     required
                     value={forumContent}
                     onChange={e => setForumContent(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50"
+                    className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 font-medium outline-none focus:ring-2 focus:ring-indigo-500 resize-y leading-relaxed"
                     placeholder="Describe what you are trying to understand..."
                   />
                 </div>

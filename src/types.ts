@@ -449,6 +449,138 @@ export interface DrillSubmission {
   createdAt: any;
 }
 
+export type DailyGceSourceType = 
+  | 'PAST_GCE' 
+  | 'AI_GENERATED_GCE_STYLE' 
+  | 'MOCK_EXAM' 
+  | 'EDULPHA_CURRICULUM' 
+  | 'REVISION';
+
+export type DailyGceDifficulty = 
+  | 'Easy' 
+  | 'Medium' 
+  | 'Hard' 
+  | 'Very Hard' 
+  | 'GCE Foundation' 
+  | 'GCE Standard' 
+  | 'GCE Challenge';
+
+export type DailyGceQuestionType = 
+  | 'mcq' 
+  | 'structured' 
+  | 'numerical' 
+  | 'programming' 
+  | 'practical' 
+  | 'essay' 
+  | 'short_answer';
+
+export interface DailyGceSubpart {
+  id: string;
+  label: string;
+  text: string;
+  marks: number;
+  codeSnippet?: string;
+}
+
+export interface DailyGceModelAnswer {
+  correctOption?: string;
+  expectedAnswer?: string;
+  markingPoints?: { point: string; marks: number }[];
+  formula?: string;
+  working?: string;
+  finalAnswer?: string;
+  units?: string;
+  codeSolution?: string;
+  explanation: string;
+  examTip?: string;
+}
+
+export interface DailyGceQuestion {
+  questionId: string;
+  sourceType: DailyGceSourceType;
+  sourcePaper?: string;
+  subject: string;
+  level: 'Ordinary Level' | 'Advanced Level';
+  year?: number;
+  paper: 'Paper 1' | 'Paper 2' | 'Paper 3';
+  questionType: DailyGceQuestionType;
+  topic: string;
+  subtopic?: string;
+  difficulty: DailyGceDifficulty;
+  marks: number;
+  language: 'en' | 'fr';
+  sourceDocument?: string;
+  sourcePage?: number;
+  questionNumber?: number | string;
+  questionText: string;
+  instructions?: string;
+  options?: { A: string; B: string; C: string; D: string } | Record<string, string>;
+  subparts?: DailyGceSubpart[];
+  codeSnippet?: string;
+  programmingData?: {
+    language: string;
+    starterCode?: string;
+    testCases?: { input: string; output: string }[];
+  };
+  practicalRequirements?: string;
+  modelAnswer: DailyGceModelAnswer;
+  isVerified: boolean;
+  isAiGenerated: boolean;
+  date: string; // YYYY-MM-DD
+  status?: 'published' | 'pending_review' | 'rejected';
+  createdAt?: any;
+}
+
+export interface DailyGceStudentSubmission {
+  id: string;
+  studentId: string;
+  questionId: string;
+  date: string;
+  subject: string;
+  level: string;
+  paper: string;
+  answer: string;
+  score: number;
+  maxMarks: number;
+  status: 'correct' | 'partially_correct' | 'incorrect';
+  evaluationFeedback?: {
+    score?: number;
+    maxMarks?: number;
+    status?: 'correct' | 'partially_correct' | 'incorrect';
+    whatWasCorrect?: string;
+    whatWasMissing?: string;
+    correction?: string;
+    explanation?: string;
+    examTip?: string;
+  };
+  timeSpentSeconds: number;
+  topic: string;
+  difficulty: string;
+  createdAt?: any;
+}
+
+export interface DailyGceStreak {
+  studentId: string;
+  currentStreak: number;
+  longestStreak: number;
+  lastActiveDate: string;
+  totalAnswered: number;
+  totalScore: number;
+  averagePercentage: number;
+  lastUpdated?: any;
+}
+
+export interface DailyGceAdminConfig {
+  enabled: boolean;
+  activeSubjects: string[];
+  rotationSchedule: Record<string, 'Paper 1' | 'Paper 2' | 'Paper 3' | 'mixed' | 'revision'>;
+  defaultDifficulty: DailyGceDifficulty;
+  sourcePriority: DailyGceSourceType[];
+  autoPublish: boolean;
+  dailyGenerationHourUtc?: number;
+}
+
+
 export interface SampleQuestion {
   id: string;
   subject: Subject;

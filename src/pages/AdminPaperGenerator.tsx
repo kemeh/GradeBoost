@@ -981,7 +981,7 @@ export default function AdminPaperGenerator() {
                   {paperData.examinationRule === 'custom_target' && (
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 mt-1 border-t border-indigo-100/80">
                       <div>
-                        <label className="text-[10px] font-bold text-slate-600 uppercase">Exact Questions</label>
+                        <label className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">Exact Questions</label>
                         <input
                           type="number"
                           min="1"
@@ -989,11 +989,11 @@ export default function AdminPaperGenerator() {
                           value={paperData.exactQuestionsCount || ''}
                           onChange={e => updatePaper(p => ({ ...p, exactQuestionsCount: parseInt(e.target.value) || undefined }))}
                           placeholder="e.g. 5"
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-slate-600 uppercase">Min Questions</label>
+                        <label className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">Min Questions</label>
                         <input
                           type="number"
                           min="1"
@@ -1001,11 +1001,11 @@ export default function AdminPaperGenerator() {
                           value={paperData.minQuestionsCount || ''}
                           onChange={e => updatePaper(p => ({ ...p, minQuestionsCount: parseInt(e.target.value) || undefined }))}
                           placeholder="e.g. 3"
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] font-bold text-slate-600 uppercase">Max Questions</label>
+                        <label className="text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase">Max Questions</label>
                         <input
                           type="number"
                           min="1"
@@ -1013,7 +1013,7 @@ export default function AdminPaperGenerator() {
                           value={paperData.maxQuestionsCount || ''}
                           onChange={e => updatePaper(p => ({ ...p, maxQuestionsCount: parseInt(e.target.value) || undefined }))}
                           placeholder="e.g. 20"
-                          className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
                     </div>
@@ -1241,13 +1241,13 @@ export default function AdminPaperGenerator() {
                     {/* Question Prompt */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                           Main Question Prompt / Context
                         </label>
-                        <span className="text-[11px] text-slate-400">Markdown supported</span>
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400">Markdown supported</span>
                       </div>
                       <textarea 
-                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none resize-y text-xs sm:text-sm leading-relaxed"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-indigo-500 outline-none resize-y text-xs sm:text-sm leading-relaxed"
                         value={q.text}
                         placeholder="State the problem context or introductory question text..."
                         onChange={e => {
@@ -1264,13 +1264,13 @@ export default function AdminPaperGenerator() {
                     {/* Optional Main Code Snippet */}
                     <div className="space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-bold text-slate-500 flex items-center gap-1">
+                        <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1">
                           <Code size={13} />
                           <span>Code Snippet / Algorithm (Optional)</span>
                         </label>
                       </div>
                       <textarea
-                        className="w-full p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl border border-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none resize-y"
+                        className="w-full p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl border border-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none resize-y placeholder:text-slate-500 caret-emerald-400"
                         value={q.codeSnippet || ''}
                         placeholder="// Enter pseudocode, Python, Java, or C snippet here..."
                         onChange={e => {
@@ -1286,14 +1286,14 @@ export default function AdminPaperGenerator() {
 
                     {/* Subparts Section */}
                     <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                      <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-800 pt-3">
+                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-700 dark:text-slate-300">
                           Sub-Questions & Marks Breakdown
                         </h4>
                         <button 
                           type="button"
                           onClick={() => handleAddSubpart(q.id)}
-                          className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg transition"
+                          className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 flex items-center gap-1 bg-indigo-50 dark:bg-indigo-950/50 px-2.5 py-1 rounded-lg transition"
                         >
                           <Plus size={13} /> Add Sub-part
                         </button>
@@ -1302,14 +1302,14 @@ export default function AdminPaperGenerator() {
                       {q.subparts.map((sub, sIdx) => (
                         <div 
                           key={sub.id || sIdx} 
-                          className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/90 space-y-2 group/sub"
+                          className="bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 group/sub"
                         >
                           <div className="flex flex-col sm:flex-row items-stretch sm:items-start gap-2.5">
                             {/* Subpart Label */}
                             <div className="w-14 shrink-0">
                               <input 
                                 type="text"
-                                className="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-center outline-none focus:border-blue-500 shadow-sm"
+                                className="w-full px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-bold text-center text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
                                 value={sub.label}
                                 onChange={e => handleUpdateSubpart(q.id, sIdx, 'label', e.target.value)}
                               />
@@ -1318,7 +1318,7 @@ export default function AdminPaperGenerator() {
                             {/* Subpart Text */}
                             <div className="flex-1">
                               <textarea 
-                                className="w-full px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium outline-none focus:border-blue-500 resize-none shadow-sm leading-relaxed"
+                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-xs font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-indigo-500 resize-y shadow-sm leading-relaxed"
                                 value={sub.text}
                                 placeholder="Enter sub-question text..."
                                 onChange={e => handleUpdateSubpart(q.id, sIdx, 'text', e.target.value)}
@@ -1329,22 +1329,34 @@ export default function AdminPaperGenerator() {
                             {/* Subpart Marks */}
                             <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0">
                               <div className="w-24">
-                                <div className="flex items-center gap-1 bg-white px-2 py-1 border border-slate-200 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-1 bg-white dark:bg-slate-900 px-2 py-1 border border-slate-300 dark:border-slate-700 rounded-lg shadow-sm">
                                   <input 
                                     type="number"
                                     min="1"
-                                    className="w-12 text-xs font-bold text-center outline-none"
+                                    className="w-12 text-xs font-bold text-center text-slate-900 dark:text-slate-100 bg-transparent outline-none"
                                     value={sub.marks}
                                     onChange={e => handleUpdateSubpart(q.id, sIdx, 'marks', parseInt(e.target.value) || 0)}
                                   />
-                                  <span className="text-[10px] font-bold text-slate-400">mks</span>
+                                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">mks</span>
                                 </div>
                               </div>
 
                               <button 
                                 type="button"
+                                onClick={() => handleUpdateSubpart(q.id, sIdx, 'codeSnippet', sub.codeSnippet === undefined ? '' : (sub.codeSnippet ? sub.codeSnippet : undefined))}
+                                className={cn(
+                                  "p-1.5 rounded-lg transition text-xs font-mono flex items-center gap-1",
+                                  sub.codeSnippet !== undefined ? "bg-emerald-950/40 text-emerald-400 border border-emerald-800/60" : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                                )}
+                                title={sub.codeSnippet !== undefined ? "Hide code snippet" : "Add code snippet/structure"}
+                              >
+                                <Code size={14} />
+                              </button>
+
+                              <button 
+                                type="button"
                                 onClick={() => handleRemoveSubpart(q.id, sIdx)}
-                                className="p-1.5 text-slate-300 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+                                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
                                 title="Remove sub-part"
                               >
                                 <Trash2 size={15} />
@@ -1352,15 +1364,24 @@ export default function AdminPaperGenerator() {
                             </div>
                           </div>
 
-                          {/* Subpart Code snippet (collapsible / toggle) */}
+                          {/* Subpart Code snippet (High-contrast multiline editor) */}
                           {sub.codeSnippet !== undefined && (
-                            <input
-                              type="text"
-                              value={sub.codeSnippet || ''}
-                              onChange={e => handleUpdateSubpart(q.id, sIdx, 'codeSnippet', e.target.value)}
-                              placeholder="Optional sub-part code/formula..."
-                              className="w-full px-3 py-1 bg-white font-mono text-[11px] text-slate-700 border border-slate-200 rounded-md outline-none focus:border-blue-500"
-                            />
+                            <div className="pt-1.5 space-y-1">
+                              <div className="flex items-center justify-between text-[11px] font-mono font-bold text-slate-500 dark:text-slate-400 px-1">
+                                <span className="flex items-center gap-1.5">
+                                  <Code size={12} className="text-emerald-500" />
+                                  <span>Sub-part Code Snippet / Data Structure</span>
+                                </span>
+                                <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Monospace Syntax</span>
+                              </div>
+                              <textarea
+                                value={sub.codeSnippet || ''}
+                                onChange={e => handleUpdateSubpart(q.id, sIdx, 'codeSnippet', e.target.value)}
+                                placeholder={`// Example node structure:\nclass Node {\n  data: int\n  next: Node\n}`}
+                                rows={Math.max(2, Math.min(8, (sub.codeSnippet || '').split('\n').length + 1))}
+                                className="w-full p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl border border-slate-800 focus:ring-2 focus:ring-emerald-500 outline-none resize-y placeholder:text-slate-500 caret-emerald-400 leading-relaxed shadow-inner"
+                              />
+                            </div>
                           )}
                         </div>
                       ))}

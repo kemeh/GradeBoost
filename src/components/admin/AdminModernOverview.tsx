@@ -50,6 +50,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useSettings } from '../../contexts/SettingsContext';
 import { Card, Badge, Button, cn, Skeleton } from '../ui';
+import { AICoverageCheckerModal } from '../EdulphaAI/AICoverageCheckerModal';
 import { StatsService } from '../../services/statsService';
 import { formatDate } from '../../utils/dateUtils';
 import toast from 'react-hot-toast';
@@ -71,6 +72,7 @@ export default function AdminModernOverview({
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [chartPeriod, setChartPeriod] = useState<'7d' | '30d' | '90d' | 'year'>('30d');
+  const [showCoverageModal, setShowCoverageModal] = useState(false);
 
   // Real Aggregated Platform Metrics
   const [metrics, setMetrics] = useState({
@@ -521,6 +523,33 @@ export default function AdminModernOverview({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Action 0: AI Teacher & Coverage Checker */}
+          <div
+            onClick={() => setShowCoverageModal(true)}
+            className="p-5 bg-gradient-to-br from-amber-50 to-white dark:from-amber-950/30 dark:to-slate-900 rounded-2xl border border-amber-200 dark:border-amber-900/50 hover:border-amber-400 shadow-xs hover:shadow-md transition-all cursor-pointer group space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 bg-amber-500 text-slate-950 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                <Layers size={20} />
+              </div>
+              <span className="px-2 py-0.5 text-[10px] font-black uppercase tracking-wider bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-md">
+                Digital School
+              </span>
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors">
+                Check AI Curriculum Coverage
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+                Scan all subjects for missing human teachers, notes, lessons, and batch generate complete learning packages.
+              </p>
+            </div>
+            <div className="flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 pt-1 group-hover:translate-x-1 transition-transform">
+              <span>Run Coverage Scan</span>
+              <ChevronRight size={14} />
+            </div>
+          </div>
+
           {/* Action 1: Paper Generator */}
           <div
             onClick={() => navigate('/admin/paper-generator')}
@@ -1083,6 +1112,8 @@ export default function AdminModernOverview({
           </div>
         </Card>
       </div>
+
+      <AICoverageCheckerModal isOpen={showCoverageModal} onClose={() => setShowCoverageModal(false)} />
     </div>
   );
 }

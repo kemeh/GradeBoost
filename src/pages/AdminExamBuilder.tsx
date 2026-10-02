@@ -222,67 +222,67 @@ export default function AdminExamBuilder() {
                 {/* Basic info */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Exam Title</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Exam Title</label>
                     <input
                       type="text"
                       required
                       value={editingExam.title}
                       onChange={(e) => setEditingExam({ ...editingExam, title: e.target.value })}
-                      className="w-full p-2.5 rounded-xl border border-slate-300 text-sm font-bold"
+                      className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Subject</label>
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase mb-1">Subject</label>
                     <input
                       type="text"
                       required
                       value={editingExam.subject}
                       onChange={(e) => setEditingExam({ ...editingExam, subject: e.target.value })}
-                      className="w-full p-2.5 rounded-xl border border-slate-300 text-sm font-bold"
+                      className="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                 </div>
 
                 {/* Exam Settings Grid */}
-                <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-4">
-                  <h3 className="text-xs font-bold uppercase text-slate-700 tracking-wider">Exam Parameters & Security Settings</h3>
+                <div className="p-4 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-2xl space-y-4">
+                  <h3 className="text-xs font-bold uppercase text-slate-700 dark:text-slate-300 tracking-wider">Exam Parameters & Security Settings</h3>
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Duration (Mins)</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Duration (Mins)</label>
                       <input
                         type="number"
                         value={editingExam.durationMinutes}
                         onChange={(e) => setEditingExam({ ...editingExam, durationMinutes: Number(e.target.value) })}
-                        className="w-full p-2 rounded-lg border border-slate-300 text-xs font-bold"
+                        className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Passing Score (%)</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Passing Score (%)</label>
                       <input
                         type="number"
                         value={editingExam.passingScorePercent}
                         onChange={(e) => setEditingExam({ ...editingExam, passingScorePercent: Number(e.target.value) })}
-                        className="w-full p-2 rounded-lg border border-slate-300 text-xs font-bold"
+                        className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Randomize Questions</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Randomize Questions</label>
                       <select
                         value={editingExam.questionOrder}
                         onChange={(e) => setEditingExam({ ...editingExam, questionOrder: e.target.value as any })}
-                        className="w-full p-2 rounded-lg border border-slate-300 text-xs font-bold bg-white"
+                        className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500"
                       >
                         <option value="random">Randomize</option>
                         <option value="fixed">Fixed Order</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-slate-600 mb-1">Calculator Allowed</label>
+                      <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">Calculator Allowed</label>
                       <select
                         value={editingExam.allowCalculator ? 'yes' : 'no'}
                         onChange={(e) => setEditingExam({ ...editingExam, allowCalculator: e.target.value === 'yes' })}
-                        className="w-full p-2 rounded-lg border border-slate-300 text-xs font-bold bg-white"
+                        className="w-full p-2 rounded-lg border border-slate-300 dark:border-slate-700 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500"
                       >
                         <option value="yes">Yes (Scientific Calculator)</option>
                         <option value="no">No Calculator</option>
@@ -292,9 +292,9 @@ export default function AdminExamBuilder() {
                 </div>
 
                 {/* Auto Question Selection Rules */}
-                <div className="p-4 bg-purple-50/60 border border-purple-200 rounded-2xl space-y-3">
+                <div className="p-4 bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/50 rounded-2xl space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <h3 className="text-xs font-bold text-purple-900 uppercase flex items-center gap-1.5">
+                    <h3 className="text-xs font-bold text-purple-900 dark:text-purple-300 uppercase flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-purple-600" /> Auto Question Selection Rule Generator
                     </h3>
                     <button
@@ -307,30 +307,30 @@ export default function AdminExamBuilder() {
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="block text-xs font-bold text-purple-800 mb-1">Easy Count</label>
+                      <label className="block text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">Easy Count</label>
                       <input
                         type="number"
                         value={autoRuleCount.easy}
                         onChange={(e) => setAutoRuleCount({ ...autoRuleCount, easy: Number(e.target.value) })}
-                        className="w-full p-2 rounded-lg border border-purple-200 text-xs font-bold bg-white"
+                        className="w-full p-2 rounded-lg border border-purple-200 dark:border-purple-800 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-purple-800 mb-1">Medium Count</label>
+                      <label className="block text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">Medium Count</label>
                       <input
                         type="number"
                         value={autoRuleCount.medium}
                         onChange={(e) => setAutoRuleCount({ ...autoRuleCount, medium: Number(e.target.value) })}
-                        className="w-full p-2 rounded-lg border border-purple-200 text-xs font-bold bg-white"
+                        className="w-full p-2 rounded-lg border border-purple-200 dark:border-purple-800 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none"
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-bold text-purple-800 mb-1">Hard Count</label>
+                      <label className="block text-xs font-bold text-purple-800 dark:text-purple-300 mb-1">Hard Count</label>
                       <input
                         type="number"
                         value={autoRuleCount.hard}
                         onChange={(e) => setAutoRuleCount({ ...autoRuleCount, hard: Number(e.target.value) })}
-                        className="w-full p-2 rounded-lg border border-purple-200 text-xs font-bold bg-white"
+                        className="w-full p-2 rounded-lg border border-purple-200 dark:border-purple-800 text-xs font-bold bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none"
                       />
                     </div>
                   </div>

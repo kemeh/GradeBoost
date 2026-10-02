@@ -203,7 +203,7 @@ export const AIProgrammingAssistant: React.FC = () => {
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder="Paste or write your program code here..."
-              className="w-full bg-slate-900 text-slate-100 font-mono text-xs p-4 rounded-b-xl border border-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none leading-relaxed"
+              className="w-full bg-slate-900 text-slate-100 font-mono text-xs p-4 rounded-b-xl border border-slate-800 focus:ring-2 focus:ring-indigo-500 outline-none leading-relaxed placeholder:text-slate-500 caret-emerald-400"
             />
           </div>
 

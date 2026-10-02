@@ -1,12 +1,12 @@
 {
-  "studentsCount": 24,
-  "teachersCount": 7,
-  "adminsCount": 2,
-  "totalUsers": 33,
-  "subjectsCount": 18,
-  "questionsCount": 1450,
-  "partnersCount": 5,
+  "studentsCount": 22,
+  "teachersCount": 1,
+  "adminsCount": 1,
+  "totalUsers": 24,
+  "subjectsCount": 35,
+  "questionsCount": 372,
+  "partnersCount": 0,
   "downloadsCount": 0,
-  "examsCount": 0,
-  "updatedAt": "2026-09-04T12:11:03.360Z"
+  "examsCount": 7,
+  "updatedAt": "2026-10-02T20:52:16.061Z"
 }

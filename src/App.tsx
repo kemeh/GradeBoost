@@ -30,6 +30,7 @@ const VerifyPhone = lazy(() => import('./pages/VerifyPhone'));
 const DuelBattle = lazy(() => import('./pages/DuelBattle'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const DailyDrill = lazy(() => import('./pages/DailyDrill'));
+const DailyGceChallengePage = lazy(() => import('./pages/DailyGceChallengePage'));
 const RandomPractice = lazy(() => import('./pages/RandomPractice'));
 const LearningChallenges = lazy(() => import('./pages/LearningChallenges'));
 const AdminChallenges = lazy(() => import('./pages/AdminChallenges'));
@@ -57,6 +58,7 @@ const ExamResultScreen = lazy(() => import('./pages/ExamResultScreen'));
 const ExamAnalyticsDashboard = lazy(() => import('./pages/ExamAnalyticsDashboard'));
 const DocumentationHub = lazy(() => import('./pages/DocumentationHub'));
 const PublicDocumentView = lazy(() => import('./pages/PublicDocumentView'));
+const PublicRevisionNotesPage = lazy(() => import('./pages/PublicRevisionNotesPage'));
 const StudentPracticalLab = lazy(() => import('./pages/StudentPracticalLab'));
 const AccountingPracticalLab = lazy(() => import('./pages/AccountingPracticalLab'));
 const AdminPracticalManager = lazy(() => import('./pages/AdminPracticalManager'));
@@ -210,7 +212,11 @@ export default function App() {
               <Route path="/courses" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/lessons" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/study-plans" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
-              <Route path="/notes" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
+              <Route path="/notes" element={<PublicRevisionNotesPage />} />
+              <Route path="/revision" element={<PublicRevisionNotesPage />} />
+              <Route path="/revision-notes" element={<PublicRevisionNotesPage />} />
+              <Route path="/revision-notes/:classId/:subjectId" element={<PublicRevisionNotesPage />} />
+              <Route path="/ai-school" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/downloads" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/digital-school" element={<PrivateRoute><StudentDashboard /></PrivateRoute>} />
               <Route path="/past-questions" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
@@ -231,7 +237,9 @@ export default function App() {
               <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
               <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
               <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
-              <Route path="/daily-drill" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
+              <Route path="/daily-challenge" element={<PrivateRoute><DailyGceChallengePage /></PrivateRoute>} />
+              <Route path="/daily-drill" element={<PrivateRoute><DailyGceChallengePage /></PrivateRoute>} />
+              <Route path="/daily-drill-old" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
               <Route path="/daily-drill-new" element={<PrivateRoute><DailyDrill /></PrivateRoute>} />
               <Route path="/random-practice" element={<PrivateRoute><RandomPractice /></PrivateRoute>} />
               <Route path="/challenges" element={<PrivateRoute><LearningChallenges /></PrivateRoute>} />
@@ -266,6 +274,7 @@ export default function App() {
               <Route path="/admin/examinations" element={<AdminRoute><Admin defaultTab="assessments" /></AdminRoute>} />
               <Route path="/admin/assessments" element={<AdminRoute><Admin defaultTab="assessments" /></AdminRoute>} />
               <Route path="/admin/question-bank" element={<TeacherRoute><AdminQuestionBank /></TeacherRoute>} />
+              <Route path="/admin/daily-questions" element={<AdminRoute><Admin defaultTab="daily-questions" /></AdminRoute>} />
               <Route path="/admin/past-papers" element={<AdminRoute><AdminPastPapers /></AdminRoute>} />
               <Route path="/admin/paper-bank" element={<AdminRoute><AdminPastPapers /></AdminRoute>} />
               <Route path="/admin/question-papers" element={<AdminRoute><AdminPastPapers /></AdminRoute>} />

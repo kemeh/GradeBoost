@@ -271,6 +271,37 @@ export const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
 SearchInput.displayName = "SearchInput";
 
 /**
+ * CodeEditorTextarea Component - High Contrast Code / Pseudocode Area
+ */
+export interface CodeEditorTextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
+  language?: string;
+}
+
+export const CodeEditorTextarea = React.forwardRef<HTMLTextAreaElement, CodeEditorTextareaProps>(
+  ({ className, language, ...props }, ref) => {
+    return (
+      <div className="relative w-full rounded-xl overflow-hidden border border-slate-800 bg-slate-900 shadow-sm">
+        {language && (
+          <div className="flex items-center justify-between px-3 py-1 bg-slate-950/80 border-b border-slate-800/80 text-[10px] font-mono font-bold text-slate-400">
+            <span>{language}</span>
+            <span className="text-emerald-400">● LIVE EDITOR</span>
+          </div>
+        )}
+        <textarea
+          ref={ref}
+          className={cn(
+            "w-full p-3.5 bg-slate-900 text-emerald-400 font-mono text-xs sm:text-sm leading-relaxed outline-none resize-y placeholder:text-slate-500 focus:ring-2 focus:ring-emerald-500/50 caret-emerald-400",
+            className
+          )}
+          {...props}
+        />
+      </div>
+    );
+  }
+);
+CodeEditorTextarea.displayName = "CodeEditorTextarea";
+
+/**
  * Progress Component
  */
 export interface ProgressProps extends React.HTMLAttributes<HTMLDivElement> {
