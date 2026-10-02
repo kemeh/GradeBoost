@@ -42,9 +42,12 @@ export default function DailyGceChallengePage() {
   const [showMarkingScheme, setShowMarkingScheme] = useState(false);
   const [celebrateComplete, setCelebrateComplete] = useState(false);
 
+  const urlTopic = searchParams.get('topic');
+  const urlSubject = searchParams.get('subject');
+
   useEffect(() => {
     loadChallenge();
-  }, [user?.uid, userLevel, user?.subject, language]);
+  }, [user?.uid, userLevel, user?.subject, language, urlTopic, urlSubject]);
 
   async function loadChallenge() {
     setLoading(true);
@@ -52,7 +55,8 @@ export default function DailyGceChallengePage() {
       const res = await fetchTodayGceQuestions({
         studentId: user?.uid,
         level: userLevel,
-        enrolledSubjects: user?.subject ? [user.subject] : undefined,
+        enrolledSubjects: urlSubject ? [urlSubject] : (user?.subject ? [user.subject] : undefined),
+        preferredTopic: urlTopic || undefined,
         language: language === 'fr' ? 'fr' : 'en'
       });
       setData(res);

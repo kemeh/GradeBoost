@@ -7,6 +7,7 @@ import { Layers, FolderKanban, BookOpen, ListTree, Plus, Trash2, Edit3, Save, X,
 import { toast } from 'react-hot-toast';
 import SubjectManager from '../SubjectManager';
 import { AdminHNDManagement } from './AdminHNDManagement';
+import AdminSyllabusManager from './AdminSyllabusManager';
 
 interface AdminAcademicHierarchyProps {
   initialTab?: 'levels' | 'departments' | 'subjects' | 'topics' | 'hnd';
@@ -379,49 +380,7 @@ export default function AdminAcademicHierarchy({ initialTab = 'levels' }: AdminA
       {/* Topics Tab */}
       {activeTab === 'topics' && (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <Button onClick={() => setShowTopicModal(true)} className="rounded-2xl">
-              <Plus size={16} className="mr-2" /> Add Syllabus Topic
-            </Button>
-          </div>
-
-          <Card className="p-0 overflow-hidden">
-            {topics.length === 0 ? (
-              <div className="p-12 text-center text-slate-400 font-medium">No syllabus topics added yet.</div>
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-[10px] uppercase font-black tracking-widest text-slate-400">
-                    <th className="p-4 pl-6">Topic Title</th>
-                    <th className="p-4">Subject</th>
-                    <th className="p-4">Level</th>
-                    <th className="p-4">Exam Weightage</th>
-                    <th className="p-4">Est. Study Hours</th>
-                    <th className="p-4 pr-6 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {topics.map(t => (
-                    <tr key={t.id} className="hover:bg-slate-50/50">
-                      <td className="p-4 pl-6 font-bold text-slate-900 text-sm">{t.title}</td>
-                      <td className="p-4 text-xs font-bold text-indigo-600">{t.subject}</td>
-                      <td className="p-4 text-xs font-medium text-slate-500">{t.level}</td>
-                      <td className="p-4 text-xs font-black text-emerald-600">{t.weightage || 15}%</td>
-                      <td className="p-4 text-xs font-bold text-slate-700">{t.estimatedHours || 4} hrs</td>
-                      <td className="p-4 pr-6 text-right">
-                        <button 
-                          onClick={() => handleDeleteTopic(t.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </Card>
+          <AdminSyllabusManager />
         </div>
       )}
 

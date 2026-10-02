@@ -1,4 +1,5 @@
 export * from './types/hnd';
+export * from './types/academicSyllabus';
 
 declare global {
   interface Window {

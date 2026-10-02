@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, Target, Trophy, 
-  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield, FlaskConical, Award, Database, History, Gift
+  Settings, LogOut, TrendingUp, Menu, X, ShieldCheck, CreditCard, BookOpen, MessageSquare, Zap, Sparkles, Bell, Smartphone, Shield, FlaskConical, Award, Database, History, Gift, ListTree
 } from 'lucide-react';
 import { auth } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -48,6 +48,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: Zap, label: t('sidebar.duelBattle', 'Duel Battle'), path: '/duel' },
     { icon: Trophy, label: t('nav.leaderboard', 'Leaderboard'), path: '/leaderboard' },
     { icon: Sparkles, label: `⚡ ${t('sidebar.dailyGceChallenge', 'Daily GCE Challenge')}`, path: '/daily-challenge' },
+    { icon: ListTree, label: `📚 ${t('sidebar.syllabusTopics', 'Syllabus & Priorities')}`, path: '/syllabus' },
     { icon: Target, label: t('sidebar.dailyDrills', 'Daily Drills'), path: '/daily-drill' },
     { icon: Sparkles, label: t('sidebar.randomPractice', 'Random Practice'), path: '/random-practice' },
     { icon: FileText, label: t('nav.practice', 'Practice Papers'), path: '/practice' },
@@ -94,6 +95,7 @@ export default function Sidebar({ className }: SidebarProps) {
     { icon: FileText, label: t('sidebar.managePapers', 'Manage Papers'), path: '/admin?tab=papers' },
     { icon: FileText, label: t('sidebar.paper2Generator', 'Paper 2 Generator'), path: '/admin/paper-generator' },
     { icon: Sparkles, label: `⚡ ${t('sidebar.dailyQuestions', 'Daily GCE Questions')}`, path: '/admin?tab=daily-questions' },
+    { icon: ListTree, label: `📚 ${t('sidebar.syllabusTopics', 'Syllabus & Priorities')}`, path: '/admin?tab=syllabus' },
     { icon: Target, label: t('sidebar.dailyDrills', 'Daily Drills'), path: '/admin/daily-drill' },
     { icon: BookOpen, label: t('sidebar.resourcesAssignments', 'Resources & Assignments'), path: '/admin/resources' },
     { icon: Settings, label: t('sidebar.systemSettings', 'System Settings'), path: '/admin/settings' },

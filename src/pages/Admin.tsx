@@ -44,6 +44,7 @@ import { AdminAuditLog } from '../components/admin/AdminAuditLog';
 import { AdminHNDManagement } from '../components/admin/AdminHNDManagement';
 import AdminPastPapersManagement from '../components/admin/AdminPastPapersManagement';
 import AdminDailyQuestionManager from '../components/admin/AdminDailyQuestionManager';
+import AdminSyllabusManager from '../components/admin/AdminSyllabusManager';
 import DynamicQuestionPaperUploadModal from '../components/admin/DynamicQuestionPaperUploadModal';
 import ModernDashboardLayout from '../components/layout/ModernDashboardLayout';
 import AdminModernOverview from '../components/admin/AdminModernOverview';
@@ -67,7 +68,7 @@ export default function Admin({ defaultTab }: AdminProps = {}) {
   const [uploading, setUploading] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   
-  type AdminTab = 'overview' | 'analytics' | 'daily-questions' | 'users' | 'students' | 'teachers' | 'hierarchy' | 'academic-hierarchy' | 'curriculum' | 'subjects' | 'lms' | 'assessments' | 'questions' | 'papers' | 'past-papers' | 'paper-bank' | 'question-papers' | 'samples' | 'payments' | 'manual' | 'plans' | 'notifications' | 'reports' | 'settings' | 'branding' | 'translations' | 'navigation' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'referrals' | 'system-data' | 'audit-log' | 'hnd' | 'duels';
+  type AdminTab = 'overview' | 'analytics' | 'daily-questions' | 'syllabus' | 'topics' | 'users' | 'students' | 'teachers' | 'hierarchy' | 'academic-hierarchy' | 'curriculum' | 'subjects' | 'lms' | 'assessments' | 'questions' | 'papers' | 'past-papers' | 'paper-bank' | 'question-papers' | 'samples' | 'payments' | 'manual' | 'plans' | 'notifications' | 'reports' | 'settings' | 'branding' | 'translations' | 'navigation' | 'partners' | 'testimonials' | 'documents' | 'footer' | 'alumni' | 'ambassadors' | 'referrals' | 'system-data' | 'audit-log' | 'hnd' | 'duels';
   const activeTab = ((searchParams.get('tab') as AdminTab) || defaultTab || 'overview') as AdminTab;
 
   const [users, setUsers] = useState<any[]>([]);
@@ -520,6 +521,12 @@ export default function Admin({ defaultTab }: AdminProps = {}) {
           </TabsContent>
           <TabsContent value="subjects">
             <AdminAcademicHierarchy initialTab="subjects" />
+          </TabsContent>
+          <TabsContent value="syllabus">
+            <AdminSyllabusManager />
+          </TabsContent>
+          <TabsContent value="topics">
+            <AdminSyllabusManager />
           </TabsContent>
 
           {/* Tab 4: Content & Curriculum (Papers, Lessons, Study Plans) */}

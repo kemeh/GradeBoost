@@ -2623,7 +2623,8 @@ Strict 7-Step Solution Structure:
         level = 'Advanced Level', // 'Ordinary Level' | 'Advanced Level'
         enrolledSubjects,
         language = 'en',
-        forceDate
+        forceDate,
+        preferredTopic
       } = req.body;
 
       const todayStr = forceDate || new Date().toISOString().split('T')[0];
@@ -2747,6 +2748,7 @@ Strict 7-Step Solution Structure:
               subject: subj,
               level: level as any,
               paper: scheduledPaper,
+              topic: preferredTopic || undefined,
               language: language as any,
               difficulty: 'GCE Standard'
             });

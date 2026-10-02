@@ -334,6 +334,11 @@ service cloud.firestore {
     }
 
     // Academic Hierarchy
+    match /academic_streams/{streamId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /academic_levels/{levelId} {
       allow read: if true;
       allow write: if isAdmin();
@@ -344,9 +349,24 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    match /syllabus_subjects/{subjectId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /syllabus_modules/{moduleId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /syllabus_topics/{topicId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    match /student_topic_progress/{progressId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
 
     match /study_plans/{planId} {

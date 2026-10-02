@@ -596,6 +596,83 @@
         "createdAt": { "type": "string" }
       },
       "required": ["userId", "reason", "details", "status", "createdAt"]
+    },
+    "AcademicStream": {
+      "title": "Academic Stream",
+      "description": "General, Technical, and Commercial educational streams.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "description": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "order": { "type": "integer" }
+      },
+      "required": ["name", "code", "isActive"]
+    },
+    "SyllabusSubject": {
+      "title": "Syllabus Subject",
+      "description": "Subjects associated with stream, level, and examination structure.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "code": { "type": "string" },
+        "streamId": { "type": "string" },
+        "levelId": { "type": "string" },
+        "examinationType": { "type": "string" },
+        "availablePapers": { "type": "array" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["name", "code", "streamId", "levelId", "examinationType"]
+    },
+    "SyllabusModule": {
+      "title": "Syllabus Module",
+      "description": "Module or unit division within a syllabus subject.",
+      "type": "object",
+      "properties": {
+        "subjectId": { "type": "string" },
+        "streamId": { "type": "string" },
+        "levelId": { "type": "string" },
+        "moduleNumber": { "type": "string" },
+        "title": { "type": "string" },
+        "order": { "type": "integer" }
+      },
+      "required": ["subjectId", "moduleNumber", "title", "order"]
+    },
+    "SyllabusTopic": {
+      "title": "Syllabus Topic",
+      "description": "Granular syllabus topic with learning objectives, subtopics, and priority score.",
+      "type": "object",
+      "properties": {
+        "subjectId": { "type": "string" },
+        "moduleId": { "type": "string" },
+        "topicName": { "type": "string" },
+        "priority": { "type": "string", "enum": ["CRITICAL", "HIGH", "MEDIUM", "LOW"] },
+        "priorityScore": { "type": "number" },
+        "prioritySource": { "type": "string" },
+        "difficulty": { "type": "string" },
+        "subtopics": { "type": "array" },
+        "learningObjectives": { "type": "array" },
+        "paperRelevance": { "type": "array" },
+        "pastQuestionCount": { "type": "integer" },
+        "isOfficialSyllabus": { "type": "boolean" }
+      },
+      "required": ["subjectId", "moduleId", "topicName", "priority", "priorityScore"]
+    },
+    "StudentTopicProgress": {
+      "title": "Student Topic Progress",
+      "description": "Student mastery, practice count, and personal study priority.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "topicId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "masteryScore": { "type": "number" },
+        "personalPriority": { "type": "string" },
+        "personalPriorityScore": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["userId", "topicId", "subjectId", "masteryScore"]
     }
   },
   "firestore": {
@@ -778,6 +855,26 @@
     "/ai_content_flags/{flagId}": {
       "schema": "AIContentFlag",
       "description": "Content flags reported by students and teachers."
+    },
+    "/academic_streams/{streamId}": {
+      "schema": "AcademicStream",
+      "description": "Educational streams (General, Technical, Commercial)."
+    },
+    "/syllabus_subjects/{subjectId}": {
+      "schema": "SyllabusSubject",
+      "description": "Academic subjects linked to stream and level."
+    },
+    "/syllabus_modules/{moduleId}": {
+      "schema": "SyllabusModule",
+      "description": "Syllabus modules and units."
+    },
+    "/syllabus_topics/{topicId}": {
+      "schema": "SyllabusTopic",
+      "description": "Granular syllabus topics with priorities and subtopics."
+    },
+    "/student_topic_progress/{progressId}": {
+      "schema": "StudentTopicProgress",
+      "description": "Student topic mastery and personal revision priorities."
     }
   }
 }

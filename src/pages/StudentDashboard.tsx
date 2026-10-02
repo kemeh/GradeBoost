@@ -7,7 +7,7 @@ import {
   ChevronRight, CheckCircle2, Star, Layers, MessageSquare, 
   BarChart2, Search, Filter, Plus, Trash2, Edit3, Send, 
   Bot, GraduationCap, Calendar, Zap, Shield, FileCheck, 
-  ArrowRight, RefreshCw, Trophy, Target, BookCheck, Eye, X, Gift, Share2
+  ArrowRight, RefreshCw, Trophy, Target, BookCheck, Eye, X, Gift, Share2, ListTree
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { useAuth } from '../contexts/AuthContext';
@@ -893,6 +893,37 @@ export default function StudentDashboard() {
 
             {/* Daily GCE Challenge Card (Prominent National Exam Preparation) */}
             <DailyGceChallengeCard />
+
+            {/* Academic Syllabus & Study Priorities Banner */}
+            <Card className="p-4 sm:p-6 bg-linear-to-r from-indigo-950 via-slate-900 to-purple-950 text-white rounded-2xl sm:rounded-3xl border border-indigo-500/30 space-y-3 relative overflow-hidden shadow-xl min-w-0">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="px-2.5 py-1 bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[10px] sm:text-[11px] font-black rounded-full uppercase tracking-wider flex items-center gap-1">
+                  <ListTree size={13} className="text-amber-400 shrink-0" /> Cameroon GCE Curriculum Engine
+                </span>
+                <span className="text-[11px] sm:text-xs text-indigo-300 font-bold">Evidence-Based Priorities</span>
+              </div>
+
+              <div className="space-y-1">
+                <h3 className="text-base sm:text-xl font-black text-white flex items-center gap-2">
+                  Academic Syllabus & Study Priorities
+                </h3>
+                <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                  Discover what topics carry the highest examination weighting in past Cameroon GCE papers, monitor your syllabus mastery, and study prioritized revision notes.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+                <Button 
+                  onClick={() => navigate('/syllabus')} 
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs gap-2 rounded-xl uppercase tracking-wider shadow-lg w-full sm:w-auto"
+                >
+                  <span>Explore Syllabus & Priorities</span> <ArrowRight size={14} className="shrink-0" />
+                </Button>
+                <span className="text-[11px] text-slate-400 italic">
+                  Critical, High & Medium topics calibrated across all subjects
+                </span>
+              </div>
+            </Card>
 
             {/* Virtual Practical Lab Promo Banner */}
             <Card className="p-4 sm:p-6 bg-gradient-to-r from-blue-950 via-slate-900 to-amber-950/70 text-white rounded-2xl sm:rounded-3xl border border-amber-500/30 space-y-3 relative overflow-hidden shadow-xl min-w-0">

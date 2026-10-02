@@ -110,7 +110,7 @@ export default function QuestionEditorModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="w-full max-w-4xl bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden my-8 flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-4xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden my-8 flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-slate-900 text-white border-b border-slate-800 shrink-0">
           <div>
@@ -126,11 +126,11 @@ export default function QuestionEditorModal({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 bg-slate-50 px-6 shrink-0">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 px-6 shrink-0">
           <button
             onClick={() => setActiveTab('basic')}
             className={`py-3 px-4 font-bold text-xs border-b-2 transition-all ${
-              activeTab === 'basic' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600 hover:text-slate-900'
+              activeTab === 'basic' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             1. Core Details & Classification
@@ -138,7 +138,7 @@ export default function QuestionEditorModal({
           <button
             onClick={() => setActiveTab('type_settings')}
             className={`py-3 px-4 font-bold text-xs border-b-2 transition-all ${
-              activeTab === 'type_settings' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600 hover:text-slate-900'
+              activeTab === 'type_settings' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             2. {formData.questionType?.toUpperCase()} Config & Answers
@@ -146,7 +146,7 @@ export default function QuestionEditorModal({
           <button
             onClick={() => setActiveTab('explanations')}
             className={`py-3 px-4 font-bold text-xs border-b-2 transition-all ${
-              activeTab === 'explanations' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600 hover:text-slate-900'
+              activeTab === 'explanations' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             3. Explanations & Marking Scheme

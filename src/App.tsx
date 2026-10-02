@@ -31,6 +31,7 @@ const DuelBattle = lazy(() => import('./pages/DuelBattle'));
 const Leaderboard = lazy(() => import('./pages/Leaderboard'));
 const DailyDrill = lazy(() => import('./pages/DailyDrill'));
 const DailyGceChallengePage = lazy(() => import('./pages/DailyGceChallengePage'));
+const StudentSyllabusPage = lazy(() => import('./pages/StudentSyllabusPage'));
 const RandomPractice = lazy(() => import('./pages/RandomPractice'));
 const LearningChallenges = lazy(() => import('./pages/LearningChallenges'));
 const AdminChallenges = lazy(() => import('./pages/AdminChallenges'));
@@ -237,6 +238,8 @@ export default function App() {
               <Route path="/diagnostic" element={<PaymentGatedRoute><Diagnostic /></PaymentGatedRoute>} />
               <Route path="/practice" element={<PaymentGatedRoute><Practice /></PaymentGatedRoute>} />
               <Route path="/practice/:paperId" element={<PrivateRoute><PracticeSession /></PrivateRoute>} />
+              <Route path="/syllabus" element={<PrivateRoute><StudentSyllabusPage /></PrivateRoute>} />
+              <Route path="/curriculum-syllabus" element={<PrivateRoute><StudentSyllabusPage /></PrivateRoute>} />
               <Route path="/daily-challenge" element={<PrivateRoute><DailyGceChallengePage /></PrivateRoute>} />
               <Route path="/daily-drill" element={<PrivateRoute><DailyGceChallengePage /></PrivateRoute>} />
               <Route path="/daily-drill-old" element={<PrivateRoute><DailyDrillSession /></PrivateRoute>} />
@@ -270,6 +273,8 @@ export default function App() {
               <Route path="/admin/academic-hierarchy" element={<AdminRoute><Admin defaultTab="academic-hierarchy" /></AdminRoute>} />
               <Route path="/admin/hierarchy" element={<AdminRoute><Admin defaultTab="academic-hierarchy" /></AdminRoute>} />
               <Route path="/admin/hnd" element={<AdminRoute><Admin defaultTab="hnd" /></AdminRoute>} />
+              <Route path="/admin/syllabus" element={<AdminRoute><Admin defaultTab="syllabus" /></AdminRoute>} />
+              <Route path="/admin/topics" element={<AdminRoute><Admin defaultTab="topics" /></AdminRoute>} />
               <Route path="/admin/specialties" element={<AdminRoute><Admin defaultTab="hnd" /></AdminRoute>} />
               <Route path="/admin/examinations" element={<AdminRoute><Admin defaultTab="assessments" /></AdminRoute>} />
               <Route path="/admin/assessments" element={<AdminRoute><Admin defaultTab="assessments" /></AdminRoute>} />

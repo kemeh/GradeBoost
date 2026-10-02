@@ -41,6 +41,7 @@ export async function fetchTodayGceQuestions(params: {
   enrolledSubjects?: string[];
   language?: string;
   forceDate?: string;
+  preferredTopic?: string;
 }): Promise<TodayGceResponse> {
   try {
     const res = await fetch('/api/gce/daily-questions/get-today', {
