@@ -23,6 +23,8 @@ import {
   fetchMessages, 
   sendAIMessage 
 } from '../../services/aiService';
+import GlobalSubjectSelector from '../GlobalSubjectSelector';
+import { SEEDED_SYLLABUS_SUBJECTS } from '../../data/authoritativeSyllabusSeed';
 
 interface AIChatWindowProps {
   userId: string;
@@ -51,8 +53,17 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
   const [messages, setMessages] = useState<AIMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [selectedSubject, setSelectedSubject] = useState(defaultSubject);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('gen_al_cs');
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+
+  // Sync selectedSubject with ID in the central registry
+  useEffect(() => {
+    const found = SEEDED_SYLLABUS_SUBJECTS.find(s => s.name === selectedSubject || s.id === selectedSubject);
+    if (found && found.id !== selectedSubjectId) {
+      setSelectedSubjectId(found.id);
+    }
+  }, [selectedSubject]);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -155,23 +166,19 @@ export const AIChatWindow: React.FC<AIChatWindowProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Subject Selector */}
-          <select 
-            value={selectedSubject} 
-            onChange={(e) => setSelectedSubject(e.target.value)}
-            className="bg-indigo-900/80 text-white text-xs rounded-xl px-3 py-1.5 border border-indigo-700/60 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-          >
-            <option value="Computer Science">Computer Science</option>
-            <option value="ICT">ICT</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Physics">Physics</option>
-            <option value="Chemistry">Chemistry</option>
-            <option value="Biology">Biology</option>
-            <option value="Economics">Economics</option>
-            <option value="History">History</option>
-            <option value="Geography">Geography</option>
-            <option value="French">French</option>
-          </select>
+          {/* Centralized Subject Selector */}
+          <GlobalSubjectSelector
+            showFilters={false}
+            selectedSubjectId={selectedSubjectId}
+            onChange={(subId, subObj) => {
+              if (subObj) {
+                setSelectedSubject(subObj.name);
+                setSelectedSubjectId(subId);
+              }
+            }}
+            label=""
+            className="w-48 text-slate-900 dark:text-slate-100"
+          />
 
           <button 
             onClick={() => setShowHistory(!showHistory)}

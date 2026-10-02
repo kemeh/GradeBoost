@@ -48,6 +48,8 @@ import {
 import { Button, Card, Badge, cn } from '../ui';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import GlobalSubjectSelector from '../GlobalSubjectSelector';
+import { SEEDED_SYLLABUS_SUBJECTS, SEEDED_ACADEMIC_LEVELS } from '../../data/authoritativeSyllabusSeed';
 
 interface AITeacherClassroomProps {
   studentId: string;
@@ -66,9 +68,18 @@ export const AITeacherClassroom: React.FC<AITeacherClassroomProps> = ({
 
   // Subject and Class Selection
   const [selectedSubject, setSelectedSubject] = useState<string>(defaultSubject);
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('gen_al_cs');
   const [selectedClassLevel, setSelectedClassLevel] = useState<string>(defaultClassLevel);
   const [currentWeekNum, setCurrentWeekNum] = useState<number>(1);
   const [preferredLanguage, setPreferredLanguage] = useState<'en' | 'fr'>('en');
+
+  // Synchronize selectedSubjectId state with text values
+  useEffect(() => {
+    const found = SEEDED_SYLLABUS_SUBJECTS.find(s => s.name === selectedSubject || s.id === selectedSubject);
+    if (found && found.id !== selectedSubjectId) {
+      setSelectedSubjectId(found.id);
+    }
+  }, [selectedSubject]);
 
   // Active Lesson Data
   const [session, setSession] = useState<AILessonSession | null>(null);
@@ -320,37 +331,26 @@ export const AITeacherClassroom: React.FC<AITeacherClassroomProps> = ({
             </div>
           </div>
 
-          {/* Subject & Language Controls */}
+          {/* Subject & Language Controls - Grounded in Central Registry */}
           <div className="flex flex-wrap items-center gap-2.5">
-            <select
-              aria-label="Select Subject"
-              value={selectedSubject}
-              onChange={e => {
-                setSelectedSubject(e.target.value);
-                setCurrentWeekNum(1);
+            <GlobalSubjectSelector
+              showFilters={true}
+              selectedSubjectId={selectedSubjectId}
+              onChange={(subId, subObj) => {
+                if (subObj) {
+                  setSelectedSubject(subObj.name);
+                  setSelectedSubjectId(subId);
+                  const foundLevel = SEEDED_ACADEMIC_LEVELS.find(l => l.id === subObj.levelId);
+                  if (foundLevel) {
+                    setSelectedClassLevel(foundLevel.name);
+                  }
+                  setCurrentWeekNum(1);
+                }
               }}
-              className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="Computer Science">Computer Science</option>
-              <option value="ICT">ICT</option>
-              <option value="Mathematics">Mathematics</option>
-              <option value="Physics">Physics</option>
-              <option value="Chemistry">Chemistry</option>
-            </select>
-
-            <select
-              aria-label="Select Education Level"
-              value={selectedClassLevel}
-              onChange={e => {
-                setSelectedClassLevel(e.target.value);
-                setCurrentWeekNum(1);
-              }}
-              className="text-xs font-bold bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-            >
-              <option value="Ordinary Level">Ordinary Level (Form 4 - 5)</option>
-              <option value="Advanced Level">Advanced Level (Lower - Upper 6th)</option>
-              <option value="Secondary First Cycle">First Cycle (Form 1 - 3)</option>
-            </select>
+              label=""
+              className="w-72"
+              language={preferredLanguage}
+            />
 
             {/* Language switch */}
             <button
